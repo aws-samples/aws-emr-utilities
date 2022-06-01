@@ -1,11 +1,9 @@
-## My Project
+# Amazon EMR Utilities
 
-TODO: Fill this README out!
+This repository contains sample code and utilities for using Amazon EMR on EC2. This package is structured based on the following directorys:
 
-Be sure to:
-
-* Change the title in this README
-* Edit your repository description on GitHub
+- applications - application specific patches, plugins, etc
+- utilities - administrative and maintenance utilities for working with EMR
 
 ## Security
 
