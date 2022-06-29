@@ -1,10 +1,10 @@
-#EMR Serverless Estimator
+# EMR Serverless Estimator
 
 EMR Serverless Estimator is a tool to estimate the cost of running Spark jobs on EMR Serverless based on Spark event logs.
 
 **Disclaimer**: This tool is provided for general information purpose only. You should not rely upon the information provided by this tool for making any business, legal or any other decisions. 
 
-##How to use the tool
+## How to use the tool
 1. Upload estimator jar file and script to your S3 bucket
 
 In this example:
@@ -44,7 +44,7 @@ The output is printed on the console.
 
 Note: Change SparkEventLogParser-slim-2.12-1.0.jar file to SparkEventLogParser-slim-1.0.jar for EMR 5.x or Spark 2.x (scala 2.11).
 
-##Command options
+## Command options
 emr-serverless-estimator.sh options are:: 
 
 * --logroot  [S3 path to Spark event log]  
@@ -87,7 +87,7 @@ estimated_serverless_vcpu_cost,estimated_serverless_memory_cost
 1.16511,0.230271
 ```
 
-##Compare the cost with transient EMR EC2 clusters
+## Compare the cost with transient EMR EC2 clusters
 
 1. Add below steps as the last 2 steps of a transient EMR 6.x cluster  
 ```
