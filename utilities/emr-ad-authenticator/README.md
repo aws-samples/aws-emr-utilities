@@ -68,8 +68,9 @@ ii. Modify emr_ad_auth_wrapper.sh to point to emr_ad_auth.sh in S3. Save this sc
 
 **Step 3: Add the mapping for Kerberos Principals to Usernames in EMR configuration**
 
-i.  In core-site, hadoop.security.auth_to_local
-ii. In kms-site, hadoop.kms.authentication.kerberos.name.rules
+*i.  In core-site, set hadoop.security.auth_to_local*
+*ii. In kms-site, set hadoop.kms.authentication.kerberos.name.rules*
+
 For example, 
 
 ```
@@ -80,7 +81,7 @@ Note: hadoop.security.auth_to_local configuration in core-site.xml needs to matc
 
 **Step 4: Create the Kerberized EMR Cluster**
 
-
+*Sample CLI*
 ```aws emr create-cluster --kerberos-attributes '{"KdcAdminPassword":"","Realm":"EC2.INTERNAL"}' --os-release-label 2.0.20220606.1 --applications Name=Hadoop Name=Spark --ec2-attributes '{"KeyName":"your-key","InstanceProfile":"EMR_EC2_DefaultRole","SubnetId":"subnet-xxxxxxxx","EmrManagedSlaveSecurityGroup":"sg-xxxxxxxx","EmrManagedMasterSecurityGroup":"sg-xxxxxxxx"}' --release-label emr-6.7.0 --log-uri 's3n://aws-logs-xxxxxxxxxxxx-us-east-1/elasticmapreduce/' --instance-groups '[{"InstanceCount":2,"EbsConfiguration":{"EbsBlockDeviceConfigs":[{"VolumeSpecification":{"SizeInGB":32,"VolumeType":"gp2"},"VolumesPerInstance":2}]},"InstanceGroupType":"CORE","InstanceType":"m5.xlarge","Name":"Core - 2"},{"InstanceCount":1,"EbsConfiguration":{"EbsBlockDeviceConfigs":[{"VolumeSpecification":{"SizeInGB":32,"VolumeType":"gp2"},"VolumesPerInstance":2}]},"InstanceGroupType":"MASTER","InstanceType":"m5.2xlarge","Name":"Master - 1"}]' --configurations '[{"Classification":"core-site","Properties":{"hadoop.security.token.service.use_ip":"true","hadoop.security.auth_to_local":"RULE:[1:$1@$0](.*@EMR\\.NET)s/@.*///L RULE:[2:$1@$0](.*@EMR\\.NET)s/@.*///L DEFAULT"}},{"Classification":"hadoop-kms-site","Properties":{"hadoop.kms.authentication.kerberos.name.rules":"RULE:[1:$1@$0](.*@EMR\\.NET)s/@.*///L RULE:[2:$1@$0](.*@EMR\\.NET)s/@.*///L DEFAULT"}}]' --auto-scaling-role EMR_AutoScaling_DefaultRole --bootstrap-actions '[{"Path":"s3://xxxxxxxx/bootstrap-actions/emr-kerberos-ad/emr_ad_auth_wrapper.sh","Name":"emr-ad-authenticator"},{"Path":"s3://xxxxxxxx/bootstrap-actions//emr-kerberos-ad/create-hdfs-home-ba.sh","Name":"Create HDFS home dir"}]' --ebs-root-volume-size 10 --service-role EMR_DefaultRole --security-configuration 'xxxxxxxxxxxxxxxxxxx' --enable-debugging --auto-termination-policy '{"IdleTimeout":7200}' --name 'emr_ad_authenticator_cluster' --scale-down-behavior TERMINATE_AT_TASK_COMPLETION --region us-east-1```
 
 **Test: Once the cluster is up and running, check if you can ssh with an AD user, verify if the hdfs dir is created for the user and you are able to execute a sample job successfully with the user.**
@@ -95,10 +96,12 @@ export HADOOP_ROOT_LOGGER=DEBUG,console; export HADOOP_JAAS_DEBUG=true; export H
 ## Common Errors
 
 1)GSSAPI Error: Unspecified GSS failure.  Minor code may provide more information (KDC returned error string: GET_LOCAL_TGT)
-Solution: Check krb5 REALM name in EMR and the script
+
+* Solution: Check krb5 REALM name in EMR and the script
 
 2)WARN kms.LoadBalancingKMSClientProvider: KMS provider at [http://ip-172-31-28-61.ec2.internal:9600/kms/v1/] threw an IOException: 
 java.io.IOException: java.lang.reflect.UndeclaredThrowableException
       at org.apache.hadoop.crypto.key.kms.KMSClientProvider.getDelegationToken(KMSClientProvider.java:1051)
-Solution - Make sure hadoop.kms.authentication.kerberos.name.rules matches exactly with hadoop.security.auth_to_local configuration in core-site.xml
+
+* Solution - Make sure hadoop.kms.authentication.kerberos.name.rules matches exactly with hadoop.security.auth_to_local configuration in core-site.xml
 
