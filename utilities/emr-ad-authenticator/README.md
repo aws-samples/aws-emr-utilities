@@ -69,6 +69,7 @@ ii. Modify emr_ad_auth_wrapper.sh to point to emr_ad_auth.sh in S3. Save this sc
 **Step 3: Add the mapping for Kerberos Principals to Usernames in EMR configuration**
 
 *i.  In core-site, set hadoop.security.auth_to_local*
+
 *ii. In kms-site, set hadoop.kms.authentication.kerberos.name.rules*
 
 For example, 
@@ -82,18 +83,38 @@ Note: hadoop.security.auth_to_local configuration in core-site.xml needs to matc
 **Step 4: Create the Kerberized EMR Cluster**
 
 *Sample CLI*
+
 ```aws emr create-cluster --kerberos-attributes '{"KdcAdminPassword":"","Realm":"EC2.INTERNAL"}' --os-release-label 2.0.20220606.1 --applications Name=Hadoop Name=Spark --ec2-attributes '{"KeyName":"your-key","InstanceProfile":"EMR_EC2_DefaultRole","SubnetId":"subnet-xxxxxxxx","EmrManagedSlaveSecurityGroup":"sg-xxxxxxxx","EmrManagedMasterSecurityGroup":"sg-xxxxxxxx"}' --release-label emr-6.7.0 --log-uri 's3n://aws-logs-xxxxxxxxxxxx-us-east-1/elasticmapreduce/' --instance-groups '[{"InstanceCount":2,"EbsConfiguration":{"EbsBlockDeviceConfigs":[{"VolumeSpecification":{"SizeInGB":32,"VolumeType":"gp2"},"VolumesPerInstance":2}]},"InstanceGroupType":"CORE","InstanceType":"m5.xlarge","Name":"Core - 2"},{"InstanceCount":1,"EbsConfiguration":{"EbsBlockDeviceConfigs":[{"VolumeSpecification":{"SizeInGB":32,"VolumeType":"gp2"},"VolumesPerInstance":2}]},"InstanceGroupType":"MASTER","InstanceType":"m5.2xlarge","Name":"Master - 1"}]' --configurations '[{"Classification":"core-site","Properties":{"hadoop.security.token.service.use_ip":"true","hadoop.security.auth_to_local":"RULE:[1:$1@$0](.*@EMR\\.NET)s/@.*///L RULE:[2:$1@$0](.*@EMR\\.NET)s/@.*///L DEFAULT"}},{"Classification":"hadoop-kms-site","Properties":{"hadoop.kms.authentication.kerberos.name.rules":"RULE:[1:$1@$0](.*@EMR\\.NET)s/@.*///L RULE:[2:$1@$0](.*@EMR\\.NET)s/@.*///L DEFAULT"}}]' --auto-scaling-role EMR_AutoScaling_DefaultRole --bootstrap-actions '[{"Path":"s3://xxxxxxxx/bootstrap-actions/emr-kerberos-ad/emr_ad_auth_wrapper.sh","Name":"emr-ad-authenticator"},{"Path":"s3://xxxxxxxx/bootstrap-actions//emr-kerberos-ad/create-hdfs-home-ba.sh","Name":"Create HDFS home dir"}]' --ebs-root-volume-size 10 --service-role EMR_DefaultRole --security-configuration 'xxxxxxxxxxxxxxxxxxx' --enable-debugging --auto-termination-policy '{"IdleTimeout":7200}' --name 'emr_ad_authenticator_cluster' --scale-down-behavior TERMINATE_AT_TASK_COMPLETION --region us-east-1```
 
 **Test: Once the cluster is up and running, check if you can ssh with an AD user, verify if the hdfs dir is created for the user and you are able to execute a sample job successfully with the user.**
 
-## Enable detailed log for Kerberos
+
+## Troubleshooting
+
+### Useful Logs
+KDC log - /var/log/kerberos/krb5kdc.log
+ldap log - /var/log/sssd/ldap_child.log
+sssd log - /var/log/sssd/sssd_<ad_domain>.log
+
+### Useful commands
+Get FQDN - ```hostname -f```
+Check AD DNS resolution ```nslookup emr.net```
+Check if AD user information is retrieved in EMR - ```id <AD_username>```
+To list keytab entry of /etc/krb5.keytab with encryption and timestamp- ```klist -kte /etc/krb5.keytab```
+To clear cached kerberos ticket - ```kdestroy```
+To authenticate using keytab in verbose mode - ```sudo kinit -kt /etc/hdfs.keytab hdfs/ip-xxx-xx-xx-xx.ec2.internal@EC2.INTERNAL -V```
+Run Sample Hadoop MapReduce Job - ```hadoop-mapreduce-examples pi 10 100```
+Run Sample Spark Job - ```spark-submit --master yarn --deploy-mode cluster --class org.apache.spark.examples.SparkPi /usr/lib/spark/examples/jars/spark-examples.jar```
+
+
+### Enable detailed log for Kerberos
 
 Please enable verbose logging to troubleshoot kerberos issues when the error message is not helpful
 ```
 export HADOOP_ROOT_LOGGER=DEBUG,console; export HADOOP_JAAS_DEBUG=true; export HADOOP_OPTS="-Dsun.security.krb5.debug=true -Dsun.security.spnego.debug=true"
 ```
 
-## Common Errors
+### Common Errors
 
 1)GSSAPI Error: Unspecified GSS failure.  Minor code may provide more information (KDC returned error string: GET_LOCAL_TGT)
 
