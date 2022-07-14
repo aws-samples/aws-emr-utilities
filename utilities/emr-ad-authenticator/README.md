@@ -66,7 +66,13 @@ ii. Modify emr_ad_auth_wrapper.sh to point to emr_ad_auth.sh in S3. Save this sc
 
 **Step 2: Use the second bootstrap script 'create-hdfs-home-ba.sh' to create HDFS home directory for AD user when logging in**
 
-**Step 3: Add the mapping for Kerberos Principals to Usernames in EMR configuration**
+**Step 3: Create an EMR security configuration with Kerberos authentication enabled**
+
+![image](image-emr-sec-conf.png)
+
+**Note: Do not enable cross-realm trust in the EMR security configuration for this solution**
+
+**Step 4: Add the mapping for Kerberos Principals to Usernames in EMR configuration**
 
 *i.  In core-site, set hadoop.security.auth_to_local*
 
@@ -78,9 +84,9 @@ For example,
 [{"classification":"core-site", "properties":{"hadoop.security.token.service.use_ip":"true", "hadoop.security.auth_to_local":"RULE:[1:$1@$0](.*@EMR\\.NET)s/@.*///L RULE:[2:$1@$0](.*@EMR\\.NET)s/@.*///L DEFAULT"}, "configurations":[]},{"classification":"hadoop-kms-site", "properties":{"hadoop.kms.authentication.kerberos.name.rules":"RULE:[1:$1@$0](.*@EMR\\.NET)s/@.*///L RULE:[2:$1@$0](.*@EMR\\.NET)s/@.*///L DEFAULT"}, "configurations":[]}]
 ```
 
-Note: hadoop.security.auth_to_local configuration in core-site.xml needs to match exactly with hadoop.kms.authentication.kerberos.name.rules configuration in kms-site.xml
+**Note: hadoop.security.auth_to_local configuration in core-site.xml needs to match exactly with hadoop.kms.authentication.kerberos.name.rules configuration in kms-site.xml**
 
-**Step 4: Create the Kerberized EMR Cluster**
+**Step 5: Create the Kerberized EMR Cluster**
 
 *Sample CLI*
 
