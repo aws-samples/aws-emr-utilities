@@ -97,13 +97,23 @@ ldap log - /var/log/sssd/ldap_child.log
 sssd log - /var/log/sssd/sssd_<ad_domain>.log
 
 ### Useful commands
+
 Get FQDN - ```hostname -f```
+
 Check AD DNS resolution ```nslookup emr.net```
+
 Check if AD user information is retrieved in EMR - ```id <AD_username>```
+
 To list keytab entry of /etc/krb5.keytab with encryption and timestamp- ```klist -kte /etc/krb5.keytab```
+
+To list all principals - ```sudo kadmin.local -q "list_principals"```
+
 To clear cached kerberos ticket - ```kdestroy```
+
 To authenticate using keytab in verbose mode - ```sudo kinit -kt /etc/hdfs.keytab hdfs/ip-xxx-xx-xx-xx.ec2.internal@EC2.INTERNAL -V```
+
 Run Sample Hadoop MapReduce Job - ```hadoop-mapreduce-examples pi 10 100```
+
 Run Sample Spark Job - ```spark-submit --master yarn --deploy-mode cluster --class org.apache.spark.examples.SparkPi /usr/lib/spark/examples/jars/spark-examples.jar```
 
 
