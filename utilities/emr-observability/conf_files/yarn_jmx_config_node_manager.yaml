@@ -1,0 +1,25 @@
+lowercaseOutputName: true
+lowercaseOutputLabelNames: true
+rules:
+  # RPC
+  - pattern: 'Hadoop<service=(.*), name=RpcActivityForPort([^\W>]+)><>([\w.]+)'
+    attrNameSnakeCase: true
+    name: rpc_activity_$3
+    labels:
+      role: "$1"
+      port: "$2"
+  # Log
+  - pattern: 'Hadoop<service=(.*), name=JvmMetrics><>Log(Warn|Fatal|Info|Error)'
+    name: log_$2
+    labels:
+      role: $1
+  - pattern: 'Hadoop<service=NodeManager, name=MetricsSystem, sub=([^\W>]+)><>([\w.]+)'
+    attrNameSnakeCase: true
+    name: yarn_nodemanager_$1_$2
+  - pattern: 'Hadoop<service=NodeManager, name=NodeManagerMetrics><>([\w.]+)'
+    attrNameSnakeCase: true
+    name: yarn_nodemanager_metrics_$1
+  - pattern: 'Hadoop<service=NodeManager, name=([^\W>]+)><>([\w.]+)'
+    attrNameSnakeCase: true
+    name: yarn_nodemanager_$1_$2
+  - pattern: '.*'
