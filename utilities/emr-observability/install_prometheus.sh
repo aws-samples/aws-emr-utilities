@@ -240,13 +240,13 @@ scrape_configs:
 
 remote_write:
   -
-    url: https://aps-workspaces.us-east-1.amazonaws.com/workspaces/ws-8865d501-f1ec-4d87-821f-3d434e2f3c12/api/v1/remote_write
+    url: https://aps-workspaces.${AWS_REGION}.amazonaws.com/workspaces/${WORKSPACE_ID}/api/v1/remote_write
     queue_config:
         max_samples_per_send: 1000
         max_shards: 200
         capacity: 2500
     sigv4:
-         region: us-east-1
+         region: ${AWS_REGION}
 EOF
 sudo cp prometheus.yml /etc/prometheus/conf
 sudo chown -R prometheus:prometheus /etc/prometheus/conf
