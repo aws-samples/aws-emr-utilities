@@ -10,7 +10,7 @@ sudo cp node_exporter /usr/local/bin/
 sudo chown node_exporter:node_exporter /usr/local/bin/node_exporter
 
 cd /tmp
-wget https://aws-bigdata-blog.s3.amazonaws.com/artifacts/aws-blog-emr-prometheus-grafana/service_files/node_exporter.service
+wget https://raw.githubusercontent.com/aws-samples/aws-emr-utilities/main/utilities/emr-observability/service_files/node_exporter.service
 sudo cp node_exporter.service /etc/systemd/system/node_exporter.service
 sudo chown node_exporter:node_exporter /etc/systemd/system/node_exporter.service
 sudo systemctl daemon-reload && \
@@ -24,10 +24,11 @@ sudo mkdir /etc/prometheus
 sudo cp jmx_prometheus_javaagent-0.17.0.jar /etc/prometheus
 
 # configure the jmx_exporter for hadoop
-wget https://aws-bigdata-blog.s3.amazonaws.com/artifacts/aws-blog-emr-prometheus-grafana/jmx_exporter_yaml/hdfs_jmx_config_namenode.yaml
-wget https://aws-bigdata-blog.s3.amazonaws.com/artifacts/aws-blog-emr-prometheus-grafana/jmx_exporter_yaml/hdfs_jmx_config_datanode.yaml
-wget https://aws-bigdata-blog.s3.amazonaws.com/artifacts/aws-blog-emr-prometheus-grafana/jmx_exporter_yaml/yarn_jmx_config_resource_manager.yaml
-wget https://aws-bigdata-blog.s3.amazonaws.com/artifacts/aws-blog-emr-prometheus-grafana/jmx_exporter_yaml/yarn_jmx_config_node_manager.yaml
+wget https://raw.githubusercontent.com/aws-samples/aws-emr-utilities/main/utilities/emr-observability/conf_files/hdfs_jmx_config_namenode.yaml
+wget https://raw.githubusercontent.com/aws-samples/aws-emr-utilities/main/utilities/emr-observability/conf_files/hdfs_jmx_config_datanode.yaml
+wget https://raw.githubusercontent.com/aws-samples/aws-emr-utilities/main/utilities/emr-observability/conf_files/yarn_jmx_config_resource_manager.yaml
+wget https://raw.githubusercontent.com/aws-samples/aws-emr-utilities/main/utilities/emr-observability/conf_files/yarn_jmx_config_node_manager.yaml
+
 
 HADOOP_CONF='/etc/hadoop/conf.empty'
 sudo mkdir -p ${HADOOP_CONF}
@@ -36,35 +37,8 @@ sudo cp hdfs_jmx_config_datanode.yaml ${HADOOP_CONF}
 sudo cp yarn_jmx_config_resource_manager.yaml ${HADOOP_CONF}
 sudo cp yarn_jmx_config_node_manager.yaml ${HADOOP_CONF}
 
-# configure the jmx_exporter for hbase
-cat > hbase_jmx_config.yaml <<EOF
-lowercaseOutputName: true
-lowercaseOutputLabelNames: true
-rules:
-  - pattern: '.*'
-EOF
-# we have to manually load the hbase-env changes to allow the jmx_exporter to push on multiple ports 
-cat > hbase-env-master.sh <<EOF
-export HBASE_OPTS="$HBASE_OPTS -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -XX:CMSInitiatingOccupancyFraction=70 -Dnetworkaddress.cache.ttl=5 -javaagent:/etc/prometheus/jmx_prometheus_javaagent-0.13.0.jar=7004:/etc/hbase/conf/hbase_jmx_config.yaml -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.port=50108"
-EOF
-cat > hbase-env-thrift.sh <<EOF
-export HBASE_OPTS="$HBASE_OPTS -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -XX:CMSInitiatingOccupancyFraction=70 -Dnetworkaddress.cache.ttl=5 -javaagent:/etc/prometheus/jmx_prometheus_javaagent-0.13.0.jar=7007:/etc/hbase/conf/hbase_jmx_config.yaml -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.port=50110"
-EOF
-cat > hbase-env-rest.sh <<EOF
-export HBASE_OPTS="$HBASE_OPTS -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -XX:CMSInitiatingOccupancyFraction=70 -Dnetworkaddress.cache.ttl=5 -javaagent:/etc/prometheus/jmx_prometheus_javaagent-0.13.0.jar=7006:/etc/hbase/conf/hbase_jmx_config.yaml -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.port=50109"
-EOF
-cat > hbase-env-regionserver.sh <<EOF
-export HBASE_OPTS="$HBASE_OPTS -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -XX:CMSInitiatingOccupancyFraction=70 -Dnetworkaddress.cache.ttl=5 -javaagent:/etc/prometheus/jmx_prometheus_javaagent-0.13.0.jar=7004:/etc/hbase/conf/hbase_jmx_config.yaml -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.port=50108"
-EOF
-sudo mkdir -p /etc/hbase/conf
-sudo cp hbase_jmx_config.yaml /etc/hbase/conf
-sudo cp hbase-env-master.sh /etc/hbase/conf
-sudo cp hbase-env-thrift.sh /etc/hbase/conf
-sudo cp hbase-env-rest.sh /etc/hbase/conf
-sudo cp hbase-env-regionserver.sh /etc/hbase/conf
-
 # configure the jmx_exporter for spark
-wget https://github.com/aws-samples/aws-emr-utilities/blob/main/utilities/emr-observability/conf_files/spark_jmx_config.yaml
+wget https://raw.githubusercontent.com/aws-samples/aws-emr-utilities/main/utilities/emr-observability/conf_files/spark_jmx_config.yaml
 sudo cp spark_jmx_config.yaml /etc/spark/conf
 
 # on the master node, install and configure prometheus
