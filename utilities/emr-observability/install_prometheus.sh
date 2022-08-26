@@ -3,9 +3,19 @@ set -x
 #set up node_exporter for pushing OS level metrics
 sudo useradd --no-create-home --shell /bin/false node_exporter
 cd /tmp
-wget https://github.com/prometheus/node_exporter/releases/download/v1.3.1/node_exporter-1.3.1.linux-amd64.tar.gz
-tar -xvzf node_exporter-1.3.1.linux-amd64.tar.gz
-cd node_exporter-1.3.1.linux-amd64
+
+instance_arch=`uname -m`
+echo "instance_arch = $instance_arch"
+
+if [ "$instance_arch" = "aarch64" ]; then
+    wget https://github.com/prometheus/node_exporter/releases/download/v1.3.1/node_exporter-1.3.1.linux-arm64.tar.gz
+    tar -xvzf node_exporter-1.3.1.linux-arm64.tar.gz
+    cd node_exporter-1.3.1.linux-arm64
+else
+    wget https://github.com/prometheus/node_exporter/releases/download/v1.3.1/node_exporter-1.3.1.linux-amd64.tar.gz
+    tar -xvzf node_exporter-1.3.1.linux-amd64.tar.gz
+    cd node_exporter-1.3.1.linux-amd64
+fi
 sudo cp node_exporter /usr/local/bin/
 sudo chown node_exporter:node_exporter /usr/local/bin/node_exporter
 
@@ -39,6 +49,7 @@ sudo cp yarn_jmx_config_node_manager.yaml ${HADOOP_CONF}
 
 # configure the jmx_exporter for spark
 wget https://raw.githubusercontent.com/aws-samples/aws-emr-utilities/main/utilities/emr-observability/conf_files/spark_jmx_config.yaml
+sudo mkdir -p /etc/spark/conf
 sudo cp spark_jmx_config.yaml /etc/spark/conf
 
 # on the master node, install and configure prometheus
@@ -49,9 +60,17 @@ sudo useradd --no-create-home --shell /bin/false prometheus
 sudo mkdir -p /etc/prometheus/conf
 sudo chown -R prometheus:prometheus /etc/prometheus
 cd /tmp
-wget https://github.com/prometheus/prometheus/releases/download/v2.37.0/prometheus-2.37.0.linux-amd64.tar.gz
-tar xvf prometheus-2.37.0.linux-amd64.tar.gz
-cd prometheus-2.37.0.linux-amd64
+
+if [ "$instance_arch" = "aarch64" ]; then
+    wget https://github.com/prometheus/prometheus/releases/download/v2.38.0/prometheus-2.38.0.linux-arm64.tar.gz
+    tar -xvzf prometheus-2.38.0.linux-arm64.tar.gz
+    cd prometheus-2.38.0.linux-arm64
+else
+    wget https://github.com/prometheus/prometheus/releases/download/v2.38.0/prometheus-2.38.0.linux-amd64.tar.gz
+    tar -xvzf prometheus-2.38.0.linux-amd64.tar.gz
+    cd prometheus-2.38.0.linux-amd64
+fi
+
 sudo cp prometheus /usr/local/bin/
 sudo cp promtool /usr/local/bin/
 sudo cp -r consoles "/etc/prometheus"
@@ -241,13 +260,13 @@ scrape_configs:
 
 remote_write:
   -
-    url: https://aps-workspaces.${AWS_REGION}.amazonaws.com/workspaces/${WORKSPACE_ID}/api/v1/remote_write
+    url: https://aps-workspaces.us-east-1.amazonaws.com/workspaces/ws-8865d501-f1ec-4d87-821f-3d434e2f3c12/api/v1/remote_write
     queue_config:
         max_samples_per_send: 1000
         max_shards: 200
         capacity: 2500
     sigv4:
-         region: ${AWS_REGION}
+         region: us-east-1
 EOF
 sudo cp prometheus.yml /etc/prometheus/conf
 sudo chown -R prometheus:prometheus /etc/prometheus/conf

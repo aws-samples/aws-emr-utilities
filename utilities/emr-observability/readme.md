@@ -39,7 +39,9 @@ Currently AMP stores data for 150 days which is fixed. There is plans to support
         max_shards: 200
         capacity: 2500
 ```
-3)While launching the EMR clusters
+3)Add policy "AmazonPrometheusRemoteWriteAccess" to EC2 instance profile(Service role for EMR cluster EC2 instances) to provide permission to remote write metrics into all Amazon Managed Service for Prometheus workspaces in the account
+
+4)While launching the EMR clusters
 Use the script as the bootstrap action
 ```
 --bootstrap-actions '[{"Path":"s3://bucket-name/path/install_prometheus.sh","Name":"Install Prometheus"}]'
@@ -48,4 +50,4 @@ Use the below EMR configuration classification json
 ```
 ./conf_files/configuration.json
 ```
-4)You can now start visualizing the metrics in AMG
+5)You can now start visualizing the metrics in AMG
