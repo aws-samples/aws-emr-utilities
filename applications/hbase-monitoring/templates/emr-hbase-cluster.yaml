@@ -1,0 +1,203 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: 'AWS CloudFormation EMR Sample Template:
+  HBase EMR cluster to showcase how to monitor HBase with prometheus and Grafana.
+
+  **WARNING** You will be billed for the AWS resources used if you create a
+  stack from this template.'
+
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+      - Label:
+          default: Project
+        Parameters:
+          - Project
+          - Artifacts
+
+      - Label:
+          default: EMR
+        Parameters:
+          - Vpc
+          - Subnet
+          - KeyName
+          - emrRelease
+
+      - Label:
+          default: EMR Topology
+        Parameters:
+          - emrInstanceType
+          - emrNodeCount
+          - emrEbsVolCount
+          - emrEbsVolSize
+
+    ParameterLabels:
+
+      KeyName:
+        default: 'SSH Key Name'
+      emrInstanceType:
+        default: 'Instance Type'
+      emrRelease:
+        default: 'Release'
+      emrNodeCount:
+        default: 'Nodes Count'
+      emrEbsVolCount:
+        default: 'EBS Volume Count'
+      emrEbsVolSize:
+        default: 'EBS Volume Size (MB)'
+
+
+Parameters:
+
+  Project:
+    Type: String
+    Description: Value of the `Project` tag attached to each resource
+    Default: aws-hbase
+  Artifacts:
+    Type: String
+    Description: S3 artifact repository. Do NOT use any trailing slash at the end
+    Default: s3://YOUR_BUCKET_NAME/artifacts/aws-emr-hbase-monitoring
+
+  Vpc:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC where the cluster will be launched
+  Subnet:
+    Type: AWS::EC2::Subnet::Id
+    Description: Subnet where the cluster will be launched
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: EC2 private Key to access the EMR cluster using SSH connection
+
+  emrInstanceType:
+    Type: String
+    Default: m5.2xlarge
+    AllowedValues:
+      - m5.2xlarge
+      - m5.4xlarge
+      - m5d.2xlarge
+      - m5d.4xlarge
+      - r5.xlarge
+      - r5.2xlarge
+      - i3en.xlarge
+      - i3en.2xlarge
+  emrNodeCount:
+    Type: Number
+    Default: 2
+  emrRelease:
+    Type: String
+    Default: emr-5.36.0
+    Description: EMR release version (emr 5.x -> HBase 1.x ; emr 6.x -> HBase 2.x)
+    AllowedValues:
+      - emr-6.7.0
+      - emr-6.6.0
+      - emr-6.5.0
+      - emr-5.36.0
+      - emr-5.35.0
+      - emr-5.34.0
+  emrEbsVolCount:
+    Type: Number
+    Default: 2
+    Description: Number of EBS volumes attached to a single CORE node.
+    ConstraintDescription: Unsigned integer 1-10 only allowed
+    MinValue: 1
+    MaxValue: 10
+  emrEbsVolSize:
+    Type: Number
+    Default: 256
+    Description: Disk size in GB per volume
+    MinValue: 256
+    MaxValue: 16000
+
+
+Resources:
+
+#===============================================================================
+# EMR cluster
+#===============================================================================
+  EmrSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: EMR cluster access policy
+      VpcId: !Ref Vpc
+
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Project
+          Value: !Ref Project
+        - Key: Name
+          Value: !Sub ${Project}/emr-sg
+  EmrCluster:
+    Type: AWS::EMR::Cluster
+    Properties:
+      Name: 'aws-emr/hbase-monitoring'
+      JobFlowRole: 'EMR_EC2_DefaultRole'
+      ServiceRole: 'EMR_DefaultRole'
+      ReleaseLabel: !Ref emrRelease
+      VisibleToAllUsers: true
+      LogUri: !Sub s3://aws-logs-${AWS::AccountId}-${AWS::Region}/elasticmapreduce/
+      Tags:
+        - Key: Project
+          Value: !Ref Project
+        - Key: Name
+          Value: !Sub ${Project}/emr-node
+      Instances:
+        AdditionalMasterSecurityGroups:
+          - !Ref EmrSecurityGroup
+        AdditionalSlaveSecurityGroups:
+          - !Ref EmrSecurityGroup
+        TerminationProtected: false
+        MasterInstanceGroup:
+          InstanceCount: 1
+          InstanceType: !Ref emrInstanceType
+          Market: ON_DEMAND
+          Name: Master node
+        CoreInstanceGroup:
+          InstanceCount: !Ref emrNodeCount
+          InstanceType: !Ref emrInstanceType
+          EbsConfiguration:
+            EbsBlockDeviceConfigs:
+              - VolumeSpecification:
+                  VolumeType: gp2
+                  SizeInGB: !Ref emrEbsVolSize
+                VolumesPerInstance: !Ref emrEbsVolCount
+            EbsOptimized: true
+          Market: ON_DEMAND
+          Name: Core instance
+        Ec2SubnetId: !Ref Subnet
+        Ec2KeyName: !Ref KeyName
+
+      BootstrapActions:
+        - Name: HBase - prometheus exporter
+          ScriptBootstrapAction:
+            Path: !Sub ${Artifacts}/resources/emr-ba-prometheus_exporter.sh
+
+      Applications:
+        - Name: HBase
+
+      Configurations:
+        - Classification: hbase-env
+          Configurations:
+            - Classification: export
+              ConfigurationProperties:
+                HBASE_MASTER_OPTS: "\"$HBASE_MASTER_OPTS -javaagent:/opt/prometheus/prometheus_javaagent.jar=7000:/opt/prometheus/hbase.yml\""
+                HBASE_REGIONSERVER_OPTS: "\"$HBASE_REGIONSERVER_OPTS -javaagent:/opt/prometheus/prometheus_javaagent.jar=7000:/opt/prometheus/hbase.yml\""
+
+#===============================================================================
+# EMR steps
+#===============================================================================
+  EmrStepMonitoring:
+    Type: AWS::EMR::Step
+    Properties:
+      Name: 'Prometheus + Grafana install'
+      ActionOnFailure: CONTINUE
+      JobFlowId: !Ref EmrCluster
+      HadoopJarStep:
+        Jar: !Sub "s3://${AWS::Region}.elasticmapreduce/libs/script-runner/script-runner.jar"
+        Args:
+          - !Sub ${Artifacts}/resources/emr-step-monitoring_apps.sh
+          - !Ref Artifacts
+          - !Sub ${Project}/emr-node

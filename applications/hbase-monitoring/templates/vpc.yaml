@@ -1,0 +1,300 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: 'AWS CloudFormation Vpc Sample Template:
+  Create 2 public and 2 privates subnets. The template also deploys an S3
+  Gateway Endpoint and a Secrets Manager VPC endpoint.
+  **WARNING** You will be billed for the AWS resources used if you create a
+  stack from this template.'
+
+Metadata:
+
+  License: Apache-2.0
+
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+      - Label:
+          default: Core
+        Parameters:
+          - Project
+      - Label:
+          default: Vpc Configuration
+        Parameters:
+          - VpcNetwork
+          - SubnetPublicNetworkOne
+          - SubnetPublicNetworkTwo
+          - SubnetPrivateNetworkOne
+          - SubnetPrivateNetworkTwo
+          - SubnetPrivateAZOne
+          - SubnetPrivateAZTwo
+    ParameterLabels:
+      VpcNetwork:
+        default: 'Vpc Network'
+      SubnetPublicNetworkOne:
+        default: 'Public Subnet One'
+      SubnetPublicNetworkTwo:
+        default: 'Public Subnet Two'
+      SubnetPrivateNetworkOne:
+        default: 'Private Subnet One'
+      SubnetPrivateNetworkTwo:
+        default: 'Private Subnet Two'
+      SubnetPrivateAZOne:
+        default: 'Availability Zone One'
+      SubnetPrivateAZTwo:
+        default: 'Availability Zone Two'
+
+Parameters:
+  Project:
+    Type: String
+    Description: A project label used to tag AWS resources
+    Default: aws-hbase
+  SubnetPrivateAZOne:
+    Type: 'AWS::EC2::AvailabilityZone::Name'
+  SubnetPrivateAZTwo:
+    Type: 'AWS::EC2::AvailabilityZone::Name'
+  VpcNetwork:
+    Description: Network range of the Vpc (ex. 10.0.0.0/16)
+    Type: String
+    Default: 10.0.0.0/16
+  SubnetPublicNetworkOne:
+    Description: Network range of the Public Subnet (ex. 10.0.10.0/24)
+    Type: String
+    Default: 10.0.10.0/24
+  SubnetPublicNetworkTwo:
+    Description: Network range of the Public Subnet (ex. 10.0.11.0/24)
+    Type: String
+    Default: 10.0.11.0/24
+  SubnetPrivateNetworkOne:
+    Description: Network range of the Private Subnet (ex. 10.0.1.0/24)
+    Type: String
+    Default: 10.0.1.0/24
+  SubnetPrivateNetworkTwo:
+    Description: Network range of the Private Subnet (ex. 10.0.2.0/24)
+    Type: String
+    Default: 10.0.2.0/24
+
+Resources:
+
+  Vpc:
+    Type: 'AWS::EC2::VPC'
+    Properties:
+      CidrBlock: !Ref VpcNetwork
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: !Sub ${Project}/vpc
+
+  PublicSubnetOne:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref Vpc
+      AvailabilityZone: !Ref SubnetPrivateAZOne
+      CidrBlock: !Ref SubnetPublicNetworkOne
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${Project}/subnet/public/${SubnetPrivateAZOne}
+  PublicSubnetTwo:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref Vpc
+      AvailabilityZone: !Ref SubnetPrivateAZTwo
+      CidrBlock: !Ref SubnetPublicNetworkTwo
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${Project}/subnet/public/${SubnetPrivateAZTwo}
+  PrivateSubnetOne:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref Vpc
+      AvailabilityZone: !Ref SubnetPrivateAZOne
+      CidrBlock: !Ref SubnetPrivateNetworkOne
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${Project}/subnet/private/${SubnetPrivateAZOne}
+  PrivateSubnetTwo:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref Vpc
+      AvailabilityZone: !Ref SubnetPrivateAZTwo
+      CidrBlock: !Ref SubnetPrivateNetworkTwo
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${Project}/subnet/private/${SubnetPrivateAZTwo}
+
+  InternetGateway:
+    Type: 'AWS::EC2::InternetGateway'
+  IGWAttachment:
+    Type: 'AWS::EC2::VPCGatewayAttachment'
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref Vpc
+
+
+  NatIpOne:
+    Type: 'AWS::EC2::EIP'
+    Properties:
+      Domain: vpc
+    DependsOn: IGWAttachment
+  NatGatewayOne:
+    Type: 'AWS::EC2::NatGateway'
+    Properties:
+      AllocationId: !GetAtt
+        - NatIpOne
+        - AllocationId
+      SubnetId: !Ref PublicSubnetOne
+
+  NatIpTwo:
+    Type: 'AWS::EC2::EIP'
+    Properties:
+      Domain: vpc
+    DependsOn: IGWAttachment
+  NatGatewayTwo:
+    Type: 'AWS::EC2::NatGateway'
+    Properties:
+      AllocationId: !GetAtt
+        - NatIpTwo
+        - AllocationId
+      SubnetId: !Ref PublicSubnetTwo
+
+
+  PublicRouteTable:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: !Sub ${Project}/vpc/route/public
+  PublicRoute:
+    Type: 'AWS::EC2::Route'
+    DependsOn: IGWAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PrivateRouteTableOne:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: !Sub ${Project}/vpc/route/private/${SubnetPrivateAZOne}
+  PrivateRouteOne:
+    Type: 'AWS::EC2::Route'
+    DependsOn: NatGatewayOne
+    Properties:
+      RouteTableId: !Ref PrivateRouteTableOne
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGatewayOne
+
+
+  PrivateRouteTableTwo:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: !Sub ${Project}/vpc/route/private/${SubnetPrivateAZTwo}
+  PrivateRouteTwo:
+    Type: 'AWS::EC2::Route'
+    DependsOn: NatGatewayTwo
+    Properties:
+      RouteTableId: !Ref PrivateRouteTableTwo
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGatewayTwo
+
+  PublicRouteTableAssociationOne:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnetOne
+  PublicRouteTableAssociationTwo:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnetTwo
+  PrivateRouteTableAssociationOne:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      RouteTableId: !Ref PrivateRouteTableOne
+      SubnetId: !Ref PrivateSubnetOne
+  PrivateRouteTableAssociationTwo:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      RouteTableId: !Ref PrivateRouteTableTwo
+      SubnetId: !Ref PrivateSubnetTwo
+
+  EndpointS3:
+    Type: 'AWS::EC2::VPCEndpoint'
+    DependsOn:
+      - Vpc
+      - PublicRouteTable
+      - PrivateRouteTableOne
+      - PrivateRouteTableTwo
+    Properties:
+      VpcId: !Ref Vpc
+      PolicyDocument:
+        Statement:
+          - Action: '*'
+            Effect: Allow
+            Resource: '*'
+            Principal: '*'
+      RouteTableIds:
+        - !Ref PrivateRouteTableOne
+        - !Ref PrivateRouteTableTwo
+        - !Ref PublicRouteTable
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.s3
+
+  SecretsManagerEndpoint:
+    Type: 'AWS::EC2::VPCEndpoint'
+    DependsOn:
+      - Vpc
+      - PrivateSubnetOne
+      - PrivateSubnetTwo
+    Properties:
+      VpcEndpointType: Interface
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.secretsmanager'
+      VpcId: !Ref Vpc
+      SubnetIds:
+        - !Ref PrivateSubnetOne
+        - !Ref PrivateSubnetTwo
+      SecurityGroupIds:
+        - !Ref SecretsManagerSecurityGroup
+
+  SecretsManagerSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      VpcId: !Ref Vpc
+      GroupDescription: Open up all ports for vpc traffic
+      SecurityGroupIngress:
+        - IpProtocol: -1
+          CidrIp: !Ref VpcNetwork
+
+Outputs:
+  VpcId:
+    Description: Vpc Id
+    Value: !Ref Vpc
+
+  VpcRange:
+    Description: Vpc Network Range CIDR
+    Value: !Ref VpcNetwork
+
+  PublicSubnetOneID:
+    Description: id of the public subnet
+    Value: !Ref PublicSubnetOne
+  PublicSubnetTwoID:
+    Description: id of the public subnet
+    Value: !Ref PublicSubnetTwo
+
+  PrivateSubnetOneID:
+    Description: id of the private subnet
+    Value: !Ref PrivateSubnetOne
+
+  PrivateSubnetTwoID:
+    Description: id of the private subnet
+    Value: !Ref PrivateSubnetTwo
