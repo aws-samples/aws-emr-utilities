@@ -13,6 +13,8 @@ In this example:
 * upload SparkEventLogParser-slim-2.12-1.0.jar to s3://<s3-bucket-name>/eventlog/SparkEventLogParser-slim-2.12-1.0.jar (for EMR 6.x)
 * upload SparkEventLogParser-slim-1.0.jar to s3://<s3-bucket-name>/eventlog/SparkEventLogParser-slim-1.0.jar (for EMR 5.x)
 
+You can get the jar file from [Release Page](https://github.com/aws-samples/aws-emr-utilities/releases/).
+
 2. Copy Spark event logs to S3
 
 You can run s3-dist-cp to copy event logs
