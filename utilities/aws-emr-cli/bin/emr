@@ -1,0 +1,65 @@
+#!/bin/bash
+#===============================================================================
+#!#
+#!# .------. .------. .------.
+#!# |E.--. | |M.--. | |R.--. |  author: ripani
+#!# | (\/) | | (\/) | | :(): |
+#!# | :\/: | | :\/: | | ()() |
+#!# | '--'E| | '--'M| | '--'R|
+#!# `------' `------' `------'
+#!#
+#!#  HISTORY
+#!#  ----------------
+#!#  2022-10-31 : ripani : initial release
+#!#
+#===============================================================================
+#?# usage: emr <command> <subcommand> [parameters]
+#?# To see help text, you can run:
+#?#
+#?#  emr help
+#?#  emr <command> help
+#?#  emr <command> <subcommand> help
+#?#
+#===============================================================================
+
+# Uncomment to check syntax, without execution.
+# set -n
+# Uncomment to debug this shell script
+# set -x
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+# load functions
+source $DIR/../functions/config.sh
+source $DIR/../functions/core.sh
+
+# make sure the log path directory exists
+mkdir -p $LOG_PATH
+
+# get parameters and shift
+command=$1
+subcommand=$2
+shift && shift
+
+# special commands
+[ "$command" == "credits" ] && credits && exit 0
+
+# check input parameters
+[[ -z $command ]] && usage && error "missing parameter" && exit 2
+[[ ! -f "$DIR/../modules/$command.sh" ]] && usage && error "$command is not a valid command" && exit 2
+
+# check requirements (commands, permissions, etc.)
+check_requirements
+
+# load command functions
+source "$DIR/../modules/$command.sh"
+
+# execute subcommand function
+if [ -n "$(LC_ALL=C type -t $subcommand)" ] && [ "$(LC_ALL=C type -t $subcommand)" = function ]; then
+	${subcommand} $*
+elif
+[ -n "$(LC_ALL=C type -t $command)" ] && [ "$(LC_ALL=C type -t $command)" = function ]; then
+	${command} ${subcommand}
+else
+	[[ -z $subcommand ]] && help && exit 1 || help && error "$subcommand is not a valid subcommand"
+fi
