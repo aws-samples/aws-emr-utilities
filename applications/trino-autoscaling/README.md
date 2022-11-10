@@ -25,4 +25,4 @@ This package contains a script that will enable autoscaling for Trino EMR cluste
 
 2. Once cluster is launched, autoscaling policy cannot be changed or detached and reattached, doing so will disable the autoscaling. If you need to change the autoscaling policy, you will need to launch a new cluster with the new policy using AWS CLI.
 
-3. If using Presto, modify trino_cloudwatch.sh and replace all "presto" occurences with "trino"
+3. If using Presto, modify trino_cloudwatch.sh and replace all "trino" occurences with "presto"
