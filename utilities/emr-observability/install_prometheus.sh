@@ -4,7 +4,7 @@ set -x
 sudo useradd --no-create-home --shell /bin/false node_exporter
 cd /tmp
 
-instance_arch=`uname -m`
+instance_arch=$(uname -m)
 echo "instance_arch = $instance_arch"
 
 if [ "$instance_arch" = "aarch64" ]; then
@@ -53,8 +53,8 @@ sudo mkdir -p /etc/spark/conf
 sudo cp spark_jmx_config.yaml /etc/spark/conf
 
 # on the master node, install and configure prometheus
-IS_MASTER=$(cat /mnt/var/lib/info/instance.json | jq -r ".isMaster" | grep "true" || true);
-if [ ! -z $IS_MASTER ]; then
+IS_MASTER=$(jq -r ".isMaster" /mnt/var/lib/info/instance.json | grep "true" || true);
+if [ -n "$IS_MASTER" ]; then
 #install Prometheus
 sudo useradd --no-create-home --shell /bin/false prometheus
 sudo mkdir -p /etc/prometheus/conf
@@ -98,7 +98,7 @@ global:
 # A scrape configuration containing exactly one endpoint to scrape:
 # Here it's Prometheus itself.
 scrape_configs:
-  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+  # The job name is added as a label \`job=<job_name>\` to any timeseries scraped from this config.
   - job_name: 'hadoop'
 
     # Override the global default and scrape targets from this job every 15 seconds.
