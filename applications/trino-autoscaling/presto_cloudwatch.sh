@@ -15,7 +15,7 @@ if [ -f /var/log/presto/server.log ]; then
 
   if [ "$IS_MASTER" = true ]; then # Master node
     # Presto Metrics
-    STATS_RESULT=$(presto-cli --execute 'select "abandonedqueries.totalcount", "canceledqueries.totalcount", "completedqueries.totalcount", "executiontime.fiveminutes.avg", "failedqueries.totalcount", "queuedqueries", "queuedtime.fiveminutes.avg", "runningqueries" from "presto.execution:name=querymanager"' --catalog jmx --schema current --output-format TSV)
+    STATS_RESULT=$(presto-cli --execute 'select "abandonedqueries.totalcount", "canceledqueries.totalcount", "completedqueries.totalcount", "executiontime.fiveminutes.avg", "failedqueries.totalcount", "queuedqueries", "queuedtime.fiveminutes.avg", "runningqueries" from "com.facebook.presto.execution:name=querymanager"' --catalog jmx --schema current --output-format TSV)
     ABANDONED_QUERIES_TOTAL_COUNT=$(echo "$STATS_RESULT" | cut -d$'\t' -f1)
     CANCELED_QUERIES_TOTAL_COUNT=$(echo "$STATS_RESULT" | cut -d$'\t' -f2)
     COMPLETED_QUERIES_TOTAL_COUNT=$(echo "$STATS_RESULT" | cut -d$'\t' -f3)
@@ -25,7 +25,7 @@ if [ -f /var/log/presto/server.log ]; then
     QUEUED_TIME_FIVE_MINUTES_AVG=$(echo "$STATS_RESULT" | cut -d$'\t' -f7)
     RUNNING_QUERIES=$(echo "$STATS_RESULT" | cut -d$'\t' -f8)
 
-    NUM_NODES=$(presto-cli --execute 'select "activecount" from "presto.failuredetector:name=heartbeatfailuredetector"' --catalog jmx --schema current --output-format TSV)
+    NUM_NODES=$(presto-cli --execute 'select "activecount" from "com.facebook.presto.failuredetector:name=heartbeatfailuredetector"' --catalog jmx --schema current --output-format TSV)
 
     # Subtract total stats queries from completed count
     # We fire 2 stats queries per trigger
