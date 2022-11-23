@@ -1,0 +1,87 @@
+[
+{
+	"InstanceCount": 1,
+	"EbsConfiguration": {
+		"EbsBlockDeviceConfigs": [{
+			"VolumeSpecification": {
+				"SizeInGB": 32,
+				"VolumeType": "gp2"
+			},
+			"VolumesPerInstance": 2
+		}]
+	},
+	"InstanceGroupType": "MASTER",
+	"InstanceType": "m5.xlarge",
+	"Name": "Master - 1"
+}, 
+{
+	"InstanceCount": 1,
+	"EbsConfiguration": {
+		"EbsBlockDeviceConfigs": [{
+			"VolumeSpecification": {
+				"SizeInGB": 32,
+				"VolumeType": "gp2"
+			},
+			"VolumesPerInstance": 2
+		}]
+	},
+	"InstanceGroupType": "CORE",
+	"InstanceType": "m5.xlarge",
+	"Name": "Core - 2"
+},
+{
+    "InstanceCount": 1,
+    "EbsConfiguration": {
+        "EbsBlockDeviceConfigs": [{
+            "VolumeSpecification": {
+                "SizeInGB": 32,
+                "VolumeType": "gp2"
+            },
+            "VolumesPerInstance": 2
+        }]
+    },
+    "InstanceGroupType": "TASK",
+    "InstanceType": "m5.xlarge",
+    "Name": "Task - 3",
+    "AutoScalingPolicy":
+    {
+     "Constraints":
+      {
+       "MinCapacity": 0,
+       "MaxCapacity": 1
+      },
+     "Rules":
+     [
+      {
+       "Name": "Presto Queued Queries",
+       "Description": "Scale in for zero queued queries.",
+       "Action":{
+        "SimpleScalingPolicyConfiguration":{
+          "AdjustmentType": "CHANGE_IN_CAPACITY",
+          "ScalingAdjustment": -1,
+          "CoolDown": 300
+        }
+       },
+       "Trigger":{
+        "CloudWatchAlarmDefinition":{
+          "ComparisonOperator": "LESS_THAN",
+          "EvaluationPeriods": 3,
+          "MetricName": "PrestoNumQueuedQueries",
+          "Namespace": "AWS/ElasticMapReduce",
+          "Period": 300,
+          "Threshold": 1,
+          "Statistic": "AVERAGE",
+          "Unit": "COUNT",
+          "Dimensions":[
+             {
+               "Key" : "JobFlowId",
+               "Value" : "${emr.clusterId}"
+             }
+          ]
+        }
+       }
+      }
+     ]
+   }
+}
+]
