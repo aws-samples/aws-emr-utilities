@@ -76,8 +76,8 @@ docker push $ECR_URL/emr-edgenode
 
 3. Create an EC2 instance as the Dockerized EMR Edge Node. Choose a Linux AMI that contains Docker daemon, eg. search by `ecs`.
 *Considerations:*
-# The docker host machine needs to be able to access the EMR application ports on the EMR primary node, as well as on the worker nodes
-# Create an EC2 instance in the same VPC as the EMR cluster, use the same IAM role and security group the primary instance uses
+- The docker host machine needs to be able to access the EMR application ports on the EMR primary node, as well as on the worker nodes
+- Create an EC2 instance in the same VPC as the EMR cluster, use the same IAM role and security group the primary instance uses
 
 4. Run the docker container on edge node
 
