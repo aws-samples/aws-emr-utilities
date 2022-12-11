@@ -5,7 +5,7 @@ A Cloudformation or Docker-based tool to create an EC2 instance that acts as a u
 ## How to use the CFN tool
 1. Deploy the tool via CFN
 ```
-wget https://raw.githubusercontent.com/melodyyangaws/aws-emr-utilities/main/utilities/emr-edge-node-creator/create-edge-node-CFN.yml
+wget https://raw.githubusercontent.com/aws-samples/aws-emr-utilities/main/utilities/emr-edge-node-creator/create-edge-node-CFN.yml
 ```
 Go to [CloudFormtaion Console](https://console.aws.amazon.com/cloudformation/home) to create the stack.
 
@@ -21,7 +21,7 @@ Go to [EMR Console](https://us-east-1.console.aws.amazon.com/elasticmapreduce), 
 
 3. Validate Edge Node 
 
-SSH or SSM to the edge node EC2 instance. sudo as Hadoop user:
+SSH or use Session Manager login to the edge node EC2 instance. Use the Hadoop user:
 ```
 sudo su hadoop
 ```
@@ -40,7 +40,7 @@ presto-cli --catalog hive --schema YOUR_SCHEMA --debug --execute "show tables" -
 # test Spark if the app is installed
 spark-submit --deploy-mode cluster /usr/lib/spark/examples/src/main/python/pi.py
 # The output is saved in stdout log file
-yarn logs -applicationId YOUR_APP_ID -log_files stdout
+yarn logs -log_files stdout -applicationId YOUR_APP_ID
 ```
 
 ## How to use the Docker tool
@@ -56,16 +56,16 @@ or
 
 JAR location: command-runner.jar
 
-Arguments : "bash" "-c" "sudo rm -rf /tmp/emr_edge_node && sudo yum install git -y && git clone --depth 1 https://github.com/melodyyangaws/aws-emr-utilities.git /tmp/emr_edge_node && cd /tmp/emr_edge_node && git filter-branch --prune-empty --subdirectory-filter utilities/emr-edge-node-creator HEAD && chmod +x copy-emr-client-deps.sh && sudo copy-emr-client-deps.sh --s3-folder s3://<your bucket>/emr-client-deps/"
+Arguments : "bash" "-c" "sudo rm -rf /tmp/emr_edge_node && sudo yum install git -y && git clone --depth 1 https://github.com/aws-samples/aws-emr-utilities.git /tmp/emr_edge_node && cd /tmp/emr_edge_node && git filter-branch --prune-empty --subdirectory-filter utilities/emr-edge-node-creator HEAD && chmod +x copy-emr-client-deps.sh && sudo copy-emr-client-deps.sh --s3-folder s3://<your bucket>/emr-client-deps/"
 ```
 
 After the step run is completed, the client deps tarball will be available at:
 
-s3://<your bucket>/emr-client-deps/emr-client-deps-<your cluster id>.tar.gz
+s3://YOUR_ARTIFACT_BUCKET/emr-client-deps/emr-client-deps-YOUR_EMR_CLUSTER_ID.tar.gz
 
 Or use AWS CLI:
 ```
-aws emr add-steps --cluster-id YOUR_EMR_CLUSTER_ID --steps Type=CUSTOM_JAR,Name=CopyEMRConfigsStep,ActionOnFailure=CANCEL_AND_WAIT,Jar=command-runner.jar,Args=["bash","-c","sudo rm -rf /tmp/emr_edge_node && sudo yum install git -y && git clone --depth 1 https://github.com/melodyyangaws/aws-emr-utilities.git /tmp/emr_edge_node && cd /tmp/emr_edge_node && git filter-branch --prune-empty --subdirectory-filter utilities/emr-edge-node-creator HEAD && bash copy-emr-client-deps.sh --s3-folder s3://YOUR_ARTIFACT_BUCKET/emr-client-deps/"] --region YOUR_REGION
+aws emr add-steps --cluster-id YOUR_EMR_CLUSTER_ID --steps Type=CUSTOM_JAR,Name=CopyEMRConfigsStep,ActionOnFailure=CANCEL_AND_WAIT,Jar=command-runner.jar,Args=["bash","-c","sudo rm -rf /tmp/emr_edge_node && sudo yum install git -y && git clone --depth 1 https://github.com/aws-samples/aws-emr-utilities.git /tmp/emr_edge_node && cd /tmp/emr_edge_node && git filter-branch --prune-empty --subdirectory-filter utilities/emr-edge-node-creator HEAD && bash copy-emr-client-deps.sh --s3-folder s3://YOUR_ARTIFACT_BUCKET/emr-client-deps/"] --region YOUR_REGION
 ```
 2. Build the docker image
 ```
