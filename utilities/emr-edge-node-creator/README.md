@@ -5,13 +5,9 @@ A Cloudformation or Docker-based tool to create an EC2 instance that acts as a u
 ## How to use the CFN tool
 1. Deploy the tool via CFN
 
-**Deployment Time**: about 30 minutes
+[Download the CFN template from Github](https://raw.githubusercontent.com/melodyyangaws/aws-emr-utilities/main/utilities/emr-edge-node-creator/create-edge-node-CFN.yml)
 
-  |   Region  |   Launch Template |
-  |  ---------------------------   |   -----------------------  |
-  |  ---------------------------   |   -----------------------  |
-  **Choose Your Region**| [![Deploy to AWS](00-deploy-to-aws.png)](https://console.aws.amazon.com/cloudformation/home?#/stacks/quickcreate?stackName=CreateEdgeNode&templateURL=https://raw.githubusercontent.com/melodyyangaws/aws-emr-utilities/main/utilities/emr-edge-node-creator/create-edge-node-CFN.yml)
-
+Go to [CloudFormtaion Console](https://console.aws.amazon.com/cloudformation/home) to create the stack.
 
 2. Check the EMR step
 
