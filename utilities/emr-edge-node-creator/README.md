@@ -10,7 +10,7 @@ A Cloudformation or Docker-based tool to create an EC2 instance that acts as a u
   |   Region  |   Launch Template |
   |  ---------------------------   |   -----------------------  |
   |  ---------------------------   |   -----------------------  |
-  **Choose Your Region**| [![Deploy to AWS](images/00-deploy-to-aws.png)](https://console.aws.amazon.com/cloudformation/home?#/stacks/quickcreate?stackName=CreateEdgeNode&templateURL=https://raw.githubusercontent.com/melodyyangaws/aws-emr-utilities/main/utilities/emr-edge-node-creator/create-edge-node-CFN.yml)
+  **Choose Your Region**| [![Deploy to AWS](00-deploy-to-aws.png)](https://console.aws.amazon.com/cloudformation/home?#/stacks/quickcreate?stackName=CreateEdgeNode&templateURL=https://raw.githubusercontent.com/melodyyangaws/aws-emr-utilities/main/utilities/emr-edge-node-creator/create-edge-node-CFN.yml)
 
 
 2. Check the EMR step
@@ -87,7 +87,9 @@ docker push $ECR_URL/emr-edgenode
 
 SSH or use Session Manager login to the EMR Edge Node
 ```
-sudo docker run -it -d --name emr-client $ECR_URL/emr-edgenode tail-f /dev/null --emr-client-deps s3://YOUR_ARTIFACT_BUCKET/emr-client-deps/emr-client-deps-YOUR_EMR_CLUSTER_ID.tar.gz
+sudo docker run -it -d --name emr-client $ECR_URL/emr-edgenode \
+--emr-client-deps s3://YOUR_ARTIFACT_BUCKET/emr-client-deps/emr-client-deps-YOUR_EMR_CLUSTER_ID.tar.gz \
+tail-f /dev/null
 
 # check if the emr-client container is up running.
 sudo docker ps
@@ -97,18 +99,18 @@ sudo docker logs emr-client
 
 5. test applications
 ```
-docker exec -it emr-client hadoop-mapreduce-examples pi 10 10000
+sudo docker exec -it emr-client hadoop-mapreduce-examples pi 10 10000
 
 # test hive if your EMR cluster has intalled the Hive app
 # you can see databases from Glue Catalog if Hive uses Glue as metastore
-docker exec -it emr-client hive -e "show databases"
+sudo docker exec -it emr-client hive -e "show databases"
 
 # test Presto if it is installed
-docker exec -it emr-client presto-cli --catalog hive --schema YOUR_SCHEMA --debug --execute "show tables" --output-format ALIGNED
+sudo docker exec -it emr-client presto-cli --catalog hive --schema YOUR_SCHEMA --debug --execute "show tables" --output-format ALIGNED
 
 # test Spark if the app is installed
-docker exec -it emr-client spark-submit --deploy-mode cluster /usr/lib/spark/examples/src/main/python/pi.py
+sudo docker exec -it emr-client spark-submit --deploy-mode cluster /usr/lib/spark/examples/src/main/python/pi.py
 # The output is saved in stdout log file
-docker exec -it emr-client yarn logs -applicationId YOUR_APP_ID -log_files stdout
+sudo docker exec -it emr-client yarn logs -applicationId YOUR_APP_ID -log_files stdout
 ```
 
