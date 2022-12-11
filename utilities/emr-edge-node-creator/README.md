@@ -4,10 +4,15 @@ A Cloudformation or Docker-based tool to create an EC2 instance that acts as a u
 
 ## How to use the CFN tool
 1. Deploy the tool via CFN
-
-[Download the CFN template from Github](https://raw.githubusercontent.com/melodyyangaws/aws-emr-utilities/main/utilities/emr-edge-node-creator/create-edge-node-CFN.yml)
-
+```
+wget https://raw.githubusercontent.com/melodyyangaws/aws-emr-utilities/main/utilities/emr-edge-node-creator/create-edge-node-CFN.yml
+```
 Go to [CloudFormtaion Console](https://console.aws.amazon.com/cloudformation/home) to create the stack.
+
+*Considerations:*
+- Create the edge node in the same VPC as the EMR cluster. Use the same IAM role and security group that the EMR primary node uses.
+- The docker host machine needs to be able to access EMR application ports.
+
 
 2. Check the EMR step
 
@@ -74,10 +79,9 @@ docker build -t $ECR_URL/emr-edgenode .
 docker push $ECR_URL/emr-edgenode
 ```
 
-3. Create an EC2 instance as the Dockerized EMR Edge Node. Choose a Linux AMI that contains Docker daemon, eg. search by `ecs`.
-*Considerations:*
-- The docker host machine needs to be able to access the EMR application ports on the EMR primary node, as well as on the worker nodes
-- Create an EC2 instance in the same VPC as the EMR cluster, use the same IAM role and security group the primary instance uses
+3. Create an EC2 instance as the Dockerized EMR Edge Node
+
+Choose a Linux AMI that contains Docker daemon, eg. search by `ecs`.
 
 4. Run the docker container on edge node
 
