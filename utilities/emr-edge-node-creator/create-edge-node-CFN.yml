@@ -82,7 +82,7 @@ Resources:
               Args:
                   - "bash"
                   - "-c" 
-                  - !Sub "sudo rm -rf /tmp/emr_edge_node && sudo yum install git -y && git clone --depth 1 https://github.com/melodyyangaws/aws-emr-utilities.git /tmp/emr_edge_node && cd /tmp/emr_edge_node && git filter-branch --prune-empty --subdirectory-filter utilities/emr-edge-node-creator HEAD && bash copy-emr-client-deps.sh --s3-folder s3://${S3BucketForArtifacts}/emr-client-deps/"
+                  - !Sub "sudo rm -rf /tmp/emr_edge_node && sudo yum install git -y && git clone --depth 1 https://github.com/aws-samples/aws-emr-utilities.git /tmp/emr_edge_node && cd /tmp/emr_edge_node && git filter-branch --prune-empty --subdirectory-filter utilities/emr-edge-node-creator HEAD && bash copy-emr-client-deps.sh --s3-folder s3://${S3BucketForArtifacts}/emr-client-deps/"
 
   EdgeNode:
     Type: AWS::EC2::Instance
@@ -130,7 +130,7 @@ Resources:
           done
           
           sleep 60;
-          git clone --depth 1 https://github.com/melodyyangaws/aws-emr-utilities.git /tmp/emr_edge_node
+          git clone --depth 1 https://github.com/aws-samples/aws-emr-utilities.git /tmp/emr_edge_node
           cd /tmp/emr_edge_node
           git filter-branch --prune-empty --subdirectory-filter utilities/emr-edge-node-creator HEAD
           sh setup-emr-edge-node-s3.sh --emr-client-deps s3://${S3BucketForArtifacts}/emr-client-deps/emr-client-deps-${EMRClusterID}.tar.gz	
