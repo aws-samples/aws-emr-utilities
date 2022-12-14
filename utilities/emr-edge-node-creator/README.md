@@ -33,7 +33,7 @@ sudo su hadoop
 # test mapreduce
 hadoop-mapreduce-examples pi 10 10000
 
-# test hive if your EMR cluster has intalled the Hive app
+# test hive if your EMR cluster has installed the Hive app
 # you can see databases from Glue Catalog if Hive uses Glue as metastore
 hive -e "show databases"
 
@@ -53,7 +53,7 @@ yarn logs -log_files stdout -applicationId YOUR_APP_ID
 Some users run a large scale of edge nodes in a docker container environment, such as EKS or ECS. The tool allows you to run multiple edge node clients mapping to multiple EMR on EC2 clusters on a single EC2 instance. 
 
 The benefits of this approach are:
-- conslidation - you can group your edge nodes to a single or fewer EC2 instances, resulsted in a simpler job scheduler design and reduced operational overhead.
+- consolidation - you can group your edge nodes to a single or fewer EC2 instances, resulted in a simpler job scheduler design and reduced operational overhead.
 
 - Isolation - the dockerized edge node client offers security isolation and optimal resource utilization. Granular access control via the [IRSA feature](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html) in EKS. EC2-level Instance Profile role could made redundant.
 
