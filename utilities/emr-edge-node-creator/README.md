@@ -179,10 +179,10 @@ What if you made configuration change on your EMR cluster? Yes, the edge node ne
 
 2. Reboot your edge node EC2 instance if you used the CFN tool. It automatically triggers the setup script. If the reboot is not an option, login to the instance and manually run the script:
 ```bash
-sh /tmp/emr_edge_node/setup-emr-edge-node-s3.sh --emr-client-deps s3://${YOUR_S3BUCKET}/emr-client-deps/emr-client-deps-v2.tar.gz  
+bash /tmp/emr_edge_node/setup-emr-edge-node-s3.sh --emr-client-deps s3://${YOUR_S3BUCKET}/emr-client-deps/emr-client-deps-v2.tar.gz  
 ``` 
 
-4. If you used the docker tool to setup edge nodes, simply rerun the script:
+3. If you used the docker tool to setup edge nodes, simply rerun the script:
 ```bash
 docker exec -it emr-client sbin/setup-emr-edge-node-s3.sh --emr-client-deps s3://${YOUR_S3BUCKET}/emr-client-deps/emr-client-deps-v2.tar.gz
 ```
