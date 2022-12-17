@@ -120,7 +120,8 @@ mkdir -p usr/share/aws
 cp -prL /usr/share/aws usr/share || true
 
 mkdir -p opt/aws
-cp -prL /opt/aws opt/
+#cp -prL /opt/aws opt/
+rsync -av --progress /opt/aws opt/ --exclude apitools
 
 CLUSTER_ID=$(ruby -e "puts \`grep jobFlowId  /emr/instance-controller/lib/info/job-flow.json\`.split.last[1..-3]")
 
