@@ -72,6 +72,7 @@ sudo mkdir -p /opt/aws
 sudo cp -pr opt/aws/* /opt/aws/
 sudo cp -pr emr /
 sudo ln -s /emr/instance-controller/lib/info /var/lib/info
+sudo ln -s /opt/aws/apitools/cfn-init/bin/cfn-signal /opt/aws/apitools/cfn-signal
 
 sudo mkdir -p /etc/hadoop
 sudo mkdir -p /etc/hive
