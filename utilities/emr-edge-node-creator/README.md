@@ -43,7 +43,7 @@ presto-cli --catalog hive --schema YOUR_SCHEMA --debug --execute "show tables" -
 # test Spark if the app is installed
 spark-submit --deploy-mode cluster /usr/lib/spark/examples/src/main/python/pi.py
 # The output is saved in stdout log file
-yarn logs -log_files stdout -applicationId YOUR_APP_ID
+yarn logs -applicationId YOUR_APP_ID
 ```
 
 ## How to use the Docker tool (for consolidated edge node usage)
@@ -103,9 +103,9 @@ aws ec2 run-instances \
     --count 1 \
     --instance-type c5.2xlarge \
     --iam-instance-profile Name=EMR_EC2_DefaultRole \
-    --security-group-ids YOUR_EMR_MASTER_SG \
-    --subnet-id YOUR_EMR_SUBNET \
-    --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=emr-edgenode}]'
+    --security-group-ids $YOUR_EMR_MASTER_SG \
+    --subnet-id $YOUR_EMR_SUBNET \
+    --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=emr-edgenode}]' \
     --user-data sudo yum install -y aws-cli
 ```
 
@@ -151,24 +151,24 @@ docker logs emr-client2
 
 5. test apps on edge node container
 ```
-sudo docker exec -it emr-client hadoop-mapreduce-examples pi 10 10000
-sudo docker exec -it emr-client2 hadoop-mapreduce-examples pi 10 10000
+docker exec -it emr-client hadoop-mapreduce-examples pi 10 10000
+docker exec -it emr-client2 hadoop-mapreduce-examples pi 10 10000
 
 # test hive if it is installed. It will list databases from Glue Catalog, if we use Glue as metastore
-sudo docker exec -it emr-client hive -e "show databases"
-sudo docker exec -it emr-client2 hive -e "show databases"
+docker exec -it emr-client hive -e "show databases"
+docker exec -it emr-client2 hive -e "show databases"
 
 # test Presto if installed
-sudo docker exec -it emr-client presto-cli --catalog hive --schema YOUR_SCHEMA --debug --execute "show tables" --output-format ALIGNED
-sudo docker exec -it emr-client2 presto-cli --catalog hive --schema YOUR_SCHEMA --debug --execute "show tables" --output-format ALIGNED
+docker exec -it emr-client presto-cli --catalog hive --schema default --debug --execute "show tables" --output-format ALIGNED
+docker exec -it emr-client2 presto-cli --catalog hive --schema default --debug --execute "show tables" --output-format ALIGNED
 
 
 # test Spark if installed
-sudo docker exec -it emr-client spark-submit --deploy-mode cluster /usr/lib/spark/examples/src/main/python/pi.py
-sudo docker exec -it emr-client2 spark-submit --deploy-mode cluster /usr/lib/spark/examples/src/main/python/pi.py
+docker exec -it emr-client spark-submit --deploy-mode cluster /usr/lib/spark/examples/src/main/python/pi.py
+docker exec -it emr-client2 spark-submit --deploy-mode cluster /usr/lib/spark/examples/src/main/python/pi.py
 
 # The output is saved in stdout log file
-sudo docker exec -it emr-client yarn logs -log_files stdout -applicationId YOUR_APP_ID
+docker exec -it emr-client yarn logs -applicationId YOUR_APP_ID
 ```
 
 ## How to re-sync the edge node
