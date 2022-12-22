@@ -190,8 +190,8 @@ docker exec -it emr-client sbin/setup-emr-edge-node-s3.sh --emr-client-deps s3:/
 ## Note: For edge node with multi-master EMR Clusters:
 
 1. Run ```hdfs haadmin -getAllServiceState``` and find out active resource manager from your edge node.
-2. Example of output
-    ```ip-172-31-22-215.ec2.internal:8020                 standby
+2. Example of output ```
+       ip-172-31-22-215.ec2.internal:8020                 standby
        ip-172-31-24-177.ec2.internal:8020                 active
        ip-172-31-27-128.ec2.internal:8020                 standby```
 3. Your application can use the output of this to parse and submit job to active node at runtime (Potentially, these steps can be used to build your application script or language of your choice for automating job submissions).       
