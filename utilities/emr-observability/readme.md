@@ -51,7 +51,7 @@ Use the script as the bootstrap action
 ```
 --bootstrap-actions '[{"Path":"s3://bucket-name/path/install_prometheus.sh","Name":"Install Prometheus"}]'
 ```
-Use the below EMR configuration classification json
+Optimization-1.pngUse the below EMR configuration classification json
 ```
 ./conf_files/configuration.json
 ```
@@ -99,11 +99,11 @@ Use the below EMR configuration classification json
  
 ### Dashboard examples - EMRonEC2OptimizationDashboard
  
-![Alt text](images/optimization-1.jpg?raw=true "Optimization Dashboard - OS and Yarn memory utilization comparison for tuning")
+![Alt text](images/optimization-1.png?raw=true "Optimization Dashboard - OS and Yarn memory utilization comparison for tuning")
  
-![Alt text](images/optimization-2.jpg?raw=true "Optimization Dashboard - OS and Yarn CPU utilization comparison for tuning")
+![Alt text](images/optimization-2.png?raw=true "Optimization Dashboard - OS and Yarn CPU utilization comparison for tuning")
  
-![Alt text](images/optimization-3.jpg?raw=true "Optimization Dashboard - IO, Disk and HDFS utilization for tuning")
+![Alt text](images/optimization-3.png?raw=true "Optimization Dashboard - IO, Disk and HDFS utilization for tuning")
  
  
  
