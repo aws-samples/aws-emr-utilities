@@ -89,7 +89,6 @@ Use the below EMR configuration classification json
 5)You can now start visualizing the metrics in AMG
  
 ## Work in progress
-* Cloudwatch metrics Integration
 * Setup Alerts
  
 ## Limitations
