@@ -13,7 +13,7 @@ Even though we recommend customers to utilize managed SHS option wherever possib
 
 ## Solution Overview
 
-*Step 1:* Provisioning EMR cluster to write spark logs to external S3 bucket with Steps
+**Step 1:** Provisioning EMR cluster to write spark logs to external S3 bucket with Steps
 
 EMR Configuration to write data to customer owned Amazon S3: 
 
@@ -24,11 +24,44 @@ Here is a simple [configuration](https://docs.aws.amazon.com/emr/latest/ReleaseG
 [{
 "classification":"spark-defaults",
 "properties":{
-"spark.eventLog.dir":"s3a://<yourbucketname>/$clusterid/sparkhistory",
-"spark.history.fs.logDirectory":"s3a://<yourbucketname>/$clusterid/sparkhistory"
+"spark.eventLog.dir":"s3a://<yourbucketname>/sparkhistory",
+"spark.history.fs.logDirectory":"s3a://<yourbucketname>/sparkhistory"
 }
 }] 
 ```
+
+Spark History server will require emrfs-hadoop-assembly JAR file and aws Java JDK jars to be able to access S3 buckets. So you need to create a symbolic links and restart the Spark History Server.
+
+Here is the simple shell script for this task (sparkhistory.sh):
+
+```
+sudo ln -s `ls /usr/share/aws/emr/emrfs/lib/emrfs-hadoop-assembly*` /usr/lib/spark/jars/emrfs.jar
+sudo ln -s `ls /usr/lib/hadoop/hadoop-aws-*` /usr/lib/spark/jars/hadoop-aws.jar
+sudo ln -s `ls /usr/share/aws/aws-java-sdk/aws-java-sdk-bundle-*` /usr/share/aws/aws-java-sdk/aws-java-sdk-bundle.jar
+
+aws s3api put-object —-bucket <yourbucketname> —-key sparkhistory/
+sudo systemctl stop spark-history-server
+sudo systemctl start spark-history-server
+```
+
+The first three lines finds the correct JAR files and then create a symbolic link, next line creates a path in S3 bucket and restarts Spark History Server. You need to upload this shell script to an S3 bucket, and define a CUSTOM_JAR step to launch this script:
+
+
+```
+[{
+ "Args":[
+ "s3://yourbucketname/sparkhistory.sh"
+ ],
+ "Type":"CUSTOM_JAR",
+ "ActionOnFailure":"CONTINUE",
+ "Jar":"s3://us-east-1.elasticmapreduce/libs/script-runner/script-runner.jar",
+ "Properties":"",
+ "Name":"Setup Spark History"
+}]
+```
+
+If you add the above configuration and the step, to your transient cluster, the logs will remain in the S3 bucket and you will be able to view the old jobs when you create a new EMR cluster (with same configuration).
+
 
 ## How to use the Docker tool (for consolidated edge node usage)
 
