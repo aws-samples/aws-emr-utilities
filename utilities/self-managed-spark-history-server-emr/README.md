@@ -71,5 +71,5 @@ nohup python3 py_web_server.sh &
 Configure proxy settings to view websites hosted on the primary node:
 https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-ssh-tunnel.html
 
-![Setup](images/D2134DB4-2879-4EC0-B2B8-11D6939CAD31.jpeg)
-![Setup](images/D2134DB4-2879-4EC0-B2B8-11D6939CAD31.jpeg)
+![Self Managed Spark History Server](images/Screen Shot 2023-02-15 at 9.26.13 AM.png)
+![Executor logs via Pre-signed URL](images/Screen Shot 2023-02-15 at 9.26.50 AM.png)
