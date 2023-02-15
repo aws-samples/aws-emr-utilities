@@ -57,7 +57,7 @@ The first few lines finds the correct JAR files and then create a symbolic link,
 
 If you add the above configuration and the step, to your transient cluster, the logs will remain in the S3 bucket and you will be able to view the old jobs when you create a new EMR cluster (with same configuration).
 
-**Step 2:** Set up a proxy server on master node to generate pre-signed S3 URL for executor logs:
+**Step 2:** Set up a proxy server on master node to serve pre-signed S3 URL for executor logs:
 
 Here is the simple python code for this task ![py_web_server.sh](code/py_web_server.py)
 Run proxy server on master node (this step can also be part of cluster bootstrap/step. This proxy server will listen on port 9977 and serve as a presigned URL for S3 bucket/key requested from Spark history server executor logs.
@@ -65,4 +65,9 @@ Run proxy server on master node (this step can also be part of cluster bootstrap
 ```
 nohup python3 py_web_server.sh &
 ```
+
+**Step 3:**  Set up a web proxy through an SSH connection:
+
+Configure proxy settings to view websites hosted on the primary node:
+https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-ssh-tunnel.html
 
