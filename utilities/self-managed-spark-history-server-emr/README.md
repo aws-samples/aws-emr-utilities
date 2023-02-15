@@ -1,6 +1,6 @@
 # Create Self Managed Spark History Server on EMR on EC2
 
-It is possible to debug and monitor your Apache Spark jobs by logging directly into the off-cluster, persistent, Apache Spark History Server (https://docs.aws.amazon.com/emr/latest/ManagementGuide/app-history-spark-UI.html) (SHS) using the EMR Console (Amazon EMR Version 5.25 onward). You can quickly analyze and troubleshoot active jobs and job history without setting up a web proxy through an SSH connection. You can access application history and relevant log files for active and terminated clusters. 
+It is possible to debug and monitor your Apache Spark jobs by logging directly into the [off-cluster, persistent, Apache Spark History Server] (https://docs.aws.amazon.com/emr/latest/ManagementGuide/app-history-spark-UI.html) (SHS) using the EMR Console (Amazon EMR Version 5.25 onward). You can quickly analyze and troubleshoot active jobs and job history without setting up a web proxy through an SSH connection. You can access application history and relevant log files for active and terminated clusters. 
 
 ## Limitations
 
