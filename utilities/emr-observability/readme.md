@@ -105,5 +105,18 @@ Use the below EMR configuration classification json
 ![Alt text](images/Optimization-3.png?raw=true "Optimization Dashboard - IO, Disk and HDFS utilization for tuning")
  
  
- 
+###  Recommended Actions
+In the **EMRonEC2OptimizationDashboard**
+
+***1) Check the OS CPU utilization and OS memory utilization.***
+
+a)If both the CPU utilization and memory utilization are at or near 100% capacity, it indicates that the system is experiencing a resource bottleneck. In this case, adding more worker nodes can help to distribute the load and increase the system's capacity to handle the workload. We would also suggest to use EMR managed scaling feature which automatically adjusts the cluster size based on the workload. If you have already configured managed scaling, you can increase the maximum capacity of the cluster to allow for more nodes to be added when needed. This can help to optimize the use of resources and reduce costs by avoiding over-provisioning.
+
+b)If the CPU utilization is at or near 100% but memory utilization is low, it indicates that the bottleneck is likely the CPU rather than the memory. In this case, we suggest to use CPU optimized instance type(c series) which has higher CPU-to-memory ratios and are designed to handle compute-intensive workloads
+
+c)If the memory utilization is at or near 100% in the cluster but the CPU utilization is low, it indicates that the bottleneck is likely the memory, rather than the CPU. In this case, we suggest to use memory optimized instance type(r series) which provide high memory-to-CPU ratios, making them ideal for memory-intensive workloads.
+
+***2)Check the OS Memory utilization and Yarn memory utilization.***
+
+If Yarn memory utilization is at 100% while the OS memory utilization is low, it suggests that resource is over allocated resources to yarn and it needs tuning. Some of the settings to tune here are yarn.nodemanager.resource.memory-mb, yarn.scheduler.minimum-allocation-mb, yarn.scheduler.maximum-allocation-mb. 
  
