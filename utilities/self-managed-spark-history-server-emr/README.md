@@ -32,21 +32,11 @@ Here is a simple [configuration](https://docs.aws.amazon.com/emr/latest/ReleaseG
 }] 
 ```
 
-Spark History server will require emrfs-hadoop-assembly JAR file and aws Java JDK jars to be able to access S3 buckets. So you need to create a symbolic links and restart the Spark History Server.
+Spark History server will require emrfs-hadoop-assembly JAR file and aws Java SDK jars to be able to access S3 buckets. So you need to create a symbolic links and restart the Spark History Server.
 
-Here is the simple shell script for this task (sparkhistory.sh):
+Here is the simple shell script for this task ![sparkhistory.sh](code/sparkhistory.sh)
 
-```
-sudo ln -s `ls /usr/share/aws/emr/emrfs/lib/emrfs-hadoop-assembly*` /usr/lib/spark/jars/emrfs.jar
-sudo ln -s `ls /usr/lib/hadoop/hadoop-aws-*` /usr/lib/spark/jars/hadoop-aws.jar
-sudo ln -s `ls /usr/share/aws/aws-java-sdk/aws-java-sdk-bundle-*` /usr/share/aws/aws-java-sdk/aws-java-sdk-bundle.jar
-
-aws s3api put-object —-bucket <yourbucketname> —-key sparkhistory/
-sudo systemctl stop spark-history-server
-sudo systemctl start spark-history-server
-```
-
-The first three lines finds the correct JAR files and then create a symbolic link, next line creates a path in S3 bucket and restarts Spark History Server. You need to upload this shell script to an S3 bucket, and define a CUSTOM_JAR step to launch this script:
+The first few lines finds the correct JAR files and then create a symbolic link, then creates a path in S3 bucket and restarts Spark History Server. You need to edit/upload this shell script to your S3 bucket, and define a CUSTOM_JAR step to launch this script:
 
 
 ```
