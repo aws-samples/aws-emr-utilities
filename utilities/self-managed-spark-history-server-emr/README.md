@@ -9,7 +9,7 @@ It is possible to debug and monitor your Apache Spark jobs by logging directly i
 3. The managed SHS can become slow with too many applications logs in the same S3 directory. It can take few minutes to launch the application with thousands application logs. A S3 partition structure is needed for large long-running EMR clusters.
 4. The customer need to access the EMR managed Spark History Server via **the EMR console**. This is not desired for customers who have strict AWS console access controls.
 
-Even though we recommend customers to utilize managed SHS option wherever possible, not desirable due to above limitations for all the customers. In this self-managed SHS solution, we will setup SHS on EMR on EC2 single master (but customers can also expand this to work on [EC2 or containerized solution](https://docs.aws.amazon.com/glue/latest/dg/monitor-spark-ui-history.html)).
+Even though we recommend customers to utilize managed SHS option wherever possible, not desirable due to above limitations for all the customers. **In this self-managed SHS solution**, we will setup SHS on EMR on EC2 single master (but customers can also expand this to work on [EC2 or containerized solution](https://docs.aws.amazon.com/glue/latest/dg/monitor-spark-ui-history.html)).
 
 ## Solution Overview
 
