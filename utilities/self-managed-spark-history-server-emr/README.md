@@ -27,7 +27,10 @@ Here is a simple [configuration](https://docs.aws.amazon.com/emr/latest/ReleaseG
 "classification":"spark-defaults",
 "properties":{
 "spark.eventLog.dir":"s3a://<yourbucketname>/sparkhistory",
-"spark.history.fs.logDirectory":"s3a://<yourbucketname>/sparkhistory"
+"spark.history.fs.logDirectory":"s3a://<yourbucketname>/sparkhistory",
+"spark.history.custom.executor.log.url":"http://<your_host>:9977/j-AGU0M29V8FFX/containers/{{APP_ID}}/{{CONTAINER_ID}}/{{FILE_NAME}}.gz"
+spark.hadoop.fs.s3a.endpoint s3.amazonaws.com
+spark.hadoop.fs.s3a.customAWSCredentialsProvider com.amazonaws.auth.DefaultAWSCredentialsProviderChain
 }
 }] 
 ```
@@ -57,8 +60,9 @@ If you add the above configuration and the step, to your transient cluster, the 
 **Step 2:** Set up a proxy server on master node to generate pre-signed S3 URL for executor logs:
 
 Here is the simple python code for this task ![py_web_server.sh](code/py_web_server.py)
-Run proxy server on master node (this step can also be part of cluster bootstrap/step.
+Run proxy server on master node (this step can also be part of cluster bootstrap/step. This proxy server will listen on port 9977 and serve as a presigned URL for S3 bucket/key requested from Spark history server executor logs.
 
 ```
 nohup python3 py_web_server.sh &
 ```
+
