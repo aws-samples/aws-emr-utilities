@@ -11,48 +11,23 @@ It is possible to debug and monitor your Apache Spark jobs by logging directly i
 
 Even though we recommend customers to utilize managed SHS option wherever possible, not desirable due to above limitations for all the customers. In this self-managed SHS solution, we will setup SHS on EMR on EC2 single master (but customers can also expand this to work on [EC2 or containerized solution](https://docs.aws.amazon.com/glue/latest/dg/monitor-spark-ui-history.html)).
 
-## How to use the CFN tool (for usual edge node usage)
+## Solution Overview
 
-<img src="image/1-CFN-edge-node.png" width="600">
+*Step 1:* Provisioning EMR cluster to write spark logs to external S3 bucket with Steps
 
-1. Deploy the tool via CFN
-```
-wget https://raw.githubusercontent.com/aws-samples/aws-emr-utilities/main/utilities/emr-edge-node-creator/create-edge-node-CFN.yml
-```
-Go to [CloudFormtaion Console](https://console.aws.amazon.com/cloudformation/home) to create the stack.
+EMR Configuration to write data to customer owned Amazon S3: 
 
-*Considerations:*
-- Create the edge node in the same VPC as the EMR cluster. Use the same IAM role and security group that the EMR primary node uses.
-- The docker host EC2 instance needs to be able to access EMR application ports. Potentially it can run multiple edge node client containers supporting different EMR versions.
-
-
-2. Check the EMR step
-
-Go to [EMR Console](https://us-east-1.console.aws.amazon.com/elasticmapreduce), select the EMR cluster you setup the edge node for. Check if the `CopyEMRConfigsStep` step is completed successfully.
-
-
-3. Validate Edge Node 
-
-SSH or use Session Manager login to the edge node EC2 instance. Use the Hadoop user:
-```
-sudo su hadoop
-```
+To overcome all these limitations, and having a more flexible way to access Spark history, you can configure Spark to send the logs to a S3 bucket. 
+Here is a simple [configuration](https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-configure-apps.html) that you can adapt for your EMR cluster:
 
 ```
-# test mapreduce
-hadoop-mapreduce-examples pi 10 10000
-
-# test hive if your EMR cluster has installed the Hive app
-# you can see databases from Glue Catalog if Hive uses Glue as metastore
-hive -e "show databases"
-
-# test Presto if it is installed
-presto-cli --catalog hive --schema YOUR_SCHEMA --debug --execute "show tables" --output-format ALIGNED
-
-# test Spark if the app is installed
-spark-submit --deploy-mode cluster /usr/lib/spark/examples/src/main/python/pi.py
-# The output is saved in stdout log file
-yarn logs -applicationId YOUR_APP_ID
+[{
+"classification":"spark-defaults",
+"properties":{
+"spark.eventLog.dir":"s3a://<yourbucketname>/$clusterid/sparkhistory",
+"spark.history.fs.logDirectory":"s3a://<yourbucketname>/$clusterid/sparkhistory"
+}
+}] 
 ```
 
 ## How to use the Docker tool (for consolidated edge node usage)
