@@ -1,6 +1,6 @@
 # Create Self Managed Spark History Server on EMR on EC2
 
-It is possible to debug and monitor your Apache Spark jobs by logging directly into the [off-cluster persistent Spark History Server](https://docs.aws.amazon.com/emr/latest/ManagementGuide/app-history-spark-UI.html) using the EMR Console (Amazon EMR Version 5.25 onward). You can quickly analyze and troubleshoot active jobs and job history without setting up a web proxy through an SSH connection. You can access application history and relevant log files for active and terminated clusters. 
+It is possible to debug and monitor your Apache Spark jobs by logging directly into the [off-cluster, persistent, Spark History Server](https://docs.aws.amazon.com/emr/latest/ManagementGuide/app-history-spark-UI.html) using the EMR Console (Amazon EMR Version 5.25 onward). You can quickly analyze and troubleshoot active jobs and job history without setting up a web proxy through an SSH connection. You can access application history and relevant log files for active and terminated clusters. 
 
 ## Limitations
 
@@ -9,7 +9,7 @@ It is possible to debug and monitor your Apache Spark jobs by logging directly i
 3. The managed SHS can become slow with too many applications logs in the same S3 directory. It can take few minutes to launch the application with thousands application logs. A S3 partition structure is needed for large long-running EMR clusters.
 4. The customer need to access the EMR managed Spark History Server via **the EMR console**. This is not desired for customers who have strict AWS console access controls.
 
-Even though we recommend customers to utilize managed SHS option, not desirable due to above limitations for all the customers. In this self-managed SHS solution, we will setup SHS on EMR on EC2 single master (but can also be expanded on EC2 or docker containerized solutions).
+Even though we recommend customers to utilize managed SHS option wherever possible, not desirable due to above limitations for all the customers. In this self-managed SHS solution, we will setup SHS on EMR on EC2 single master (but customers can also expand this to work on [EC2 or containerized solution](https://docs.aws.amazon.com/glue/latest/dg/monitor-spark-ui-history.html)).
 
 ## How to use the CFN tool (for usual edge node usage)
 
