@@ -56,4 +56,4 @@ If you add the above configuration and the step, to your transient cluster, the 
 
 **Step 2:** Set up a proxy server on master node to generate pre-signed S3 URL for executor logs:
 
-Here is the simple python code for this task ![py_web_server.sh](code/py_web_server.sh)
+Here is the simple python code for this task ![py_web_server.sh](code/py_web_server.py)
