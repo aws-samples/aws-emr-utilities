@@ -13,7 +13,7 @@ Even though we recommend customers to utilize managed SHS option wherever possib
 
 ## Solution Overview
 
-![Setup](images/F8814632-F8EC-441B-97AE-4191F3DAE811.jpeg)
+![Setup](images/D2134DB4-2879-4EC0-B2B8-11D6939CAD31.jpeg)
 
 **Step 1:** Provisioning EMR cluster to write spark logs to external S3 bucket with Steps
 
