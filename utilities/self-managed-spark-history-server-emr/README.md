@@ -28,7 +28,7 @@ Here is a simple [configuration](https://docs.aws.amazon.com/emr/latest/ReleaseG
 "properties":{
 "spark.eventLog.dir":"s3a://<yourbucketname>/sparkhistory",
 "spark.history.fs.logDirectory":"s3a://<yourbucketname>/sparkhistory",
-"spark.history.custom.executor.log.url":"http://<your_host>:9977/j-AGU0M29V8FFX/containers/{{APP_ID}}/{{CONTAINER_ID}}/{{FILE_NAME}}.gz"
+"spark.history.custom.executor.log.url":"http://<your_host>:9977/<yourclusterID>/containers/{{APP_ID}}/{{CONTAINER_ID}}/{{FILE_NAME}}.gz"
 spark.hadoop.fs.s3a.endpoint s3.amazonaws.com
 spark.hadoop.fs.s3a.customAWSCredentialsProvider com.amazonaws.auth.DefaultAWSCredentialsProviderChain
 }
