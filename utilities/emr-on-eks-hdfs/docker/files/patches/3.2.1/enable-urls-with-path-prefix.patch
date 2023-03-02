@@ -1,0 +1,395 @@
+diff --git a/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/datanode/datanode.html b/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/datanode/datanode.html
+index 20affe04269..d5fe568f258 100644
+--- a/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/datanode/datanode.html
++++ b/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/datanode/datanode.html
+@@ -19,8 +19,8 @@
+ <html xmlns="http://www.w3.org/1999/xhtml">
+ <head>
+ <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+-<link rel="stylesheet" type="text/css" href="/static/bootstrap-3.3.7/css/bootstrap.min.css" />
+-<link rel="stylesheet" type="text/css" href="/static/hadoop.css" />
++<link rel="stylesheet" type="text/css" href="static/bootstrap-3.3.7/css/bootstrap.min.css" />
++<link rel="stylesheet" type="text/css" href="static/hadoop.css" />
+ <title>DataNode Information</title>
+ </head>
+ <body>
+@@ -125,12 +125,12 @@
+   {/dn.VolumeInfo}
+ </script>
+ 
+-<script type="text/javascript" src="/static/jquery-3.3.1.min.js"></script>
+-<script type="text/javascript" src="/static/bootstrap-3.3.7/js/bootstrap.min.js"></script>
+-<script type="text/javascript" src="/static/moment.min.js"></script>
+-<script type="text/javascript" src="/static/dust-full-2.0.0.min.js"></script>
+-<script type="text/javascript" src="/static/dust-helpers-1.1.1.min.js"></script>
+-<script type="text/javascript" src="/static/dfs-dust.js"></script>
++<script type="text/javascript" src="static/jquery-3.3.1.min.js"></script>
++<script type="text/javascript" src="static/bootstrap-3.3.7/js/bootstrap.min.js"></script>
++<script type="text/javascript" src="static/moment.min.js"></script>
++<script type="text/javascript" src="static/dust-full-2.0.0.min.js"></script>
++<script type="text/javascript" src="static/dust-helpers-1.1.1.min.js"></script>
++<script type="text/javascript" src="static/dfs-dust.js"></script>
+ <script type="text/javascript" src="dn.js"></script>
+ 
+ </body>
+diff --git a/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/datanode/dn.js b/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/datanode/dn.js
+index 9e2732ca5de..07fed42af50 100644
+--- a/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/datanode/dn.js
++++ b/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/datanode/dn.js
+@@ -23,7 +23,7 @@
+   dust.loadSource(dust.compile($('#tmpl-dn').html(), 'dn'));
+ 
+   function load() {
+-    $.get('/jmx?qry=Hadoop:service=DataNode,name=DataNodeInfo', function(resp) {
++    $.get('jmx?qry=Hadoop:service=DataNode,name=DataNodeInfo', function(resp) {
+       data.dn = workaround(resp.beans[0]);
+       data.dn.HostName = resp.beans[0]['DatanodeHostname'];
+       render();
+diff --git a/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/hdfs/dfshealth.html b/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/hdfs/dfshealth.html
+index eeceb05c6f0..897a99523d4 100644
+--- a/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/hdfs/dfshealth.html
++++ b/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/hdfs/dfshealth.html
+@@ -19,9 +19,9 @@
+ <html xmlns="http://www.w3.org/1999/xhtml">
+ <head>
+ <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+-<link rel="stylesheet" type="text/css" href="/static/bootstrap-3.3.7/css/bootstrap.min.css" />
+-<link rel="stylesheet" type="text/css" href="/static/dataTables.bootstrap.css" />
+-<link rel="stylesheet" type="text/css" href="/static/hadoop.css" />
++<link rel="stylesheet" type="text/css" href="static/bootstrap-3.3.7/css/bootstrap.min.css" />
++<link rel="stylesheet" type="text/css" href="static/dataTables.bootstrap.css" />
++<link rel="stylesheet" type="text/css" href="static/hadoop.css" />
+ <title>Namenode information</title>
+ </head>
+ <body>
+@@ -475,15 +475,15 @@
+ </table>
+ </script>
+ 
+-<script type="text/javascript" src="/static/jquery-3.3.1.min.js">
+-</script><script type="text/javascript" src="/static/jquery.dataTables.min.js">
+-</script><script type="text/javascript" src="/static/bootstrap-3.3.7/js/bootstrap.min.js">
+-</script><script type="text/javascript" src="/static/dataTables.bootstrap.js">
+-</script><script type="text/javascript" src="/static/moment.min.js">
+-</script><script type="text/javascript" src="/static/dust-full-2.0.0.min.js">
+-</script><script type="text/javascript" src="/static/dust-helpers-1.1.1.min.js">
+-</script><script type="text/javascript" src="/static/dfs-dust.js">
+-</script><script type="text/javascript" src="/static/d3-v4.1.1.min.js">
++<script type="text/javascript" src="static/jquery-3.3.1.min.js">
++</script><script type="text/javascript" src="static/jquery.dataTables.min.js">
++</script><script type="text/javascript" src="static/bootstrap-3.3.7/js/bootstrap.min.js">
++</script><script type="text/javascript" src="static/dataTables.bootstrap.js">
++</script><script type="text/javascript" src="static/moment.min.js">
++</script><script type="text/javascript" src="static/dust-full-2.0.0.min.js">
++</script><script type="text/javascript" src="static/dust-helpers-1.1.1.min.js">
++</script><script type="text/javascript" src="static/dfs-dust.js">
++</script><script type="text/javascript" src="static/d3-v4.1.1.min.js">
+ </script><script type="text/javascript" src="dfshealth.js">
+ </script>
+ </body>
+diff --git a/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/hdfs/dfshealth.js b/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/hdfs/dfshealth.js
+index 5b2838ca9b5..ba0a51f8752 100644
+--- a/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/hdfs/dfshealth.js
++++ b/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/hdfs/dfshealth.js
+@@ -33,14 +33,14 @@
+ 
+   function load_overview() {
+     var BEANS = [
+-      {"name": "nn",      "url": "/jmx?qry=Hadoop:service=NameNode,name=NameNodeInfo"},
+-      {"name": "nnstat",  "url": "/jmx?qry=Hadoop:service=NameNode,name=NameNodeStatus"},
+-      {"name": "fs",      "url": "/jmx?qry=Hadoop:service=NameNode,name=FSNamesystemState"},
+-      {"name": "fsn",     "url": "/jmx?qry=Hadoop:service=NameNode,name=FSNamesystem"},
+-      {"name": "replicastat",      "url": "/jmx?qry=Hadoop:service=NameNode,name=ReplicatedBlocksState"},
+-      {"name": "ecstat",      "url": "/jmx?qry=Hadoop:service=NameNode,name=ECBlockGroupsState"},
+-      {"name": "blockstats",      "url": "/jmx?qry=Hadoop:service=NameNode,name=BlockStats"},
+-      {"name": "mem",     "url": "/jmx?qry=java.lang:type=Memory"}
++      {"name": "nn",      "url": "jmx?qry=Hadoop:service=NameNode,name=NameNodeInfo"},
++      {"name": "nnstat",  "url": "jmx?qry=Hadoop:service=NameNode,name=NameNodeStatus"},
++      {"name": "fs",      "url": "jmx?qry=Hadoop:service=NameNode,name=FSNamesystemState"},
++      {"name": "fsn",     "url": "jmx?qry=Hadoop:service=NameNode,name=FSNamesystem"},
++      {"name": "replicastat",      "url": "jmx?qry=Hadoop:service=NameNode,name=ReplicatedBlocksState"},
++      {"name": "ecstat",      "url": "jmx?qry=Hadoop:service=NameNode,name=ECBlockGroupsState"},
++      {"name": "blockstats",      "url": "jmx?qry=Hadoop:service=NameNode,name=BlockStats"},
++      {"name": "mem",     "url": "jmx?qry=java.lang:type=Memory"}
+     ];
+ 
+     var HELPERS = {
+@@ -66,7 +66,7 @@
+ 
+     var data = {};
+ 
+-    $.ajax({'url': '/conf', 'dataType': 'xml', 'async': false}).done(
++    $.ajax({'url': 'conf', 'dataType': 'xml', 'async': false}).done(
+       function(d) {
+         var $xml = $(d);
+         var namespace, nnId;
+@@ -168,7 +168,7 @@
+       });
+       return r;
+     }
+-    $.get('/startupProgress', function (resp) {
++    $.get('startupProgress', function (resp) {
+       var data = workaround(resp);
+       dust.render('startup-progress', data, function(err, out) {
+         $('#tab-startup-progress').html(out);
+@@ -322,7 +322,7 @@
+     }
+ 
+     $.get(
+-      '/jmx?qry=Hadoop:service=NameNode,name=NameNodeInfo',
++      'jmx?qry=Hadoop:service=NameNode,name=NameNodeInfo',
+       guard_with_startup_progress(function (resp) {
+         var data = workaround(resp.beans[0]);
+         var base = dust.makeBase(HELPERS);
+@@ -374,7 +374,7 @@
+     }
+ 
+     $.get(
+-      '/jmx?qry=Hadoop:service=NameNode,name=NameNodeInfo',
++      'jmx?qry=Hadoop:service=NameNode,name=NameNodeInfo',
+       guard_with_startup_progress(function (resp) {
+         var data = workaround(resp.beans[0]);
+         var base = dust.makeBase(HELPERS);
+@@ -387,7 +387,7 @@
+ 
+   function load_snapshot_info() {
+     $.get(
+-      '/jmx?qry=Hadoop:service=NameNode,name=SnapshotInfo',
++      'jmx?qry=Hadoop:service=NameNode,name=SnapshotInfo',
+       guard_with_startup_progress(function (resp) {
+       dust.render('snapshot-info', resp.beans[0], function(err, out) {
+           $('#tab-snapshot').html(out);
+diff --git a/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/hdfs/explorer.html b/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/hdfs/explorer.html
+index f996b0c6f86..0b3100d6cc7 100644
+--- a/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/hdfs/explorer.html
++++ b/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/hdfs/explorer.html
+@@ -19,10 +19,10 @@
+ <html xmlns="http://www.w3.org/1999/xhtml">
+   <head>
+     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+-    <link rel="stylesheet" type="text/css" href="/static/bootstrap-3.3.7/css/bootstrap.min.css" />
+-    <link rel="stylesheet" type="text/css" href="/static/bootstrap-3.3.7/css/bootstrap-editable.css"/>
+-    <link rel="stylesheet" type="text/css" href="/static/dataTables.bootstrap.css" />
+-    <link rel="stylesheet" type="text/css" href="/static/hadoop.css" />
++    <link rel="stylesheet" type="text/css" href="static/bootstrap-3.3.7/css/bootstrap.min.css" />
++    <link rel="stylesheet" type="text/css" href="static/bootstrap-3.3.7/css/bootstrap-editable.css"/>
++    <link rel="stylesheet" type="text/css" href="static/dataTables.bootstrap.css" />
++    <link rel="stylesheet" type="text/css" href="static/hadoop.css" />
+     <title>Browsing HDFS</title>
+   </head>
+   <body>
+@@ -306,18 +306,18 @@ <h4 class="modal-title" id="delete-modal-title">Delete</h4>
+         </ul>
+       </p>
+     </script>
+-    <script type="text/javascript" src="/static/jquery-3.3.1.min.js">
+-    </script><script type="text/javascript" src="/static/jquery.dataTables.min.js">
+-    </script><script type="text/javascript" src="/static/bootstrap-3.3.7/js/bootstrap.min.js">
+-    </script><script type="text/javascript" src="/static/bootstrap-3.3.7/js/bootstrap-editable.min.js">
+-    </script><script type="text/javascript" src="/static/dataTables.bootstrap.js">
+-    </script><script type="text/javascript" src="/static/dust-full-2.0.0.min.js">
+-    </script><script type="text/javascript" src="/static/dust-helpers-1.1.1.min.js">
+-    </script><script type="text/javascript" src="/static/dfs-dust.js">
+-    </script><script type="text/javascript" src="/static/json-bignum.js">
+-    </script><script type="text/javascript" src="/static/rest-csrf.js">
++    <script type="text/javascript" src="static/jquery-3.3.1.min.js">
++    </script><script type="text/javascript" src="static/jquery.dataTables.min.js">
++    </script><script type="text/javascript" src="static/bootstrap-3.3.7/js/bootstrap.min.js">
++    </script><script type="text/javascript" src="static/bootstrap-3.3.7/js/bootstrap-editable.min.js">
++    </script><script type="text/javascript" src="static/dataTables.bootstrap.js">
++    </script><script type="text/javascript" src="static/dust-full-2.0.0.min.js">
++    </script><script type="text/javascript" src="static/dust-helpers-1.1.1.min.js">
++    </script><script type="text/javascript" src="static/dfs-dust.js">
++    </script><script type="text/javascript" src="static/json-bignum.js">
++    </script><script type="text/javascript" src="static/rest-csrf.js">
+     </script><script type="text/javascript" src="explorer.js">
+-    </script><script type="text/javascript" src="/static/moment.min.js">
++    </script><script type="text/javascript" src="static/moment.min.js">
+     </script>
+   </body>
+ </html>
+diff --git a/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/hdfs/explorer.js b/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/hdfs/explorer.js
+index de9916e5615..eef25530072 100644
+--- a/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/hdfs/explorer.js
++++ b/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/hdfs/explorer.js
+@@ -85,8 +85,8 @@
+       + " ?");
+ 
+     $('#delete-button').click(function() {
+-      // DELETE /webhdfs/v1/<path>?op=DELETE&recursive=<true|false>
+-      var url = '/webhdfs/v1' + encode_path(absolute_file_path) +
++      // DELETE webhdfs/v1/<path>?op=DELETE&recursive=<true|false>
++      var url = 'webhdfs/v1' + encode_path(absolute_file_path) +
+         '?op=DELETE' + '&recursive=true';
+ 
+       $.ajax(url,
+@@ -134,7 +134,7 @@
+     var permission_mask = p.toString(8);
+ 
+     // PUT /webhdfs/v1/<path>?op=SETPERMISSION&permission=<permission>
+-    var url = '/webhdfs/v1' + encode_path(abs_path) +
++    var url = 'webhdfs/v1' + encode_path(abs_path) +
+       '?op=SETPERMISSION' + '&permission=' + permission_mask;
+ 
+     $.ajax(url, { type: 'PUT'
+@@ -177,7 +177,7 @@
+     }
+ 
+     abs_path = encode_path(abs_path);
+-    var url = '/webhdfs/v1' + abs_path + '?op=GET_BLOCK_LOCATIONS';
++    var url = 'webhdfs/v1' + abs_path + '?op=GET_BLOCK_LOCATIONS';
+     $.ajax({url: url, dataType: 'text'}).done(function(data_text) {
+       var data = JSONParseBigNum(data_text);
+       var d = get_response(data, "LocatedBlocks");
+@@ -189,7 +189,7 @@
+       $('#file-info-tail').hide();
+       $('#file-info-title').text("File information - " + path);
+ 
+-      var download_url = '/webhdfs/v1' + abs_path + '?op=OPEN';
++      var download_url = 'webhdfs/v1' + abs_path + '?op=OPEN';
+ 
+       $('#file-info-download').attr('href', download_url);
+ 
+@@ -250,7 +250,7 @@
+         url: function(params) {
+           var inode_name = $(this).closest('tr').attr('inode-path');
+           var absolute_file_path = append_path(current_directory, inode_name);
+-          var url = '/webhdfs/v1' + encode_path(absolute_file_path) + '?op=' +
++          var url = 'webhdfs/v1' + encode_path(absolute_file_path) + '?op=' +
+             op + '&' + parameter + '=' + encodeURIComponent(params.value);
+ 
+           return $.ajax(url, { type: 'PUT', })
+@@ -293,7 +293,7 @@
+         return chunk.write('' + moment(Number(value)).format('ddd MMM DD HH:mm:ss ZZ YYYY'));
+       }
+     };
+-    var url = '/webhdfs/v1' + encode_path(dir) + '?op=LISTSTATUS';
++    var url = 'webhdfs/v1' + encode_path(dir) + '?op=LISTSTATUS';
+     $.get(url, function(data) {
+       var d = get_response(data, "FileStatuses");
+       if (d === null) {
+@@ -392,7 +392,7 @@
+     $(this).prop('disabled', true);
+     $(this).button('complete');
+ 
+-    var url = '/webhdfs/v1' + encode_path(append_path(current_directory,
++    var url = 'webhdfs/v1' + encode_path(append_path(current_directory,
+       $('#new_directory').val())) + '?op=MKDIRS';
+ 
+     $.ajax(url, { type: 'PUT' }
+@@ -442,7 +442,7 @@
+     for(var i = 0; i < $('#modal-upload-file-input').prop('files').length; i++) {
+       (function() {
+         var file = $('#modal-upload-file-input').prop('files')[i];
+-        var url = '/webhdfs/v1' + encode_path(append_path(current_directory, file.name));
++        var url = 'webhdfs/v1' + encode_path(append_path(current_directory, file.name));
+         url += '?op=CREATE&noredirect=true';
+         files.push( { file: file } )
+         files[i].request = $.ajax({
+@@ -508,7 +508,7 @@
+     var files = JSON.parse(sessionStorage.getItem("selected_file_names"));
+     var source_directory = sessionStorage.getItem("source_directory");
+     $.each(files, function(index, value) {
+-      var url = "/webhdfs/v1"
++      var url = "webhdfs/v1"
+         + encode_path(append_path(source_directory, value))
+         + '?op=RENAME&destination='
+         + encode_path(append_path(current_directory, value));
+diff --git a/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/journal/index.html b/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/journal/index.html
+index 8ed572ad5f0..b0489737dec 100644
+--- a/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/journal/index.html
++++ b/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/journal/index.html
+@@ -19,8 +19,8 @@
+ <html xmlns="http://www.w3.org/1999/xhtml">
+ <head>
+ <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+-<link rel="stylesheet" type="text/css" href="/static/bootstrap-3.3.7/css/bootstrap.min.css" />
+-<link rel="stylesheet" type="text/css" href="/static/hadoop.css" />
++<link rel="stylesheet" type="text/css" href="static/bootstrap-3.3.7/css/bootstrap.min.css" />
++<link rel="stylesheet" type="text/css" href="static/hadoop.css" />
+ <title>JournalNode Information</title>
+ </head>
+ <body>
+@@ -51,8 +51,8 @@
+ </div>
+ </div>
+ 
+-<script type="text/javascript" src="/static/jquery-3.3.1.min.js">
+-</script><script type="text/javascript" src="/static/bootstrap-3.3.7/js/bootstrap.min.js">
++<script type="text/javascript" src="static/jquery-3.3.1.min.js">
++</script><script type="text/javascript" src="static/bootstrap-3.3.7/js/bootstrap.min.js">
+ </script>
+ <script type="text/javascript">
+ $('#authority').html(window.location.host);
+diff --git a/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/secondary/snn.js b/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/secondary/snn.js
+index ff2e7850f81..0d8ae47cbe1 100644
+--- a/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/secondary/snn.js
++++ b/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/secondary/snn.js
+@@ -43,11 +43,11 @@
+   }
+ 
+   function load() {
+-    $.getJSON('/jmx?qry=Hadoop:service=SecondaryNameNode,name=SecondaryNameNodeInfo', function(resp) {
++    $.getJSON('jmx?qry=Hadoop:service=SecondaryNameNode,name=SecondaryNameNodeInfo', function(resp) {
+       data.snn = resp.beans[0];
+     }).always(finished_request);
+ 
+-    $.ajax({'url': '/conf', 'dataType': 'xml'}).done(function(d) {
++    $.ajax({'url': 'conf', 'dataType': 'xml'}).done(function(d) {
+       var $xml = $(d);
+       var confs = {};
+       $xml.find('property').each(function(idx,v) {
+diff --git a/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/secondary/status.html b/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/secondary/status.html
+index ff2f7ce153f..12c65ecfe99 100644
+--- a/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/secondary/status.html
++++ b/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/secondary/status.html
+@@ -20,8 +20,8 @@
+ <head>
+   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+   <link rel="stylesheet" type="text/css"
+-       href="/static/bootstrap-3.3.7/css/bootstrap.min.css" />
+-  <link rel="stylesheet" type="text/css" href="/static/hadoop.css" />
++       href="static/bootstrap-3.3.7/css/bootstrap.min.css" />
++  <link rel="stylesheet" type="text/css" href="static/hadoop.css" />
+   <title>SecondaryNamenode information</title>
+ </head>
+ <body>
+@@ -86,11 +86,11 @@
+ {/snn}
+ </script>
+ 
+-<script type="text/javascript" src="/static/jquery-3.3.1.min.js">
+-</script><script type="text/javascript" src="/static/bootstrap-3.3.7/js/bootstrap.min.js">
+-</script><script type="text/javascript" src="/static/dust-full-2.0.0.min.js">
+-</script><script type="text/javascript" src="/static/dust-helpers-1.1.1.min.js">
+-</script><script type="text/javascript" src="/static/dfs-dust.js">
++<script type="text/javascript" src="static/jquery-3.3.1.min.js">
++</script><script type="text/javascript" src="static/bootstrap-3.3.7/js/bootstrap.min.js">
++</script><script type="text/javascript" src="static/dust-full-2.0.0.min.js">
++</script><script type="text/javascript" src="static/dust-helpers-1.1.1.min.js">
++</script><script type="text/javascript" src="static/dfs-dust.js">
+ </script><script type="text/javascript" src="snn.js">
+ </script>
+ </body>
+diff --git a/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/static/rest-csrf.js b/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/static/rest-csrf.js
+index 973a8e815fd..fc4af68aa22 100644
+--- a/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/static/rest-csrf.js
++++ b/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/static/rest-csrf.js
+@@ -26,7 +26,7 @@
+   var restCsrfCustomHeader = null;
+   var restCsrfMethodsToIgnore = null;
+ 
+-  $.ajax({'url': '/conf', 'dataType': 'xml', 'async': false}).done(
++  $.ajax({'url': 'conf', 'dataType': 'xml', 'async': false}).done(
+     function(data) {
+       function getBooleanValue(element) {
+         return ($(element).find('value').text().trim().toLowerCase() === 'true')
+@@ -79,7 +79,7 @@
+   // Adds custom headers to request if necessary.  This is done only for WebHDFS
+   // URLs, and only if it's not an ignored method.
+   function addRestCsrfCustomHeader(xhr, settings) {
+-    if (settings.url == null || !settings.url.startsWith('/webhdfs/')) {
++    if (settings.url == null || !settings.url.startsWith('webhdfs/')) {
+       return;
+     }
+     var method = settings.type;

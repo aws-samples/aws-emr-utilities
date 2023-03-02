@@ -1,0 +1,38 @@
+ARG BASE_IMAGE_NAME=895885662937.dkr.ecr.us-west-2.amazonaws.com/spark/emr-6.8.0
+ARG BASE_IMAGE_TAG=latest
+
+
+FROM ${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}
+ARG USER=hadoop
+ARG GROUP=hadoop
+
+USER root
+
+RUN curl -o /etc/yum.repos.d/alsadi-dumb-init-epel-7.repo -sSL https://copr.fedorainfracloud.org/coprs/alsadi/dumb-init/repo/epel-7/alsadi-dumb-init-epel-7.repo
+RUN yum update -y && yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+RUN yum install -y xmlstarlet dumb-init jq
+# RUN yum install -y sudo && echo "hadoop ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+RUN mkdir -p /usr/lib/hadoop-hdfs \
+	&&  mkdir -p /usr/lib/hadoop-yarn \
+	&&  mkdir -p /usr/lib/hadoop-mapreduce \
+	&& chown -R ${USER}:${GROUP} /var/log/hadoop-hdfs
+
+COPY ./files/hadoop-hdfs /usr/lib/hadoop-hdfs
+COPY ./entrypoint.sh /
+
+RUN chmod -R 755 /usr/lib/hadoop-hdfs
+ENTRYPOINT ["/entrypoint.sh", "hdfs"]
+
+RUN for i in $(seq 1 8); do mkdir -p -m 755 /data${i} && chown ${USER}:${GROUP} -R /data${i}; done
+VOLUME /data1 /data2 /data3 /data4 /data5 /data6 /data7 /data8
+
+USER ${USER}
+ENV JAVA_HOME /usr/lib/jvm/java-1.8.0-amazon-corretto.x86_64/jre/
+ENV HADOOP_HOME /usr/lib/hadoop
+ENV HDFS_HOME /usr/lib/hadoop-hdfs
+ENV HADOOP_YARN_HOME /usr/lib/hadoop-mapreduce
+ENV HADOOP_MAPRED_HOME /usr/lib/hadoop-mapreduce
+ENV HADOOP_LOG_DIR /var/log/hadoop-hdfs
+ENV PATH $HDFS_HOME/bin:$HADOOP_HOME/bin:$PATH
+
+RUN hadoop checknative -a || true

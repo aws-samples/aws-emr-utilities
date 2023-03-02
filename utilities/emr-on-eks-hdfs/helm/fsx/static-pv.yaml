@@ -1,0 +1,252 @@
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nn0-pv
+spec:
+  storageClassName: fsx
+  capacity:
+    storage: 150Gi
+  persistentVolumeReclaimPolicy: Recycle
+  mountOptions:
+    - flock
+  accessModes:
+    - ReadWriteMany
+  csi:
+    driver: fsx.csi.aws.com
+    volumeHandle: fs-083915de896b6b07d
+    volumeAttributes:
+      dnsname: fs-083915de896b6b07d.fsx.us-west-2.amazonaws.com
+      mountname: zhysnbev
+
+
+# 3 data volumes per Fsx file system
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: vol0-pv-0
+spec:
+  storageClassName: fsx
+  capacity:
+    storage: 350Gi
+  persistentVolumeReclaimPolicy: Recycle
+  mountOptions:
+    - flock
+  accessModes:
+    - ReadWriteMany
+  csi:
+    driver: fsx.csi.aws.com
+    volumeHandle: fs-083915de896b6b07d
+    volumeAttributes:
+      dnsname: fs-083915de896b6b07d.fsx.us-west-2.amazonaws.com
+      mountname: zhysnbev
+  claimRef:
+    name: vol0-hdfs-datanode-0
+    namespace: emr 
+
+
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: vol1-pv-0
+spec:
+  storageClassName: fsx
+  capacity:
+    storage: 350Gi
+  persistentVolumeReclaimPolicy: Recycle
+  mountOptions:
+    - flock
+  accessModes:
+    - ReadWriteMany
+  csi:
+    driver: fsx.csi.aws.com
+    volumeHandle: fs-083915de896b6b07d
+    volumeAttributes:
+      dnsname: fs-083915de896b6b07d.fsx.us-west-2.amazonaws.com
+      mountname: zhysnbev
+  claimRef:
+    name: vol1-hdfs-datanode-0
+    namespace: emr 
+
+
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: vol2-pv-0
+spec:
+  storageClassName: fsx
+  capacity:
+    storage: 350Gi
+  persistentVolumeReclaimPolicy: Recycle
+  mountOptions:
+    - flock
+  accessModes:
+    - ReadWriteMany
+  csi:
+    driver: fsx.csi.aws.com
+    volumeHandle: fs-083915de896b6b07d
+    volumeAttributes:
+      dnsname: fs-083915de896b6b07d.fsx.us-west-2.amazonaws.com
+      mountname: zhysnbev
+  claimRef:
+    name: vol2-hdfs-datanode-0
+    namespace: emr 
+ 
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: vol0-pv-1
+spec:
+  storageClassName: fsx
+  capacity:
+    storage: 350Gi
+  persistentVolumeReclaimPolicy: Recycle
+  mountOptions:
+    - flock
+  accessModes:
+    - ReadWriteMany
+  csi:
+    driver: fsx.csi.aws.com
+    volumeHandle: fs-0e884b967a83fc28b
+    volumeAttributes:
+      dnsname: fs-0e884b967a83fc28b.fsx.us-west-2.amazonaws.com
+      mountname: veqspbev
+  claimRef:
+    name: vol0-hdfs-datanode-1
+    namespace: emr 
+
+    
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: vol1-pv-1
+spec:
+  storageClassName: fsx
+  capacity:
+    storage: 350Gi
+  persistentVolumeReclaimPolicy: Recycle
+  mountOptions:
+    - flock
+  accessModes:
+    - ReadWriteMany
+  csi:
+    driver: fsx.csi.aws.com
+    volumeHandle: fs-0e884b967a83fc28b
+    volumeAttributes:
+      dnsname: fs-0e884b967a83fc28b.fsx.us-west-2.amazonaws.com
+      mountname: veqspbev
+  claimRef:
+    name: vol1-hdfs-datanode-1
+    namespace: emr 
+
+    
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: vol2-pv-1
+spec:
+  storageClassName: fsx
+  capacity:
+    storage: 350Gi
+  persistentVolumeReclaimPolicy: Recycle
+  mountOptions:
+    - flock
+  accessModes:
+    - ReadWriteMany
+  csi:
+    driver: fsx.csi.aws.com
+    volumeHandle: fs-0e884b967a83fc28b
+    volumeAttributes:
+      dnsname: fs-0e884b967a83fc28b.fsx.us-west-2.amazonaws.com
+      mountname: veqspbev
+  claimRef:
+    name: vol2-hdfs-datanode-1
+    namespace: emr 
+
+
+           
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: vol0-pv-2
+spec:
+  storageClassName: fsx
+  capacity:
+    storage: 350Gi
+  persistentVolumeReclaimPolicy: Recycle
+  mountOptions:
+    - flock
+  accessModes:
+    - ReadWriteMany
+  csi:
+    driver: fsx.csi.aws.com
+    volumeHandle: fs-09194e49dcc53dfd4
+    volumeAttributes:
+      dnsname: fs-09194e49dcc53dfd4.fsx.us-west-2.amazonaws.com
+      mountname: 2dysnbev
+  claimRef:
+    name: vol0-hdfs-datanode-2
+    namespace: emr 
+
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: vol1-pv-2
+spec:
+  storageClassName: fsx
+  capacity:
+    storage: 350Gi
+  persistentVolumeReclaimPolicy: Recycle
+  mountOptions:
+    - flock
+  accessModes:
+    - ReadWriteMany
+  csi:
+    driver: fsx.csi.aws.com
+    volumeHandle: fs-09194e49dcc53dfd4
+    volumeAttributes:
+      dnsname: fs-09194e49dcc53dfd4.fsx.us-west-2.amazonaws.com
+      mountname: 2dysnbev
+  claimRef:
+    name: vol1-hdfs-datanode-2
+    namespace: emr   
+  
+
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: vol2-pv-2
+spec:
+  storageClassName: fsx
+  capacity:
+    storage: 350Gi
+  persistentVolumeReclaimPolicy: Recycle
+  mountOptions:
+    - flock
+  accessModes:
+    - ReadWriteMany
+  csi:
+    driver: fsx.csi.aws.com
+    volumeHandle: fs-09194e49dcc53dfd4
+    volumeAttributes:
+      dnsname: fs-09194e49dcc53dfd4.fsx.us-west-2.amazonaws.com
+      mountname: 2dysnbev
+  claimRef:
+    name: vol2-hdfs-datanode-2
+    namespace: emr 
+

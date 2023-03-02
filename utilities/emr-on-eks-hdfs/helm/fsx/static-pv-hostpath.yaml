@@ -1,0 +1,198 @@
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: vol0-hdfs-datanode-0
+spec:
+  storageClassName: fsx
+  capacity:
+    storage: 220Gi
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Recycle
+  accessModes:
+    - ReadWriteOnce
+  # To get the subpath created under 1000 userid, it must be configured by the s3 data repo before hand
+  hostPath:
+    path: "/fsx/dn0"
+  claimRef:
+    name: vol0-hdfs-datanode-0
+    namespace: emr 
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: vol0-hdfs-datanode-1
+spec:
+  storageClassName: fsx
+  capacity:
+    storage: 220Gi
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Recycle
+  accessModes:
+    - ReadWriteOnce
+  # To get the subpath created under 1000 userid, it must be configured by the s3 data repo before hand
+  hostPath:
+    path: "/fsx/dn0"
+  claimRef:
+    name: vol0-hdfs-datanode-1
+    namespace: emr
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: vol0-hdfs-datanode-2
+spec:
+  storageClassName: fsx
+  capacity:
+    storage: 220Gi
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Recycle
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/fsx/dn0"
+  claimRef:
+    name: vol0-hdfs-datanode-2
+    namespace: emr
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: vol0-hdfs-namenode-0
+spec:
+  storageClassName: fsx
+  capacity:
+    storage: 200Gi
+  volumeMode: Filesystem
+  storageClassName: fsx
+  accessModes:
+    - ReadWriteOnce
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Recycle
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/fsx/nn0"
+  claimRef:
+    name: vol0-hdfs-namenode-0
+    namespace: emr  
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: vol1-hdfs-datanode-0
+spec:
+  storageClassName: fsx
+  capacity:
+    storage: 220Gi
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Recycle
+  accessModes:
+    - ReadWriteOnce
+  # To get the subpath created under 1000 userid, it must be configured by the s3 data repo before hand
+  hostPath:
+    path: "/fsx/dn1"
+  claimRef:
+    name: vol1-hdfs-datanode-0
+    namespace: emr
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: vol1-hdfs-datanode-1
+spec:
+  storageClassName: fsx
+  capacity:
+    storage: 220Gi
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Recycle
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/fsx/dn1"
+  claimRef:
+    name: vol1-hdfs-datanode-1
+    namespace: emr
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: vol1-hdfs-datanode-2
+spec:
+  storageClassName: fsx
+  capacity:
+    storage: 220Gi
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Recycle
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/fsx/dn1"
+  claimRef:
+    name: vol1-hdfs-datanode-2
+    namespace: emr
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: vol2-hdfs-datanode-0
+spec:
+  storageClassName: fsx
+  capacity:
+    storage: 220Gi
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Recycle
+  accessModes:
+    - ReadWriteOnce
+  # To get the subpath created under 1000 userid, it must be configured by the s3 data repo before hand
+  hostPath:
+    path: "/fsx/dn2"
+  claimRef:
+    name: vol2-hdfs-datanode-0
+    namespace: emr
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: vol2-hdfs-datanode-1
+spec:
+  storageClassName: fsx
+  capacity:
+    storage: 220Gi
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Recycle
+  accessModes:
+    - ReadWriteOnce
+  # To get the subpath created under 1000 userid, it must be configured by the s3 data repo before hand
+  hostPath:
+    path: "/fsx/dn2"
+  claimRef:
+    name: vol2-hdfs-datanode-1
+    namespace: emr
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: vol2-hdfs-datanode-2
+spec:
+  storageClassName: fsx
+  capacity:
+    storage: 220Gi
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Recycle
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/fsx/dn2"
+  claimRef:
+    name: vol2-hdfs-datanode-2
+    namespace: emr

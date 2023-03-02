@@ -1,0 +1,61 @@
+---
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+metadata:
+  name: $EKSCLUSTER_NAME
+  region: $AWS_REGION
+  version: "1.22"
+vpc:
+  clusterEndpoints:
+      publicAccess: true
+      privateAccess: true  
+availabilityZones: ["${AWS_REGION}a","${AWS_REGION}b"]
+iam:
+  withOIDC: true
+  serviceAccounts:
+  - metadata:
+      name: cluster-autoscaler
+      namespace: kube-system
+      labels: {aws-usage: "cluster-ops"}
+    wellKnownPolicies:
+      autoScaler: true
+    roleName: eksctl-cluster-autoscaler-role
+  - metadata:
+      name: oss
+      namespace: oss
+      labels: {aws-usage: "application"}
+    attachPolicyARNs:
+    - arn:aws:iam::$ACCOUNTID:policy/$ROLE_NAME-policy
+  # - metadata:
+  #     name: amp-iamproxy-ingest-service-account
+  #     namespace: prometheus
+  #     labels: {aws-usage: "monitoring"}
+  #   attachPolicyARNs: 
+  #   - "arn:aws:iam::aws:policy/AmazonPrometheusRemoteWriteAccess"
+  #   roleName: eks-rss-prometheus-ingest 
+  #   roleOnly: true    
+managedNodeGroups: 
+  - name: hdfs-mn
+    availabilityZones: ["us-west-2b"] 
+    # mount fsx for lustre at the node level
+    preBootstrapCommands:
+      - "sudo amazon-linux-extras install -y lustre; sudo mkdir -p /fsx;"
+      - "sudo echo fs-0082b23e03351fa9b.fsx.us-west-2.amazonaws.com@tcp:/o3iclbev /fsx lustre defaults,noatime,flock,_netdev,x-systemd.automount,x-systemd.requires=network.service 0 0 >> /etc/fstab;"
+      - "sudo mount -a;"
+      - "sudo chown -R ec2-user:ec2-user /fsx"
+    instanceType: c5.9xlarge
+    volumeSize: 30
+    volumeType: gp3
+    minSize: 1
+    desiredCapacity: 1
+    maxSize: 50
+    labels:
+      app: hdfs
+    tags:
+      # required for cluster-autoscaler auto-discovery
+      k8s.io/cluster-autoscaler/enabled: "true"
+      k8s.io/cluster-autoscaler/eks-rss: "owned"   
+# enable all of the control plane logs
+cloudWatch:
+ clusterLogging:
+   enableTypes: ["*"]

@@ -1,0 +1,116 @@
+diff --git a/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/ipc/Client.java b/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/ipc/Client.java
+index efd77a0071f..4c4e4933a03 100644
+--- a/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/ipc/Client.java
++++ b/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/ipc/Client.java
+@@ -455,13 +455,6 @@ public synchronized Writable getRpcResponse() {
+     public Connection(ConnectionId remoteId, int serviceClass) throws IOException {
+       this.remoteId = remoteId;
+       this.server = remoteId.getAddress();
+-      if (server.isUnresolved()) {
+-        throw NetUtils.wrapException(server.getHostName(),
+-            server.getPort(),
+-            null,
+-            0,
+-            new UnknownHostException());
+-      }
+       this.maxResponseLength = remoteId.conf.getInt(
+           CommonConfigurationKeys.IPC_MAXIMUM_RESPONSE_LENGTH,
+           CommonConfigurationKeys.IPC_MAXIMUM_RESPONSE_LENGTH_DEFAULT);
+@@ -654,6 +647,15 @@ private synchronized void setupConnection(
+       short timeoutFailures = 0;
+       while (true) {
+         try {
++          if (server.isUnresolved()) {
++            throw NetUtils.wrapException(
++              server.getHostName(),
++              server.getPort(),
++              null,
++              0,
++              new UnknownHostException()
++           );
++          }
+           this.socket = socketFactory.createSocket();
+           this.socket.setTcpNoDelay(tcpNoDelay);
+           this.socket.setKeepAlive(true);
+diff --git a/hadoop-common-project/hadoop-common/src/test/java/org/apache/hadoop/ipc/TestIPC.java b/hadoop-common-project/hadoop-common/src/test/java/org/apache/hadoop/ipc/TestIPC.java
+index 7ba4e53af87..40a4e95eeae 100644
+--- a/hadoop-common-project/hadoop-common/src/test/java/org/apache/hadoop/ipc/TestIPC.java
++++ b/hadoop-common-project/hadoop-common/src/test/java/org/apache/hadoop/ipc/TestIPC.java
+@@ -47,6 +47,7 @@
+ import java.net.SocketAddress;
+ import java.net.SocketException;
+ import java.net.SocketTimeoutException;
++import java.net.UnknownHostException;
+ import java.util.ArrayList;
+ import java.util.Collections;
+ import java.util.HashSet;
+@@ -54,6 +55,7 @@
+ import java.util.Random;
+ import java.util.Set;
+ import java.util.concurrent.BrokenBarrierException;
++import java.util.concurrent.Callable;
+ import java.util.concurrent.CountDownLatch;
+ import java.util.concurrent.CyclicBarrier;
+ import java.util.concurrent.ExecutorService;
+@@ -88,6 +90,7 @@
+ import org.apache.hadoop.security.UserGroupInformation.AuthenticationMethod;
+ import org.apache.hadoop.security.token.SecretManager.InvalidToken;
+ import org.apache.hadoop.test.GenericTestUtils;
++import org.apache.hadoop.test.LambdaTestUtils;
+ import org.apache.hadoop.test.Whitebox;
+ import org.apache.hadoop.util.StringUtils;
+ import org.junit.Assert;
+@@ -730,7 +733,52 @@ public void testIpcConnectTimeout() throws IOException {
+     }
+     client.stop();
+   }
+-  
++
++  @Test(timeout=60000)
++  public void testIpcHostResolutionTimeout() throws Exception {
++    final InetSocketAddress addr = new InetSocketAddress("host.invalid", 80);
++
++    // start client
++    Client.setConnectTimeout(conf, 100);
++    final Client client = new Client(LongWritable.class, conf);
++    // set the rpc timeout to twice the MIN_SLEEP_TIME
++    try {
++      LambdaTestUtils.intercept(UnknownHostException.class, new Callable<Void>() {
++        @Override
++        public Void call() throws IOException {
++          TestIPC.this.call(client, new LongWritable(RANDOM.nextLong()), addr, MIN_SLEEP_TIME * 2, conf);
++          return null;
++        }
++      });
++    } finally {
++      client.stop();
++    }
++  }
++
++  @Test(timeout=60000)
++  public void testIpcFlakyHostResolution() throws IOException {
++    // start server
++    Server server = new TestServer(5, false);
++    server.start();
++
++    // Leave host unresolved to start. Use "localhost" as opposed
++    // to local IP from NetUtils.getConnectAddress(server) to force
++    // resolution later
++    InetSocketAddress unresolvedAddr = InetSocketAddress.createUnresolved("localhost", NetUtils.getConnectAddress(server).getPort());
++
++    // start client
++    Client.setConnectTimeout(conf, 100);
++    Client client = new Client(LongWritable.class, conf);
++
++    try {
++      // Should re-resolve host and succeed
++      call(client, new LongWritable(RANDOM.nextLong()), unresolvedAddr,MIN_SLEEP_TIME * 2, conf);
++    } finally {
++      client.stop();
++      server.stop();
++    }
++  }
++
+   /**
+    * Check service class byte in IPC header is correct on wire.
+    */
