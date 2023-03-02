@@ -1,0 +1,13 @@
+diff --git a/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-applications/hadoop-yarn-applications-catalog/hadoop-yarn-applications-catalog-webapp/pom.xml b/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-applications/hadoop-yarn-applications-catalog/hadoop-yarn-applications-catalog-webapp/pom.xml
+index 54577cf32a1..d6a98681eca 100644
+--- a/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-applications/hadoop-yarn-applications-catalog/hadoop-yarn-applications-catalog-webapp/pom.xml
++++ b/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-applications/hadoop-yarn-applications-catalog/hadoop-yarn-applications-catalog-webapp/pom.xml
+@@ -256,7 +256,7 @@
+                         </goals>
+                         <phase>generate-resources</phase>
+                         <configuration>
+-                            <nodeVersion>v8.11.3</nodeVersion>
++                            <nodeVersion>v12.22.5</nodeVersion>
+                             <yarnVersion>v1.7.0</yarnVersion>
+                         </configuration>
+                     </execution>

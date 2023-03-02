@@ -1,0 +1,88 @@
+{{- /*
+
+Copyright 2020 Crown Copyright
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+*/ -}}
+{{- if .Values.shell.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "hdfs.fullname" . }}-shell
+  labels:
+    {{- include "hdfs.labels" . | nindent 4 }}
+    app.kubernetes.io/component: shell
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "hdfs.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: shell
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
+        checksum/secrets: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+      labels:
+        {{- include "hdfs.labels" . | nindent 8 }}
+        app.kubernetes.io/component: shell
+    spec:
+      containers:
+      - name: shell
+        image: {{ .Values.shell.repository }}:{{ .Values.shell.tag }}
+        imagePullPolicy: {{ .Values.shell.imagePullPolicy }}
+        command:
+        - /bin/bash
+        stdin: true
+        tty: true
+        env:
+        - name: HADOOP_CONF_DIR
+          value: {{ .Values.config.path }}
+        volumeMounts:
+        - name: config
+          mountPath: {{ .Values.config.path }}
+          readOnly: true
+        - name: secrets
+          mountPath: {{ .Values.secrets.path }}
+          readOnly: true
+        resources:
+          {{- toYaml .Values.shell.resources | nindent 10 }}
+      volumes:
+      - name: config
+        configMap:
+          name: {{ template "hdfs.fullname" . }}
+          optional: false
+      - name: secrets
+        secret:
+          secretName: {{ template "hdfs.fullname" . }}
+          optional: false
+      {{- with .Values.shell.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.shell.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.shell.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.shell.imagePullSecrets }}
+      imagePullSecrets:
+      {{- range . }}
+      - name: {{ . }}
+      {{- end }}
+      {{- end }}
+{{- end }}

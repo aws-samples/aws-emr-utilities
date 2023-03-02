@@ -1,0 +1,134 @@
+# Copyright 2020 Crown Copyright
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+alpine:
+  repository: alpine
+  tag: 3.10.2
+  imagePullPolicy: IfNotPresent
+namenode:
+  repository: melodydocker/hdfs
+  tag: latest
+  # repository: gchq/hdfs # oss version
+  # tag: 3.2.1 
+  imagePullPolicy: Always
+  imagePullSecrets: []
+  resources: {}
+  nodeSelector: 
+    app: sparktest
+    eks.amazonaws.com/nodegroup: c59b
+  tolerations: []
+  affinity: {}
+  securityContext:
+    # runAsUser: 1000 # hadoop user in oss
+    runAsUser: 999 # hadoop user in EMR
+    fsGroup: 1000
+  ports:
+    http: 9870
+    https: 9871
+    clientRpc: 8020
+    serviceRpc: 8021
+    lifelineRpc: 8022
+  dataVolumes:
+    count: 1
+    pvcTemplateSpec:
+      # namenode disk is small, use the default gp2 EBS volume
+      storageClassName: null
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 50Gi
+  extraEnvVars: {}
+  # Example usage:
+  # HADOOP_HEAPSIZE_MIN: 128m
+  # hadoop.heapsize.min: 128m
+datanode:
+  nodeCount: 2
+  repository: melodydocker/hdfs
+  tag: latest
+  # repository: gchq/hdfs # oss version
+  # tag: 3.2.1 
+  imagePullPolicy: Always
+  imagePullSecrets: []
+  resources: {}
+  nodeSelector: 
+    app: sparktest
+    eks.amazonaws.com/nodegroup: c59b
+  tolerations: []
+  affinity: {}
+  securityContext:
+    runAsUser: 999
+    fsGroup: 1000
+  ports:
+    http: 9864
+    https: 9865
+    data: 9866
+    ipc: 9867
+  dataVolumes:
+    count: 2
+    # dynamically provision Fsx for lustre per datanode pod
+    pvcTemplateSpec:
+      storageClassName: fsx
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 550Gi
+  extraEnvVars: {}
+  # Example usage:
+  # HADOOP_HEAPSIZE_MIN: 128m
+  # hadoop.heapsize.min: 128m
+shell:
+  enabled: true
+  repository: melodydocker/hdfs
+  tag: latest
+  imagePullPolicy: Always
+  imagePullSecrets: []
+  resources: {}
+  nodeSelector: 
+    app: sparktest
+    eks.amazonaws.com/nodegroup: c59b
+  tolerations: []
+  affinity: {}
+config:
+  path: /etc/hadoop/conf
+  coreSite: {}
+  hdfsSite:
+    dfs.replication: 3
+    hadoop.security.authorization: true
+  rackAwareness:
+    serviceAccountName:
+    nodeTopologyLabel: topology.kubernetes.io/zone
+secrets:
+  path: /etc/hadoop/secrets
+  files: {}
+nameOverride: ""
+fullnameOverride: ""
+labels: {}
+ingress:
+  enabled: true
+  annotations:
+    traefik.ingress.kubernetes.io/rule-type: PathPrefixStrip
+  host: ""
+  # For Traefik:
+  # pathPrefix: /hdfs/
+  # For Nginx:
+  pathPrefix: "/hdfs/(.*)"
+postInstallCommands: []
+# - hadoop fs -mkdir -p /accumulo
+# - hadoop fs -chown accumulo /accumulo
+# - hadoop fs -chmod 700 /accumulo
+# - hadoop fs -ls /
+
+networkPolicy:
+  enabled: true

@@ -1,0 +1,15 @@
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: fsx
+provisioner: fsx.csi.aws.com
+parameters:
+  subnetId: $subnet_id
+  securityGroupIds: $security_group
+  deploymentType: PERSISTENT_2
+  perUnitStorageThroughput: "125"
+  dataCompressionType: LZ4
+  # PERSISTENT_2 type doesn't support the S3 sync setting
+  # s3ExportPath: s3://emr-on-eks-$ACCOUNT-$AWS_REGION/hdfssync
+  # s3ImportPath:  s3:/emr-on-eks-$ACCOUNT-$AWS_REGION/hdfssync

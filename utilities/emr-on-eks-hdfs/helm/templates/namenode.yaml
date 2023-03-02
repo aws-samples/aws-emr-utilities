@@ -1,0 +1,159 @@
+# Copyright 2020 Crown Copyright
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ template "hdfs.fullname" . }}-namenode
+  labels:
+    {{- include "hdfs.labels" . | nindent 4 }}
+    app.kubernetes.io/component: namenode
+spec:
+  podManagementPolicy: Parallel
+  replicas: 1
+  serviceName: {{ template "hdfs.fullname" . }}-namenodes
+  selector:
+    matchLabels:
+      {{- include "hdfs.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: namenode
+  volumeClaimTemplates:
+  # {{- range $vol := until (int .Values.namenode.dataVolumes.count) }}
+  - metadata:
+      # name: nn{{$vol}}
+      name: nn-vol
+      labels:
+        {{- include "hdfs.labels" $ | nindent 8 }}
+    spec:
+      # volumeName: nn{{$vol}}-pv
+      {{- toYaml $.Values.namenode.dataVolumes.pvcTemplateSpec | nindent 6 }}
+  # {{- end }}    
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
+        checksum/secrets: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+      labels:
+        {{- include "hdfs.labels" . | nindent 8 }}
+        app.kubernetes.io/component: namenode
+    spec:
+      {{- if and .Values.config.rackAwareness .Values.config.rackAwareness.nodeTopologyLabel }}
+      serviceAccountName: {{ template "hdfs.namenodeServiceAccountName" . }}
+      {{- end }}
+      initContainers:
+      - name: volume-permission
+        image: public.ecr.aws/y4g4v0z7/busybox
+        securityContext:
+          runAsUser: 0
+        command: ["sh", "-c", "chown -R {{ .Values.namenode.securityContext.runAsUser }}:{{ .Values.namenode.securityContext.fsGroup }} /fsx"] 
+        volumeMounts:
+      # {{- range $vol := until (int .Values.namenode.dataVolumes.count) }}
+        # - name: nn{{$vol}}
+        #   mountPath: /fsx/nn{{$vol}}
+      # {{- end }}
+          - name: nn-vol
+            mountPath: /fsx
+      containers:
+      - name: namenode
+        image: {{ .Values.namenode.repository }}:{{ .Values.namenode.tag }}
+        imagePullPolicy: {{ .Values.namenode.imagePullPolicy }}
+        args:
+        - namenode
+        env:
+        - name: HADOOP_CONF_DIR
+          value: {{ .Values.config.path }}
+        {{- range $key, $value := .Values.namenode.extraEnvVars }}
+        - name: {{ $key | upper | replace "." "_" }}
+          value: {{ $value | quote }}
+        {{- end }}
+        volumeMounts:
+        - name: config
+          mountPath: {{ .Values.config.path }}
+          readOnly: true
+        - name: secrets
+          mountPath: {{ .Values.secrets.path }}
+          readOnly: true
+        {{- if and .Values.config.rackAwareness .Values.config.rackAwareness.nodeTopologyLabel }}
+        - name: rack-awareness
+          mountPath: /scripts/resolve-rack.sh
+          subPath: resolve-rack.sh
+        {{- end }}
+      # {{- range $vol := until (int .Values.namenode.dataVolumes.count) }}
+        # - name: nn{{$vol}}
+        #   mountPath: /fsx/nn{{$vol}}
+      # {{- end }}
+        - name: nn-vol
+          mountPath: /fsx
+        ports:
+        - name: http
+          containerPort: {{ .Values.namenode.ports.http }}
+        - name: https
+          containerPort: {{ .Values.namenode.ports.https }}
+        - name: client-rpc
+          containerPort: {{ .Values.namenode.ports.clientRpc }}
+        - name: service-rpc
+          containerPort: {{ .Values.namenode.ports.serviceRpc }}
+        - name: lifeline-rpc
+          containerPort: {{ .Values.namenode.ports.lifelineRpc }}
+        livenessProbe:
+          exec:
+            command:
+            - /bin/bash
+            - -c
+            - hdfs dfsadmin -fs hdfs://localhost -safemode get
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 30
+          successThreshold: 1
+          failureThreshold: 2
+        resources:
+          {{- toYaml .Values.namenode.resources | nindent 10 }}
+      volumes:
+      - name: config
+        configMap:
+          name: {{ template "hdfs.fullname" . }}
+          optional: false
+      - name: secrets
+        secret:
+          secretName: {{ template "hdfs.fullname" . }}
+          optional: false
+      {{- if .Values.config.rackAwareness }}
+      {{- if .Values.config.rackAwareness.nodeTopologyLabel }}
+      - name: rack-awareness
+        configMap:
+          name: {{ template "hdfs.fullname" . }}-rack-awareness
+          defaultMode: 0755
+      {{- end }}
+      {{- end }}
+      {{- with .Values.namenode.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.namenode.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.namenode.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.namenode.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.namenode.imagePullSecrets }}
+      imagePullSecrets:
+      {{- range . }}
+      - name: {{ . }}
+      {{- end }}
+      {{- end }}

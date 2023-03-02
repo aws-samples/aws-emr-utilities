@@ -1,0 +1,55 @@
+{{- /*
+
+Copyright 2020 Crown Copyright
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+*/ -}}
+{{- if .Values.postInstallCommands }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ template "hdfs.fullname" . }}-post-install-cmds
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: hook-succeeded
+    helm.sh/hook-weight: "10"
+  labels:
+    {{- include "hdfs.labels" . | nindent 4 }}
+    app.kubernetes.io/component: hook
+spec:
+  restartPolicy: OnFailure
+  containers:
+  - name: cmds
+    image: {{ .Values.shell.repository }}:{{ .Values.shell.tag }}
+    imagePullPolicy: {{ .Values.shell.imagePullPolicy }}
+    command: ["/bin/bash", "-c", "until hadoop fs -ls / >/dev/null 2>&1 || [ $(( ATTEMPTS++ )) -gt 300 ]; do echo \"$(date) - Waiting for HDFS instance to be ready...\" && sleep 10; done && {{ join " && " .Values.postInstallCommands}}"]
+    env:
+    - name: HADOOP_CONF_DIR
+      value: {{ .Values.config.path }}
+    volumeMounts:
+    - name: config
+      mountPath: {{ .Values.config.path }}
+      readOnly: true
+  volumes:
+  - name: config
+    configMap:
+      name: {{ template "hdfs.fullname" . }}
+      optional: false
+  {{- with .Values.shell.imagePullSecrets }}
+  imagePullSecrets:
+  {{- range . }}
+  - name: {{ . }}
+  {{- end }}
+  {{- end }}
+{{- end }}
