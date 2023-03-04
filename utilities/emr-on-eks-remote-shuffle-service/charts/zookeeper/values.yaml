@@ -1,0 +1,20 @@
+replicaCount: 2
+# heapSize: 1024
+# dataLogDir: "/zk1/logs"
+resources:
+  limits: 
+    memory: 4096Mi
+    cpu: 500m
+  requests:
+    memory: 4096Mi
+    cpu: 500m
+nodeSelector:
+  node.kubernetes.io/instance-type: i3en.6xlarge    
+    
+# extraVolumeMounts:
+#   - name: zk-data-dir-1
+#     mountPath: /zk1
+# extraVolumes:
+#   - name: zk-data-dir-1
+#     hostPath:
+#       path: /local1

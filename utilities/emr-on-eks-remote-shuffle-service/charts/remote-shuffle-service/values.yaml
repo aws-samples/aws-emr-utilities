@@ -1,0 +1,43 @@
+replicas: 3
+
+image:
+  repository: public.ecr.aws/myang-poc/rss-server
+  tag: spark3.2.0
+  # repository: ghcr.io/datapunchorg/remoteshuffleservice
+  # tag: k8s-spark-3.2
+nodeSelector:
+  app: rss
+resources:
+  requests:
+    memory: "172G" #i3en.6xl
+    cpu: "21.6"
+  limits:
+    memory: "192G"
+    cpu: "24"
+
+securityContext:
+  runAsGroup: 0
+  runAsUser: 0
+# configure the shuffle service volume owner as Hadoop user (EMR on EKS is 999:1000, OSS Spark is 1000:1000)
+volumeUser: 999
+volumeGroup: 1000
+volumeMounts:
+  - name: spark-local-dir-1
+    mountPath: /rss1
+volumes:
+  - name: spark-local-dir-1
+    hostPath:
+      path: /local1
+
+command:
+  jvmHeapSizeOption: "-Xmx8192M"
+  # point to a nmve SSD volume as the shuffle data storage, not use root volume.
+  # the RSS only supports a single disk so far. Use storage optmized EC2 instance type.
+  rootdir: "/rss1"
+  dataRetentionMillis: "14400000"  # 4 hours
+  nettyAcceptThreads: 16
+  nettyWorkerThreads: 160
+
+ports:
+  shuffleServer: 9338
+  healthcheck: 8080

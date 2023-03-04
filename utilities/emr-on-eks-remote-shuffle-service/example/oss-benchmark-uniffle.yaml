@@ -1,0 +1,79 @@
+# // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# // SPDX-License-Identifier: MIT-0
+apiVersion: "sparkoperator.k8s.io/v1beta2"
+kind: SparkApplication
+metadata:
+  name: rss-benchmark
+  namespace: oss
+spec:
+  nodeSelector:
+    app: sparktest
+  type: Scala
+  mode: cluster
+  image: 021732063925.dkr.ecr.us-east-1.amazonaws.com/uniffle-spark-benchmark:3.2.0
+  imagePullPolicy: Always
+  sparkVersion: 3.2.0
+  mainClass: com.amazonaws.eks.tpcds.BenchmarkSQL
+  mainApplicationFile: local:///opt/spark/examples/jars/eks-spark-benchmark-assembly-1.0.jar
+  arguments:
+  # TPC-DS data localtion
+    - "s3://$(BUCKET_PARAM)/BLOG_TPCDS-TEST-3T-partitioned"
+  # results location
+    - "s3://$(BUCKET_PARAM)/OSS_TPCDS-TEST-3T-RESULT"
+  # Path to kit in the docker image
+    - "/opt/tpcds-kit/tools"
+  # Data Format
+    - "parquet"
+  # Scale factor (in GB)
+    - "3000"
+  # Number of iterations
+    - "1"
+  # Optimize queries with hive tables
+    - "false"
+  # Filter queries, will run all if empty - "q98-v2.4,q99-v2.4,ss_max-v2.4,q95-v2.4"
+    - "" 
+  # Logging set to WARN
+    - "true"
+  sparkConf:
+    "spark.network.timeout": "2000s"
+    "spark.executor.heartbeatInterval": "300s"  
+    # IRSA for S3 connection
+    "spark.kubernetes.executor.podNamePrefix": "oss-test-uniffle"
+    "spark.hadoop.fs.s3a.aws.credentials.provider": "com.amazonaws.auth.WebIdentityTokenCredentialsProvider"
+    "spark.hadoop.fs.s3.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem"
+    "spark.hadoop.mapreduce.fileoutputcommitter.algorithm.version": "2" 
+    "spark.serializer": "org.apache.spark.serializer.KryoSerializer"
+    # Enable Uniffle Remote Shuffle Service
+    "spark.shuffle.manager": "org.apache.spark.shuffle.RssShuffleManager"
+    "spark.rss.coordinator.quorum": "rss-coordinator-uniffle-rss-0.uniffle.svc.cluster.local:19997,rss-coordinator-uniffle-rss-1.uniffle.svc.cluster.local:19997"
+    "spark.rss.storage.type": "MEMORY_LOCALFILE"
+    "spark.rss.remote.storage.path": "/rss1/rssdata,/rss2/rssdata"
+    "spark.rss.writer.buffer.size": "1100k"
+    "spark.rss.client.send.threadPool.keepalive": "240"
+    "spark.rss.client.read.buffer.size": "20m"
+    "spark.rss.client.io.compression.codec": "SNAPPY"
+    # Assign the compute to the same AZ and replacement group as Uniffle RSS 
+    "spark.kubernetes.node.selector.eks.amazonaws.com/nodegroup": "c59b"
+  driver:
+    # javaOptions: "-Dlog4j.configuration=file:/etc/spark/conf/log4j.properties"
+    env:
+      - name: BUCKET_PARAM
+        valueFrom:
+          configMapKeyRef:
+            name: special-config
+            key: codeBucket   
+    cores: 2
+    coreLimit: "2.1"
+    memory: "3g"
+    memoryOverhead: "1g"
+    serviceAccount: oss 
+  executor:
+    # javaOptions: "-Dlog4j.configuration=file:/etc/spark/conf/log4j.properties"
+    cores: 4
+    coreLimit: "4.3"
+    memory: "6g"
+    memoryOverhead: "2g"
+    # 8 executors per node  
+    instances: 47
+  restartPolicy:
+    type: Never

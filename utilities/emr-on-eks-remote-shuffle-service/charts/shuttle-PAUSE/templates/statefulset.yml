@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}
+  labels: {{- .Values.nodeSelector | toYaml | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels: {{- .Values.nodeSelector | toYaml | nindent 6 }}
+  serviceName: {{ .Release.Name }}
+  template:
+    metadata:
+      labels: {{- .Values.nodeSelector | toYaml | nindent 8 }}
+    spec:  
+    {{- if .Values.securityContext }}
+      securityContext:
+        runAsUser: {{ .Values.securityContext.runAsUser }}
+        runAsGroup: {{ .Values.securityContext.runAsGroup }}   
+    {{- end}} 
+    {{- if .Values.volumes }}
+      volumes:
+        - name: {{ .Release.Name }}-conf-templates
+          configMap:
+            name: {{ .Release.Name }}-conf-templates
+    {{- range $volumes := .Values.volumes }}
+        - name: {{ $volumes.name }}
+          hostPath:
+            path: {{ $volumes.hostPath.path }}
+    {{- end }}
+    {{- end }} 
+{{- if .Values.nodeSelector }}
+      nodeSelector: {{- .Values.nodeSelector | toYaml | nindent 8 }}
+{{- end }}
+{{- if .Values.volumeMounts }}
+{{- $userId := .Values.volumeUser -}}
+{{- $userGroup := .Values.volumeGroup -}}
+{{- range $volumeMounts := .Values.volumeMounts }}
+      initContainers:  
+      - name: volume-permission
+        image: public.ecr.aws/docker/library/busybox
+        # grant volume access to hadoop user  
+        command: ['sh', '-c', 'mkdir {{ $volumeMounts.mountPath }};chown -R {{ $userId}}:{{ $userGroup }} {{ $volumeMounts.mountPath }}']  
+        volumeMounts:
+        - name: {{ $volumeMounts.name }}
+          mountPath: {{ $volumeMounts.mountPath }}
+  {{- end }} 
+  {{- end }}   
+      containers:
+        - name: {{ .Release.Name }}
+    {{- if .Values.volumeMounts }}
+          volumeMounts:
+          - name: {{ .Release.Name }}-conf-templates
+            mountPath: /usr/share/css/conf/templates
+    {{- range $volumeMounts := .Values.volumeMounts }}
+          - name: {{ $volumeMounts.name }}
+            mountPath: {{ $volumeMounts.mountPath }}
+    {{- end }} 
+    {{- end }}   
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.imagePullPolicy | default "IfNotPresent" }}
+          resources:
+            requests:
+              memory: {{ .Values.resources.requests.memory }}
+              cpu:  {{ .Values.resources.requests.cpu }}
+            limits:
+              memory: {{ .Values.resources.limits.memory }}
+              cpu: {{ .Values.resources.limits.cpu }}
+          env:
+            - name: CSS_SERVER_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name 
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP 
+          {{- range $key, $value := .Values.env }}
+            - name: {{ $key }}
+              value: "{{ $value }}"
+          {{- end }}          
+          command: ["sh", "-c", "/usr/share/css/sbin/entrypoint.sh && java {{ .Values.command.JVM_HEAP_SIZE }} {{ .Values.command.EXTRA_JAVA_OPT }} -Dcss.log.dir=/usr/share/css/logs -Dcss.log.filename=css-root-worker-$(CSS_SERVER_ID).out -classpath /lib:/usr/share/css/lib/* com.bytedance.css.service.deploy.worker.Worker --host $(CSS_SERVER_ID).css.{{ .Release.Namespace }}.svc.cluster.local css://$(CSS_SERVER_ID).css.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.ports.shuffleServer }}"]     
+          ports:
+            - containerPort: {{ .Values.ports.shuffleServer }}

@@ -1,0 +1,3 @@
+To scale the cluster, run the following command:
+  kubectl get statefulsets rss --namespace remote-shuffle-service
+  kubectl scale statefulsets {{ .Release.Name }} --namespace {{ .Release.Namespace }} --replicas=6  (for exampe: scale out to 6 rss servers if needed)

@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: linuxbox
+spec:
+  restartPolicy: OnFailure
+  # nodeSelector:
+    # eks.amazonaws.com/fargate-profile: emr
+    # eks.amazonaws.com/nodegroup: i3en2
+  containers:
+  - name: linuxbox
+    image: amazonlinux:latest
+    command: [ "/bin/bash", "-c", "--" ]
+    args: [ "while true; do sleep 30; done;" ]

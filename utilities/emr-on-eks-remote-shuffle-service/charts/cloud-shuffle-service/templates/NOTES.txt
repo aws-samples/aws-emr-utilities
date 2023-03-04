@@ -1,0 +1,2 @@
+To scale the cluster to 3, run the following command:
+  kubectl scale statefulsets {{ .Release.Name }} --namespace {{ .Release.Namespace }} --replicas=3  (from 0 to N Number if needed)

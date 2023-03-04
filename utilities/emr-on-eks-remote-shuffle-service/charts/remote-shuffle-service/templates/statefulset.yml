@@ -1,0 +1,95 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements. See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License. You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}
+  labels: {{- .Values.nodeSelector | toYaml | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels: {{- .Values.nodeSelector | toYaml | nindent 6 }}
+  serviceName: {{ .Release.Name }}
+  template:
+    metadata:
+      labels: {{- .Values.nodeSelector | toYaml | nindent 8 }}
+    spec:  
+    {{- if .Values.securityContext }}
+      securityContext:
+        runAsUser: {{ .Values.securityContext.runAsUser }}
+        runAsGroup: {{ .Values.securityContext.runAsGroup }}   
+    {{- end}} 
+    {{- if .Values.volumes }}
+      volumes:
+    {{- range $volumes := .Values.volumes }}
+        - name: {{ $volumes.name }}
+          hostPath:
+            path: {{ $volumes.hostPath.path }}
+    {{- end }}
+    {{- end }} 
+{{- if .Values.nodeSelector }}
+      nodeSelector: {{- .Values.nodeSelector | toYaml | nindent 8 }}
+{{- end }}
+{{- if .Values.volumeMounts }}
+{{- $userId := .Values.volumeUser -}}
+{{- $userGroup := .Values.volumeGroup -}}
+{{- range $volumeMounts := .Values.volumeMounts }}
+      initContainers:  
+      - name: volume-permission
+        image: public.ecr.aws/docker/library/busybox
+        # grant volume access to hadoop user  
+        command: ['sh', '-c', 'mkdir {{ $volumeMounts.mountPath }};chown -R {{ $userId}}:{{ $userGroup }} {{ $volumeMounts.mountPath }}']  
+        volumeMounts:
+        - name: {{ $volumeMounts.name }}
+          mountPath: {{ $volumeMounts.mountPath }}
+  {{- end }} 
+  {{- end }}   
+      containers:
+        - name: {{ .Release.Name }}
+    {{- if .Values.volumeMounts }}
+          volumeMounts:
+    {{- range $volumeMounts := .Values.volumeMounts }}
+          - name: {{ $volumeMounts.name }}
+            mountPath: {{ $volumeMounts.mountPath }}
+    {{- end }} 
+    {{- end }}   
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.imagePullPolicy | default "IfNotPresent" }}
+          resources:
+            requests:
+              memory: {{ .Values.resources.requests.memory }}
+              cpu:  {{ .Values.resources.requests.cpu }}
+            limits:
+              memory: {{ .Values.resources.limits.memory }}
+              cpu: {{ .Values.resources.limits.cpu }}
+          env:
+            - name: RSS_SERVER_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          command: ["java", "{{ .Values.command.jvmHeapSizeOption }}", "-Dlog4j.configuration=log4j-remote-shuffle-service.properties", "-cp", "remote-shuffle-service-server.jar", "com.uber.rss.StreamServer","-port","{{ .Values.ports.shuffleServer }}", "-httpPort", "{{ .Values.ports.healthcheck }}","-rootDir","{{ .Values.command.rootdir }}","-nettyAcceptThreads","{{ .Values.command.nettyAcceptThreads | default 2 }}","-nettyWorkerThreads","{{ .Values.command.nettyWorkerThreads | default 20 }}","-appFileRetentionMillis","{{ .Values.command.dataRetentionMillis | default 129600000 }}"]
+          args: []
+          ports:
+            - containerPort: {{ .Values.ports.shuffleServer }}
+            - containerPort: {{ .Values.ports.healthcheck }}
+              name: healthcheck
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: healthcheck
+            failureThreshold: 3
+            periodSeconds: 15

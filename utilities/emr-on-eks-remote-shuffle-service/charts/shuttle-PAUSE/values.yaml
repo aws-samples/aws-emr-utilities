@@ -1,0 +1,115 @@
+# Default values for shuttle.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+image:
+  repository: 021732063925.dkr.ecr.us-east-1.amazonaws.com/shuttle-server
+  tag: latest
+  pullPolicy: Always
+
+server:
+  workers: 2
+  node:
+    dataDir: /data
+    # pluginDir: /usr/lib/trino/plugin
+  # log:
+  #   level: INFO
+  config:
+    # path: /etc/trino
+    # http:
+    #   port: 8080
+    # https:
+    #   enabled: false
+    #   port: 8443
+    # query:
+    #   maxMemory: "4GB"
+    #   maxMemoryPerNode: "1GB"
+    # memory:
+    #   heapHeadroomPerNode: "1GB"
+  autoscaling:
+    enabled: false
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 80
+
+env: []
+initContainers: {}
+  # coordinator:
+  #   - name: init-coordinator
+  #     image: busybox:1.28
+  #     imagePullPolicy: IfNotPresent
+  #     command: ['sh', '-c', "until nslookup myservice.$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace).svc.cluster.local; do echo waiting for myservice; sleep 2; done"]
+  # worker:
+  #   - name: init-worker
+  #     image: busybox:1.28
+  #     command: ['sh', '-c', 'echo The worker is running! && sleep 3600']
+
+securityContext:
+  runAsUser: 999
+  runAsGroup: 1000
+
+service:
+  type: ClusterIP
+  port: 8080
+
+nodeSelector:
+  app: shuttle
+
+coordinator:
+  jvm:
+    maxHeapSize: "8G"
+    gcMethod:
+      type: "UseG1GC"
+      g1:
+        heapRegionSize: "32M"
+
+  additionalJVMConfig: {}
+
+  resources: {}
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+
+  livenessProbe: {}
+    # initialDelaySeconds: 20
+    # periodSeconds: 10
+    # timeoutSeconds: 5
+    # failureThreshold: 6
+    # successThreshold: 1
+  readinessProbe: {}
+    # initialDelaySeconds: 20
+    # periodSeconds: 10
+    # timeoutSeconds: 5
+    # failureThreshold: 6
+    # successThreshold: 1
+
+worker:
+  jvm:
+    maxHeapSize: "8G"
+    gcMethod:
+      type: "UseG1GC"
+      g1:
+        heapRegionSize: "32M"
+
+  resources: {}
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+
+  livenessProbe: {}
+    # initialDelaySeconds: 20
+    # periodSeconds: 10
+    # timeoutSeconds: 5
+    # failureThreshold: 6
+    # successThreshold: 1
+  readinessProbe: {}
+    # initialDelaySeconds: 20
+    # periodSeconds: 10
+    # timeoutSeconds: 5
+    # failureThreshold: 6
+    # successThreshold: 1
