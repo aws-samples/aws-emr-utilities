@@ -1,0 +1,93 @@
+# // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# // SPDX-License-Identifier: MIT-0
+apiVersion: "sparkoperator.k8s.io/v1beta2"
+kind: SparkApplication
+metadata:
+  name: tpcds-data-generation-3t
+  namespace: oss
+spec:
+  type: Scala
+  mode: cluster
+  image: ghcr.io/aws-samples/eks-spark-benchmark:3.1.2
+  imagePullPolicy: Always
+  sparkVersion: 3.1.2                    
+  mainClass: com.amazonaws.eks.tpcds.DataGeneration
+  mainApplicationFile: local:///opt/spark/examples/jars/eks-spark-benchmark-assembly-1.0.jar
+  arguments:
+  # TPC-DS data localtion
+    - "s3://$(BUCKET_PARAM)/BLOG_TPCDS-TEST-3T-partitioned"
+  # Path to kit in the docker image
+    - "/opt/tpcds-kit/tools"
+  # Data Format
+    - "parquet"
+  # Scale factor (in GB)
+    - "3000"
+  # Generate data num partitions
+    - "200"
+  # Create the partitioned fact tables
+    - "true"
+  # Shuffle to get partitions coalesced into single files.
+    - "true"
+  # Logging set to WARN
+    - "true"
+  sparkConf:
+    "spark.network.timeout": "2000s"
+    "spark.executor.heartbeatInterval": "300s"
+    "spark.kubernetes.memoryOverheadFactor": "0.4"
+    "spark.sql.files.maxRecordsPerFile": "30000000"
+    "spark.serializer": "org.apache.spark.serializer.KryoSerializer"
+
+    "spark.kubernetes.node.selector.eks.amazonaws.com/nodegroup": "rss-i3en"
+
+    # S3 settings
+    "spark.hadoop.fs.s3a.aws.credentials.provider": "com.amazonaws.auth.WebIdentityTokenCredentialsProvider"
+    "spark.hadoop.fs.s3a.fast.upload": "true"
+    "spark.hadoop.fs.s3a.path.style.access": "true"
+    "spark.hadoop.fs.s3.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem"
+    "spark.hadoop.mapreduce.fileoutputcommitter.algorithm.version": "2"
+    "spark.kubernetes.executor.podNamePrefix": "oss-data-gen"
+    "spark.executor.defaultJavaOptions": "-verbose:gc -XX:+UseG1GC"
+    "spark.driver.defaultJavaOptions": "-XX:+UseG1GC"
+  driver:
+    initContainers:  
+    - name: volume-permission
+      image: public.ecr.aws/y4g4v0z7/busybox
+      command: ['sh', '-c', 'mkdir /ossdata1; chown -R 1000:1000 /ossdata1']
+      volumeMounts:
+        - name: spark-local-dir-1
+          mountPath: /ossdata1
+    env:
+      - name: BUCKET_PARAM
+        valueFrom:
+          configMapKeyRef:
+            name: special-config
+            key: codeBucket
+    cores: 10
+    coreLimit: "10.1"
+    memory: "10g"
+    serviceAccount: oss
+    volumeMounts:
+      - name: spark-local-dir-1
+        mountPath: /ossdata1      
+  executor:
+    initContainers:  
+    - name: volume-permission
+      image: public.ecr.aws/y4g4v0z7/busybox
+      command: ['sh', '-c', 'mkdir /ossdata1; chown -R 1000:1000 /ossdata1']
+      volumeMounts:
+        - name: spark-local-dir-1
+          mountPath: /ossdata1
+    cores: 11
+    coreLimit: "11.1"
+    memory: "15g"
+    # 3 exec/9 nodes (c5d.9xl), 2 exec/14 nodes(i3en.6xlarge) 
+    instances: 26
+    volumeMounts:
+      - name: spark-local-dir-1
+        mountPath: /ossdata1
+  volumes:    
+    - name: spark-local-dir-1
+      hostPath:
+        path: /local1     
+  restartPolicy:  
+    type: Never

@@ -1,0 +1,13 @@
+apiVersion: v2
+name: cloud-shuffle-service
+version: 0.0.1
+appVersion: 0.0.1
+description: A Helm chart for Cloud Shuffle Service
+keywords:
+  - spark
+  - shuffle
+  - remote
+home: https://github.com/bytedance/CloudShuffleService
+maintainers:
+- email: meloyang@amazon.com
+  name: meloyang

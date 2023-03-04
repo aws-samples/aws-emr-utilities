@@ -1,0 +1,26 @@
+# // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# // SPDX-License-Identifier: MIT-0
+apiVersion: v1
+kind: Pod
+spec:
+  nodeSelector:
+    app: sparktest   
+  volumes:
+    - name: heap-dumps
+      emptyDir: {}
+  containers:
+  - name: spark-kubernetes-executor
+    volumeMounts:
+      - name: heap-dumps
+        mountPath: /dumps
+  - name: ship-heap-dump
+    image: amazonlinux:latest
+    command: ["/bin/sh", "-c"]
+    args:
+    - |
+      amazon-linux-extras install epel -y
+      yum install -y awscli inotify-tools
+      inotifywait -m /dumps -e close_write | while read path action file; do aws s3 cp "$path$file" "s3://emr-on-eks-rss-021732063925-us-west-2/hp/$HOSTNAME-$file"; done;
+    volumeMounts:
+    - name: heap-dumps
+      mountPath: /dumps

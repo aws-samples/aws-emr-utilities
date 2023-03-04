@@ -1,0 +1,44 @@
+replicas: 3
+image:
+  repository: public.ecr.aws/myang-poc/css-server
+  tag: latest
+  imagePullPolicy: IfNotPresent
+nodeSelector:
+    app: css
+resources:
+  requests:
+    memory: "172G" #i3en.6xl
+    cpu: "21.6"
+  limits:
+    memory: "192G"
+    cpu: "24"
+
+securityContext:
+  runAsGroup: 0
+  runAsUser: 0
+# configure the shuffle service volume owner as Hadoop user (EMR on EKS is 999:1000)
+volumeUser: 999
+volumeGroup: 1000
+volumeMounts:
+  - name: spark-local-dir-1
+    mountPath: /css1/css
+  - name: spark-local-dir-2
+    mountPath: /css2/css
+volumes:
+  - name: spark-local-dir-1
+    hostPath:
+      path: /local1
+  - name: spark-local-dir-2
+    hostPath:
+      path: /local2
+command:
+  JVM_HEAP_SIZE: "-Xmx8192m"
+  EXTRA_JAVA_OPT: "-XX:MaxDirectMemorySize=100000m"
+ports:
+  shuffleServer: 9099
+env:  
+  CLUSTER_NAME: mycss
+  REGISTRY_TYPE: zookeeper   
+  ZK_ADDRESS: "zookeeper-0.zookeeper-headless.zk.svc.cluster.local:2181,zookeeper-1.zookeeper-headless.zk.svc.cluster.local:2181"
+  SHUFFLE_DATA_DIR: "/css1/css,/css2/css"
+  CSS_CONF_PARAMS: "css.disk.dir.num.min = 1;css.flush.queue.capacity = 4096;css.flush.buffer.size = 128k;css.network.timeout = 600s;css.epoch.rotate.threshold = 1g;css.push.io.numConnectionsPerPeer = 8;css.push.io.threads = 128;css.replicate.threads = 128;css.fetch.io.threads = 64;css.fetch.chunk.size = 4m;css.shuffle.server.chunkFetchHandlerThreadsPercent = 400"

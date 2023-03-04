@@ -1,0 +1,10 @@
+{{- if eq .Values.env.REGISTRY_TYPE "zookeeper" }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-conf-templates
+  labels:
+    {{- .Values.nodeSelector | toYaml | nindent 4 }}
+data:
+{{ (.Files.Glob (printf "configsets/*" )).AsConfig | indent 2 }}
+{{- end }}
