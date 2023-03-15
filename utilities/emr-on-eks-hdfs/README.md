@@ -11,7 +11,7 @@ Additionally, moving the HDFS storage out of the core node's local storage and t
 
 The repository contains a helm chart to simplify the HDFS installation in Kubernetes environment. Storage wise, we intentionally choose the smallest volume size 1.2TB and the lowest throughput capacity 150 MB/s per FSx system, which is $0.073 per GB-month, cheaper than gp3 storage.
 
-Follow the [instruction](https://github.com/aws-emr-utilities/utilities/emr-on-eks-remote-shuffle-service#infrastructure) to provision and configure an [AWS EKS cluster](https://aws.amazon.com/eks/) that the HDFS Helm Chart can be deployed on.
+Follow the [instruction](https://github.com/aws-samples/aws-emr-utilities/tree/main/utilities/emr-on-eks-remote-shuffle-service#infrastructure) to provision `c5` type of instances and configure an [AWS EKS cluster](https://aws.amazon.com/eks/) that the HDFS Helm Chart can be deployed on.
 
 By default, this chart deploys:
 
