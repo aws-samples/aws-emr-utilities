@@ -101,8 +101,19 @@ mkdir -p etc/init
 cp -prL /etc/presto etc/ || true
 cp -prL /etc/hudi etc/ || true
 cp -prL /etc/tez etc/ || true
-cp -prL /etc/*.keytab etc/ || true
-cp -prL /etc/krb5.conf etc/ || true
+cp -prL /etc/hadoop.keytab etc/ || true
+sudo cp -prL /etc/hdfs.keytab etc/ || true
+sudo cp -prL /etc/hive.keytab etc/ || true
+sudo cp -prL /etc/httpfs.keytab etc/ || true
+sudo cp -prL /etc/kms.keytab etc/ || true
+sudo cp -prL /etc/livy.keytab etc/ || true
+sudo cp -prL /etc/mapred.keytab etc/ || true
+sudo cp -prL /etc/oozie.keytab etc/ || true
+sudo cp -prL /etc/spark.keytab etc/ || true
+sudo cp -prL /etc/yarn.keytab etc/ || true
+sudo cp -prL /etc/zeppelin.keytab etc/ || true
+sudo cp -prL /etc/zookeeper.keytab etc/ || true
+sudo cp -prL /etc/krb5.conf etc/ || true
 
 cp -pL /etc/init/hive-server2.conf etc/init || true
 cp -pL /etc/init/livy-server.conf etc/init || true
