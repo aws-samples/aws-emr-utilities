@@ -113,6 +113,7 @@ sudo cp -prL /etc/spark.keytab etc/ || true
 sudo cp -prL /etc/yarn.keytab etc/ || true
 sudo cp -prL /etc/zeppelin.keytab etc/ || true
 sudo cp -prL /etc/zookeeper.keytab etc/ || true
+sudo chmod 755 etc/*.keytab || true
 sudo cp -prL /etc/krb5.conf etc/ || true
 
 cp -pL /etc/init/hive-server2.conf etc/init || true
