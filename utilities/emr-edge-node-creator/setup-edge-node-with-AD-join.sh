@@ -103,6 +103,10 @@ sudo mkdir -p /var/log/hive/user/hadoop
 sudo chown hadoop:hadoop /var/log/hive/user/hadoop
 sudo usermod -a -G sudo hadoop
 
+sudo useradd -m hdfs -p hdfs
+sudo mkdir -p /var/log/hadoop-hdfs
+sudo chown hdfs:hadoop /var/log/hadoop-hdfs
+
 sudo useradd -m hive -p hive
 sudo mkdir -p /var/log/hive/user/hive
 sudo chown hive:hive /var/log/hive/user/hive
