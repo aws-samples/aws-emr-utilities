@@ -6,6 +6,7 @@
 #   2. the edge node has Python, JDK 8, AWS CLI, and Ruby installed
 #   3. python on the edge node should be the same version as pyspark on EMR (2.7 or 3.4), conda can be used
 #   4. this script is copied to edge node by running "aws s3 cp s3://aws-emr-bda-public-us-west-2/BAs/setup-emr-edge-node-s3.sh ."
+#   5. make sure to replace AD related variables within the script for successful AD join for edge nodes
 
 # Usage: bash setup-emr-edge-node-s3.sh --emr-client-deps <EMR client dependencies file in S3>
 #
