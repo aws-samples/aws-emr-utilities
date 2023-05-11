@@ -52,6 +52,8 @@ if grep -q Ubuntu /etc/issue; then
 else # default to Amazon Linux
   yum install sudo -y || true # this might be needed inside Docker container
   sudo yum install krb5-workstation krb5-libs -y
+  sudo yum install krb5-server -y
+  sudo yum install jq -y
   sudo mkdir -p /etc/init
   sudo cp -pr etc/init/* /etc/init/
   sudo yum install sudo java-1.8.0-openjdk java-1.8.0-openjdk-devel -y
