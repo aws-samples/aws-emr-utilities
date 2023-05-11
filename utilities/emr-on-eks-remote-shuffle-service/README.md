@@ -10,7 +10,7 @@ The high level design for Uber's Remote Shuffle Service (RSS) can be found [here
 * [1. Install Uber's RSS](#1-install-rss-server-on-eks) 
 * [2. Install ByteDance's CSS](#1-install-css-server-on-eks) 
 * [3. Install Apache Uniffle (Tencent)](#1-install-uniffle-operator-on-eks)
-* 4. Install ByteDance's CSS on EMR on EC2 (WIP)
+* [4. Install Apache Celeborn (Aliyun)](#1-install-celeborn-server-on-eks)
 
 ## Infrastructure
 If you do not have your own environment to run Spark, run the command. Change the region if needed.
@@ -185,13 +185,14 @@ aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --
 aws ecr create-repository --repository-name rss-webhook --image-scanning-configuration scanOnPush=true
 aws ecr create-repository --repository-name rss-controller --image-scanning-configuration scanOnPush=true
 
-cd ../../operator
+cd ../../charts/uniffle-operator
 export VERSION="0.7.0-snapshot"
 make REGISTRY=$ECR_URL docker-build docker-push -f Makefile
 ```
 #### Run Uniffle Operator in EKS 
-**TODO: a single-command deployment via helm chart**
-Replace docker image URLs in the definition files:`uniffle-webhook.yaml`, `uniffle-webhook.yaml`, `uniffle-operator.yaml`.
+**TODO: build helm chart for a single-command deployment**
+Before start, update the `example/configmap.yaml` file to config Uniffle operator.Replace docker image URLs by your images in the definition files:`example/uniffle-webhook.yaml`, `example/uniffle-webhook.yaml`, `example/uniffle-operator.yaml`.
+
 Note: server's key configs are `xmxSize=0.75 X server pod memory`, `rss.server.buffer.capacity=0.6 X xmxSize` and  `rss.server.read.buffer.capacity=0.2 X xmxSize`
 
 ```bash
@@ -229,6 +230,35 @@ docker pull $SRC_ECR_URL/spark/emr-6.6.0:latest
 
 docker build -t $ECR_URL/uniffle-spark-benchmark:emr6.6 -f docker/uniffle-emr-client/Dockerfile --build-arg SPARK_BASE_IMAGE=$SRC_ECR_URL/spark/emr-6.6.0:latest .
 docker push $ECR_URL/uniffle-spark-benchmark:emr6.6
+```
+
+## **Apache Celeborn RSS option**
+
+### 1. Install Celeborn server on EKS
+
+#### Build Server docker image
+```bash
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+ECR_URL=$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_URL
+# create a new ECR as an one-off task
+aws ecr create-repository --repository-name celeborn-server \
+    --image-scanning-configuration scanOnPush=true
+
+cd docker/celeborn-server
+SPARK_VERSION=3.2
+docker build -t $ECR_URL/celeborn-server:spark${SPARK_VERSION} \
+  --build-arg SPARK_VERSION=${SPARK_VERSION} \
+  -f Dockerfile .
+docker push $ECR_URL/celeborn-server:spark${SPARK_VERSION}
+```
+#### Run Celeborn shuffle service in EKS
+```bash
+git clone https://github.com/apache/incubator-celeborn.git
+cd incubator-celeborn
+# Config celeborn, environment variables and docker image
+vi charts/celeborn/values.yaml
+
 ```
 
 ## Run Benchmark

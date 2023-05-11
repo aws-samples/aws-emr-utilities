@@ -64,13 +64,3 @@ spec:
       # /local* is EC2 SSD disk name. /rss* is a local directory created by InitContianer 
       /local1: /rss1
       /local2: /rss2
-      # /data/rssenv1/rssdata3: /data3
-      # /data/rssenv1/rssdata4: /data4
-      # /data/rssenv1/rssdata5: /data5
-      # /data/rssenv1/rssdata6: /data6
-      # /data/rssenv1/rssdata7: /data7
-      # /data/rssenv1/rssdata8: /data8
-      # /data/rssenv1/rssdata9: /data9
-      # /data/rssenv1/rssdata10: /data10
-      # /data/rssenv1/rssdata11: /data11
-      # /data/rssenv1/rssdata12: /data12
