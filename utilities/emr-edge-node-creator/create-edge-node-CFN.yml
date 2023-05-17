@@ -140,13 +140,12 @@ Resources:
           yum update -y
           yum install -y git aws-cfn-bootstrap
           yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
-          count=""
 
-          while [[ $count -gt 0 ]]; do
-          sleep 30;
-          count=`aws s3 ls s3://${S3BucketForArtifacts}/emr-client-deps/emr-client-deps-${EMRClusterID}.tar.gz | wc -l`
-          echo $count
+          while [ ! "$(aws s3 ls s3://${S3BucketForArtifacts}/emr-client-deps/emr-client-deps-${EMRClusterID}.tar.gz)" ]; do
+          echo "File $FILE_NAME not found in bucket $BUCKET_NAME. Sleeping for 5 seconds..."
+          sleep 5
           done
+          echo "File $FILE_NAME found in bucket $BUCKET_NAME."
           
           sleep 60;
           git clone --depth 1 https://github.com/aws-samples/aws-emr-utilities.git /tmp/emr_edge_node
