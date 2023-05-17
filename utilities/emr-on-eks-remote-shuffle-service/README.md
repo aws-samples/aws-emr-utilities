@@ -160,9 +160,6 @@ docker pull $SRC_ECR_URL/spark/emr-6.6.0:latest
 
 docker build -t $ECR_URL/css-spark-benchmark:emr6.6 -f docker/css-emr-client/Dockerfile --build-arg SPARK_BASE_IMAGE=$SRC_ECR_URL/spark/emr-6.6.0:latest .
 docker push $ECR_URL/css-spark-benchmark:emr6.6
-
-docker build -t $ECR_URL/uniffle-spark-benchmark:3.2.0 -f docker/uniffle-oss-client/Dockerfile .
-docker push $ECR_URL/uniffle-spark-benchmark:3.2.0
 ```
 ## **Apache Uniffle RSS option**
 
@@ -236,7 +233,7 @@ docker push $ECR_URL/uniffle-spark-benchmark:emr6.6
 
 ### 1. Install Celeborn server on EKS
 
-#### Create Server & client docker images
+#### Create docker container repository
 ```bash
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 ECR_URL=$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
@@ -247,7 +244,7 @@ aws ecr create-repository --repository-name celeborn-server \
 aws ecr create-repository --repository-name clb-spark-benchmark \
   --image-scanning-configuration scanOnPush=true
 ```  
-### Build & push docker image
+#### Build & push server & client docker images
 ```
 SPARK_VERSION=3.2
 # build server
@@ -264,7 +261,6 @@ docker build -t $ECR_URL/clb-spark-benchmark:emr6.6 \
   -f docker/celeborn-emr-client/Dockerfile .
 docker push $ECR_URL/clb-spark-benchmark:emr6.6
 ```
-
 #### Run Celeborn shuffle service in EKS
 ```bash
 # config celeborn environment variables and docker image
@@ -290,16 +286,18 @@ Update the docker image name to your ECR URL in the following file, then run:
 # go to the project root directory
 cd emr-on-eks-remote-shuffle-service
 export EMRCLUSTER_NAME=emr-on-eks-rss
-export AWS_REGION=us-east-1
+export AWS_REGION=<YOUR_REGION>
 # run the performance test with Uber's RSS
 ./example/emr6.6-benchmark-rss.sh
 # Or Bytedance's CSS
 ./example/emr6.6-benchmark-css.sh
 # Or Tecent's Apache Uniffle
 ./example/emr6.6-benchmark-uniffle.sh
+# Or Aliyun's Apache Celeborn
+./example/emr6.6-benchmark-celeborn.sh
 # check job progress
 kubectl get po -n emr
-kubectl logs DRIVER_POD_NAME -n emr spark-kubernetes-driver
+kubectl logs <DRIVER_POD_NAME> -n emr spark-kubernetes-driver
 ```
 
 **NOTE**: in Uber's RSS benchmark test, keep the server string like `rss-%s` for the config `spark.shuffle.rss.serverSequence.connectionString`, This is intended because `RssShuffleManager` can use it to format the connection string dynamically. In the following example, our Spark job will connect to 3 RSS servers:
@@ -317,6 +315,10 @@ The setting`"spark.shuffle.rss.serviceRegistry.type": "serverSequence"` means th
 NOTE: some queries may not be able to complete, due to the limited resources alloated to run such a large scale test. Update the docker image to your image repository URL, then test the performance for different remote shuffle service options, For example:
 ```bash
 kubectl apply -f oss-benchmark-uniffle.yaml
+# or 
+kubectl apply -f oss-benchmark-rss.yaml
+```
+```bash
 # check job progress
 kubectl get pod -n oss
 # check application logs

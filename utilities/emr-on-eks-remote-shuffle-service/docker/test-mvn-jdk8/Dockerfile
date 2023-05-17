@@ -1,7 +1,7 @@
 # FROM amazoncorretto:8 as rss-jdk8
 FROM openjdk:8-jdk-slim as rss-jdk8
 # FROM amazonlinux:2 as rss-jdk8
-ARG MAVEN_VERSION=3.8.6
+ARG MAVEN_VERSION=3.8.8
 ARG BASE_URL=https://apache.osuosl.org/maven/maven-3/${MAVEN_VERSION}/binaries
 
 # install maven

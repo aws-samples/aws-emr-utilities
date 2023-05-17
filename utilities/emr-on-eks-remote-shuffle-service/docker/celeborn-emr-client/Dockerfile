@@ -1,12 +1,12 @@
 # // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # // SPDX-License-Identifier: MIT-0
 ARG SPARK_BASE_IMAGE=755674844232.dkr.ecr.us-east-1.amazonaws.com/spark/emr-6.6.0:latest
-ARG SPARK_VERSION=3.2
 ARG java_image_tag=8-jdk-focal
 
 FROM eclipse-temurin:${java_image_tag} as cele-client
+ARG SPARK_VERSION=3.2
 # install maven
-RUN apt-get update && apt-get install -y git bash tini bind9-utils procps dnsutils krb5-user
+RUN apt-get update && apt-get install -y git
 # build celeborn binary
 RUN git clone https://github.com/apache/incubator-celeborn.git
 WORKDIR incubator-celeborn
