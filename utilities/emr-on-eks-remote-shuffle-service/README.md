@@ -4,13 +4,13 @@ Remote Shuffle Service provides the capability for Apache Spark applications to 
 on remote servers. See more details on Spark community document: 
 [[SPARK-25299][DISCUSSION] Improving Spark Shuffle Reliability](https://docs.google.com/document/d/1uCkzGGVG17oGC6BJ75TpzLAZNorvrAU3FRd2X-rVHSM/edit?ts=5e3c57b8).
 
-The high level design for Uber's Remote Shuffle Service (RSS) can be found [here](https://github.com/uber/RemoteShuffleService/blob/master/docs/server-high-level-design.md), ByteDance's Cloud Shuffle Service (CSS) can be found [here](https://github.com/bytedance/CloudShuffleService), Tecent's Apache Uniffle can be found [here](https://uniffle.apache.org/docs/intro).OPPO's Shuttle can be found [here](https://github.com/cubefs/shuttle/blob/master/docs/server-high-level-design.md)
+The high level design for Uber's Remote Shuffle Service (RSS) can be found [here](https://github.com/uber/RemoteShuffleService/blob/master/docs/server-high-level-design.md), ByteDance's Cloud Shuffle Service (CSS) can be found [here](https://github.com/bytedance/CloudShuffleService), Tecent's Apache Uniffle can be found [here](https://uniffle.apache.org/docs/intro).AliCloud's Apache Celeborn can be found [here](https://github.com/apache/incubator-celeborn). OPPO's Shuttle can be found [here](https://github.com/cubefs/shuttle/blob/master/docs/server-high-level-design.md)
 
 # Setup instructions:
 * [1. Install Uber's RSS](#1-install-rss-server-on-eks) 
 * [2. Install ByteDance's CSS](#1-install-css-server-on-eks) 
 * [3. Install Apache Uniffle (Tencent)](#1-install-uniffle-operator-on-eks)
-* [4. Install Apache Celeborn (Aliyun)](#1-install-celeborn-server-on-eks)
+* [4. Install Apache Celeborn (AliCloud)](#1-install-celeborn-server-on-eks)
 
 ## Infrastructure
 If you do not have your own environment to run Spark, run the command. Change the region if needed.
@@ -26,8 +26,8 @@ which provides a one-click experience to create an EMR on EKS environment and OS
 
 ## Quick Start: Run rmeote shuffle server in EMR
 ```bash
-git clone https://github.com/melodyyangaws/emr-on-eks-remote-shuffle-service.git
-cd emr-on-eks-remote-shuffle-service
+git clone https://github.com/aws-samples/aws-emr-utilities.git
+cd aws-emr-utilities/utilities/emr-on-eks-remote-shuffle-service
 ```
 ## **UBER's RSS option**
 ### 1. Install RSS server on EKS
@@ -236,29 +236,41 @@ docker push $ECR_URL/uniffle-spark-benchmark:emr6.6
 
 ### 1. Install Celeborn server on EKS
 
-#### Build Server docker image
+#### Build Server & client docker images
 ```bash
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 ECR_URL=$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
 aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_URL
 # create a new ECR as an one-off task
 aws ecr create-repository --repository-name celeborn-server \
-    --image-scanning-configuration scanOnPush=true
-
-cd docker/celeborn-server
+  --image-scanning-configuration scanOnPush=true
+aws ecr create-repository --repository-name clb-spark-benchmark \
+  --image-scanning-configuration scanOnPush=true
+# build docker image
 SPARK_VERSION=3.2
+# build server
 docker build -t $ECR_URL/celeborn-server:spark${SPARK_VERSION} \
   --build-arg SPARK_VERSION=${SPARK_VERSION} \
-  -f Dockerfile .
+  -f docker/celeborn-server/Dockerfile .
+# push the image to ECR
 docker push $ECR_URL/celeborn-server:spark${SPARK_VERSION}
+
+# build client with benchmark tool
+docker build -t $ECR_URL/clb-spark-benchmark:emr6.6 \
+  --build-arg SPARK_VERSION=${SPARK_VERSION} \
+  --build-arg SPARK_BASE_IMAGE=$SRC_ECR_URL/spark/emr-6.6.0:latest \
+  -f docker/celeborn-emr-client/Dockerfile .
+docker push $ECR_URL/clb-spark-benchmark:emr6.6
 ```
+
 #### Run Celeborn shuffle service in EKS
 ```bash
-git clone https://github.com/apache/incubator-celeborn.git
-cd incubator-celeborn
-# Config celeborn, environment variables and docker image
-vi charts/celeborn/values.yaml
-
+# config celeborn environment variables and docker image
+vi charts/celeborn-shuffle-service/values.yaml
+# install
+helm install celeborn ./charts/celeborn-shuffle-service  -n celeborn --create-namespace
+# check progress
+kubectl get all -n celeborn
 ```
 
 ## Run Benchmark
