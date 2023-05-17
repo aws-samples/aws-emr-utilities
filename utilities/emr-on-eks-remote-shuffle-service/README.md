@@ -236,7 +236,7 @@ docker push $ECR_URL/uniffle-spark-benchmark:emr6.6
 
 ### 1. Install Celeborn server on EKS
 
-#### Build Server & client docker images
+#### Create Server & client docker images
 ```bash
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 ECR_URL=$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
@@ -246,7 +246,9 @@ aws ecr create-repository --repository-name celeborn-server \
   --image-scanning-configuration scanOnPush=true
 aws ecr create-repository --repository-name clb-spark-benchmark \
   --image-scanning-configuration scanOnPush=true
-# build docker image
+```  
+### Build & push docker image
+```
 SPARK_VERSION=3.2
 # build server
 docker build -t $ECR_URL/celeborn-server:spark${SPARK_VERSION} \

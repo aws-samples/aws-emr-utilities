@@ -32,7 +32,7 @@ nodeSelector:
   app: css
 
 # master replicas should not less than 3
-masterReplicas: 2
+masterReplicas: 3
 # worker replicas set on demand, should less than node number
 workerReplicas: 3
 
@@ -43,21 +43,21 @@ securityContext:
 
 # celeborn configurations
 celeborn:
-  celeborn.ha.enabled: true
-  celeborn.master.endpoints: celeborn-master-0:9097,celeborn-master-1:9097,celeborn-master-2:9097
+  celeborn.ha.enabled: false
+  celeborn.master.endpoints: celeborn-master-0.celeborn-master-svc.celeborn.svc.cluster.local:9097,celeborn-master-1.celeborn-master-svc.celeborn.svc.cluster.local:9097,celeborn-master-2.celeborn-master-svc.celeborn.svc.cluster.local:9097
   celeborn.ha.master.node.id: 1
-  celeborn.ha.master.node.1.host: celeborn-master-0
+  celeborn.ha.master.node.1.host: celeborn-master-0.celeborn-master-svc.celeborn.svc.cluster.local
   celeborn.ha.master.node.1.port: 9097
   celeborn.ha.master.node.1.ratis.port: 9872
-  celeborn.ha.master.node.2.host: celeborn-master-1
+  celeborn.ha.master.node.2.host: celeborn-master-1.celeborn-master-svc.celeborn.svc.cluster.local
   celeborn.ha.master.node.2.port: 9097
   celeborn.ha.master.node.2.ratis.port: 9872
-  celeborn.ha.master.node.3.host: celeborn-master-2
+  celeborn.ha.master.node.3.host: celeborn-master-2.celeborn-master-svc.celeborn.svc.cluster.local
   celeborn.ha.master.node.3.port: 9097
   celeborn.ha.master.node.3.ratis.port: 9872
-  celeborn.ha.master.ratis.raft.server.storage.dir: /clb1/rss_ratis/
+  celeborn.ha.master.ratis.raft.server.storage.dir: /rss1/rss_ratis/
 
-  celeborn.worker.storage.dirs: /clb1/cele,/clb1/cele
+  celeborn.worker.storage.dirs: /local1/cele,/local2/cele
   celeborn.metrics.enabled: true
   celeborn.master.metrics.prometheus.port: 9098
   celeborn.worker.metrics.prometheus.port: 9096
