@@ -255,8 +255,6 @@ CELEBORN_VERSION=branch-0.2
 docker build -t $ECR_URL/celeborn-server:spark${SPARK_VERSION} \
   --build-arg SPARK_VERSION=${SPARK_VERSION} \
   --build-arg CELEBORN_VERSION=${CELEBORN_VERSION} \
-  --build-arg celeborn_uid=999 \
-  --build-arg celeborn_gid=1000 \
   -f docker/celeborn-server/Dockerfile .
 # push the image to ECR
 docker push $ECR_URL/celeborn-server:spark${SPARK_VERSION}
@@ -316,6 +314,7 @@ kubectl --namespace prometheus port-forward service/prometheus-kube-prometheus-p
 helm install celeborn charts/celeborn-shuffle-service  -n celeborn --create-namespace
 # check progress
 kubectl get all -n celeborn
+# OPTIONAL: if prometheus operator is installed
 kubectl get podmonitor -n celeborn
 ```
 
