@@ -1,0 +1,40 @@
+alertmanager:
+  enabled: false
+kubeApiServer:
+  enabled: false
+coreDns:
+  enabled: false
+kubeEtcd:
+  enabled: false
+kubeControllerManager:
+  enabled: false
+kubelet:
+  enabled: false  
+kubeScheduler:
+  enabled: false          
+grafana:
+  enabled: false
+
+prometheus:
+  serviceAccount:
+    create: true
+    name: amp-iamproxy-ingest-service-account
+    annotations: 
+      eks.amazonaws.com/role-arn: arn:aws:iam::633458367150:role/eks-rss-prometheus-ingest
+  prometheusSpec:
+    scrapeInterval: 15s
+    evaluationInterval: 15s
+    remoteWrite:
+    - url: https://aps-workspaces.us-west-2.amazonaws.com/workspaces/ws-c03c150b-62bc-49a4-b50d-873f95195a4a/api/v1/remote_write
+      sigv4:
+        region: us-west-2
+      queueConfig:
+        maxSamplesPerSend: 3000
+        batchSendDeadline: 10s
+        minShards: 4
+        maxShards: 200
+        capacity: 10000
+      
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    probeSelectorNilUsesHelmValues: false

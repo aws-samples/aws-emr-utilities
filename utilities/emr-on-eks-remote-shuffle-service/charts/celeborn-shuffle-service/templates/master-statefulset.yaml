@@ -71,6 +71,19 @@ spec:
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+    {{- if .Values.volumeUser }}
+      {{- $userId := .Values.volumeUser }}
+      {{- $userGroup := .Values.volumeGroup }}
+      {{- $serverDir := get .Values.celeborn "celeborn.ha.master.ratis.raft.server.storage.dir" }}
+      initContainers:  
+      - name: volume-permission
+        image: public.ecr.aws/docker/library/busybox
+        # grant volume access to hadoop user  
+        command: ['sh', '-c', 'mkdir {{ $serverDir }};chown -R {{ $userId}}:{{ $userGroup }} {{ $serverDir }}']  
+        volumeMounts:
+        - name: {{ include "celeborn.fullname" . }}-master-ratis
+          mountPath: {{ $serverDir }}
+    {{- end }}   
       containers:
       - name: {{ .Chart.Name }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
@@ -105,8 +118,8 @@ spec:
         - configMap:
             name: {{ .Values.configmap }}
           name: {{ include "celeborn.fullname" . }}-volume
-        {{- $dirs := get .Values.celeborn "celeborn.worker.storage.dirs" | splitList ","}}
+        {{- $vols := get .Values.celeborn "celeborn.volumes.hostpath" | splitList ","}}  
         - hostPath:
-            path: {{ index $dirs 0 }}/ratis
+            path: {{ index $vols 0 }}/ratis
             type: DirectoryOrCreate
           name: {{ include "celeborn.fullname" . }}-master-ratis

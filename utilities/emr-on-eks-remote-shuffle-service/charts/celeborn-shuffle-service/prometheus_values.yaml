@@ -1,0 +1,22 @@
+serviceAccounts:
+  server:
+    create: true
+    name: amp-iamproxy-ingest-service-account
+    annotations: 
+      eks.amazonaws.com/role-arn: arn:aws:iam::633458367150:role/eks-rss-prometheus-ingest
+server:
+  remoteWrite:
+    - url: https://aps-workspaces.us-west-2.amazonaws.com/workspaces/ws-c03c150b-62bc-49a4-b50d-873f95195a4a/api/v1/remote_write
+      sigv4:
+        region: us-west-2
+      queue_config:
+        max_samples_per_send: 3000
+        batch_send_deadline: 10s
+        min_shards: 4
+        max_shards: 200
+        capacity: 10000
+
+  persistentVolume:
+    enabled: false  
+alertmanager:
+  enabled: false

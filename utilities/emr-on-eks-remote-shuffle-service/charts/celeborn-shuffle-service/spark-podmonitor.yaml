@@ -1,0 +1,50 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: spark-driver-podmonitor
+  namespace: emr
+  labels:
+    app.kubernetes.io/instance: emr
+    app.kubernetes.io/managed-by: Helm
+    emr-containers.amazonaws.com/component: driver
+    spark-role: driver
+spec:
+  jobLabel: spark-driver-podmonitor
+  namespaceSelector:
+    matchNames:
+    - emr
+  podMetricsEndpoints:
+  - interval: 5s
+    path: /metrics/prometheus
+    port: "blockmanager"
+    scheme: http
+  selector:
+    matchLabels:
+      spark-role: driver
+      emr-containers.amazonaws.com/resource.type: job.run
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: spark-executor-podmonitor
+  namespace: emr
+  labels:
+    app.kubernetes.io/instance: emr
+    app.kubernetes.io/managed-by: Helm
+    emr-containers.amazonaws.com/component: executor
+    spark-role: executor
+spec:
+  jobLabel: spark-executor-podmonitor
+  namespaceSelector:
+    matchNames:
+    - emr
+  podMetricsEndpoints:
+  - interval: 5s
+    path: /metrics/prometheus
+    port: "blockmanager"
+    scheme: http
+  selector:
+    matchLabels:
+      spark-role: executor
+      emr-containers.amazonaws.com/resource.type: job.run

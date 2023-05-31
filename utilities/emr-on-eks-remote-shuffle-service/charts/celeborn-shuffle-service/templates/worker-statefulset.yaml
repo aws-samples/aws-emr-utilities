@@ -71,6 +71,21 @@ spec:
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+    {{- if .Values.volumeUser }}
+      {{- $userId := .Values.volumeUser }}
+      {{- $userGroup := .Values.volumeGroup }}
+      initContainers:  
+    {{- $dirs := get .Values.celeborn "celeborn.worker.storage.dirs" | splitList ","}}
+    {{- range $index, $dir := $dirs }}
+      - name: volume-permission-{{ $index }}
+        image: public.ecr.aws/docker/library/busybox
+        # grant volume access to hadoop user  
+        command: ['sh', '-c', 'mkdir {{ $dir }} ;chown -R {{ $userId}}:{{ $userGroup }} {{ $dir }}']  
+        volumeMounts:
+        - mountPath: {{ $dir }} 
+          name: vol-{{ $index }}
+    {{- end }} 
+    {{- end }}    
       containers:
       - name: {{ .Chart.Name }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
@@ -109,9 +124,10 @@ spec:
         - configMap:
             name: {{ .Values.configmap }}
           name: {{ include "celeborn.fullname" . }}-volume
-        {{- range $index, $dir := $dirs }}
+        {{- $vols := get .Values.celeborn "celeborn.volumes.hostpath" | splitList ","}}   
+        {{- range $index, $vol := $vols }}
         - hostPath:
-            path: {{ $dir }}/worker
+            path: {{ $vol }}
             type: DirectoryOrCreate
           name: vol-{{ $index }}
         {{- end }} 
