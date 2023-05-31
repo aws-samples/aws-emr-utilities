@@ -250,9 +250,11 @@ aws ecr create-repository --repository-name clb-spark-benchmark \
 #### Build & push server & client docker images
 ```
 SPARK_VERSION=3.2
+CELEBORN_VERSION=branch-0.2
 # build server
 docker build -t $ECR_URL/celeborn-server:spark${SPARK_VERSION} \
   --build-arg SPARK_VERSION=${SPARK_VERSION} \
+  --build-arg CELEBORN_VERSION=${CELEBORN_VERSION} \
   --build-arg celeborn_uid=999 \
   --build-arg celeborn_gid=1000 \
   -f docker/celeborn-server/Dockerfile .
@@ -262,6 +264,7 @@ docker push $ECR_URL/celeborn-server:spark${SPARK_VERSION}
 # build client with benchmark tool
 docker build -t $ECR_URL/clb-spark-benchmark:emr6.6 \
   --build-arg SPARK_VERSION=${SPARK_VERSION} \
+  --build-arg CELEBORN_VERSION=${CELEBORN_VERSION} \
   --build-arg SPARK_BASE_IMAGE=$SRC_ECR_URL/spark/emr-6.6.0:latest \
   -f docker/celeborn-emr-client/Dockerfile .
 docker push $ECR_URL/clb-spark-benchmark:emr6.6
