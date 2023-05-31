@@ -70,12 +70,13 @@ celeborn:
   celeborn.rpc.io.clientThreads: 4
   celeborn.rpc.dispatcher.numThreads: 4
   celeborn.worker.flusher.buffer.size: 128k
+  celeborn.worker.flusher.threads: 8
   celeborn.worker.fetch.io.threads: 64                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
   celeborn.worker.push.io.threads: 128
-  celeborn.push.stageEnd.timeout: 120s
-  celeborn.application.heartbeat.timeout: 600s
-  celeborn.worker.heartbeat.timeout: 600s
-  celeborn.network.timeout: 600s
+  celeborn.push.stageEnd.timeout: 600s
+  celeborn.application.heartbeat.timeout: 300
+  celeborn.worker.heartbeat.timeout: 120s
+  celeborn.network.timeout: 2000s
   # celeborn.worker.replicate.threads: 128
   celeborn.worker.commit.threads: 64
   celeborn.worker.readBuffer.target.changeThreshold: 4mb

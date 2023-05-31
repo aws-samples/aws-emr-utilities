@@ -5,10 +5,12 @@ ARG java_image_tag=8-jdk-focal
 
 FROM eclipse-temurin:${java_image_tag} as cele-client
 ARG SPARK_VERSION=3.2
+ARG CELEBORN_VERSION=branch-0.2
+
 # install maven
 RUN apt-get update && apt-get install -y git
 # build celeborn binary
-RUN git clone https://github.com/apache/incubator-celeborn.git
+RUN git clone https://github.com/apache/incubator-celeborn.git -b ${CELEBORN_VERSION}
 WORKDIR incubator-celeborn
 RUN ./build/make-distribution.sh -Pspark-${SPARK_VERSION} && \
     cat *.tgz | tar -xvzf - && \

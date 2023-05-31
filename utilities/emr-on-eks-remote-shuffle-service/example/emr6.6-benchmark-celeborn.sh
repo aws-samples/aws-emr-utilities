@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT-0
 # export EMRCLUSTER_NAME=emr-on-eks-rss
 # export AWS_REGION=us-east-1
-
+          # "spark.celeborn.shuffle.partitionSplit.threshold": "2g",
           # "spark.celeborn.client.push.sort.pipeline.enabled": "true",
           # "spark.celeborn.client.push.sort.randomizePartitionId.enabled": "true",
           # "spark.celeborn.shuffle.batchHandleChangePartition.enabled": "true",
@@ -12,6 +12,9 @@
           # "spark.celeborn.client.push.blacklist.enabled": "true",
           # "spark.celeborn.client.blacklistSlave.enabled": "true",
           # "spark.celeborn.client.shuffle.writer": "SORT",
+               
+    
+        
 export ACCOUNTID=$(aws sts get-caller-identity --query Account --output text)
 export VIRTUAL_CLUSTER_ID=$(aws emr-containers list-virtual-clusters --query "virtualClusters[?name == '$EMRCLUSTER_NAME' && state == 'RUNNING'].id" --output text)
 export EMR_ROLE_ARN=arn:aws:iam::$ACCOUNTID:role/$EMRCLUSTER_NAME-execution-role
@@ -20,7 +23,7 @@ export ECR_URL="$ACCOUNTID.dkr.ecr.$AWS_REGION.amazonaws.com"
 
 aws emr-containers start-job-run \
   --virtual-cluster-id $VIRTUAL_CLUSTER_ID \
-  --name em66-3clb-usesortq15 \
+  --name em66-clb-adj \
   --execution-role-arn $EMR_ROLE_ARN \
   --release-label emr-6.6.0-latest \
   --job-driver '{
@@ -36,30 +39,32 @@ aws emr-containers start-job-run \
           "spark.kubernetes.container.image": "'$ECR_URL'/clb-spark-benchmark:emr6.6",
           "spark.executor.memoryOverhead": "2G",
           "spark.kubernetes.executor.podNamePrefix": "emr-eks-tpcds-clb",
-          "spark.serializer": "org.apache.spark.serializer.KryoSerializer",
-          
-          "spark.celeborn.push.replicate.enabled": "false",
-          "spark.celeborn.shuffle.partitionSplit.threshold": "2g",
-          "spark.celeborn.client.shuffle.rangeReadFilter.enabled": "true",
-          "spark.celeborn.fetch.timeout": "30s",
-          "spark.celeborn.push.data.timeout": "30s",
+          "spark.kubernetes.node.selector.eks.amazonaws.com/nodegroup": "c59b",
+          "spark.network.timeout": "2000s",
+          "spark.executor.heartbeatInterval": "300s",
+
+          "spark.celeborn.client.fetch.timeout": "120s",
+          "spark.celeborn.client.push.data.timeout": "120s",
           "spark.celeborn.push.limit.inFlight.timeout": "600s",
+
+          "spark.serializer": "org.apache.spark.serializer.KryoSerializer",
+          "spark.celeborn.push.replicate.enabled": "false",
           "spark.celeborn.push.maxReqsInFlight": "32",
           "spark.celeborn.shuffle.compression.codec": "zstd",
-          "spark.celeborn.rpc.askTimeout": "30s",
+          "spark.celeborn.rpc.askTimeout": "120s",
 
           "spark.shuffle.service.enabled": "false",
           "spark.sql.adaptive.enabled": "true",
           "spark.sql.adaptive.skewJoin.enabled": "true",
           "spark.sql.adaptive.localShuffleReader.enabled": "false",
           "spark.shuffle.manager": "org.apache.spark.shuffle.celeborn.RssShuffleManager",
-          "spark.celeborn.master.endpoints": "celeborn-master-0.celeborn-master-svc.celeborn:9097,celeborn-master-1.celeborn-master-svc.celeborn:9097,celeborn-master-2.celeborn-master-svc.celeborn:9097",
-          "spark.kubernetes.node.selector.eks.amazonaws.com/nodegroup": "c59b"
+          "spark.celeborn.master.endpoints": "celeborn-master-0.celeborn-master-svc.celeborn:9097,celeborn-master-1.celeborn-master-svc.celeborn:9097,celeborn-master-2.celeborn-master-svc.celeborn:9097"
+          
       }},
       {
         "classification": "spark-log4j",
         "properties": {
-          "log4j.rootCategory":"DEBUG, console"
+          "log4j.rootCategory":"WARN, console"
         }
       }
     ],

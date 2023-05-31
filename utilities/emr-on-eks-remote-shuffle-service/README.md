@@ -272,10 +272,12 @@ Celeborn helm chart comes with the monitoring feature via Prometheus. To install
 # config celeborn environment variables and docker image
 vi charts/celeborn-shuffle-service/values.yaml
 ```
+
 <details>
-<summary>OPTIONAL:Install prometheus monitoring</summary>
+<summary>OPTIONAL: Install prometheus monitoring</summary>
 We will use OSS Prometheus Operator, and the serverelss Amazon managed prometheus and managed Grafana to monitor Celeborn in this case.
-```
+
+```bash
 kubectl create namespace prometheus
 eksctl create iamserviceaccount \
     --cluster ${EKSCLUSTER_NAME} --namespace prometheus --name amp-iamproxy-ingest-service-account \
@@ -305,7 +307,8 @@ helm upgrade --install prometheus prometheus-community/kube-prometheus-stack -n 
 kubectl --namespace prometheus port-forward service/prometheus-kube-prometheus-prometheus 9090
 ```
 </details>
-```
+
+```bash
 # install celeborn
 helm install celeborn charts/celeborn-shuffle-service  -n celeborn --create-namespace
 # check progress
