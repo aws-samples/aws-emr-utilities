@@ -62,7 +62,7 @@ celeborn:
   celeborn.metrics.enabled: true
   celeborn.master.metrics.prometheus.port: 9098
   celeborn.worker.metrics.prometheus.port: 9096
-  celeborn.worker.monitor.disk.enabled: true
+  celeborn.worker.monitor.disk.enabled: false
 
   celeborn.shuffle.chunk.size: 4m
   celeborn.rpc.io.serverThreads: 128
@@ -73,8 +73,8 @@ celeborn:
   celeborn.worker.fetch.io.threads: 64                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
   celeborn.worker.push.io.threads: 128
   celeborn.push.stageEnd.timeout: 120s
-  celeborn.application.heartbeat.timeout: 180s
-  celeborn.worker.heartbeat.timeout: 180s
+  celeborn.application.heartbeat.timeout: 600s
+  celeborn.worker.heartbeat.timeout: 600s
   celeborn.network.timeout: 600s
   # celeborn.worker.replicate.threads: 128
   celeborn.worker.commit.threads: 64
@@ -83,15 +83,17 @@ celeborn:
   celeborn.worker.directMemoryRatioForReadBuffer: 0.4
   celeborn.worker.partition.initial.readBuffersMin: 512
   celeborn.rpc.io.threads: 8
-  # celeborn.worker.partitionSorter.threads: 8
+  # celeborn.worker.partitionSorter.directMemoryRatioThreshold: 0.2
+  # celeborn.worker.sortPartition.reservedMemoryPerPartition: 4mb
+  # celeborn.worker.sortPartition.threads: 8
 
 
 environments:
-  CELEBORN_MASTER_MEMORY: 10g
+  CELEBORN_MASTER_MEMORY: 15g
   # CELEBORN_MASTER_MEMORY: 2g
   CELEBORN_MASTER_JAVA_OPTS: "-XX:-PrintGC -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps -Xloggc:gc-master.out -Dio.netty.leakDetectionLevel=advanced"
   # CELEBORN_WORKER_MEMORY: 2g
-  CELEBORN_WORKER_MEMORY: 14g
+  CELEBORN_WORKER_MEMORY: 15g
   CELEBORN_WORKER_OFFHEAP_MEMORY: 20g
   CELEBORN_WORKER_JAVA_OPTS: "-XX:-PrintGC -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps -Xloggc:gc-worker.out -Dio.netty.leakDetectionLevel=advanced"
   CELEBORN_NO_DAEMONIZE: 1

@@ -166,12 +166,13 @@ docker push $ECR_URL/css-spark-benchmark:emr6.6
 ### 1. Install Uniffle Operator on EKS
 Ensure you have [`wget`](https://formulae.brew.sh/formula/wget) and [`go 1.16`](https://formulae.brew.sh/formula/go@1.16) installed.
 
-#### Build Coordinator and Server docker image
+#### Build Uniffle Server Docker Images
 ```bash
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 ECR_URL=$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
 aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_URL
-
+aws ecr create-repository --repository-name uniffle-server --image-scanning-configuration scanOnPush=true
+# build uniffle server
 cd docker/uniffle-server
 export UNIFFLE_VERSION="0.7.0-snapshot"
 sh build.sh --hadoop-version 3.2.1 --registry $ECR_URL
@@ -181,9 +182,11 @@ sh build.sh --hadoop-version 3.2.1 --registry $ECR_URL
 aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_URL
 aws ecr create-repository --repository-name rss-webhook --image-scanning-configuration scanOnPush=true
 aws ecr create-repository --repository-name rss-controller --image-scanning-configuration scanOnPush=true
-
+# build uniffle webhook and controller
 cd ../../charts/uniffle-operator
 export VERSION="0.7.0-snapshot"
+export GOPROXY=direct
+rm -rf local
 make REGISTRY=$ECR_URL docker-build docker-push -f Makefile
 ```
 #### Run Uniffle Operator in EKS 
@@ -250,6 +253,8 @@ SPARK_VERSION=3.2
 # build server
 docker build -t $ECR_URL/celeborn-server:spark${SPARK_VERSION} \
   --build-arg SPARK_VERSION=${SPARK_VERSION} \
+  --build-arg celeborn_uid=999 \
+  --build-arg celeborn_gid=1000 \
   -f docker/celeborn-server/Dockerfile .
 # push the image to ECR
 docker push $ECR_URL/celeborn-server:spark${SPARK_VERSION}
@@ -262,13 +267,50 @@ docker build -t $ECR_URL/clb-spark-benchmark:emr6.6 \
 docker push $ECR_URL/clb-spark-benchmark:emr6.6
 ```
 #### Run Celeborn shuffle service in EKS
+Celeborn helm chart comes with the monitoring feature via Prometheus. To install Prometheus in EKS and integrate with Amazon Managed Prometheus and Managed Grafana, check out this [installation script](https://github.com/melodyyangaws/karpenter-emr-on-eks/blob/main/provision/create-workshop-env.sh#L111).
 ```bash
 # config celeborn environment variables and docker image
 vi charts/celeborn-shuffle-service/values.yaml
-# install
-helm install celeborn ./charts/celeborn-shuffle-service  -n celeborn --create-namespace
+```
+<details>
+<summary>OPTIONAL:Install prometheus monitoring</summary>
+We will use OSS Prometheus Operator, and the serverelss Amazon managed prometheus and managed Grafana to monitor Celeborn in this case.
+```
+kubectl create namespace prometheus
+eksctl create iamserviceaccount \
+    --cluster ${EKSCLUSTER_NAME} --namespace prometheus --name amp-iamproxy-ingest-service-account \
+    --role-name "${EKSCLUSTER_NAME}-prometheus-ingest" \
+    --attach-policy-arn "arn:aws:iam::aws:policy/AmazonPrometheusRemoteWriteAccess" \
+    --role-only \
+    --approve
+# create managed prometheus workspace
+amp=$(aws amp list-workspaces --query "workspaces[?alias=='$EKSCLUSTER_NAME'].workspaceId" --output text)
+if [ -z "$amp" ]; then
+    echo "Creating a new prometheus workspace..."
+    export WORKSPACE_ID=$(aws amp create-workspace --alias $EKSCLUSTER_NAME --query workspaceId --output text)
+else
+    echo "A prometheus workspace already exists"
+    export WORKSPACE_ID=$amp
+fi
+sed -i -- 's/{AWS_REGION}/'$AWS_REGION'/g' charts/celeborn-shuffle-service/prometheusoperator_values.yaml
+sed -i -- 's/{ACCOUNTID}/'$ACCOUNTID'/g' charts/celeborn-shuffle-service/prometheusoperator_values.yaml
+sed -i -- 's/{WORKSPACE_ID}/'$WORKSPACE_ID'/g' charts/celeborn-shuffle-service/prometheusoperator_values.yaml
+sed -i -- 's/{EKSCLUSTER_NAME}/'$EKSCLUSTER_NAME'/g' charts/celeborn-shuffle-service/prometheusoperator_values.yaml
+
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+# check the `yaml`, ensure varaibles are populated first
+helm upgrade --install prometheus prometheus-community/kube-prometheus-stack -n prometheus -f charts/celeborn-shuffle-service/prometheusoperator_values.yaml
+# validate on the webUI:localhost:9090, status->targets
+kubectl --namespace prometheus port-forward service/prometheus-kube-prometheus-prometheus 9090
+```
+</details>
+```
+# install celeborn
+helm install celeborn charts/celeborn-shuffle-service  -n celeborn --create-namespace
 # check progress
 kubectl get all -n celeborn
+kubectl get podmonitor -n celeborn
 ```
 
 ## Run Benchmark
