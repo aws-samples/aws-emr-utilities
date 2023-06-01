@@ -1,0 +1,893 @@
+++ id -u
++ myuid=999
+++ id -g
++ mygid=1000
++ set +e
+++ getent passwd 999
++ uidentry=hadoop:x:999:1000::/home/hadoop:/bin/bash
++ set -e
++ '[' -z hadoop:x:999:1000::/home/hadoop:/bin/bash ']'
++ '[' -n '' ']'
++ SPARK_K8S_CMD=driver
++ [[ driver == executor ]]
++ SPARK_CLASSPATH=':/usr/lib/spark/jars/*'
++ env
++ grep SPARK_JAVA_OPT_
++ sort -t_ -k4 -n
++ sed 's/[^=]*=\(.*\)/\1/g'
++ readarray -t SPARK_EXECUTOR_JAVA_OPTS
++ '[' -n '' ']'
++ '[' -z ']'
++ '[' -z ']'
++ '[' -n '' ']'
++ '[' -z x ']'
++ SPARK_CLASSPATH='/etc/hadoop/conf::/usr/lib/spark/jars/*'
++ '[' -z x ']'
++ SPARK_CLASSPATH='/usr/lib/spark/conf:/etc/hadoop/conf::/usr/lib/spark/jars/*'
++ case "$SPARK_K8S_CMD" in
++ shift 1
++ CMD=("$SPARK_HOME/bin/spark-submit" --conf "spark.driver.bindAddress=$SPARK_DRIVER_BIND_ADDRESS" --deploy-mode client "$@")
++ DISABLE_STDOUT_STDERR=0
++ '[' -z /var/log/spark/user/spark-0000000323l3bd1i3ak-driver/stdout ']'
++ '[' -z /var/log/spark/user/spark-0000000323l3bd1i3ak-driver/stderr ']'
++ DISABLE_PULLING_CONTAINER_FAILURE=0
++ '[' -z '(Error|Exception|Fail)' ']'
++ '[' -z /var/log/spark/error.log ']'
++ '[' -n '' ']'
++ '[' -n '' ']'
++ '[' -n '' ']'
+++ dirname /var/log/spark/user/spark-0000000323l3bd1i3ak-driver/stderr
+++ dirname /var/log/spark/user/spark-0000000323l3bd1i3ak-driver/stdout
++ mkdir -p /var/log/spark/user/spark-0000000323l3bd1i3ak-driver /var/log/spark/user/spark-0000000323l3bd1i3ak-driver
++ '[' -n /var/log/fluentd/main-container-terminated ']'
++ args=(-f "$SIDECAR_SIGNAL_FILE")
++ '[' -n '' ']'
++ (( 0 ))
++ (( DISABLE_PULLING_CONTAINER_FAILURE ))
++ exec /usr/bin/tini -s -- /usr/lib/spark/bin/spark-submit --conf spark.driver.bindAddress=192.168.41.36 --deploy-mode client --properties-file /usr/lib/spark/conf/spark.properties --class com.amazonaws.eks.tpcds.BenchmarkSQL local:///usr/lib/spark/examples/jars/eks-spark-benchmark-assembly-1.0.jar s3://emr-on-eks-rss-633458367150-us-west-2/BLOG_TPCDS-TEST-3T-partitioned s3://emr-on-eks-rss-633458367150-us-west-2/EMRONEKS_TPCDS-TEST-3T-RESULT /opt/tpcds-kit/tools parquet 3000 1 false q15-v2.4,q17-v2.4 true
++ /usr/bin/pub-terminate.sh -f /var/log/fluentd/main-container-terminated
+++ tee /var/log/spark/user/spark-0000000323l3bd1i3ak-driver/stdout /dev/fd/63
++++ stdbuf -o0 grep -E '(Error|Exception|Fail)'
+++ tee /var/log/spark/user/spark-0000000323l3bd1i3ak-driver/stderr /dev/fd/62
++++ stdbuf -o0 grep -E '(Error|Exception|Fail)'
+PID to watch not set; defaulting to parent with PID 1
+Error path to watch is not set
+Created file /var/log/fluentd/main-container-terminated to heartbeat to
+Waiting for PID 1 to terminate...
+DATA DIR is s3://emr-on-eks-rss-633458367150-us-west-2/BLOG_TPCDS-TEST-3T-partitioned
+23/06/01 03:58:07 INFO SparkContext: Running Spark version 3.2.0-amzn-0
+23/06/01 03:58:07 INFO ResourceUtils: ==============================================================
+23/06/01 03:58:07 INFO ResourceUtils: No custom resources configured for spark.driver.
+23/06/01 03:58:07 INFO ResourceUtils: ==============================================================
+23/06/01 03:58:07 INFO SparkContext: Submitted application: TPCDS SQL Benchmark 3000 GB
+23/06/01 03:58:07 INFO ResourceProfile: Default ResourceProfile created, executor resources: Map(memoryOverhead -> name: memoryOverhead, amount: 2048, script: , vendor: , cores -> name: cores, amount: 4, script: , vendor: , memory -> name: memory, amount: 6144, script: , vendor: , offHeap -> name: offHeap, amount: 0, script: , vendor: ), task resources: Map(cpus -> name: cpus, amount: 1.0)
+23/06/01 03:58:07 INFO ResourceProfile: Limiting resource is cpus at 4 tasks per executor
+23/06/01 03:58:07 INFO ResourceProfileManager: Added ResourceProfile id: 0
+23/06/01 03:58:07 INFO SecurityManager: Changing view acls to: hadoop
+23/06/01 03:58:07 INFO SecurityManager: Changing modify acls to: hadoop
+23/06/01 03:58:07 INFO SecurityManager: Changing view acls groups to: 
+23/06/01 03:58:07 INFO SecurityManager: Changing modify acls groups to: 
+23/06/01 03:58:07 INFO SecurityManager: SecurityManager: authentication enabled; ui acls disabled; users  with view permissions: Set(hadoop); groups with view permissions: Set(); users  with modify permissions: Set(hadoop); groups with modify permissions: Set()
+23/06/01 03:58:07 DEBUG InternalLoggerFactory: Using SLF4J as the default logging framework
+23/06/01 03:58:07 DEBUG InternalThreadLocalMap: -Dio.netty.threadLocalMap.stringBuilder.initialSize: 1024
+23/06/01 03:58:07 DEBUG InternalThreadLocalMap: -Dio.netty.threadLocalMap.stringBuilder.maxSize: 4096
+23/06/01 03:58:07 DEBUG MultithreadEventLoopGroup: -Dio.netty.eventLoopThreads: 4
+23/06/01 03:58:07 DEBUG PlatformDependent0: -Dio.netty.noUnsafe: false
+23/06/01 03:58:07 DEBUG PlatformDependent0: Java version: 8
+23/06/01 03:58:07 DEBUG PlatformDependent0: sun.misc.Unsafe.theUnsafe: available
+23/06/01 03:58:07 DEBUG PlatformDependent0: sun.misc.Unsafe.copyMemory: available
+23/06/01 03:58:07 DEBUG PlatformDependent0: java.nio.Buffer.address: available
+23/06/01 03:58:07 DEBUG PlatformDependent0: direct buffer constructor: available
+23/06/01 03:58:07 DEBUG PlatformDependent0: java.nio.Bits.unaligned: available, true
+23/06/01 03:58:07 DEBUG PlatformDependent0: jdk.internal.misc.Unsafe.allocateUninitializedArray(int): unavailable prior to Java9
+23/06/01 03:58:07 DEBUG PlatformDependent0: java.nio.DirectByteBuffer.<init>(long, int): available
+23/06/01 03:58:07 DEBUG PlatformDependent: sun.misc.Unsafe: available
+23/06/01 03:58:07 DEBUG PlatformDependent: -Dio.netty.tmpdir: /tmp (java.io.tmpdir)
+23/06/01 03:58:07 DEBUG PlatformDependent: -Dio.netty.bitMode: 64 (sun.arch.data.model)
+23/06/01 03:58:07 DEBUG PlatformDependent: -Dio.netty.maxDirectMemory: 3203792896 bytes
+23/06/01 03:58:07 DEBUG PlatformDependent: -Dio.netty.uninitializedArrayAllocationThreshold: -1
+23/06/01 03:58:07 DEBUG CleanerJava6: java.nio.ByteBuffer.cleaner(): available
+23/06/01 03:58:07 DEBUG PlatformDependent: -Dio.netty.noPreferDirect: false
+23/06/01 03:58:07 DEBUG NioEventLoop: -Dio.netty.noKeySetOptimization: false
+23/06/01 03:58:07 DEBUG NioEventLoop: -Dio.netty.selectorAutoRebuildThreshold: 512
+23/06/01 03:58:07 DEBUG PlatformDependent: org.jctools-core.MpscChunkedArrayQueue: available
+23/06/01 03:58:07 DEBUG ResourceLeakDetector: -Dio.netty.leakDetection.level: simple
+23/06/01 03:58:07 DEBUG ResourceLeakDetector: -Dio.netty.leakDetection.targetRecords: 4
+23/06/01 03:58:07 DEBUG PooledByteBufAllocator: -Dio.netty.allocator.numHeapArenas: 4
+23/06/01 03:58:07 DEBUG PooledByteBufAllocator: -Dio.netty.allocator.numDirectArenas: 4
+23/06/01 03:58:07 DEBUG PooledByteBufAllocator: -Dio.netty.allocator.pageSize: 8192
+23/06/01 03:58:07 DEBUG PooledByteBufAllocator: -Dio.netty.allocator.maxOrder: 11
+23/06/01 03:58:07 DEBUG PooledByteBufAllocator: -Dio.netty.allocator.chunkSize: 16777216
+23/06/01 03:58:07 DEBUG PooledByteBufAllocator: -Dio.netty.allocator.smallCacheSize: 256
+23/06/01 03:58:07 DEBUG PooledByteBufAllocator: -Dio.netty.allocator.normalCacheSize: 64
+23/06/01 03:58:07 DEBUG PooledByteBufAllocator: -Dio.netty.allocator.maxCachedBufferCapacity: 32768
+23/06/01 03:58:07 DEBUG PooledByteBufAllocator: -Dio.netty.allocator.cacheTrimInterval: 8192
+23/06/01 03:58:07 DEBUG PooledByteBufAllocator: -Dio.netty.allocator.cacheTrimIntervalMillis: 0
+23/06/01 03:58:07 DEBUG PooledByteBufAllocator: -Dio.netty.allocator.useCacheForAllThreads: true
+23/06/01 03:58:07 DEBUG PooledByteBufAllocator: -Dio.netty.allocator.maxCachedByteBuffersPerChunk: 1023
+23/06/01 03:58:07 DEBUG DefaultChannelId: -Dio.netty.processId: 23 (auto-detected)
+23/06/01 03:58:07 DEBUG NetUtil: -Djava.net.preferIPv4Stack: false
+23/06/01 03:58:07 DEBUG NetUtil: -Djava.net.preferIPv6Addresses: false
+23/06/01 03:58:07 DEBUG NetUtilInitializations: Loopback interface: lo (lo, 127.0.0.1)
+23/06/01 03:58:07 DEBUG NetUtil: /proc/sys/net/core/somaxconn: 4096
+23/06/01 03:58:07 DEBUG DefaultChannelId: -Dio.netty.machineId: 4e:e1:4e:ff:fe:89:1c:c4 (auto-detected)
+23/06/01 03:58:07 DEBUG ByteBufUtil: -Dio.netty.allocator.type: pooled
+23/06/01 03:58:07 DEBUG ByteBufUtil: -Dio.netty.threadLocalDirectBufferSize: 0
+23/06/01 03:58:07 DEBUG ByteBufUtil: -Dio.netty.maxThreadLocalCharBufferSize: 16384
+23/06/01 03:58:07 DEBUG TransportServer: Shuffle server started on port: 7078
+23/06/01 03:58:07 INFO Utils: Successfully started service 'sparkDriver' on port 7078.
+23/06/01 03:58:07 DEBUG SparkEnv: Using serializer: class org.apache.spark.serializer.KryoSerializer
+23/06/01 03:58:07 INFO SparkEnv: Registering MapOutputTracker
+23/06/01 03:58:07 DEBUG MapOutputTrackerMasterEndpoint: init
+23/06/01 03:58:07 INFO SparkEnv: Registering BlockManagerMaster
+23/06/01 03:58:07 INFO BlockManagerMasterEndpoint: Using org.apache.spark.storage.DefaultTopologyMapper for getting topology information
+23/06/01 03:58:07 INFO BlockManagerMasterEndpoint: BlockManagerMasterEndpoint up
+23/06/01 03:58:07 INFO SparkEnv: Registering BlockManagerMasterHeartbeat
+23/06/01 03:58:07 INFO DiskBlockManager: Created local directory at /var/data/spark-bbb581fe-f18e-427d-bb29-e64b65a9097a/blockmgr-bb409531-b1e1-4bfb-a7c5-feccbe7796f4
+23/06/01 03:58:07 DEBUG DiskBlockManager: Adding shutdown hook
+23/06/01 03:58:07 INFO MemoryStore: MemoryStore started with capacity 1653.2 MiB
+23/06/01 03:58:07 INFO SparkEnv: Registering OutputCommitCoordinator
+23/06/01 03:58:07 DEBUG OutputCommitCoordinator$OutputCommitCoordinatorEndpoint: init
+23/06/01 03:58:07 DEBUG SubResultCacheManager: Sub-result caches config to enable false.
+23/06/01 03:58:07 INFO SubResultCacheManager: Sub-result caches are disabled.
+23/06/01 03:58:07 DEBUG SecurityManager: Created SSL options for ui: SSLOptions{enabled=false, port=None, keyStore=None, keyStorePassword=None, trustStore=None, trustStorePassword=None, protocol=None, enabledAlgorithms=Set()}
+23/06/01 03:58:07 DEBUG log: Logging to org.slf4j.impl.Log4jLoggerAdapter(org.sparkproject.jetty.util.log) via org.sparkproject.jetty.util.log.Slf4jLog
+23/06/01 03:58:07 INFO log: Logging initialized @1973ms to org.sparkproject.jetty.util.log.Slf4jLog
+23/06/01 03:58:07 DEBUG DecoratedObjectFactory: Adding Decorator: org.sparkproject.jetty.util.DeprecationWarning@10ad20cb
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: o.s.j.s.ServletContextHandler@e041f0c{/,null,STOPPED} added {ServletHandler@f325091{STOPPED},MANAGED}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@f325091{STOPPED} added {org.apache.spark.ui.JettyUtils$$anon$1-1e287667==org.apache.spark.ui.JettyUtils$$anon$1@b1cb8828{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED},AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@f325091{STOPPED} added {[/]=>org.apache.spark.ui.JettyUtils$$anon$1-1e287667,POJO}
+23/06/01 03:58:07 DEBUG DecoratedObjectFactory: Adding Decorator: org.sparkproject.jetty.util.DeprecationWarning@64b31700
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: o.s.j.s.ServletContextHandler@3b65e559{/,null,STOPPED} added {ServletHandler@bae47a0{STOPPED},MANAGED}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@bae47a0{STOPPED} added {org.apache.spark.ui.JettyUtils$$anon$1-74a9c4b0==org.apache.spark.ui.JettyUtils$$anon$1@515718c2{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED},AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@bae47a0{STOPPED} added {[/]=>org.apache.spark.ui.JettyUtils$$anon$1-74a9c4b0,POJO}
+23/06/01 03:58:07 DEBUG DecoratedObjectFactory: Adding Decorator: org.sparkproject.jetty.util.DeprecationWarning@1c4ee95c
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: o.s.j.s.ServletContextHandler@79c4715d{/,null,STOPPED} added {ServletHandler@5aa360ea{STOPPED},MANAGED}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@5aa360ea{STOPPED} added {org.apache.spark.ui.JettyUtils$$anon$1-6548bb7d==org.apache.spark.ui.JettyUtils$$anon$1@d1842efe{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED},AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@5aa360ea{STOPPED} added {[/]=>org.apache.spark.ui.JettyUtils$$anon$1-6548bb7d,POJO}
+23/06/01 03:58:07 DEBUG DecoratedObjectFactory: Adding Decorator: org.sparkproject.jetty.util.DeprecationWarning@e27ba81
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: o.s.j.s.ServletContextHandler@54336c81{/,null,STOPPED} added {ServletHandler@1556f2dd{STOPPED},MANAGED}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@1556f2dd{STOPPED} added {org.apache.spark.ui.JettyUtils$$anon$1-35e52059==org.apache.spark.ui.JettyUtils$$anon$1@ed3d4a62{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED},AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@1556f2dd{STOPPED} added {[/]=>org.apache.spark.ui.JettyUtils$$anon$1-35e52059,POJO}
+23/06/01 03:58:07 DEBUG DecoratedObjectFactory: Adding Decorator: org.sparkproject.jetty.util.DeprecationWarning@492fc69e
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: o.s.j.s.ServletContextHandler@117632cf{/,null,STOPPED} added {ServletHandler@2fb68ec6{STOPPED},MANAGED}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@2fb68ec6{STOPPED} added {org.apache.spark.ui.JettyUtils$$anon$1-d71adc2==org.apache.spark.ui.JettyUtils$$anon$1@bcff5162{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED},AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@2fb68ec6{STOPPED} added {[/]=>org.apache.spark.ui.JettyUtils$$anon$1-d71adc2,POJO}
+23/06/01 03:58:07 DEBUG DecoratedObjectFactory: Adding Decorator: org.sparkproject.jetty.util.DeprecationWarning@3add81c4
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: o.s.j.s.ServletContextHandler@1a1d3c1a{/,null,STOPPED} added {ServletHandler@1c65121{STOPPED},MANAGED}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@1c65121{STOPPED} added {org.apache.spark.ui.JettyUtils$$anon$1-159e366==org.apache.spark.ui.JettyUtils$$anon$1@3029a255{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED},AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@1c65121{STOPPED} added {[/]=>org.apache.spark.ui.JettyUtils$$anon$1-159e366,POJO}
+23/06/01 03:58:07 DEBUG DecoratedObjectFactory: Adding Decorator: org.sparkproject.jetty.util.DeprecationWarning@24528a25
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: o.s.j.s.ServletContextHandler@17ae98d7{/,null,STOPPED} added {ServletHandler@59221b97{STOPPED},MANAGED}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@59221b97{STOPPED} added {org.apache.spark.ui.JettyUtils$$anon$1-6ac4944a==org.apache.spark.ui.JettyUtils$$anon$1@38fe7512{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED},AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@59221b97{STOPPED} added {[/]=>org.apache.spark.ui.JettyUtils$$anon$1-6ac4944a,POJO}
+23/06/01 03:58:07 DEBUG DecoratedObjectFactory: Adding Decorator: org.sparkproject.jetty.util.DeprecationWarning@5a772895
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: o.s.j.s.ServletContextHandler@39fc6b2c{/,null,STOPPED} added {ServletHandler@704b2127{STOPPED},MANAGED}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@704b2127{STOPPED} added {org.apache.spark.ui.JettyUtils$$anon$1-3ee39da0==org.apache.spark.ui.JettyUtils$$anon$1@d8502ea8{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED},AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@704b2127{STOPPED} added {[/]=>org.apache.spark.ui.JettyUtils$$anon$1-3ee39da0,POJO}
+23/06/01 03:58:07 DEBUG DecoratedObjectFactory: Adding Decorator: org.sparkproject.jetty.util.DeprecationWarning@7cc9ce8
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: o.s.j.s.ServletContextHandler@2e27d72f{/,null,STOPPED} added {ServletHandler@c0b41d6{STOPPED},MANAGED}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@c0b41d6{STOPPED} added {org.apache.spark.ui.JettyUtils$$anon$1-4837595f==org.apache.spark.ui.JettyUtils$$anon$1@9e9c880b{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED},AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@c0b41d6{STOPPED} added {[/]=>org.apache.spark.ui.JettyUtils$$anon$1-4837595f,POJO}
+23/06/01 03:58:07 DEBUG DecoratedObjectFactory: Adding Decorator: org.sparkproject.jetty.util.DeprecationWarning@2bffa76d
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: o.s.j.s.ServletContextHandler@3b718392{/,null,STOPPED} added {ServletHandler@6d2260db{STOPPED},MANAGED}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@6d2260db{STOPPED} added {org.apache.spark.ui.JettyUtils$$anon$1-1f2d2181==org.apache.spark.ui.JettyUtils$$anon$1@e91b752d{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED},AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@6d2260db{STOPPED} added {[/]=>org.apache.spark.ui.JettyUtils$$anon$1-1f2d2181,POJO}
+23/06/01 03:58:07 DEBUG DecoratedObjectFactory: Adding Decorator: org.sparkproject.jetty.util.DeprecationWarning@5c371e13
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: o.s.j.s.ServletContextHandler@530a8454{/,null,STOPPED} added {ServletHandler@1e34c607{STOPPED},MANAGED}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@1e34c607{STOPPED} added {org.apache.spark.ui.JettyUtils$$anon$1-5215cd9a==org.apache.spark.ui.JettyUtils$$anon$1@c5a7fc18{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED},AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@1e34c607{STOPPED} added {[/]=>org.apache.spark.ui.JettyUtils$$anon$1-5215cd9a,POJO}
+23/06/01 03:58:07 DEBUG DecoratedObjectFactory: Adding Decorator: org.sparkproject.jetty.util.DeprecationWarning@36b6964d
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: o.s.j.s.ServletContextHandler@31198ceb{/,null,STOPPED} added {ServletHandler@9257031{STOPPED},MANAGED}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@9257031{STOPPED} added {org.apache.spark.ui.JettyUtils$$anon$1-75201592==org.apache.spark.ui.JettyUtils$$anon$1@3573ff87{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED},AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@9257031{STOPPED} added {[/]=>org.apache.spark.ui.JettyUtils$$anon$1-75201592,POJO}
+23/06/01 03:58:07 DEBUG DecoratedObjectFactory: Adding Decorator: org.sparkproject.jetty.util.DeprecationWarning@aa5455e
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: o.s.j.s.ServletContextHandler@282308c3{/,null,STOPPED} added {ServletHandler@5dda14d0{STOPPED},MANAGED}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@5dda14d0{STOPPED} added {org.apache.spark.ui.JettyUtils$$anon$1-1db0ec27==org.apache.spark.ui.JettyUtils$$anon$1@ce72c032{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED},AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@5dda14d0{STOPPED} added {[/]=>org.apache.spark.ui.JettyUtils$$anon$1-1db0ec27,POJO}
+23/06/01 03:58:07 DEBUG DecoratedObjectFactory: Adding Decorator: org.sparkproject.jetty.util.DeprecationWarning@3d9fc57a
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: o.s.j.s.ServletContextHandler@d4ab71a{/,null,STOPPED} added {ServletHandler@3b4ef7{STOPPED},MANAGED}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@3b4ef7{STOPPED} added {org.apache.spark.ui.JettyUtils$$anon$1-1af05b03==org.apache.spark.ui.JettyUtils$$anon$1@367d9b18{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED},AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@3b4ef7{STOPPED} added {[/]=>org.apache.spark.ui.JettyUtils$$anon$1-1af05b03,POJO}
+23/06/01 03:58:07 DEBUG DecoratedObjectFactory: Adding Decorator: org.sparkproject.jetty.util.DeprecationWarning@438bad7c
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: o.s.j.s.ServletContextHandler@25230246{/,null,STOPPED} added {ServletHandler@4fdf8f12{STOPPED},MANAGED}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@4fdf8f12{STOPPED} added {org.apache.spark.ui.JettyUtils$$anon$1-4a8b5227==org.apache.spark.ui.JettyUtils$$anon$1@22621867{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED},AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@4fdf8f12{STOPPED} added {[/]=>org.apache.spark.ui.JettyUtils$$anon$1-4a8b5227,POJO}
+23/06/01 03:58:07 DEBUG DecoratedObjectFactory: Adding Decorator: org.sparkproject.jetty.util.DeprecationWarning@54f5f647
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: o.s.j.s.ServletContextHandler@6979efad{/,null,STOPPED} added {ServletHandler@5a6d5a8f{STOPPED},MANAGED}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@5a6d5a8f{STOPPED} added {org.apache.spark.ui.JettyUtils$$anon$1-4a67318f==org.apache.spark.ui.JettyUtils$$anon$1@1c9988e8{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED},AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@5a6d5a8f{STOPPED} added {[/]=>org.apache.spark.ui.JettyUtils$$anon$1-4a67318f,POJO}
+23/06/01 03:58:07 DEBUG DecoratedObjectFactory: Adding Decorator: org.sparkproject.jetty.util.DeprecationWarning@6650813a
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: o.s.j.s.ServletContextHandler@44ea608c{/,null,STOPPED} added {ServletHandler@50cf5a23{STOPPED},MANAGED}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@50cf5a23{STOPPED} added {org.apache.spark.ui.JettyUtils$$anon$1-450794b4==org.apache.spark.ui.JettyUtils$$anon$1@facd1063{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED},AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@50cf5a23{STOPPED} added {[/]=>org.apache.spark.ui.JettyUtils$$anon$1-450794b4,POJO}
+23/06/01 03:58:07 DEBUG DecoratedObjectFactory: Adding Decorator: org.sparkproject.jetty.util.DeprecationWarning@273c947f
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: o.s.j.s.ServletContextHandler@30457e14{/,null,STOPPED} added {ServletHandler@1af1347d{STOPPED},MANAGED}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@1af1347d{STOPPED} added {org.apache.spark.ui.JettyUtils$$anon$1-632aa1a3==org.apache.spark.ui.JettyUtils$$anon$1@668ea37c{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED},AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@1af1347d{STOPPED} added {[/]=>org.apache.spark.ui.JettyUtils$$anon$1-632aa1a3,POJO}
+23/06/01 03:58:07 DEBUG DecoratedObjectFactory: Adding Decorator: org.sparkproject.jetty.util.DeprecationWarning@3b582111
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: o.s.j.s.ServletContextHandler@2899a8db{/,null,STOPPED} added {ServletHandler@1e8823d2{STOPPED},MANAGED}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@1e8823d2{STOPPED} added {org.apache.spark.ui.JettyUtils$$anon$1-c1a4620==org.apache.spark.ui.JettyUtils$$anon$1@806b4345{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED},AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@1e8823d2{STOPPED} added {[/]=>org.apache.spark.ui.JettyUtils$$anon$1-c1a4620,POJO}
+23/06/01 03:58:07 DEBUG DecoratedObjectFactory: Adding Decorator: org.sparkproject.jetty.util.DeprecationWarning@76b0ae1b
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: o.s.j.s.ServletContextHandler@130a0f66{/,null,STOPPED} added {ServletHandler@4c432866{STOPPED},MANAGED}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@4c432866{STOPPED} added {org.apache.spark.ui.JettyUtils$$anon$1-12365c88==org.apache.spark.ui.JettyUtils$$anon$1@29862440{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED},AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@4c432866{STOPPED} added {[/]=>org.apache.spark.ui.JettyUtils$$anon$1-12365c88,POJO}
+23/06/01 03:58:07 DEBUG DecoratedObjectFactory: Adding Decorator: org.sparkproject.jetty.util.DeprecationWarning@2237bada
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: o.s.j.s.ServletContextHandler@77e2a6e2{/,null,STOPPED} added {ServletHandler@5710768a{STOPPED},MANAGED}
+23/06/01 03:58:07 DEBUG PreEncodedHttpField: HttpField encoders loaded: []
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@5710768a{STOPPED} added {org.sparkproject.jetty.servlet.DefaultServlet-6134ac4a==org.sparkproject.jetty.servlet.DefaultServlet@37d28233{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED},AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@5710768a{STOPPED} added {[/]=>org.sparkproject.jetty.servlet.DefaultServlet-6134ac4a,POJO}
+23/06/01 03:58:07 DEBUG DecoratedObjectFactory: Adding Decorator: org.sparkproject.jetty.util.DeprecationWarning@71b1a49c
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: o.s.j.s.ServletContextHandler@73e132e0{/,null,STOPPED} added {ServletHandler@3773862a{STOPPED},MANAGED}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@3773862a{STOPPED} added {org.apache.spark.ui.JettyUtils$$anon$2-2472c7d8==org.apache.spark.ui.JettyUtils$$anon$2@f62c8672{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED},AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@3773862a{STOPPED} added {[/]=>org.apache.spark.ui.JettyUtils$$anon$2-2472c7d8,POJO}
+23/06/01 03:58:07 DEBUG DecoratedObjectFactory: Adding Decorator: org.sparkproject.jetty.util.DeprecationWarning@9fecdf1
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: o.s.j.s.ServletContextHandler@3b809711{/,null,STOPPED} added {ServletHandler@3b0f7d9d{STOPPED},MANAGED}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@3b0f7d9d{STOPPED} added {org.glassfish.jersey.servlet.ServletContainer-2392212b==org.glassfish.jersey.servlet.ServletContainer@10ef6997{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED},AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@3b0f7d9d{STOPPED} added {[/*]=>org.glassfish.jersey.servlet.ServletContainer-2392212b,POJO}
+23/06/01 03:58:07 DEBUG DecoratedObjectFactory: Adding Decorator: org.sparkproject.jetty.util.DeprecationWarning@6594402a
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: o.s.j.s.ServletContextHandler@30f4b1a6{/,null,STOPPED} added {ServletHandler@405325cf{STOPPED},MANAGED}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@405325cf{STOPPED} added {org.apache.spark.ui.JettyUtils$$anon$2-3e1162e7==org.apache.spark.ui.JettyUtils$$anon$2@73bf582d{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED},AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@405325cf{STOPPED} added {[/]=>org.apache.spark.ui.JettyUtils$$anon$2-3e1162e7,POJO}
+23/06/01 03:58:07 DEBUG DecoratedObjectFactory: Adding Decorator: org.sparkproject.jetty.util.DeprecationWarning@350b3a17
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: o.s.j.s.ServletContextHandler@38600b{/,null,STOPPED} added {ServletHandler@669d2b1b{STOPPED},MANAGED}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@669d2b1b{STOPPED} added {org.apache.spark.ui.JettyUtils$$anon$2-721eb7df==org.apache.spark.ui.JettyUtils$$anon$2@8c571713{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED},AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@669d2b1b{STOPPED} added {[/]=>org.apache.spark.ui.JettyUtils$$anon$2-721eb7df,POJO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: QueuedThreadPool[qtp1736458419]@678040b3{STOPPED,8<=0<=200,i=0,r=-1,q=0}[NO_TRY] added {org.sparkproject.jetty.util.thread.ThreadPoolBudget@5f574cc2,POJO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: Server@53bf7094{STOPPED}[9.4.43.v20210629] added {QueuedThreadPool[SparkUI]@678040b3{STOPPED,8<=0<=200,i=0,r=-1,q=0}[NO_TRY],AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: Server@53bf7094{STOPPED}[9.4.43.v20210629] added {ErrorHandler@7cf7aee{STOPPED},AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: Server@53bf7094{STOPPED}[9.4.43.v20210629] added {ContextHandlerCollection@df4b72{STOPPED},MANAGED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting Server@53bf7094{STOPPED}[9.4.43.v20210629]
+23/06/01 03:58:07 INFO Server: jetty-9.4.43.v20210629; built: 2021-06-30T11:07:22.254Z; git: 526006ecfa3af7f1a27ef3a288e2bef7ea9dd7e8; jvm 1.8.0_362-b08
+23/06/01 03:58:07 DEBUG AbstractHandler: starting Server@53bf7094{STARTING}[9.4.43.v20210629]
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting QueuedThreadPool[SparkUI]@678040b3{STOPPED,8<=0<=200,i=0,r=-1,q=0}[NO_TRY]
+23/06/01 03:58:07 DEBUG ReservedThreadExecutor: ReservedThreadExecutor@3f3c7bdb{s=0/2,p=0}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: QueuedThreadPool[SparkUI]@678040b3{STARTING,8<=0<=200,i=0,r=-1,q=0}[ReservedThreadExecutor@3f3c7bdb{s=0/2,p=0}] added {ReservedThreadExecutor@3f3c7bdb{s=0/2,p=0},AUTO}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting ReservedThreadExecutor@3f3c7bdb{s=0/2,p=0}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2068ms ReservedThreadExecutor@3f3c7bdb{s=0/2,p=0}
+23/06/01 03:58:07 DEBUG QueuedThreadPool: Starting Thread[SparkUI-28,5,main]
+23/06/01 03:58:07 DEBUG QueuedThreadPool: Starting Thread[SparkUI-29,5,main]
+23/06/01 03:58:07 DEBUG QueuedThreadPool: Starting Thread[SparkUI-30,5,main]
+23/06/01 03:58:07 DEBUG QueuedThreadPool: Runner started for QueuedThreadPool[SparkUI]@678040b3{STARTING,8<=2<=200,i=2,r=-1,q=0}[ReservedThreadExecutor@3f3c7bdb{s=0/2,p=0}]
+23/06/01 03:58:07 DEBUG QueuedThreadPool: Starting Thread[SparkUI-31,5,main]
+23/06/01 03:58:07 DEBUG QueuedThreadPool: Runner started for QueuedThreadPool[SparkUI]@678040b3{STARTING,8<=3<=200,i=3,r=-1,q=0}[ReservedThreadExecutor@3f3c7bdb{s=0/2,p=0}]
+23/06/01 03:58:07 DEBUG QueuedThreadPool: Starting Thread[SparkUI-32,5,main]
+23/06/01 03:58:07 DEBUG QueuedThreadPool: Starting Thread[SparkUI-33,5,main]
+23/06/01 03:58:07 DEBUG QueuedThreadPool: Runner started for QueuedThreadPool[SparkUI]@678040b3{STARTING,8<=4<=200,i=4,r=-1,q=0}[ReservedThreadExecutor@3f3c7bdb{s=0/2,p=0}]
+23/06/01 03:58:07 DEBUG QueuedThreadPool: Runner started for QueuedThreadPool[SparkUI]@678040b3{STARTING,8<=5<=200,i=5,r=-1,q=0}[ReservedThreadExecutor@3f3c7bdb{s=0/2,p=0}]
+23/06/01 03:58:07 DEBUG QueuedThreadPool: Starting Thread[SparkUI-34,5,main]
+23/06/01 03:58:07 DEBUG QueuedThreadPool: Runner started for QueuedThreadPool[SparkUI]@678040b3{STARTING,8<=6<=200,i=6,r=-1,q=0}[ReservedThreadExecutor@3f3c7bdb{s=0/2,p=0}]
+23/06/01 03:58:07 DEBUG QueuedThreadPool: Starting Thread[SparkUI-35,5,main]
+23/06/01 03:58:07 DEBUG QueuedThreadPool: Runner started for QueuedThreadPool[SparkUI]@678040b3{STARTING,8<=7<=200,i=7,r=-1,q=0}[ReservedThreadExecutor@3f3c7bdb{s=0/2,p=0}]
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2070ms QueuedThreadPool[SparkUI]@678040b3{STARTED,8<=8<=200,i=8,r=-1,q=0}[ReservedThreadExecutor@3f3c7bdb{s=0/2,p=0}]
+23/06/01 03:58:07 DEBUG QueuedThreadPool: Runner started for QueuedThreadPool[SparkUI]@678040b3{STARTED,8<=8<=200,i=8,r=-1,q=0}[ReservedThreadExecutor@3f3c7bdb{s=0/2,p=0}]
+23/06/01 03:58:07 DEBUG QueuedThreadPool: Runner started for QueuedThreadPool[SparkUI]@678040b3{STARTED,8<=8<=200,i=8,r=-1,q=0}[ReservedThreadExecutor@3f3c7bdb{s=0/2,p=0}]
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting ErrorHandler@7cf7aee{STOPPED}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting ErrorHandler@7cf7aee{STARTING}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2070ms ErrorHandler@7cf7aee{STARTED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting ContextHandlerCollection@df4b72{STOPPED}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting ContextHandlerCollection@df4b72{STARTING}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2070ms ContextHandlerCollection@df4b72{STARTED}
+23/06/01 03:58:07 INFO Server: Started @2071ms
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2071ms Server@53bf7094{STARTED}[9.4.43.v20210629]
+23/06/01 03:58:07 DEBUG JettyUtils: Using requestHeaderSize: 8192
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: HttpConnectionFactory@2fa3be26[HTTP/1.1] added {HttpConfiguration@4287d447{32768/8192,8192/8192,https://:0,[]},POJO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServerConnector@19f21b6b{null, ()}{0.0.0.0:0} added {Server@53bf7094{STARTED}[9.4.43.v20210629],UNMANAGED}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServerConnector@19f21b6b{null, ()}{0.0.0.0:0} added {QueuedThreadPool[SparkUI]@678040b3{STARTED,8<=8<=200,i=8,r=-1,q=0}[ReservedThreadExecutor@3f3c7bdb{s=0/2,p=0}],UNMANAGED}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServerConnector@19f21b6b{null, ()}{0.0.0.0:0} added {ScheduledExecutorScheduler@261d8190{STOPPED},AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServerConnector@19f21b6b{null, ()}{0.0.0.0:0} added {org.sparkproject.jetty.io.ArrayByteBufferPool@34448e6c,POJO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServerConnector@19f21b6b{null, (http/1.1)}{0.0.0.0:0} added {HttpConnectionFactory@2fa3be26[HTTP/1.1],AUTO}
+23/06/01 03:58:07 DEBUG AbstractConnector: ServerConnector@19f21b6b{HTTP/1.1, (http/1.1)}{0.0.0.0:0} added HttpConnectionFactory@2fa3be26[HTTP/1.1]
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServerConnector@19f21b6b{HTTP/1.1, (http/1.1)}{0.0.0.0:0} added {SelectorManager@ServerConnector@19f21b6b{HTTP/1.1, (http/1.1)}{0.0.0.0:0},MANAGED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting ServerConnector@19f21b6b{HTTP/1.1, (http/1.1)}{0.0.0.0:4040}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServerConnector@19f21b6b{HTTP/1.1, (http/1.1)}{0.0.0.0:4040} added {sun.nio.ch.ServerSocketChannelImpl[/0.0.0.0:4040],POJO}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting ScheduledExecutorScheduler@261d8190{STOPPED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2099ms ScheduledExecutorScheduler@261d8190{STARTED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting HttpConnectionFactory@2fa3be26[HTTP/1.1]
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2099ms HttpConnectionFactory@2fa3be26[HTTP/1.1]
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting SelectorManager@ServerConnector@19f21b6b{HTTP/1.1, (http/1.1)}{0.0.0.0:4040}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: EatWhatYouKill@39ce27f2/SelectorProducer@1e411d81/IDLE/p=false/QueuedThreadPool[SparkUI]@678040b3{STARTED,8<=8<=200,i=8,r=-1,q=0}[ReservedThreadExecutor@3f3c7bdb{s=0/2,p=0}][pc=0,pic=0,pec=0,epc=0]@2023-06-01T03:58:07.874Z added {SelectorProducer@1e411d81,POJO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: EatWhatYouKill@39ce27f2/SelectorProducer@1e411d81/IDLE/p=false/QueuedThreadPool[SparkUI]@678040b3{STARTED,8<=8<=200,i=8,r=-1,q=0}[ReservedThreadExecutor@3f3c7bdb{s=0/2,p=0}][pc=0,pic=0,pec=0,epc=0]@2023-06-01T03:58:07.875Z added {QueuedThreadPool[SparkUI]@678040b3{STARTED,8<=8<=200,i=8,r=-1,q=0}[ReservedThreadExecutor@3f3c7bdb{s=0/2,p=0}],UNMANAGED}
+23/06/01 03:58:07 DEBUG EatWhatYouKill: EatWhatYouKill@39ce27f2/SelectorProducer@1e411d81/IDLE/p=false/QueuedThreadPool[SparkUI]@678040b3{STARTED,8<=8<=200,i=8,r=-1,q=0}[ReservedThreadExecutor@3f3c7bdb{s=0/2,p=0}][pc=0,pic=0,pec=0,epc=0]@2023-06-01T03:58:07.875Z created
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ManagedSelector@28c88600{STOPPED} id=0 keys=-1 selected=-1 updates=0 added {EatWhatYouKill@39ce27f2/SelectorProducer@1e411d81/IDLE/p=false/QueuedThreadPool[SparkUI]@678040b3{STARTED,8<=8<=200,i=8,r=-1,q=0}[ReservedThreadExecutor@3f3c7bdb{s=0/2,p=0}][pc=0,pic=0,pec=0,epc=0]@2023-06-01T03:58:07.876Z,MANAGED}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: SelectorManager@ServerConnector@19f21b6b{HTTP/1.1, (http/1.1)}{0.0.0.0:4040} added {ManagedSelector@28c88600{STOPPED} id=0 keys=-1 selected=-1 updates=0,AUTO}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting ManagedSelector@28c88600{STOPPED} id=0 keys=-1 selected=-1 updates=0
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting EatWhatYouKill@39ce27f2/SelectorProducer@1e411d81/IDLE/p=false/QueuedThreadPool[SparkUI]@678040b3{STARTED,8<=8<=200,i=8,r=-1,q=0}[ReservedThreadExecutor@3f3c7bdb{s=0/2,p=0}][pc=0,pic=0,pec=0,epc=0]@2023-06-01T03:58:07.876Z
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2108ms EatWhatYouKill@39ce27f2/SelectorProducer@1e411d81/IDLE/p=false/QueuedThreadPool[SparkUI]@678040b3{STARTED,8<=8<=200,i=8,r=-1,q=0}[ReservedThreadExecutor@3f3c7bdb{s=0/2,p=0}][pc=0,pic=0,pec=0,epc=0]@2023-06-01T03:58:07.876Z
+23/06/01 03:58:07 DEBUG QueuedThreadPool: queue org.sparkproject.jetty.io.ManagedSelector$$Lambda$604/2141066548@138a7441 startThread=0
+23/06/01 03:58:07 DEBUG QueuedThreadPool: run org.sparkproject.jetty.io.ManagedSelector$$Lambda$604/2141066548@138a7441 in QueuedThreadPool[SparkUI]@678040b3{STARTED,8<=8<=200,i=7,r=-1,q=0}[ReservedThreadExecutor@3f3c7bdb{s=0/2,p=0}]
+23/06/01 03:58:07 DEBUG ManagedSelector: Queued change lazy=false org.sparkproject.jetty.io.ManagedSelector$Start@81ff872 on ManagedSelector@28c88600{STARTING} id=0 keys=0 selected=0 updates=0
+23/06/01 03:58:07 DEBUG EatWhatYouKill: EatWhatYouKill@39ce27f2/SelectorProducer@1e411d81/IDLE/p=false/QueuedThreadPool[SparkUI]@678040b3{STARTED,8<=8<=200,i=7,r=-1,q=0}[ReservedThreadExecutor@3f3c7bdb{s=0/2,p=0}][pc=0,pic=0,pec=0,epc=0]@2023-06-01T03:58:07.877Z tryProduce false
+23/06/01 03:58:07 DEBUG ManagedSelector: updateable 1
+23/06/01 03:58:07 DEBUG ManagedSelector: update org.sparkproject.jetty.io.ManagedSelector$Start@81ff872
+23/06/01 03:58:07 DEBUG ManagedSelector: updates 0
+23/06/01 03:58:07 DEBUG ManagedSelector: Selector sun.nio.ch.EPollSelectorImpl@2a6e986e waiting with 0 keys
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2110ms ManagedSelector@28c88600{STARTED} id=0 keys=0 selected=0 updates=0
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2110ms SelectorManager@ServerConnector@19f21b6b{HTTP/1.1, (http/1.1)}{0.0.0.0:4040}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServerConnector@19f21b6b{HTTP/1.1, (http/1.1)}{0.0.0.0:4040} added {acceptor-0@7e31ce0f,POJO}
+23/06/01 03:58:07 DEBUG QueuedThreadPool: queue acceptor-0@7e31ce0f startThread=0
+23/06/01 03:58:07 INFO AbstractConnector: Started ServerConnector@19f21b6b{HTTP/1.1, (http/1.1)}{0.0.0.0:4040}
+23/06/01 03:58:07 DEBUG QueuedThreadPool: run acceptor-0@7e31ce0f in QueuedThreadPool[SparkUI]@678040b3{STARTED,8<=8<=200,i=6,r=-1,q=0}[ReservedThreadExecutor@3f3c7bdb{s=0/2,p=0}]
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2111ms ServerConnector@19f21b6b{HTTP/1.1, (http/1.1)}{0.0.0.0:4040}
+23/06/01 03:58:07 INFO Utils: Successfully started service 'SparkUI' on port 4040.
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: Server@53bf7094{STARTED}[9.4.43.v20210629] added {Spark@19f21b6b{HTTP/1.1, (http/1.1)}{0.0.0.0:4040},UNMANAGED}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@f325091{STOPPED} added {org.apache.spark.ui.HttpSecurityFilter-4ad4936c==org.apache.spark.ui.HttpSecurityFilter@4ad4936c{inst=false,async=true,src=EMBEDDED:null},AUTO}
+23/06/01 03:58:07 DEBUG TypeUtil: This JVM Runtime does not support Modules, disabling Jetty internal support
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@f325091{STOPPED} added {[/*]/[]/[ASYNC, REQUEST, FORWARD, ERROR, INCLUDE]=>org.apache.spark.ui.HttpSecurityFilter-4ad4936c,POJO}
+23/06/01 03:58:07 DEBUG PathMappings: Added MappedResource[pathSpec=ServletPathSpec@4a69d1f9{*.svgz},resource=true] to PathMappings[size=1]
+23/06/01 03:58:07 DEBUG GzipHandler: GzipHandler@4bd2f0dc{STOPPED,min=32,inflate=-1} mime types IncludeExclude@2e647e59{i=[],ip=CONTAINS,e=[image/ief, image/vnd.wap.wbmp, image/jpeg, application/bzip2, image/x-portable-graymap, application/brotli, image/bmp, image/gif, image/x-icon, audio/midi, video/x-msvideo, image/x-xbitmap, application/x-rar-compressed, image/x-portable-bitmap, image/x-rgb, image/x-cmu-raster, application/gzip, audio/x-wav, audio/x-pn-realaudio, audio/basic, application/compress, audio/x-aiff, video/x.ms.asx, video/x.ms.asf, image/png, video/vnd.rn-realvideo, image/x-xwindowdump, image/jpeg2000, video/x-sgi-movie, audio/mpeg, image/xcf, video/mpeg, image/x-portable-pixmap, image/tiff, image/x-portable-anymap, image/x-xpixmap, application/zip, video/quicktime, application/x-xz, video/mp4],ep=CONTAINS}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: GzipHandler@4bd2f0dc{STOPPED,min=32,inflate=-1} added {o.s.j.s.ServletContextHandler@e041f0c{/jobs,null,STOPPED,@Spark},MANAGED}
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs->[{GzipHandler@4bd2f0dc{STOPPED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@e041f0c{/jobs,null,STOPPED,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ContextHandlerCollection@df4b72{STARTED} added {GzipHandler@4bd2f0dc{STOPPED,min=32,inflate=-1},UNMANAGED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting o.s.j.s.ServletContextHandler@e041f0c{/jobs,null,STOPPED,@Spark}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting o.s.j.s.ServletContextHandler@e041f0c{/jobs,null,STARTING,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting ServletHandler@f325091{STOPPED}
+23/06/01 03:58:07 DEBUG ServletHandler: Path=/[EMBEDDED:null] mapped to servlet=org.apache.spark.ui.JettyUtils$$anon$1-1e287667[EMBEDDED:null]
+23/06/01 03:58:07 DEBUG PathMappings: Added MappedResource[pathSpec=ServletPathSpec@4e{/},resource=org.apache.spark.ui.JettyUtils$$anon$1-1e287667==org.apache.spark.ui.JettyUtils$$anon$1@b1cb8828{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}] to PathMappings[size=1]
+23/06/01 03:58:07 DEBUG ServletHandler: filterNameMap={org.apache.spark.ui.HttpSecurityFilter-4ad4936c=org.apache.spark.ui.HttpSecurityFilter-4ad4936c==org.apache.spark.ui.HttpSecurityFilter@4ad4936c{inst=false,async=true,src=EMBEDDED:null}}
+23/06/01 03:58:07 DEBUG ServletHandler: pathFilters=[[/*]/[]/[ASYNC, REQUEST, FORWARD, ERROR, INCLUDE]=>org.apache.spark.ui.HttpSecurityFilter-4ad4936c]
+23/06/01 03:58:07 DEBUG ServletHandler: servletFilterMap={}
+23/06/01 03:58:07 DEBUG ServletHandler: servletPathMap=PathMappings[size=1]
+23/06/01 03:58:07 DEBUG ServletHandler: servletNameMap={org.apache.spark.ui.JettyUtils$$anon$1-1e287667=org.apache.spark.ui.JettyUtils$$anon$1-1e287667==org.apache.spark.ui.JettyUtils$$anon$1@b1cb8828{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting ServletHandler@f325091{STARTING}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2133ms ServletHandler@f325091{STARTED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting org.apache.spark.ui.HttpSecurityFilter-4ad4936c==org.apache.spark.ui.HttpSecurityFilter@4ad4936c{inst=false,async=true,src=EMBEDDED:null}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2134ms org.apache.spark.ui.HttpSecurityFilter-4ad4936c==org.apache.spark.ui.HttpSecurityFilter@4ad4936c{inst=false,async=true,src=EMBEDDED:null}
+23/06/01 03:58:07 DEBUG FilterHolder: Filter.init org.apache.spark.ui.HttpSecurityFilter@7bc9e6ab
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting org.apache.spark.ui.JettyUtils$$anon$1-1e287667==org.apache.spark.ui.JettyUtils$$anon$1@b1cb8828{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2138ms org.apache.spark.ui.JettyUtils$$anon$1-1e287667==org.apache.spark.ui.JettyUtils$$anon$1@b1cb8828{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STARTED}
+23/06/01 03:58:07 DEBUG ServletHolder: Servlet.init null for org.apache.spark.ui.JettyUtils$$anon$1-1e287667
+23/06/01 03:58:07 INFO ContextHandler: Started o.s.j.s.ServletContextHandler@e041f0c{/jobs,null,AVAILABLE,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2140ms o.s.j.s.ServletContextHandler@e041f0c{/jobs,null,AVAILABLE,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting GzipHandler@4bd2f0dc{STOPPED,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: GzipHandler@4bd2f0dc{STARTING,min=32,inflate=-1} added {DeflaterPool@381cad29{STOPPED,size=0,capacity=UNLIMITED},AUTO}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting GzipHandler@4bd2f0dc{STARTING,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting DeflaterPool@381cad29{STOPPED,size=0,capacity=UNLIMITED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2141ms DeflaterPool@381cad29{STARTED,size=0,capacity=UNLIMITED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2141ms GzipHandler@4bd2f0dc{STARTED,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@bae47a0{STOPPED} added {org.apache.spark.ui.HttpSecurityFilter-3c5a54b7==org.apache.spark.ui.HttpSecurityFilter@3c5a54b7{inst=false,async=true,src=EMBEDDED:null},AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@bae47a0{STOPPED} added {[/*]/[]/[ASYNC, REQUEST, FORWARD, ERROR, INCLUDE]=>org.apache.spark.ui.HttpSecurityFilter-3c5a54b7,POJO}
+23/06/01 03:58:07 DEBUG PathMappings: Added MappedResource[pathSpec=ServletPathSpec@4a69d1f9{*.svgz},resource=true] to PathMappings[size=1]
+23/06/01 03:58:07 DEBUG GzipHandler: GzipHandler@61f2c3f0{STOPPED,min=32,inflate=-1} mime types IncludeExclude@291120f4{i=[],ip=CONTAINS,e=[image/ief, image/vnd.wap.wbmp, image/jpeg, application/bzip2, image/x-portable-graymap, application/brotli, image/bmp, image/gif, image/x-icon, audio/midi, video/x-msvideo, image/x-xbitmap, application/x-rar-compressed, image/x-portable-bitmap, image/x-rgb, image/x-cmu-raster, application/gzip, audio/x-wav, audio/x-pn-realaudio, audio/basic, application/compress, audio/x-aiff, video/x.ms.asx, video/x.ms.asf, image/png, video/vnd.rn-realvideo, image/x-xwindowdump, image/jpeg2000, video/x-sgi-movie, audio/mpeg, image/xcf, video/mpeg, image/x-portable-pixmap, image/tiff, image/x-portable-anymap, image/x-xpixmap, application/zip, video/quicktime, application/x-xz, video/mp4],ep=CONTAINS}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: GzipHandler@61f2c3f0{STOPPED,min=32,inflate=-1} added {o.s.j.s.ServletContextHandler@3b65e559{/jobs/json,null,STOPPED,@Spark},MANAGED}
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs/json->[{GzipHandler@61f2c3f0{STOPPED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@3b65e559{/jobs/json,null,STOPPED,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs->[{GzipHandler@4bd2f0dc{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@e041f0c{/jobs,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ContextHandlerCollection@df4b72{STARTED} added {GzipHandler@61f2c3f0{STOPPED,min=32,inflate=-1},UNMANAGED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting o.s.j.s.ServletContextHandler@3b65e559{/jobs/json,null,STOPPED,@Spark}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting o.s.j.s.ServletContextHandler@3b65e559{/jobs/json,null,STARTING,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting ServletHandler@bae47a0{STOPPED}
+23/06/01 03:58:07 DEBUG ServletHandler: Path=/[EMBEDDED:null] mapped to servlet=org.apache.spark.ui.JettyUtils$$anon$1-74a9c4b0[EMBEDDED:null]
+23/06/01 03:58:07 DEBUG PathMappings: Added MappedResource[pathSpec=ServletPathSpec@4e{/},resource=org.apache.spark.ui.JettyUtils$$anon$1-74a9c4b0==org.apache.spark.ui.JettyUtils$$anon$1@515718c2{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}] to PathMappings[size=1]
+23/06/01 03:58:07 DEBUG ServletHandler: filterNameMap={org.apache.spark.ui.HttpSecurityFilter-3c5a54b7=org.apache.spark.ui.HttpSecurityFilter-3c5a54b7==org.apache.spark.ui.HttpSecurityFilter@3c5a54b7{inst=false,async=true,src=EMBEDDED:null}}
+23/06/01 03:58:07 DEBUG ServletHandler: pathFilters=[[/*]/[]/[ASYNC, REQUEST, FORWARD, ERROR, INCLUDE]=>org.apache.spark.ui.HttpSecurityFilter-3c5a54b7]
+23/06/01 03:58:07 DEBUG ServletHandler: servletFilterMap={}
+23/06/01 03:58:07 DEBUG ServletHandler: servletPathMap=PathMappings[size=1]
+23/06/01 03:58:07 DEBUG ServletHandler: servletNameMap={org.apache.spark.ui.JettyUtils$$anon$1-74a9c4b0=org.apache.spark.ui.JettyUtils$$anon$1-74a9c4b0==org.apache.spark.ui.JettyUtils$$anon$1@515718c2{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting ServletHandler@bae47a0{STARTING}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2143ms ServletHandler@bae47a0{STARTED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting org.apache.spark.ui.HttpSecurityFilter-3c5a54b7==org.apache.spark.ui.HttpSecurityFilter@3c5a54b7{inst=false,async=true,src=EMBEDDED:null}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2143ms org.apache.spark.ui.HttpSecurityFilter-3c5a54b7==org.apache.spark.ui.HttpSecurityFilter@3c5a54b7{inst=false,async=true,src=EMBEDDED:null}
+23/06/01 03:58:07 DEBUG FilterHolder: Filter.init org.apache.spark.ui.HttpSecurityFilter@417ad4f3
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting org.apache.spark.ui.JettyUtils$$anon$1-74a9c4b0==org.apache.spark.ui.JettyUtils$$anon$1@515718c2{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2143ms org.apache.spark.ui.JettyUtils$$anon$1-74a9c4b0==org.apache.spark.ui.JettyUtils$$anon$1@515718c2{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STARTED}
+23/06/01 03:58:07 DEBUG ServletHolder: Servlet.init null for org.apache.spark.ui.JettyUtils$$anon$1-74a9c4b0
+23/06/01 03:58:07 INFO ContextHandler: Started o.s.j.s.ServletContextHandler@3b65e559{/jobs/json,null,AVAILABLE,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2143ms o.s.j.s.ServletContextHandler@3b65e559{/jobs/json,null,AVAILABLE,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting GzipHandler@61f2c3f0{STOPPED,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: GzipHandler@61f2c3f0{STARTING,min=32,inflate=-1} added {DeflaterPool@2f6bcf87{STOPPED,size=0,capacity=UNLIMITED},AUTO}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting GzipHandler@61f2c3f0{STARTING,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting DeflaterPool@2f6bcf87{STOPPED,size=0,capacity=UNLIMITED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2143ms DeflaterPool@2f6bcf87{STARTED,size=0,capacity=UNLIMITED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2143ms GzipHandler@61f2c3f0{STARTED,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@5aa360ea{STOPPED} added {org.apache.spark.ui.HttpSecurityFilter-58f174d9==org.apache.spark.ui.HttpSecurityFilter@58f174d9{inst=false,async=true,src=EMBEDDED:null},AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@5aa360ea{STOPPED} added {[/*]/[]/[ASYNC, REQUEST, FORWARD, ERROR, INCLUDE]=>org.apache.spark.ui.HttpSecurityFilter-58f174d9,POJO}
+23/06/01 03:58:07 DEBUG PathMappings: Added MappedResource[pathSpec=ServletPathSpec@4a69d1f9{*.svgz},resource=true] to PathMappings[size=1]
+23/06/01 03:58:07 DEBUG GzipHandler: GzipHandler@78c7f9b3{STOPPED,min=32,inflate=-1} mime types IncludeExclude@6f8d7714{i=[],ip=CONTAINS,e=[image/ief, image/vnd.wap.wbmp, image/jpeg, application/bzip2, image/x-portable-graymap, application/brotli, image/bmp, image/gif, image/x-icon, audio/midi, video/x-msvideo, image/x-xbitmap, application/x-rar-compressed, image/x-portable-bitmap, image/x-rgb, image/x-cmu-raster, application/gzip, audio/x-wav, audio/x-pn-realaudio, audio/basic, application/compress, audio/x-aiff, video/x.ms.asx, video/x.ms.asf, image/png, video/vnd.rn-realvideo, image/x-xwindowdump, image/jpeg2000, video/x-sgi-movie, audio/mpeg, image/xcf, video/mpeg, image/x-portable-pixmap, image/tiff, image/x-portable-anymap, image/x-xpixmap, application/zip, video/quicktime, application/x-xz, video/mp4],ep=CONTAINS}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: GzipHandler@78c7f9b3{STOPPED,min=32,inflate=-1} added {o.s.j.s.ServletContextHandler@79c4715d{/jobs/job,null,STOPPED,@Spark},MANAGED}
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs/json->[{GzipHandler@61f2c3f0{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@3b65e559{/jobs/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs/job->[{GzipHandler@78c7f9b3{STOPPED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@79c4715d{/jobs/job,null,STOPPED,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs->[{GzipHandler@4bd2f0dc{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@e041f0c{/jobs,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ContextHandlerCollection@df4b72{STARTED} added {GzipHandler@78c7f9b3{STOPPED,min=32,inflate=-1},UNMANAGED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting o.s.j.s.ServletContextHandler@79c4715d{/jobs/job,null,STOPPED,@Spark}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting o.s.j.s.ServletContextHandler@79c4715d{/jobs/job,null,STARTING,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting ServletHandler@5aa360ea{STOPPED}
+23/06/01 03:58:07 DEBUG ServletHandler: Path=/[EMBEDDED:null] mapped to servlet=org.apache.spark.ui.JettyUtils$$anon$1-6548bb7d[EMBEDDED:null]
+23/06/01 03:58:07 DEBUG PathMappings: Added MappedResource[pathSpec=ServletPathSpec@4e{/},resource=org.apache.spark.ui.JettyUtils$$anon$1-6548bb7d==org.apache.spark.ui.JettyUtils$$anon$1@d1842efe{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}] to PathMappings[size=1]
+23/06/01 03:58:07 DEBUG ServletHandler: filterNameMap={org.apache.spark.ui.HttpSecurityFilter-58f174d9=org.apache.spark.ui.HttpSecurityFilter-58f174d9==org.apache.spark.ui.HttpSecurityFilter@58f174d9{inst=false,async=true,src=EMBEDDED:null}}
+23/06/01 03:58:07 DEBUG ServletHandler: pathFilters=[[/*]/[]/[ASYNC, REQUEST, FORWARD, ERROR, INCLUDE]=>org.apache.spark.ui.HttpSecurityFilter-58f174d9]
+23/06/01 03:58:07 DEBUG ServletHandler: servletFilterMap={}
+23/06/01 03:58:07 DEBUG ServletHandler: servletPathMap=PathMappings[size=1]
+23/06/01 03:58:07 DEBUG ServletHandler: servletNameMap={org.apache.spark.ui.JettyUtils$$anon$1-6548bb7d=org.apache.spark.ui.JettyUtils$$anon$1-6548bb7d==org.apache.spark.ui.JettyUtils$$anon$1@d1842efe{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting ServletHandler@5aa360ea{STARTING}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2145ms ServletHandler@5aa360ea{STARTED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting org.apache.spark.ui.HttpSecurityFilter-58f174d9==org.apache.spark.ui.HttpSecurityFilter@58f174d9{inst=false,async=true,src=EMBEDDED:null}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2145ms org.apache.spark.ui.HttpSecurityFilter-58f174d9==org.apache.spark.ui.HttpSecurityFilter@58f174d9{inst=false,async=true,src=EMBEDDED:null}
+23/06/01 03:58:07 DEBUG FilterHolder: Filter.init org.apache.spark.ui.HttpSecurityFilter@1e6b9a95
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting org.apache.spark.ui.JettyUtils$$anon$1-6548bb7d==org.apache.spark.ui.JettyUtils$$anon$1@d1842efe{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2145ms org.apache.spark.ui.JettyUtils$$anon$1-6548bb7d==org.apache.spark.ui.JettyUtils$$anon$1@d1842efe{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STARTED}
+23/06/01 03:58:07 DEBUG ServletHolder: Servlet.init null for org.apache.spark.ui.JettyUtils$$anon$1-6548bb7d
+23/06/01 03:58:07 INFO ContextHandler: Started o.s.j.s.ServletContextHandler@79c4715d{/jobs/job,null,AVAILABLE,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2145ms o.s.j.s.ServletContextHandler@79c4715d{/jobs/job,null,AVAILABLE,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting GzipHandler@78c7f9b3{STOPPED,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: GzipHandler@78c7f9b3{STARTING,min=32,inflate=-1} added {DeflaterPool@4d6f623d{STOPPED,size=0,capacity=UNLIMITED},AUTO}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting GzipHandler@78c7f9b3{STARTING,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting DeflaterPool@4d6f623d{STOPPED,size=0,capacity=UNLIMITED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2145ms DeflaterPool@4d6f623d{STARTED,size=0,capacity=UNLIMITED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2145ms GzipHandler@78c7f9b3{STARTED,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@1556f2dd{STOPPED} added {org.apache.spark.ui.HttpSecurityFilter-aa21042==org.apache.spark.ui.HttpSecurityFilter@aa21042{inst=false,async=true,src=EMBEDDED:null},AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@1556f2dd{STOPPED} added {[/*]/[]/[ASYNC, REQUEST, FORWARD, ERROR, INCLUDE]=>org.apache.spark.ui.HttpSecurityFilter-aa21042,POJO}
+23/06/01 03:58:07 DEBUG PathMappings: Added MappedResource[pathSpec=ServletPathSpec@4a69d1f9{*.svgz},resource=true] to PathMappings[size=1]
+23/06/01 03:58:07 DEBUG GzipHandler: GzipHandler@4cee7fa0{STOPPED,min=32,inflate=-1} mime types IncludeExclude@7a26928a{i=[],ip=CONTAINS,e=[image/ief, image/vnd.wap.wbmp, image/jpeg, application/bzip2, image/x-portable-graymap, application/brotli, image/bmp, image/gif, image/x-icon, audio/midi, video/x-msvideo, image/x-xbitmap, application/x-rar-compressed, image/x-portable-bitmap, image/x-rgb, image/x-cmu-raster, application/gzip, audio/x-wav, audio/x-pn-realaudio, audio/basic, application/compress, audio/x-aiff, video/x.ms.asx, video/x.ms.asf, image/png, video/vnd.rn-realvideo, image/x-xwindowdump, image/jpeg2000, video/x-sgi-movie, audio/mpeg, image/xcf, video/mpeg, image/x-portable-pixmap, image/tiff, image/x-portable-anymap, image/x-xpixmap, application/zip, video/quicktime, application/x-xz, video/mp4],ep=CONTAINS}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: GzipHandler@4cee7fa0{STOPPED,min=32,inflate=-1} added {o.s.j.s.ServletContextHandler@54336c81{/jobs/job/json,null,STOPPED,@Spark},MANAGED}
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs/json->[{GzipHandler@61f2c3f0{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@3b65e559{/jobs/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs/job->[{GzipHandler@78c7f9b3{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@79c4715d{/jobs/job,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs/job/json->[{GzipHandler@4cee7fa0{STOPPED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@54336c81{/jobs/job/json,null,STOPPED,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs->[{GzipHandler@4bd2f0dc{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@e041f0c{/jobs,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ContextHandlerCollection@df4b72{STARTED} added {GzipHandler@4cee7fa0{STOPPED,min=32,inflate=-1},UNMANAGED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting o.s.j.s.ServletContextHandler@54336c81{/jobs/job/json,null,STOPPED,@Spark}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting o.s.j.s.ServletContextHandler@54336c81{/jobs/job/json,null,STARTING,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting ServletHandler@1556f2dd{STOPPED}
+23/06/01 03:58:07 DEBUG ServletHandler: Path=/[EMBEDDED:null] mapped to servlet=org.apache.spark.ui.JettyUtils$$anon$1-35e52059[EMBEDDED:null]
+23/06/01 03:58:07 DEBUG PathMappings: Added MappedResource[pathSpec=ServletPathSpec@4e{/},resource=org.apache.spark.ui.JettyUtils$$anon$1-35e52059==org.apache.spark.ui.JettyUtils$$anon$1@ed3d4a62{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}] to PathMappings[size=1]
+23/06/01 03:58:07 DEBUG ServletHandler: filterNameMap={org.apache.spark.ui.HttpSecurityFilter-aa21042=org.apache.spark.ui.HttpSecurityFilter-aa21042==org.apache.spark.ui.HttpSecurityFilter@aa21042{inst=false,async=true,src=EMBEDDED:null}}
+23/06/01 03:58:07 DEBUG ServletHandler: pathFilters=[[/*]/[]/[ASYNC, REQUEST, FORWARD, ERROR, INCLUDE]=>org.apache.spark.ui.HttpSecurityFilter-aa21042]
+23/06/01 03:58:07 DEBUG ServletHandler: servletFilterMap={}
+23/06/01 03:58:07 DEBUG ServletHandler: servletPathMap=PathMappings[size=1]
+23/06/01 03:58:07 DEBUG ServletHandler: servletNameMap={org.apache.spark.ui.JettyUtils$$anon$1-35e52059=org.apache.spark.ui.JettyUtils$$anon$1-35e52059==org.apache.spark.ui.JettyUtils$$anon$1@ed3d4a62{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting ServletHandler@1556f2dd{STARTING}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2147ms ServletHandler@1556f2dd{STARTED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting org.apache.spark.ui.HttpSecurityFilter-aa21042==org.apache.spark.ui.HttpSecurityFilter@aa21042{inst=false,async=true,src=EMBEDDED:null}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2147ms org.apache.spark.ui.HttpSecurityFilter-aa21042==org.apache.spark.ui.HttpSecurityFilter@aa21042{inst=false,async=true,src=EMBEDDED:null}
+23/06/01 03:58:07 DEBUG FilterHolder: Filter.init org.apache.spark.ui.HttpSecurityFilter@601cbd8c
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting org.apache.spark.ui.JettyUtils$$anon$1-35e52059==org.apache.spark.ui.JettyUtils$$anon$1@ed3d4a62{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2147ms org.apache.spark.ui.JettyUtils$$anon$1-35e52059==org.apache.spark.ui.JettyUtils$$anon$1@ed3d4a62{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STARTED}
+23/06/01 03:58:07 DEBUG ServletHolder: Servlet.init null for org.apache.spark.ui.JettyUtils$$anon$1-35e52059
+23/06/01 03:58:07 INFO ContextHandler: Started o.s.j.s.ServletContextHandler@54336c81{/jobs/job/json,null,AVAILABLE,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2147ms o.s.j.s.ServletContextHandler@54336c81{/jobs/job/json,null,AVAILABLE,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting GzipHandler@4cee7fa0{STOPPED,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: GzipHandler@4cee7fa0{STARTING,min=32,inflate=-1} added {DeflaterPool@7180e701{STOPPED,size=0,capacity=UNLIMITED},AUTO}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting GzipHandler@4cee7fa0{STARTING,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting DeflaterPool@7180e701{STOPPED,size=0,capacity=UNLIMITED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2147ms DeflaterPool@7180e701{STARTED,size=0,capacity=UNLIMITED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2147ms GzipHandler@4cee7fa0{STARTED,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@2fb68ec6{STOPPED} added {org.apache.spark.ui.HttpSecurityFilter-4e2c95ee==org.apache.spark.ui.HttpSecurityFilter@4e2c95ee{inst=false,async=true,src=EMBEDDED:null},AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@2fb68ec6{STOPPED} added {[/*]/[]/[ASYNC, REQUEST, FORWARD, ERROR, INCLUDE]=>org.apache.spark.ui.HttpSecurityFilter-4e2c95ee,POJO}
+23/06/01 03:58:07 DEBUG PathMappings: Added MappedResource[pathSpec=ServletPathSpec@4a69d1f9{*.svgz},resource=true] to PathMappings[size=1]
+23/06/01 03:58:07 DEBUG GzipHandler: GzipHandler@d0ec63{STOPPED,min=32,inflate=-1} mime types IncludeExclude@5a5c128{i=[],ip=CONTAINS,e=[image/ief, image/vnd.wap.wbmp, image/jpeg, application/bzip2, image/x-portable-graymap, application/brotli, image/bmp, image/gif, image/x-icon, audio/midi, video/x-msvideo, image/x-xbitmap, application/x-rar-compressed, image/x-portable-bitmap, image/x-rgb, image/x-cmu-raster, application/gzip, audio/x-wav, audio/x-pn-realaudio, audio/basic, application/compress, audio/x-aiff, video/x.ms.asx, video/x.ms.asf, image/png, video/vnd.rn-realvideo, image/x-xwindowdump, image/jpeg2000, video/x-sgi-movie, audio/mpeg, image/xcf, video/mpeg, image/x-portable-pixmap, image/tiff, image/x-portable-anymap, image/x-xpixmap, application/zip, video/quicktime, application/x-xz, video/mp4],ep=CONTAINS}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: GzipHandler@d0ec63{STOPPED,min=32,inflate=-1} added {o.s.j.s.ServletContextHandler@117632cf{/stages,null,STOPPED,@Spark},MANAGED}
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs/json->[{GzipHandler@61f2c3f0{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@3b65e559{/jobs/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs/job->[{GzipHandler@78c7f9b3{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@79c4715d{/jobs/job,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs/job/json->[{GzipHandler@4cee7fa0{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@54336c81{/jobs/job/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs->[{GzipHandler@4bd2f0dc{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@e041f0c{/jobs,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages->[{GzipHandler@d0ec63{STOPPED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@117632cf{/stages,null,STOPPED,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ContextHandlerCollection@df4b72{STARTED} added {GzipHandler@d0ec63{STOPPED,min=32,inflate=-1},UNMANAGED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting o.s.j.s.ServletContextHandler@117632cf{/stages,null,STOPPED,@Spark}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting o.s.j.s.ServletContextHandler@117632cf{/stages,null,STARTING,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting ServletHandler@2fb68ec6{STOPPED}
+23/06/01 03:58:07 DEBUG ServletHandler: Path=/[EMBEDDED:null] mapped to servlet=org.apache.spark.ui.JettyUtils$$anon$1-d71adc2[EMBEDDED:null]
+23/06/01 03:58:07 DEBUG PathMappings: Added MappedResource[pathSpec=ServletPathSpec@4e{/},resource=org.apache.spark.ui.JettyUtils$$anon$1-d71adc2==org.apache.spark.ui.JettyUtils$$anon$1@bcff5162{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}] to PathMappings[size=1]
+23/06/01 03:58:07 DEBUG ServletHandler: filterNameMap={org.apache.spark.ui.HttpSecurityFilter-4e2c95ee=org.apache.spark.ui.HttpSecurityFilter-4e2c95ee==org.apache.spark.ui.HttpSecurityFilter@4e2c95ee{inst=false,async=true,src=EMBEDDED:null}}
+23/06/01 03:58:07 DEBUG ServletHandler: pathFilters=[[/*]/[]/[ASYNC, REQUEST, FORWARD, ERROR, INCLUDE]=>org.apache.spark.ui.HttpSecurityFilter-4e2c95ee]
+23/06/01 03:58:07 DEBUG ServletHandler: servletFilterMap={}
+23/06/01 03:58:07 DEBUG ServletHandler: servletPathMap=PathMappings[size=1]
+23/06/01 03:58:07 DEBUG ServletHandler: servletNameMap={org.apache.spark.ui.JettyUtils$$anon$1-d71adc2=org.apache.spark.ui.JettyUtils$$anon$1-d71adc2==org.apache.spark.ui.JettyUtils$$anon$1@bcff5162{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting ServletHandler@2fb68ec6{STARTING}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2149ms ServletHandler@2fb68ec6{STARTED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting org.apache.spark.ui.HttpSecurityFilter-4e2c95ee==org.apache.spark.ui.HttpSecurityFilter@4e2c95ee{inst=false,async=true,src=EMBEDDED:null}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2149ms org.apache.spark.ui.HttpSecurityFilter-4e2c95ee==org.apache.spark.ui.HttpSecurityFilter@4e2c95ee{inst=false,async=true,src=EMBEDDED:null}
+23/06/01 03:58:07 DEBUG FilterHolder: Filter.init org.apache.spark.ui.HttpSecurityFilter@73eb8672
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting org.apache.spark.ui.JettyUtils$$anon$1-d71adc2==org.apache.spark.ui.JettyUtils$$anon$1@bcff5162{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2149ms org.apache.spark.ui.JettyUtils$$anon$1-d71adc2==org.apache.spark.ui.JettyUtils$$anon$1@bcff5162{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STARTED}
+23/06/01 03:58:07 DEBUG ServletHolder: Servlet.init null for org.apache.spark.ui.JettyUtils$$anon$1-d71adc2
+23/06/01 03:58:07 INFO ContextHandler: Started o.s.j.s.ServletContextHandler@117632cf{/stages,null,AVAILABLE,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2149ms o.s.j.s.ServletContextHandler@117632cf{/stages,null,AVAILABLE,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting GzipHandler@d0ec63{STOPPED,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: GzipHandler@d0ec63{STARTING,min=32,inflate=-1} added {DeflaterPool@5942ee04{STOPPED,size=0,capacity=UNLIMITED},AUTO}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting GzipHandler@d0ec63{STARTING,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting DeflaterPool@5942ee04{STOPPED,size=0,capacity=UNLIMITED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2149ms DeflaterPool@5942ee04{STARTED,size=0,capacity=UNLIMITED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2149ms GzipHandler@d0ec63{STARTED,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@1c65121{STOPPED} added {org.apache.spark.ui.HttpSecurityFilter-5e76a2bb==org.apache.spark.ui.HttpSecurityFilter@5e76a2bb{inst=false,async=true,src=EMBEDDED:null},AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@1c65121{STOPPED} added {[/*]/[]/[ASYNC, REQUEST, FORWARD, ERROR, INCLUDE]=>org.apache.spark.ui.HttpSecurityFilter-5e76a2bb,POJO}
+23/06/01 03:58:07 DEBUG PathMappings: Added MappedResource[pathSpec=ServletPathSpec@4a69d1f9{*.svgz},resource=true] to PathMappings[size=1]
+23/06/01 03:58:07 DEBUG GzipHandler: GzipHandler@757194dc{STOPPED,min=32,inflate=-1} mime types IncludeExclude@5a865416{i=[],ip=CONTAINS,e=[image/ief, image/vnd.wap.wbmp, image/jpeg, application/bzip2, image/x-portable-graymap, application/brotli, image/bmp, image/gif, image/x-icon, audio/midi, video/x-msvideo, image/x-xbitmap, application/x-rar-compressed, image/x-portable-bitmap, image/x-rgb, image/x-cmu-raster, application/gzip, audio/x-wav, audio/x-pn-realaudio, audio/basic, application/compress, audio/x-aiff, video/x.ms.asx, video/x.ms.asf, image/png, video/vnd.rn-realvideo, image/x-xwindowdump, image/jpeg2000, video/x-sgi-movie, audio/mpeg, image/xcf, video/mpeg, image/x-portable-pixmap, image/tiff, image/x-portable-anymap, image/x-xpixmap, application/zip, video/quicktime, application/x-xz, video/mp4],ep=CONTAINS}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: GzipHandler@757194dc{STOPPED,min=32,inflate=-1} added {o.s.j.s.ServletContextHandler@1a1d3c1a{/stages/json,null,STOPPED,@Spark},MANAGED}
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs/json->[{GzipHandler@61f2c3f0{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@3b65e559{/jobs/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs/job->[{GzipHandler@78c7f9b3{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@79c4715d{/jobs/job,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs/job/json->[{GzipHandler@4cee7fa0{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@54336c81{/jobs/job/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages/json->[{GzipHandler@757194dc{STOPPED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@1a1d3c1a{/stages/json,null,STOPPED,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs->[{GzipHandler@4bd2f0dc{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@e041f0c{/jobs,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages->[{GzipHandler@d0ec63{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@117632cf{/stages,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ContextHandlerCollection@df4b72{STARTED} added {GzipHandler@757194dc{STOPPED,min=32,inflate=-1},UNMANAGED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting o.s.j.s.ServletContextHandler@1a1d3c1a{/stages/json,null,STOPPED,@Spark}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting o.s.j.s.ServletContextHandler@1a1d3c1a{/stages/json,null,STARTING,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting ServletHandler@1c65121{STOPPED}
+23/06/01 03:58:07 DEBUG ServletHandler: Path=/[EMBEDDED:null] mapped to servlet=org.apache.spark.ui.JettyUtils$$anon$1-159e366[EMBEDDED:null]
+23/06/01 03:58:07 DEBUG PathMappings: Added MappedResource[pathSpec=ServletPathSpec@4e{/},resource=org.apache.spark.ui.JettyUtils$$anon$1-159e366==org.apache.spark.ui.JettyUtils$$anon$1@3029a255{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}] to PathMappings[size=1]
+23/06/01 03:58:07 DEBUG ServletHandler: filterNameMap={org.apache.spark.ui.HttpSecurityFilter-5e76a2bb=org.apache.spark.ui.HttpSecurityFilter-5e76a2bb==org.apache.spark.ui.HttpSecurityFilter@5e76a2bb{inst=false,async=true,src=EMBEDDED:null}}
+23/06/01 03:58:07 DEBUG ServletHandler: pathFilters=[[/*]/[]/[ASYNC, REQUEST, FORWARD, ERROR, INCLUDE]=>org.apache.spark.ui.HttpSecurityFilter-5e76a2bb]
+23/06/01 03:58:07 DEBUG ServletHandler: servletFilterMap={}
+23/06/01 03:58:07 DEBUG ServletHandler: servletPathMap=PathMappings[size=1]
+23/06/01 03:58:07 DEBUG ServletHandler: servletNameMap={org.apache.spark.ui.JettyUtils$$anon$1-159e366=org.apache.spark.ui.JettyUtils$$anon$1-159e366==org.apache.spark.ui.JettyUtils$$anon$1@3029a255{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting ServletHandler@1c65121{STARTING}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2151ms ServletHandler@1c65121{STARTED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting org.apache.spark.ui.HttpSecurityFilter-5e76a2bb==org.apache.spark.ui.HttpSecurityFilter@5e76a2bb{inst=false,async=true,src=EMBEDDED:null}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2151ms org.apache.spark.ui.HttpSecurityFilter-5e76a2bb==org.apache.spark.ui.HttpSecurityFilter@5e76a2bb{inst=false,async=true,src=EMBEDDED:null}
+23/06/01 03:58:07 DEBUG FilterHolder: Filter.init org.apache.spark.ui.HttpSecurityFilter@14faa38c
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting org.apache.spark.ui.JettyUtils$$anon$1-159e366==org.apache.spark.ui.JettyUtils$$anon$1@3029a255{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2151ms org.apache.spark.ui.JettyUtils$$anon$1-159e366==org.apache.spark.ui.JettyUtils$$anon$1@3029a255{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STARTED}
+23/06/01 03:58:07 DEBUG ServletHolder: Servlet.init null for org.apache.spark.ui.JettyUtils$$anon$1-159e366
+23/06/01 03:58:07 INFO ContextHandler: Started o.s.j.s.ServletContextHandler@1a1d3c1a{/stages/json,null,AVAILABLE,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2151ms o.s.j.s.ServletContextHandler@1a1d3c1a{/stages/json,null,AVAILABLE,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting GzipHandler@757194dc{STOPPED,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: GzipHandler@757194dc{STARTING,min=32,inflate=-1} added {DeflaterPool@7ff2b8d2{STOPPED,size=0,capacity=UNLIMITED},AUTO}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting GzipHandler@757194dc{STARTING,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting DeflaterPool@7ff2b8d2{STOPPED,size=0,capacity=UNLIMITED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2151ms DeflaterPool@7ff2b8d2{STARTED,size=0,capacity=UNLIMITED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2151ms GzipHandler@757194dc{STARTED,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@59221b97{STOPPED} added {org.apache.spark.ui.HttpSecurityFilter-6dc1484==org.apache.spark.ui.HttpSecurityFilter@6dc1484{inst=false,async=true,src=EMBEDDED:null},AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@59221b97{STOPPED} added {[/*]/[]/[ASYNC, REQUEST, FORWARD, ERROR, INCLUDE]=>org.apache.spark.ui.HttpSecurityFilter-6dc1484,POJO}
+23/06/01 03:58:07 DEBUG PathMappings: Added MappedResource[pathSpec=ServletPathSpec@4a69d1f9{*.svgz},resource=true] to PathMappings[size=1]
+23/06/01 03:58:07 DEBUG GzipHandler: GzipHandler@6e92c6ad{STOPPED,min=32,inflate=-1} mime types IncludeExclude@2fb5fe30{i=[],ip=CONTAINS,e=[image/ief, image/vnd.wap.wbmp, image/jpeg, application/bzip2, image/x-portable-graymap, application/brotli, image/bmp, image/gif, image/x-icon, audio/midi, video/x-msvideo, image/x-xbitmap, application/x-rar-compressed, image/x-portable-bitmap, image/x-rgb, image/x-cmu-raster, application/gzip, audio/x-wav, audio/x-pn-realaudio, audio/basic, application/compress, audio/x-aiff, video/x.ms.asx, video/x.ms.asf, image/png, video/vnd.rn-realvideo, image/x-xwindowdump, image/jpeg2000, video/x-sgi-movie, audio/mpeg, image/xcf, video/mpeg, image/x-portable-pixmap, image/tiff, image/x-portable-anymap, image/x-xpixmap, application/zip, video/quicktime, application/x-xz, video/mp4],ep=CONTAINS}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: GzipHandler@6e92c6ad{STOPPED,min=32,inflate=-1} added {o.s.j.s.ServletContextHandler@17ae98d7{/stages/stage,null,STOPPED,@Spark},MANAGED}
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs/json->[{GzipHandler@61f2c3f0{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@3b65e559{/jobs/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs/job->[{GzipHandler@78c7f9b3{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@79c4715d{/jobs/job,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs/job/json->[{GzipHandler@4cee7fa0{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@54336c81{/jobs/job/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages/json->[{GzipHandler@757194dc{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@1a1d3c1a{/stages/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs->[{GzipHandler@4bd2f0dc{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@e041f0c{/jobs,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages->[{GzipHandler@d0ec63{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@117632cf{/stages,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages/stage->[{GzipHandler@6e92c6ad{STOPPED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@17ae98d7{/stages/stage,null,STOPPED,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ContextHandlerCollection@df4b72{STARTED} added {GzipHandler@6e92c6ad{STOPPED,min=32,inflate=-1},UNMANAGED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting o.s.j.s.ServletContextHandler@17ae98d7{/stages/stage,null,STOPPED,@Spark}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting o.s.j.s.ServletContextHandler@17ae98d7{/stages/stage,null,STARTING,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting ServletHandler@59221b97{STOPPED}
+23/06/01 03:58:07 DEBUG ServletHandler: Path=/[EMBEDDED:null] mapped to servlet=org.apache.spark.ui.JettyUtils$$anon$1-6ac4944a[EMBEDDED:null]
+23/06/01 03:58:07 DEBUG PathMappings: Added MappedResource[pathSpec=ServletPathSpec@4e{/},resource=org.apache.spark.ui.JettyUtils$$anon$1-6ac4944a==org.apache.spark.ui.JettyUtils$$anon$1@38fe7512{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}] to PathMappings[size=1]
+23/06/01 03:58:07 DEBUG ServletHandler: filterNameMap={org.apache.spark.ui.HttpSecurityFilter-6dc1484=org.apache.spark.ui.HttpSecurityFilter-6dc1484==org.apache.spark.ui.HttpSecurityFilter@6dc1484{inst=false,async=true,src=EMBEDDED:null}}
+23/06/01 03:58:07 DEBUG ServletHandler: pathFilters=[[/*]/[]/[ASYNC, REQUEST, FORWARD, ERROR, INCLUDE]=>org.apache.spark.ui.HttpSecurityFilter-6dc1484]
+23/06/01 03:58:07 DEBUG ServletHandler: servletFilterMap={}
+23/06/01 03:58:07 DEBUG ServletHandler: servletPathMap=PathMappings[size=1]
+23/06/01 03:58:07 DEBUG ServletHandler: servletNameMap={org.apache.spark.ui.JettyUtils$$anon$1-6ac4944a=org.apache.spark.ui.JettyUtils$$anon$1-6ac4944a==org.apache.spark.ui.JettyUtils$$anon$1@38fe7512{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting ServletHandler@59221b97{STARTING}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2152ms ServletHandler@59221b97{STARTED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting org.apache.spark.ui.HttpSecurityFilter-6dc1484==org.apache.spark.ui.HttpSecurityFilter@6dc1484{inst=false,async=true,src=EMBEDDED:null}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2153ms org.apache.spark.ui.HttpSecurityFilter-6dc1484==org.apache.spark.ui.HttpSecurityFilter@6dc1484{inst=false,async=true,src=EMBEDDED:null}
+23/06/01 03:58:07 DEBUG FilterHolder: Filter.init org.apache.spark.ui.HttpSecurityFilter@456be73c
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting org.apache.spark.ui.JettyUtils$$anon$1-6ac4944a==org.apache.spark.ui.JettyUtils$$anon$1@38fe7512{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2153ms org.apache.spark.ui.JettyUtils$$anon$1-6ac4944a==org.apache.spark.ui.JettyUtils$$anon$1@38fe7512{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STARTED}
+23/06/01 03:58:07 DEBUG ServletHolder: Servlet.init null for org.apache.spark.ui.JettyUtils$$anon$1-6ac4944a
+23/06/01 03:58:07 INFO ContextHandler: Started o.s.j.s.ServletContextHandler@17ae98d7{/stages/stage,null,AVAILABLE,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2153ms o.s.j.s.ServletContextHandler@17ae98d7{/stages/stage,null,AVAILABLE,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting GzipHandler@6e92c6ad{STOPPED,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: GzipHandler@6e92c6ad{STARTING,min=32,inflate=-1} added {DeflaterPool@2375b321{STOPPED,size=0,capacity=UNLIMITED},AUTO}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting GzipHandler@6e92c6ad{STARTING,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting DeflaterPool@2375b321{STOPPED,size=0,capacity=UNLIMITED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2153ms DeflaterPool@2375b321{STARTED,size=0,capacity=UNLIMITED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2153ms GzipHandler@6e92c6ad{STARTED,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@704b2127{STOPPED} added {org.apache.spark.ui.HttpSecurityFilter-5baaae4c==org.apache.spark.ui.HttpSecurityFilter@5baaae4c{inst=false,async=true,src=EMBEDDED:null},AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@704b2127{STOPPED} added {[/*]/[]/[ASYNC, REQUEST, FORWARD, ERROR, INCLUDE]=>org.apache.spark.ui.HttpSecurityFilter-5baaae4c,POJO}
+23/06/01 03:58:07 DEBUG PathMappings: Added MappedResource[pathSpec=ServletPathSpec@4a69d1f9{*.svgz},resource=true] to PathMappings[size=1]
+23/06/01 03:58:07 DEBUG GzipHandler: GzipHandler@4f449e8f{STOPPED,min=32,inflate=-1} mime types IncludeExclude@411291e5{i=[],ip=CONTAINS,e=[image/ief, image/vnd.wap.wbmp, image/jpeg, application/bzip2, image/x-portable-graymap, application/brotli, image/bmp, image/gif, image/x-icon, audio/midi, video/x-msvideo, image/x-xbitmap, application/x-rar-compressed, image/x-portable-bitmap, image/x-rgb, image/x-cmu-raster, application/gzip, audio/x-wav, audio/x-pn-realaudio, audio/basic, application/compress, audio/x-aiff, video/x.ms.asx, video/x.ms.asf, image/png, video/vnd.rn-realvideo, image/x-xwindowdump, image/jpeg2000, video/x-sgi-movie, audio/mpeg, image/xcf, video/mpeg, image/x-portable-pixmap, image/tiff, image/x-portable-anymap, image/x-xpixmap, application/zip, video/quicktime, application/x-xz, video/mp4],ep=CONTAINS}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: GzipHandler@4f449e8f{STOPPED,min=32,inflate=-1} added {o.s.j.s.ServletContextHandler@39fc6b2c{/stages/stage/json,null,STOPPED,@Spark},MANAGED}
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs/json->[{GzipHandler@61f2c3f0{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@3b65e559{/jobs/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs/job->[{GzipHandler@78c7f9b3{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@79c4715d{/jobs/job,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages/stage/json->[{GzipHandler@4f449e8f{STOPPED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@39fc6b2c{/stages/stage/json,null,STOPPED,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs/job/json->[{GzipHandler@4cee7fa0{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@54336c81{/jobs/job/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages/json->[{GzipHandler@757194dc{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@1a1d3c1a{/stages/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs->[{GzipHandler@4bd2f0dc{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@e041f0c{/jobs,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages->[{GzipHandler@d0ec63{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@117632cf{/stages,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages/stage->[{GzipHandler@6e92c6ad{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@17ae98d7{/stages/stage,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ContextHandlerCollection@df4b72{STARTED} added {GzipHandler@4f449e8f{STOPPED,min=32,inflate=-1},UNMANAGED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting o.s.j.s.ServletContextHandler@39fc6b2c{/stages/stage/json,null,STOPPED,@Spark}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting o.s.j.s.ServletContextHandler@39fc6b2c{/stages/stage/json,null,STARTING,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting ServletHandler@704b2127{STOPPED}
+23/06/01 03:58:07 DEBUG ServletHandler: Path=/[EMBEDDED:null] mapped to servlet=org.apache.spark.ui.JettyUtils$$anon$1-3ee39da0[EMBEDDED:null]
+23/06/01 03:58:07 DEBUG PathMappings: Added MappedResource[pathSpec=ServletPathSpec@4e{/},resource=org.apache.spark.ui.JettyUtils$$anon$1-3ee39da0==org.apache.spark.ui.JettyUtils$$anon$1@d8502ea8{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}] to PathMappings[size=1]
+23/06/01 03:58:07 DEBUG ServletHandler: filterNameMap={org.apache.spark.ui.HttpSecurityFilter-5baaae4c=org.apache.spark.ui.HttpSecurityFilter-5baaae4c==org.apache.spark.ui.HttpSecurityFilter@5baaae4c{inst=false,async=true,src=EMBEDDED:null}}
+23/06/01 03:58:07 DEBUG ServletHandler: pathFilters=[[/*]/[]/[ASYNC, REQUEST, FORWARD, ERROR, INCLUDE]=>org.apache.spark.ui.HttpSecurityFilter-5baaae4c]
+23/06/01 03:58:07 DEBUG ServletHandler: servletFilterMap={}
+23/06/01 03:58:07 DEBUG ServletHandler: servletPathMap=PathMappings[size=1]
+23/06/01 03:58:07 DEBUG ServletHandler: servletNameMap={org.apache.spark.ui.JettyUtils$$anon$1-3ee39da0=org.apache.spark.ui.JettyUtils$$anon$1-3ee39da0==org.apache.spark.ui.JettyUtils$$anon$1@d8502ea8{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting ServletHandler@704b2127{STARTING}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2155ms ServletHandler@704b2127{STARTED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting org.apache.spark.ui.HttpSecurityFilter-5baaae4c==org.apache.spark.ui.HttpSecurityFilter@5baaae4c{inst=false,async=true,src=EMBEDDED:null}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2155ms org.apache.spark.ui.HttpSecurityFilter-5baaae4c==org.apache.spark.ui.HttpSecurityFilter@5baaae4c{inst=false,async=true,src=EMBEDDED:null}
+23/06/01 03:58:07 DEBUG FilterHolder: Filter.init org.apache.spark.ui.HttpSecurityFilter@6e28bb87
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting org.apache.spark.ui.JettyUtils$$anon$1-3ee39da0==org.apache.spark.ui.JettyUtils$$anon$1@d8502ea8{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2155ms org.apache.spark.ui.JettyUtils$$anon$1-3ee39da0==org.apache.spark.ui.JettyUtils$$anon$1@d8502ea8{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STARTED}
+23/06/01 03:58:07 DEBUG ServletHolder: Servlet.init null for org.apache.spark.ui.JettyUtils$$anon$1-3ee39da0
+23/06/01 03:58:07 INFO ContextHandler: Started o.s.j.s.ServletContextHandler@39fc6b2c{/stages/stage/json,null,AVAILABLE,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2155ms o.s.j.s.ServletContextHandler@39fc6b2c{/stages/stage/json,null,AVAILABLE,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting GzipHandler@4f449e8f{STOPPED,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: GzipHandler@4f449e8f{STARTING,min=32,inflate=-1} added {DeflaterPool@19f040ba{STOPPED,size=0,capacity=UNLIMITED},AUTO}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting GzipHandler@4f449e8f{STARTING,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting DeflaterPool@19f040ba{STOPPED,size=0,capacity=UNLIMITED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2155ms DeflaterPool@19f040ba{STARTED,size=0,capacity=UNLIMITED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2155ms GzipHandler@4f449e8f{STARTED,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@c0b41d6{STOPPED} added {org.apache.spark.ui.HttpSecurityFilter-72ab05ed==org.apache.spark.ui.HttpSecurityFilter@72ab05ed{inst=false,async=true,src=EMBEDDED:null},AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@c0b41d6{STOPPED} added {[/*]/[]/[ASYNC, REQUEST, FORWARD, ERROR, INCLUDE]=>org.apache.spark.ui.HttpSecurityFilter-72ab05ed,POJO}
+23/06/01 03:58:07 DEBUG PathMappings: Added MappedResource[pathSpec=ServletPathSpec@4a69d1f9{*.svgz},resource=true] to PathMappings[size=1]
+23/06/01 03:58:07 DEBUG GzipHandler: GzipHandler@27e32fe4{STOPPED,min=32,inflate=-1} mime types IncludeExclude@c3c4c1c{i=[],ip=CONTAINS,e=[image/ief, image/vnd.wap.wbmp, image/jpeg, application/bzip2, image/x-portable-graymap, application/brotli, image/bmp, image/gif, image/x-icon, audio/midi, video/x-msvideo, image/x-xbitmap, application/x-rar-compressed, image/x-portable-bitmap, image/x-rgb, image/x-cmu-raster, application/gzip, audio/x-wav, audio/x-pn-realaudio, audio/basic, application/compress, audio/x-aiff, video/x.ms.asx, video/x.ms.asf, image/png, video/vnd.rn-realvideo, image/x-xwindowdump, image/jpeg2000, video/x-sgi-movie, audio/mpeg, image/xcf, video/mpeg, image/x-portable-pixmap, image/tiff, image/x-portable-anymap, image/x-xpixmap, application/zip, video/quicktime, application/x-xz, video/mp4],ep=CONTAINS}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: GzipHandler@27e32fe4{STOPPED,min=32,inflate=-1} added {o.s.j.s.ServletContextHandler@2e27d72f{/stages/pool,null,STOPPED,@Spark},MANAGED}
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs/json->[{GzipHandler@61f2c3f0{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@3b65e559{/jobs/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs/job->[{GzipHandler@78c7f9b3{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@79c4715d{/jobs/job,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages/stage/json->[{GzipHandler@4f449e8f{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@39fc6b2c{/stages/stage/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs/job/json->[{GzipHandler@4cee7fa0{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@54336c81{/jobs/job/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages/json->[{GzipHandler@757194dc{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@1a1d3c1a{/stages/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs->[{GzipHandler@4bd2f0dc{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@e041f0c{/jobs,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages->[{GzipHandler@d0ec63{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@117632cf{/stages,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages/stage->[{GzipHandler@6e92c6ad{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@17ae98d7{/stages/stage,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages/pool->[{GzipHandler@27e32fe4{STOPPED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@2e27d72f{/stages/pool,null,STOPPED,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ContextHandlerCollection@df4b72{STARTED} added {GzipHandler@27e32fe4{STOPPED,min=32,inflate=-1},UNMANAGED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting o.s.j.s.ServletContextHandler@2e27d72f{/stages/pool,null,STOPPED,@Spark}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting o.s.j.s.ServletContextHandler@2e27d72f{/stages/pool,null,STARTING,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting ServletHandler@c0b41d6{STOPPED}
+23/06/01 03:58:07 DEBUG ServletHandler: Path=/[EMBEDDED:null] mapped to servlet=org.apache.spark.ui.JettyUtils$$anon$1-4837595f[EMBEDDED:null]
+23/06/01 03:58:07 DEBUG PathMappings: Added MappedResource[pathSpec=ServletPathSpec@4e{/},resource=org.apache.spark.ui.JettyUtils$$anon$1-4837595f==org.apache.spark.ui.JettyUtils$$anon$1@9e9c880b{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}] to PathMappings[size=1]
+23/06/01 03:58:07 DEBUG ServletHandler: filterNameMap={org.apache.spark.ui.HttpSecurityFilter-72ab05ed=org.apache.spark.ui.HttpSecurityFilter-72ab05ed==org.apache.spark.ui.HttpSecurityFilter@72ab05ed{inst=false,async=true,src=EMBEDDED:null}}
+23/06/01 03:58:07 DEBUG ServletHandler: pathFilters=[[/*]/[]/[ASYNC, REQUEST, FORWARD, ERROR, INCLUDE]=>org.apache.spark.ui.HttpSecurityFilter-72ab05ed]
+23/06/01 03:58:07 DEBUG ServletHandler: servletFilterMap={}
+23/06/01 03:58:07 DEBUG ServletHandler: servletPathMap=PathMappings[size=1]
+23/06/01 03:58:07 DEBUG ServletHandler: servletNameMap={org.apache.spark.ui.JettyUtils$$anon$1-4837595f=org.apache.spark.ui.JettyUtils$$anon$1-4837595f==org.apache.spark.ui.JettyUtils$$anon$1@9e9c880b{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting ServletHandler@c0b41d6{STARTING}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2157ms ServletHandler@c0b41d6{STARTED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting org.apache.spark.ui.HttpSecurityFilter-72ab05ed==org.apache.spark.ui.HttpSecurityFilter@72ab05ed{inst=false,async=true,src=EMBEDDED:null}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2157ms org.apache.spark.ui.HttpSecurityFilter-72ab05ed==org.apache.spark.ui.HttpSecurityFilter@72ab05ed{inst=false,async=true,src=EMBEDDED:null}
+23/06/01 03:58:07 DEBUG FilterHolder: Filter.init org.apache.spark.ui.HttpSecurityFilter@17d238b1
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting org.apache.spark.ui.JettyUtils$$anon$1-4837595f==org.apache.spark.ui.JettyUtils$$anon$1@9e9c880b{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2157ms org.apache.spark.ui.JettyUtils$$anon$1-4837595f==org.apache.spark.ui.JettyUtils$$anon$1@9e9c880b{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STARTED}
+23/06/01 03:58:07 DEBUG ServletHolder: Servlet.init null for org.apache.spark.ui.JettyUtils$$anon$1-4837595f
+23/06/01 03:58:07 INFO ContextHandler: Started o.s.j.s.ServletContextHandler@2e27d72f{/stages/pool,null,AVAILABLE,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2157ms o.s.j.s.ServletContextHandler@2e27d72f{/stages/pool,null,AVAILABLE,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting GzipHandler@27e32fe4{STOPPED,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: GzipHandler@27e32fe4{STARTING,min=32,inflate=-1} added {DeflaterPool@3d7cc3cb{STOPPED,size=0,capacity=UNLIMITED},AUTO}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting GzipHandler@27e32fe4{STARTING,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting DeflaterPool@3d7cc3cb{STOPPED,size=0,capacity=UNLIMITED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2157ms DeflaterPool@3d7cc3cb{STARTED,size=0,capacity=UNLIMITED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2157ms GzipHandler@27e32fe4{STARTED,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@6d2260db{STOPPED} added {org.apache.spark.ui.HttpSecurityFilter-35e478f==org.apache.spark.ui.HttpSecurityFilter@35e478f{inst=false,async=true,src=EMBEDDED:null},AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@6d2260db{STOPPED} added {[/*]/[]/[ASYNC, REQUEST, FORWARD, ERROR, INCLUDE]=>org.apache.spark.ui.HttpSecurityFilter-35e478f,POJO}
+23/06/01 03:58:07 DEBUG PathMappings: Added MappedResource[pathSpec=ServletPathSpec@4a69d1f9{*.svgz},resource=true] to PathMappings[size=1]
+23/06/01 03:58:07 DEBUG GzipHandler: GzipHandler@6d6cb754{STOPPED,min=32,inflate=-1} mime types IncludeExclude@6b7d1df8{i=[],ip=CONTAINS,e=[image/ief, image/vnd.wap.wbmp, image/jpeg, application/bzip2, image/x-portable-graymap, application/brotli, image/bmp, image/gif, image/x-icon, audio/midi, video/x-msvideo, image/x-xbitmap, application/x-rar-compressed, image/x-portable-bitmap, image/x-rgb, image/x-cmu-raster, application/gzip, audio/x-wav, audio/x-pn-realaudio, audio/basic, application/compress, audio/x-aiff, video/x.ms.asx, video/x.ms.asf, image/png, video/vnd.rn-realvideo, image/x-xwindowdump, image/jpeg2000, video/x-sgi-movie, audio/mpeg, image/xcf, video/mpeg, image/x-portable-pixmap, image/tiff, image/x-portable-anymap, image/x-xpixmap, application/zip, video/quicktime, application/x-xz, video/mp4],ep=CONTAINS}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: GzipHandler@6d6cb754{STOPPED,min=32,inflate=-1} added {o.s.j.s.ServletContextHandler@3b718392{/stages/pool/json,null,STOPPED,@Spark},MANAGED}
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs/json->[{GzipHandler@61f2c3f0{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@3b65e559{/jobs/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs/job->[{GzipHandler@78c7f9b3{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@79c4715d{/jobs/job,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages/stage/json->[{GzipHandler@4f449e8f{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@39fc6b2c{/stages/stage/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs/job/json->[{GzipHandler@4cee7fa0{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@54336c81{/jobs/job/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages/json->[{GzipHandler@757194dc{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@1a1d3c1a{/stages/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs->[{GzipHandler@4bd2f0dc{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@e041f0c{/jobs,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages->[{GzipHandler@d0ec63{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@117632cf{/stages,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages/stage->[{GzipHandler@6e92c6ad{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@17ae98d7{/stages/stage,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages/pool/json->[{GzipHandler@6d6cb754{STOPPED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@3b718392{/stages/pool/json,null,STOPPED,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages/pool->[{GzipHandler@27e32fe4{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@2e27d72f{/stages/pool,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ContextHandlerCollection@df4b72{STARTED} added {GzipHandler@6d6cb754{STOPPED,min=32,inflate=-1},UNMANAGED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting o.s.j.s.ServletContextHandler@3b718392{/stages/pool/json,null,STOPPED,@Spark}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting o.s.j.s.ServletContextHandler@3b718392{/stages/pool/json,null,STARTING,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting ServletHandler@6d2260db{STOPPED}
+23/06/01 03:58:07 DEBUG ServletHandler: Path=/[EMBEDDED:null] mapped to servlet=org.apache.spark.ui.JettyUtils$$anon$1-1f2d2181[EMBEDDED:null]
+23/06/01 03:58:07 DEBUG PathMappings: Added MappedResource[pathSpec=ServletPathSpec@4e{/},resource=org.apache.spark.ui.JettyUtils$$anon$1-1f2d2181==org.apache.spark.ui.JettyUtils$$anon$1@e91b752d{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}] to PathMappings[size=1]
+23/06/01 03:58:07 DEBUG ServletHandler: filterNameMap={org.apache.spark.ui.HttpSecurityFilter-35e478f=org.apache.spark.ui.HttpSecurityFilter-35e478f==org.apache.spark.ui.HttpSecurityFilter@35e478f{inst=false,async=true,src=EMBEDDED:null}}
+23/06/01 03:58:07 DEBUG ServletHandler: pathFilters=[[/*]/[]/[ASYNC, REQUEST, FORWARD, ERROR, INCLUDE]=>org.apache.spark.ui.HttpSecurityFilter-35e478f]
+23/06/01 03:58:07 DEBUG ServletHandler: servletFilterMap={}
+23/06/01 03:58:07 DEBUG ServletHandler: servletPathMap=PathMappings[size=1]
+23/06/01 03:58:07 DEBUG ServletHandler: servletNameMap={org.apache.spark.ui.JettyUtils$$anon$1-1f2d2181=org.apache.spark.ui.JettyUtils$$anon$1-1f2d2181==org.apache.spark.ui.JettyUtils$$anon$1@e91b752d{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting ServletHandler@6d2260db{STARTING}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2159ms ServletHandler@6d2260db{STARTED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting org.apache.spark.ui.HttpSecurityFilter-35e478f==org.apache.spark.ui.HttpSecurityFilter@35e478f{inst=false,async=true,src=EMBEDDED:null}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2159ms org.apache.spark.ui.HttpSecurityFilter-35e478f==org.apache.spark.ui.HttpSecurityFilter@35e478f{inst=false,async=true,src=EMBEDDED:null}
+23/06/01 03:58:07 DEBUG FilterHolder: Filter.init org.apache.spark.ui.HttpSecurityFilter@3044e9c7
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting org.apache.spark.ui.JettyUtils$$anon$1-1f2d2181==org.apache.spark.ui.JettyUtils$$anon$1@e91b752d{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2159ms org.apache.spark.ui.JettyUtils$$anon$1-1f2d2181==org.apache.spark.ui.JettyUtils$$anon$1@e91b752d{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STARTED}
+23/06/01 03:58:07 DEBUG ServletHolder: Servlet.init null for org.apache.spark.ui.JettyUtils$$anon$1-1f2d2181
+23/06/01 03:58:07 INFO ContextHandler: Started o.s.j.s.ServletContextHandler@3b718392{/stages/pool/json,null,AVAILABLE,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2159ms o.s.j.s.ServletContextHandler@3b718392{/stages/pool/json,null,AVAILABLE,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting GzipHandler@6d6cb754{STOPPED,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: GzipHandler@6d6cb754{STARTING,min=32,inflate=-1} added {DeflaterPool@41d7b27f{STOPPED,size=0,capacity=UNLIMITED},AUTO}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting GzipHandler@6d6cb754{STARTING,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting DeflaterPool@41d7b27f{STOPPED,size=0,capacity=UNLIMITED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2159ms DeflaterPool@41d7b27f{STARTED,size=0,capacity=UNLIMITED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2159ms GzipHandler@6d6cb754{STARTED,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@1e34c607{STOPPED} added {org.apache.spark.ui.HttpSecurityFilter-49096b06==org.apache.spark.ui.HttpSecurityFilter@49096b06{inst=false,async=true,src=EMBEDDED:null},AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@1e34c607{STOPPED} added {[/*]/[]/[ASYNC, REQUEST, FORWARD, ERROR, INCLUDE]=>org.apache.spark.ui.HttpSecurityFilter-49096b06,POJO}
+23/06/01 03:58:07 DEBUG PathMappings: Added MappedResource[pathSpec=ServletPathSpec@4a69d1f9{*.svgz},resource=true] to PathMappings[size=1]
+23/06/01 03:58:07 DEBUG GzipHandler: GzipHandler@4a183d02{STOPPED,min=32,inflate=-1} mime types IncludeExclude@5d05ef57{i=[],ip=CONTAINS,e=[image/ief, image/vnd.wap.wbmp, image/jpeg, application/bzip2, image/x-portable-graymap, application/brotli, image/bmp, image/gif, image/x-icon, audio/midi, video/x-msvideo, image/x-xbitmap, application/x-rar-compressed, image/x-portable-bitmap, image/x-rgb, image/x-cmu-raster, application/gzip, audio/x-wav, audio/x-pn-realaudio, audio/basic, application/compress, audio/x-aiff, video/x.ms.asx, video/x.ms.asf, image/png, video/vnd.rn-realvideo, image/x-xwindowdump, image/jpeg2000, video/x-sgi-movie, audio/mpeg, image/xcf, video/mpeg, image/x-portable-pixmap, image/tiff, image/x-portable-anymap, image/x-xpixmap, application/zip, video/quicktime, application/x-xz, video/mp4],ep=CONTAINS}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: GzipHandler@4a183d02{STOPPED,min=32,inflate=-1} added {o.s.j.s.ServletContextHandler@530a8454{/storage,null,STOPPED,@Spark},MANAGED}
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs/json->[{GzipHandler@61f2c3f0{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@3b65e559{/jobs/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs/job->[{GzipHandler@78c7f9b3{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@79c4715d{/jobs/job,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages/stage/json->[{GzipHandler@4f449e8f{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@39fc6b2c{/stages/stage/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs/job/json->[{GzipHandler@4cee7fa0{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@54336c81{/jobs/job/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages/json->[{GzipHandler@757194dc{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@1a1d3c1a{/stages/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs->[{GzipHandler@4bd2f0dc{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@e041f0c{/jobs,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages->[{GzipHandler@d0ec63{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@117632cf{/stages,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages/stage->[{GzipHandler@6e92c6ad{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@17ae98d7{/stages/stage,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: storage->[{GzipHandler@4a183d02{STOPPED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@530a8454{/storage,null,STOPPED,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages/pool/json->[{GzipHandler@6d6cb754{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@3b718392{/stages/pool/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages/pool->[{GzipHandler@27e32fe4{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@2e27d72f{/stages/pool,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ContextHandlerCollection@df4b72{STARTED} added {GzipHandler@4a183d02{STOPPED,min=32,inflate=-1},UNMANAGED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting o.s.j.s.ServletContextHandler@530a8454{/storage,null,STOPPED,@Spark}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting o.s.j.s.ServletContextHandler@530a8454{/storage,null,STARTING,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting ServletHandler@1e34c607{STOPPED}
+23/06/01 03:58:07 DEBUG ServletHandler: Path=/[EMBEDDED:null] mapped to servlet=org.apache.spark.ui.JettyUtils$$anon$1-5215cd9a[EMBEDDED:null]
+23/06/01 03:58:07 DEBUG PathMappings: Added MappedResource[pathSpec=ServletPathSpec@4e{/},resource=org.apache.spark.ui.JettyUtils$$anon$1-5215cd9a==org.apache.spark.ui.JettyUtils$$anon$1@c5a7fc18{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}] to PathMappings[size=1]
+23/06/01 03:58:07 DEBUG ServletHandler: filterNameMap={org.apache.spark.ui.HttpSecurityFilter-49096b06=org.apache.spark.ui.HttpSecurityFilter-49096b06==org.apache.spark.ui.HttpSecurityFilter@49096b06{inst=false,async=true,src=EMBEDDED:null}}
+23/06/01 03:58:07 DEBUG ServletHandler: pathFilters=[[/*]/[]/[ASYNC, REQUEST, FORWARD, ERROR, INCLUDE]=>org.apache.spark.ui.HttpSecurityFilter-49096b06]
+23/06/01 03:58:07 DEBUG ServletHandler: servletFilterMap={}
+23/06/01 03:58:07 DEBUG ServletHandler: servletPathMap=PathMappings[size=1]
+23/06/01 03:58:07 DEBUG ServletHandler: servletNameMap={org.apache.spark.ui.JettyUtils$$anon$1-5215cd9a=org.apache.spark.ui.JettyUtils$$anon$1-5215cd9a==org.apache.spark.ui.JettyUtils$$anon$1@c5a7fc18{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting ServletHandler@1e34c607{STARTING}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2161ms ServletHandler@1e34c607{STARTED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting org.apache.spark.ui.HttpSecurityFilter-49096b06==org.apache.spark.ui.HttpSecurityFilter@49096b06{inst=false,async=true,src=EMBEDDED:null}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2161ms org.apache.spark.ui.HttpSecurityFilter-49096b06==org.apache.spark.ui.HttpSecurityFilter@49096b06{inst=false,async=true,src=EMBEDDED:null}
+23/06/01 03:58:07 DEBUG FilterHolder: Filter.init org.apache.spark.ui.HttpSecurityFilter@213deac2
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting org.apache.spark.ui.JettyUtils$$anon$1-5215cd9a==org.apache.spark.ui.JettyUtils$$anon$1@c5a7fc18{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2161ms org.apache.spark.ui.JettyUtils$$anon$1-5215cd9a==org.apache.spark.ui.JettyUtils$$anon$1@c5a7fc18{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STARTED}
+23/06/01 03:58:07 DEBUG ServletHolder: Servlet.init null for org.apache.spark.ui.JettyUtils$$anon$1-5215cd9a
+23/06/01 03:58:07 INFO ContextHandler: Started o.s.j.s.ServletContextHandler@530a8454{/storage,null,AVAILABLE,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2161ms o.s.j.s.ServletContextHandler@530a8454{/storage,null,AVAILABLE,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting GzipHandler@4a183d02{STOPPED,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: GzipHandler@4a183d02{STARTING,min=32,inflate=-1} added {DeflaterPool@23eee4b8{STOPPED,size=0,capacity=UNLIMITED},AUTO}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting GzipHandler@4a183d02{STARTING,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting DeflaterPool@23eee4b8{STOPPED,size=0,capacity=UNLIMITED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2161ms DeflaterPool@23eee4b8{STARTED,size=0,capacity=UNLIMITED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2161ms GzipHandler@4a183d02{STARTED,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@9257031{STOPPED} added {org.apache.spark.ui.HttpSecurityFilter-28952dea==org.apache.spark.ui.HttpSecurityFilter@28952dea{inst=false,async=true,src=EMBEDDED:null},AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@9257031{STOPPED} added {[/*]/[]/[ASYNC, REQUEST, FORWARD, ERROR, INCLUDE]=>org.apache.spark.ui.HttpSecurityFilter-28952dea,POJO}
+23/06/01 03:58:07 DEBUG PathMappings: Added MappedResource[pathSpec=ServletPathSpec@4a69d1f9{*.svgz},resource=true] to PathMappings[size=1]
+23/06/01 03:58:07 DEBUG GzipHandler: GzipHandler@5a9800f8{STOPPED,min=32,inflate=-1} mime types IncludeExclude@143d9a93{i=[],ip=CONTAINS,e=[image/ief, image/vnd.wap.wbmp, image/jpeg, application/bzip2, image/x-portable-graymap, application/brotli, image/bmp, image/gif, image/x-icon, audio/midi, video/x-msvideo, image/x-xbitmap, application/x-rar-compressed, image/x-portable-bitmap, image/x-rgb, image/x-cmu-raster, application/gzip, audio/x-wav, audio/x-pn-realaudio, audio/basic, application/compress, audio/x-aiff, video/x.ms.asx, video/x.ms.asf, image/png, video/vnd.rn-realvideo, image/x-xwindowdump, image/jpeg2000, video/x-sgi-movie, audio/mpeg, image/xcf, video/mpeg, image/x-portable-pixmap, image/tiff, image/x-portable-anymap, image/x-xpixmap, application/zip, video/quicktime, application/x-xz, video/mp4],ep=CONTAINS}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: GzipHandler@5a9800f8{STOPPED,min=32,inflate=-1} added {o.s.j.s.ServletContextHandler@31198ceb{/storage/json,null,STOPPED,@Spark},MANAGED}
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs/json->[{GzipHandler@61f2c3f0{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@3b65e559{/jobs/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs/job->[{GzipHandler@78c7f9b3{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@79c4715d{/jobs/job,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages/stage/json->[{GzipHandler@4f449e8f{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@39fc6b2c{/stages/stage/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs/job/json->[{GzipHandler@4cee7fa0{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@54336c81{/jobs/job/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages/json->[{GzipHandler@757194dc{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@1a1d3c1a{/stages/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs->[{GzipHandler@4bd2f0dc{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@e041f0c{/jobs,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages->[{GzipHandler@d0ec63{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@117632cf{/stages,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages/stage->[{GzipHandler@6e92c6ad{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@17ae98d7{/stages/stage,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: storage/json->[{GzipHandler@5a9800f8{STOPPED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@31198ceb{/storage/json,null,STOPPED,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: storage->[{GzipHandler@4a183d02{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@530a8454{/storage,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages/pool/json->[{GzipHandler@6d6cb754{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@3b718392{/stages/pool/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages/pool->[{GzipHandler@27e32fe4{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@2e27d72f{/stages/pool,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ContextHandlerCollection@df4b72{STARTED} added {GzipHandler@5a9800f8{STOPPED,min=32,inflate=-1},UNMANAGED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting o.s.j.s.ServletContextHandler@31198ceb{/storage/json,null,STOPPED,@Spark}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting o.s.j.s.ServletContextHandler@31198ceb{/storage/json,null,STARTING,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting ServletHandler@9257031{STOPPED}
+23/06/01 03:58:07 DEBUG ServletHandler: Path=/[EMBEDDED:null] mapped to servlet=org.apache.spark.ui.JettyUtils$$anon$1-75201592[EMBEDDED:null]
+23/06/01 03:58:07 DEBUG PathMappings: Added MappedResource[pathSpec=ServletPathSpec@4e{/},resource=org.apache.spark.ui.JettyUtils$$anon$1-75201592==org.apache.spark.ui.JettyUtils$$anon$1@3573ff87{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}] to PathMappings[size=1]
+23/06/01 03:58:07 DEBUG ServletHandler: filterNameMap={org.apache.spark.ui.HttpSecurityFilter-28952dea=org.apache.spark.ui.HttpSecurityFilter-28952dea==org.apache.spark.ui.HttpSecurityFilter@28952dea{inst=false,async=true,src=EMBEDDED:null}}
+23/06/01 03:58:07 DEBUG ServletHandler: pathFilters=[[/*]/[]/[ASYNC, REQUEST, FORWARD, ERROR, INCLUDE]=>org.apache.spark.ui.HttpSecurityFilter-28952dea]
+23/06/01 03:58:07 DEBUG ServletHandler: servletFilterMap={}
+23/06/01 03:58:07 DEBUG ServletHandler: servletPathMap=PathMappings[size=1]
+23/06/01 03:58:07 DEBUG ServletHandler: servletNameMap={org.apache.spark.ui.JettyUtils$$anon$1-75201592=org.apache.spark.ui.JettyUtils$$anon$1-75201592==org.apache.spark.ui.JettyUtils$$anon$1@3573ff87{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting ServletHandler@9257031{STARTING}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2162ms ServletHandler@9257031{STARTED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting org.apache.spark.ui.HttpSecurityFilter-28952dea==org.apache.spark.ui.HttpSecurityFilter@28952dea{inst=false,async=true,src=EMBEDDED:null}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2162ms org.apache.spark.ui.HttpSecurityFilter-28952dea==org.apache.spark.ui.HttpSecurityFilter@28952dea{inst=false,async=true,src=EMBEDDED:null}
+23/06/01 03:58:07 DEBUG FilterHolder: Filter.init org.apache.spark.ui.HttpSecurityFilter@40226788
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting org.apache.spark.ui.JettyUtils$$anon$1-75201592==org.apache.spark.ui.JettyUtils$$anon$1@3573ff87{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2163ms org.apache.spark.ui.JettyUtils$$anon$1-75201592==org.apache.spark.ui.JettyUtils$$anon$1@3573ff87{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STARTED}
+23/06/01 03:58:07 DEBUG ServletHolder: Servlet.init null for org.apache.spark.ui.JettyUtils$$anon$1-75201592
+23/06/01 03:58:07 INFO ContextHandler: Started o.s.j.s.ServletContextHandler@31198ceb{/storage/json,null,AVAILABLE,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2163ms o.s.j.s.ServletContextHandler@31198ceb{/storage/json,null,AVAILABLE,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting GzipHandler@5a9800f8{STOPPED,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: GzipHandler@5a9800f8{STARTING,min=32,inflate=-1} added {DeflaterPool@4159e81b{STOPPED,size=0,capacity=UNLIMITED},AUTO}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting GzipHandler@5a9800f8{STARTING,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting DeflaterPool@4159e81b{STOPPED,size=0,capacity=UNLIMITED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2163ms DeflaterPool@4159e81b{STARTED,size=0,capacity=UNLIMITED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2163ms GzipHandler@5a9800f8{STARTED,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@5dda14d0{STOPPED} added {org.apache.spark.ui.HttpSecurityFilter-5b5caf08==org.apache.spark.ui.HttpSecurityFilter@5b5caf08{inst=false,async=true,src=EMBEDDED:null},AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@5dda14d0{STOPPED} added {[/*]/[]/[ASYNC, REQUEST, FORWARD, ERROR, INCLUDE]=>org.apache.spark.ui.HttpSecurityFilter-5b5caf08,POJO}
+23/06/01 03:58:07 DEBUG PathMappings: Added MappedResource[pathSpec=ServletPathSpec@4a69d1f9{*.svgz},resource=true] to PathMappings[size=1]
+23/06/01 03:58:07 DEBUG GzipHandler: GzipHandler@23cd4ff2{STOPPED,min=32,inflate=-1} mime types IncludeExclude@70807224{i=[],ip=CONTAINS,e=[image/ief, image/vnd.wap.wbmp, image/jpeg, application/bzip2, image/x-portable-graymap, application/brotli, image/bmp, image/gif, image/x-icon, audio/midi, video/x-msvideo, image/x-xbitmap, application/x-rar-compressed, image/x-portable-bitmap, image/x-rgb, image/x-cmu-raster, application/gzip, audio/x-wav, audio/x-pn-realaudio, audio/basic, application/compress, audio/x-aiff, video/x.ms.asx, video/x.ms.asf, image/png, video/vnd.rn-realvideo, image/x-xwindowdump, image/jpeg2000, video/x-sgi-movie, audio/mpeg, image/xcf, video/mpeg, image/x-portable-pixmap, image/tiff, image/x-portable-anymap, image/x-xpixmap, application/zip, video/quicktime, application/x-xz, video/mp4],ep=CONTAINS}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: GzipHandler@23cd4ff2{STOPPED,min=32,inflate=-1} added {o.s.j.s.ServletContextHandler@282308c3{/storage/rdd,null,STOPPED,@Spark},MANAGED}
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs/json->[{GzipHandler@61f2c3f0{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@3b65e559{/jobs/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages/stage/json->[{GzipHandler@4f449e8f{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@39fc6b2c{/stages/stage/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: storage/rdd->[{GzipHandler@23cd4ff2{STOPPED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@282308c3{/storage/rdd,null,STOPPED,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs/job/json->[{GzipHandler@4cee7fa0{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@54336c81{/jobs/job/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs->[{GzipHandler@4bd2f0dc{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@e041f0c{/jobs,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages/json->[{GzipHandler@757194dc{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@1a1d3c1a{/stages/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages/stage->[{GzipHandler@6e92c6ad{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@17ae98d7{/stages/stage,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: storage/json->[{GzipHandler@5a9800f8{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@31198ceb{/storage/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: storage->[{GzipHandler@4a183d02{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@530a8454{/storage,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs/job->[{GzipHandler@78c7f9b3{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@79c4715d{/jobs/job,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages->[{GzipHandler@d0ec63{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@117632cf{/stages,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages/pool/json->[{GzipHandler@6d6cb754{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@3b718392{/stages/pool/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages/pool->[{GzipHandler@27e32fe4{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@2e27d72f{/stages/pool,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ContextHandlerCollection@df4b72{STARTED} added {GzipHandler@23cd4ff2{STOPPED,min=32,inflate=-1},UNMANAGED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting o.s.j.s.ServletContextHandler@282308c3{/storage/rdd,null,STOPPED,@Spark}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting o.s.j.s.ServletContextHandler@282308c3{/storage/rdd,null,STARTING,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting ServletHandler@5dda14d0{STOPPED}
+23/06/01 03:58:07 DEBUG ServletHandler: Path=/[EMBEDDED:null] mapped to servlet=org.apache.spark.ui.JettyUtils$$anon$1-1db0ec27[EMBEDDED:null]
+23/06/01 03:58:07 DEBUG PathMappings: Added MappedResource[pathSpec=ServletPathSpec@4e{/},resource=org.apache.spark.ui.JettyUtils$$anon$1-1db0ec27==org.apache.spark.ui.JettyUtils$$anon$1@ce72c032{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}] to PathMappings[size=1]
+23/06/01 03:58:07 DEBUG ServletHandler: filterNameMap={org.apache.spark.ui.HttpSecurityFilter-5b5caf08=org.apache.spark.ui.HttpSecurityFilter-5b5caf08==org.apache.spark.ui.HttpSecurityFilter@5b5caf08{inst=false,async=true,src=EMBEDDED:null}}
+23/06/01 03:58:07 DEBUG ServletHandler: pathFilters=[[/*]/[]/[ASYNC, REQUEST, FORWARD, ERROR, INCLUDE]=>org.apache.spark.ui.HttpSecurityFilter-5b5caf08]
+23/06/01 03:58:07 DEBUG ServletHandler: servletFilterMap={}
+23/06/01 03:58:07 DEBUG ServletHandler: servletPathMap=PathMappings[size=1]
+23/06/01 03:58:07 DEBUG ServletHandler: servletNameMap={org.apache.spark.ui.JettyUtils$$anon$1-1db0ec27=org.apache.spark.ui.JettyUtils$$anon$1-1db0ec27==org.apache.spark.ui.JettyUtils$$anon$1@ce72c032{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting ServletHandler@5dda14d0{STARTING}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2164ms ServletHandler@5dda14d0{STARTED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting org.apache.spark.ui.HttpSecurityFilter-5b5caf08==org.apache.spark.ui.HttpSecurityFilter@5b5caf08{inst=false,async=true,src=EMBEDDED:null}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2164ms org.apache.spark.ui.HttpSecurityFilter-5b5caf08==org.apache.spark.ui.HttpSecurityFilter@5b5caf08{inst=false,async=true,src=EMBEDDED:null}
+23/06/01 03:58:07 DEBUG FilterHolder: Filter.init org.apache.spark.ui.HttpSecurityFilter@7e97551f
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting org.apache.spark.ui.JettyUtils$$anon$1-1db0ec27==org.apache.spark.ui.JettyUtils$$anon$1@ce72c032{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2164ms org.apache.spark.ui.JettyUtils$$anon$1-1db0ec27==org.apache.spark.ui.JettyUtils$$anon$1@ce72c032{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STARTED}
+23/06/01 03:58:07 DEBUG ServletHolder: Servlet.init null for org.apache.spark.ui.JettyUtils$$anon$1-1db0ec27
+23/06/01 03:58:07 INFO ContextHandler: Started o.s.j.s.ServletContextHandler@282308c3{/storage/rdd,null,AVAILABLE,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2164ms o.s.j.s.ServletContextHandler@282308c3{/storage/rdd,null,AVAILABLE,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting GzipHandler@23cd4ff2{STOPPED,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: GzipHandler@23cd4ff2{STARTING,min=32,inflate=-1} added {DeflaterPool@400d912a{STOPPED,size=0,capacity=UNLIMITED},AUTO}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting GzipHandler@23cd4ff2{STARTING,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting DeflaterPool@400d912a{STOPPED,size=0,capacity=UNLIMITED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2164ms DeflaterPool@400d912a{STARTED,size=0,capacity=UNLIMITED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2164ms GzipHandler@23cd4ff2{STARTED,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@3b4ef7{STOPPED} added {org.apache.spark.ui.HttpSecurityFilter-9f6e406==org.apache.spark.ui.HttpSecurityFilter@9f6e406{inst=false,async=true,src=EMBEDDED:null},AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@3b4ef7{STOPPED} added {[/*]/[]/[ASYNC, REQUEST, FORWARD, ERROR, INCLUDE]=>org.apache.spark.ui.HttpSecurityFilter-9f6e406,POJO}
+23/06/01 03:58:07 DEBUG PathMappings: Added MappedResource[pathSpec=ServletPathSpec@4a69d1f9{*.svgz},resource=true] to PathMappings[size=1]
+23/06/01 03:58:07 DEBUG GzipHandler: GzipHandler@7a94b64e{STOPPED,min=32,inflate=-1} mime types IncludeExclude@3e6f3bae{i=[],ip=CONTAINS,e=[image/ief, image/vnd.wap.wbmp, image/jpeg, application/bzip2, image/x-portable-graymap, application/brotli, image/bmp, image/gif, image/x-icon, audio/midi, video/x-msvideo, image/x-xbitmap, application/x-rar-compressed, image/x-portable-bitmap, image/x-rgb, image/x-cmu-raster, application/gzip, audio/x-wav, audio/x-pn-realaudio, audio/basic, application/compress, audio/x-aiff, video/x.ms.asx, video/x.ms.asf, image/png, video/vnd.rn-realvideo, image/x-xwindowdump, image/jpeg2000, video/x-sgi-movie, audio/mpeg, image/xcf, video/mpeg, image/x-portable-pixmap, image/tiff, image/x-portable-anymap, image/x-xpixmap, application/zip, video/quicktime, application/x-xz, video/mp4],ep=CONTAINS}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: GzipHandler@7a94b64e{STOPPED,min=32,inflate=-1} added {o.s.j.s.ServletContextHandler@d4ab71a{/storage/rdd/json,null,STOPPED,@Spark},MANAGED}
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs/json->[{GzipHandler@61f2c3f0{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@3b65e559{/jobs/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages/stage/json->[{GzipHandler@4f449e8f{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@39fc6b2c{/stages/stage/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: storage/rdd->[{GzipHandler@23cd4ff2{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@282308c3{/storage/rdd,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs/job/json->[{GzipHandler@4cee7fa0{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@54336c81{/jobs/job/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs->[{GzipHandler@4bd2f0dc{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@e041f0c{/jobs,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages/json->[{GzipHandler@757194dc{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@1a1d3c1a{/stages/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages/stage->[{GzipHandler@6e92c6ad{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@17ae98d7{/stages/stage,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: storage/json->[{GzipHandler@5a9800f8{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@31198ceb{/storage/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: storage->[{GzipHandler@4a183d02{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@530a8454{/storage,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: storage/rdd/json->[{GzipHandler@7a94b64e{STOPPED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@d4ab71a{/storage/rdd/json,null,STOPPED,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs/job->[{GzipHandler@78c7f9b3{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@79c4715d{/jobs/job,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages->[{GzipHandler@d0ec63{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@117632cf{/stages,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages/pool/json->[{GzipHandler@6d6cb754{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@3b718392{/stages/pool/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages/pool->[{GzipHandler@27e32fe4{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@2e27d72f{/stages/pool,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ContextHandlerCollection@df4b72{STARTED} added {GzipHandler@7a94b64e{STOPPED,min=32,inflate=-1},UNMANAGED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting o.s.j.s.ServletContextHandler@d4ab71a{/storage/rdd/json,null,STOPPED,@Spark}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting o.s.j.s.ServletContextHandler@d4ab71a{/storage/rdd/json,null,STARTING,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting ServletHandler@3b4ef7{STOPPED}
+23/06/01 03:58:07 DEBUG ServletHandler: Path=/[EMBEDDED:null] mapped to servlet=org.apache.spark.ui.JettyUtils$$anon$1-1af05b03[EMBEDDED:null]
+23/06/01 03:58:07 DEBUG PathMappings: Added MappedResource[pathSpec=ServletPathSpec@4e{/},resource=org.apache.spark.ui.JettyUtils$$anon$1-1af05b03==org.apache.spark.ui.JettyUtils$$anon$1@367d9b18{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}] to PathMappings[size=1]
+23/06/01 03:58:07 DEBUG ServletHandler: filterNameMap={org.apache.spark.ui.HttpSecurityFilter-9f6e406=org.apache.spark.ui.HttpSecurityFilter-9f6e406==org.apache.spark.ui.HttpSecurityFilter@9f6e406{inst=false,async=true,src=EMBEDDED:null}}
+23/06/01 03:58:07 DEBUG ServletHandler: pathFilters=[[/*]/[]/[ASYNC, REQUEST, FORWARD, ERROR, INCLUDE]=>org.apache.spark.ui.HttpSecurityFilter-9f6e406]
+23/06/01 03:58:07 DEBUG ServletHandler: servletFilterMap={}
+23/06/01 03:58:07 DEBUG ServletHandler: servletPathMap=PathMappings[size=1]
+23/06/01 03:58:07 DEBUG ServletHandler: servletNameMap={org.apache.spark.ui.JettyUtils$$anon$1-1af05b03=org.apache.spark.ui.JettyUtils$$anon$1-1af05b03==org.apache.spark.ui.JettyUtils$$anon$1@367d9b18{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting ServletHandler@3b4ef7{STARTING}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2166ms ServletHandler@3b4ef7{STARTED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting org.apache.spark.ui.HttpSecurityFilter-9f6e406==org.apache.spark.ui.HttpSecurityFilter@9f6e406{inst=false,async=true,src=EMBEDDED:null}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2166ms org.apache.spark.ui.HttpSecurityFilter-9f6e406==org.apache.spark.ui.HttpSecurityFilter@9f6e406{inst=false,async=true,src=EMBEDDED:null}
+23/06/01 03:58:07 DEBUG FilterHolder: Filter.init org.apache.spark.ui.HttpSecurityFilter@12477988
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting org.apache.spark.ui.JettyUtils$$anon$1-1af05b03==org.apache.spark.ui.JettyUtils$$anon$1@367d9b18{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STOPPED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2166ms org.apache.spark.ui.JettyUtils$$anon$1-1af05b03==org.apache.spark.ui.JettyUtils$$anon$1@367d9b18{jsp=null,order=-1,inst=false,async=true,src=EMBEDDED:null,STARTED}
+23/06/01 03:58:07 DEBUG ServletHolder: Servlet.init null for org.apache.spark.ui.JettyUtils$$anon$1-1af05b03
+23/06/01 03:58:07 INFO ContextHandler: Started o.s.j.s.ServletContextHandler@d4ab71a{/storage/rdd/json,null,AVAILABLE,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2166ms o.s.j.s.ServletContextHandler@d4ab71a{/storage/rdd/json,null,AVAILABLE,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting GzipHandler@7a94b64e{STOPPED,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: GzipHandler@7a94b64e{STARTING,min=32,inflate=-1} added {DeflaterPool@2caf6912{STOPPED,size=0,capacity=UNLIMITED},AUTO}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting GzipHandler@7a94b64e{STARTING,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting DeflaterPool@2caf6912{STOPPED,size=0,capacity=UNLIMITED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2166ms DeflaterPool@2caf6912{STARTED,size=0,capacity=UNLIMITED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: STARTED @2166ms GzipHandler@7a94b64e{STARTED,min=32,inflate=-1}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@4fdf8f12{STOPPED} added {org.apache.spark.ui.HttpSecurityFilter-73d69c0f==org.apache.spark.ui.HttpSecurityFilter@73d69c0f{inst=false,async=true,src=EMBEDDED:null},AUTO}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ServletHandler@4fdf8f12{STOPPED} added {[/*]/[]/[ASYNC, REQUEST, FORWARD, ERROR, INCLUDE]=>org.apache.spark.ui.HttpSecurityFilter-73d69c0f,POJO}
+23/06/01 03:58:07 DEBUG PathMappings: Added MappedResource[pathSpec=ServletPathSpec@4a69d1f9{*.svgz},resource=true] to PathMappings[size=1]
+23/06/01 03:58:07 DEBUG GzipHandler: GzipHandler@34237b90{STOPPED,min=32,inflate=-1} mime types IncludeExclude@1d01dfa5{i=[],ip=CONTAINS,e=[image/ief, image/vnd.wap.wbmp, image/jpeg, application/bzip2, image/x-portable-graymap, application/brotli, image/bmp, image/gif, image/x-icon, audio/midi, video/x-msvideo, image/x-xbitmap, application/x-rar-compressed, image/x-portable-bitmap, image/x-rgb, image/x-cmu-raster, application/gzip, audio/x-wav, audio/x-pn-realaudio, audio/basic, application/compress, audio/x-aiff, video/x.ms.asx, video/x.ms.asf, image/png, video/vnd.rn-realvideo, image/x-xwindowdump, image/jpeg2000, video/x-sgi-movie, audio/mpeg, image/xcf, video/mpeg, image/x-portable-pixmap, image/tiff, image/x-portable-anymap, image/x-xpixmap, application/zip, video/quicktime, application/x-xz, video/mp4],ep=CONTAINS}
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: GzipHandler@34237b90{STOPPED,min=32,inflate=-1} added {o.s.j.s.ServletContextHandler@25230246{/environment,null,STOPPED,@Spark},MANAGED}
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs/json->[{GzipHandler@61f2c3f0{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@3b65e559{/jobs/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages/stage/json->[{GzipHandler@4f449e8f{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@39fc6b2c{/stages/stage/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: storage/rdd->[{GzipHandler@23cd4ff2{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@282308c3{/storage/rdd,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs/job/json->[{GzipHandler@4cee7fa0{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@54336c81{/jobs/job/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs->[{GzipHandler@4bd2f0dc{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@e041f0c{/jobs,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages/json->[{GzipHandler@757194dc{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@1a1d3c1a{/stages/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages/stage->[{GzipHandler@6e92c6ad{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@17ae98d7{/stages/stage,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: storage/json->[{GzipHandler@5a9800f8{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@31198ceb{/storage/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: storage->[{GzipHandler@4a183d02{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@530a8454{/storage,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: storage/rdd/json->[{GzipHandler@7a94b64e{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@d4ab71a{/storage/rdd/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: jobs/job->[{GzipHandler@78c7f9b3{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@79c4715d{/jobs/job,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: environment->[{GzipHandler@34237b90{STOPPED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@25230246{/environment,null,STOPPED,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages->[{GzipHandler@d0ec63{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@117632cf{/stages,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages/pool/json->[{GzipHandler@6d6cb754{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@3b718392{/stages/pool/json,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContextHandlerCollection: stages/pool->[{GzipHandler@27e32fe4{STARTED,min=32,inflate=-1},[o.s.j.s.ServletContextHandler@2e27d72f{/stages/pool,null,AVAILABLE,@Spark}]}]
+23/06/01 03:58:07 DEBUG ContainerLifeCycle: ContextHandlerCollection@df4b72{STARTED} added {GzipHandler@34237b90{STOPPED,min=32,inflate=-1},UNMANAGED}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting o.s.j.s.ServletContextHandler@25230246{/environment,null,STOPPED,@Spark}
+23/06/01 03:58:07 DEBUG AbstractHandler: starting o.s.j.s.ServletContextHandler@25230246{/environment,null,STARTING,@Spark}
+23/06/01 03:58:07 DEBUG AbstractLifeCycle: starting ServletHandler@4fdf8f12{STOPPED}
+23/06/01 03:58:07 DEBUG ServletHandler: Path=/[EMBEDDED:null] mapped to servlet=org.apache.spark.ui.JettyUtils$$anon$1-4a8b5227[EMBEDDED:null]

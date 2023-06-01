@@ -6,15 +6,17 @@
           # "spark.celeborn.shuffle.partitionSplit.threshold": "2g",
           # "spark.celeborn.client.push.sort.pipeline.enabled": "true",
           # "spark.celeborn.client.push.sort.randomizePartitionId.enabled": "true",
-          # "spark.celeborn.shuffle.batchHandleChangePartition.enabled": "true",
-          # "spark.celeborn.shuffle.batchHandleCommitPartition.enabled": "true",
-          # "spark.celeborn.shuffle.batchHandleReleasePartition.enabled": "true",
+
           # "spark.celeborn.client.push.blacklist.enabled": "true",
           # "spark.celeborn.client.blacklistSlave.enabled": "true",
           # "spark.celeborn.client.shuffle.writer": "SORT",
-               
-    
-        
+          # "spark.celeborn.client.fetch.timeout": "120s",
+          # "spark.celeborn.client.push.data.timeout": "120s",
+          # "spark.celeborn.push.limit.inFlight.timeout": "600s",
+          # "spark.celeborn.client.shuffle.batchHandleChangePartition.enabled": "true",
+          # "spark.celeborn.client.shuffle.batchHandleCommitPartition.enabled": "true",
+          # "spark.celeborn.client.shuffle.batchHandleReleasePartition.enabled": "true",
+
 export ACCOUNTID=$(aws sts get-caller-identity --query Account --output text)
 export VIRTUAL_CLUSTER_ID=$(aws emr-containers list-virtual-clusters --query "virtualClusters[?name == '$EMRCLUSTER_NAME' && state == 'RUNNING'].id" --output text)
 export EMR_ROLE_ARN=arn:aws:iam::$ACCOUNTID:role/$EMRCLUSTER_NAME-execution-role
@@ -23,36 +25,34 @@ export ECR_URL="$ACCOUNTID.dkr.ecr.$AWS_REGION.amazonaws.com"
 
 aws emr-containers start-job-run \
   --virtual-cluster-id $VIRTUAL_CLUSTER_ID \
-  --name em66-clb-adj \
+  --name em66-clb-q1517-sort2.0 \
   --execution-role-arn $EMR_ROLE_ARN \
   --release-label emr-6.6.0-latest \
   --job-driver '{
   "sparkSubmitJobDriver": {
       "entryPoint": "local:///usr/lib/spark/examples/jars/eks-spark-benchmark-assembly-1.0.jar",
-      "entryPointArguments":["s3://'$S3BUCKET'/BLOG_TPCDS-TEST-3T-partitioned","s3://'$S3BUCKET'/EMRONEKS_TPCDS-TEST-3T-RESULT","/opt/tpcds-kit/tools","parquet","3000","1","false","q15-v2.4","true"],
+      "entryPointArguments":["s3://'$S3BUCKET'/BLOG_TPCDS-TEST-3T-partitioned","s3://'$S3BUCKET'/EMRONEKS_TPCDS-TEST-3T-RESULT","/opt/tpcds-kit/tools","parquet","3000","1","false","q15-v2.4,q17-v2.4","true"],
       "sparkSubmitParameters": "--class com.amazonaws.eks.tpcds.BenchmarkSQL --conf spark.driver.cores=2 --conf spark.driver.memory=3g --conf spark.executor.cores=4 --conf spark.executor.memory=6g --conf spark.executor.instances=47"}}' \
   --configuration-overrides '{
     "applicationConfiguration": [
       {
         "classification": "spark-defaults", 
         "properties": {
-          "spark.kubernetes.container.image": "'$ECR_URL'/clb-spark-benchmark:emr6.6",
+          "spark.kubernetes.container.image": "'$ECR_URL'/clb-spark-benchmark:emr6.6_clb0.2",
           "spark.executor.memoryOverhead": "2G",
-          "spark.kubernetes.executor.podNamePrefix": "emr-eks-tpcds-clb",
+          "spark.kubernetes.executor.podNamePrefix": "emr-eks-tpcds-clb-sort",
           "spark.kubernetes.node.selector.eks.amazonaws.com/nodegroup": "c59b",
-          "spark.network.timeout": "2000s",
-          "spark.executor.heartbeatInterval": "300s",
-
-          "spark.celeborn.client.fetch.timeout": "120s",
-          "spark.celeborn.client.push.data.timeout": "120s",
-          "spark.celeborn.push.limit.inFlight.timeout": "600s",
-
           "spark.serializer": "org.apache.spark.serializer.KryoSerializer",
-          "spark.celeborn.push.replicate.enabled": "false",
-          "spark.celeborn.push.maxReqsInFlight": "32",
-          "spark.celeborn.shuffle.compression.codec": "zstd",
-          "spark.celeborn.rpc.askTimeout": "120s",
 
+          "spark.celeborn.push.maxReqsInFlight": "64",
+          "spark.celeborn.shuffle.compression.codec": "LZ4",
+          "spark.celeborn.shuffle.chunk.size": "4m",
+          "spark.celeborn.shuffle.partitionSplit.threshold": "2G",
+          "spark.celeborn.push.revive.maxRetries": "1",
+          "spark.speculation": "false",
+          "spark.celeborn.shuffle.writer": "sort",
+
+          "spark.celeborn.push.replicate.enabled": "false",
           "spark.shuffle.service.enabled": "false",
           "spark.sql.adaptive.enabled": "true",
           "spark.sql.adaptive.skewJoin.enabled": "true",
@@ -64,7 +64,7 @@ aws emr-containers start-job-run \
       {
         "classification": "spark-log4j",
         "properties": {
-          "log4j.rootCategory":"WARN, console"
+          "log4j.rootCategory":"DEBUG, console"
         }
       }
     ],

@@ -257,7 +257,7 @@ docker build -t $ECR_URL/celeborn-server:spark${SPARK_VERSION}_clb${CELEBORN_VER
   --build-arg CELEBORN_VERSION=${CELEBORN_VERSION} \
   -f docker/celeborn-server/Dockerfile .
 # push the image to ECR
-docker push $ECR_URL/celeborn-server:spark${SPARK_VERSION}
+docker push $ECR_URL/celeborn-server:spark${SPARK_VERSION}_clb${CELEBORN_VERSION}
 
 # build client with benchmark tool
 docker build -t $ECR_URL/clb-spark-benchmark:emr6.6_clb${CELEBORN_VERSION} \
@@ -265,7 +265,7 @@ docker build -t $ECR_URL/clb-spark-benchmark:emr6.6_clb${CELEBORN_VERSION} \
   --build-arg CELEBORN_VERSION=${CELEBORN_VERSION} \
   --build-arg SPARK_BASE_IMAGE=$SRC_ECR_URL/spark/emr-6.6.0:latest \
   -f docker/celeborn-emr-client/Dockerfile .
-docker push $ECR_URL/clb-spark-benchmark:emr6.6
+docker push $ECR_URL/clb-spark-benchmark:emr6.6_clb${CELEBORN_VERSION}
 ```
 #### Run Celeborn shuffle service in EKS
 Celeborn helm chart comes with the monitoring feature via Prometheus. To install Prometheus in EKS and integrate with Amazon Managed Prometheus and Managed Grafana, check out this [installation script](https://github.com/melodyyangaws/karpenter-emr-on-eks/blob/main/provision/create-workshop-env.sh#L111).

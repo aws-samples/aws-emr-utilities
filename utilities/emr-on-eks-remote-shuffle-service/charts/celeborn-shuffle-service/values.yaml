@@ -26,7 +26,7 @@ image:
   repository: 633458367150.dkr.ecr.us-west-2.amazonaws.com/celeborn-server
   pullPolicy: Always
   # tag: 0.1.1-6badd20
-  tag: spark3.2
+  tag: spark3.2_clb0.2
 
 nodeSelector: 
   app: css
@@ -64,26 +64,26 @@ celeborn:
   celeborn.worker.metrics.prometheus.port: 9096
   celeborn.worker.monitor.disk.enabled: false
 
-  celeborn.shuffle.chunk.size: 4m
-  celeborn.rpc.io.serverThreads: 128
+  # celeborn.rpc.io.serverThreads: 128
   celeborn.rpc.io.numConnectionsPerPeer: 8
-  celeborn.rpc.io.clientThreads: 4
+  # celeborn.rpc.io.clientThreads: 4
   celeborn.rpc.dispatcher.numThreads: 4
   celeborn.worker.flusher.buffer.size: 128k
-  celeborn.worker.flusher.threads: 8
+  celeborn.worker.flusher.threads: 24
   celeborn.worker.fetch.io.threads: 64                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
   celeborn.worker.push.io.threads: 128
-  celeborn.push.stageEnd.timeout: 600s
-  celeborn.application.heartbeat.timeout: 300
-  celeborn.worker.heartbeat.timeout: 120s
+  # celeborn.master.heartbeat.application.timeout: 300s
+  # celeborn.master.heartbeat.worker.timeout: 120s
   celeborn.network.timeout: 2000s
-  # celeborn.worker.replicate.threads: 128
-  celeborn.worker.commit.threads: 64
-  celeborn.worker.readBuffer.target.changeThreshold: 4mb
+  celeborn.worker.replicate.threads: 128
+  # celeborn.worker.commitFiles.threads: 64
+  # celeborn.worker.readBuffer.target.changeThreshold: 4mb
   celeborn.worker.readBuffer.toTriggerReadMin: 128
   celeborn.worker.directMemoryRatioForReadBuffer: 0.4
-  celeborn.worker.partition.initial.readBuffersMin: 512
+  celeborn.worker.closeIdleConnections: true
+  # celeborn.worker.partition.initial.readBuffersMin: 512
   celeborn.rpc.io.threads: 8
+  celeborn.rpc.askTimeout: 120s
   # celeborn.worker.partitionSorter.directMemoryRatioThreshold: 0.2
   # celeborn.worker.sortPartition.reservedMemoryPerPartition: 4mb
   # celeborn.worker.sortPartition.threads: 8

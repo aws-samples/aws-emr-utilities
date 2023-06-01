@@ -1,0 +1,158 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
+AWSTemplateFormatVersion: 2010-09-09
+
+Conditions:
+  InUsEast1:
+    Fn::Equals:
+      - { Ref: "AWS::Region" }
+      - us-east-1
+
+Resources:
+  PySparkECRRepo:
+    Type: AWS::ECR::Repository
+    Properties:
+      EncryptionConfiguration:
+        EncryptionType: "String"
+        KmsKey: "String"
+      ImageScanningConfiguration:
+        ScanOnPush: String
+      ImageTagMutability: "String"
+      LifecyclePolicy:
+        LifecyclePolicyText: "String"
+        RegistryId: "String"
+      RepositoryName: "String"
+      RepositoryPolicyText: JSON
+      Tags: 
+        Tags
+  
+  LogicalID:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        ArtifactIdentifier: "String"
+        EncryptionDisabled: false
+        Location: "String"
+        Name: "String"
+        NamespaceType: "String"
+        OverrideArtifactName: false
+        Packaging: "String"
+        Path: "String"
+        Type: "String"
+      BadgeEnabled: false
+      BuildBatchConfig:
+        BatchReportMode: "String"
+        CombineArtifacts: String
+        ServiceRole: "false"
+        TimeoutInMins: String
+      Cache:
+        Location: "String"
+        Modes:
+          -
+        Type: "false"
+      ConcurrentBuildLimit: String
+      Description: "false"
+      EncryptionKey: "String"
+      Environment:
+        Certificate: "String"
+        ComputeType: "String"
+        EnvironmentVariables:
+          -
+        Image: "String"
+        ImagePullCredentialsType: "String"
+        PrivilegedMode: false
+        Type: "String"
+      FileSystemLocations: 
+        FileSystemLocations
+      LogsConfig:
+      Name: "String"
+      QueuedTimeoutInMinutes: String
+      ResourceAccessRole: "false"
+      SecondaryArtifacts: 
+        SecondaryArtifacts
+      SecondarySourceVersions: 
+        SecondarySourceVersions
+      SecondarySources: 
+        SecondarySources
+      ServiceRole: "String" # Required
+      Source:
+        BuildSpec: "String"
+        GitCloneDepth: Number
+        InsecureSsl: false
+        Location: "String"
+        ReportBuildStatus: false
+        SourceIdentifier: "String"
+        Type: "String"
+      SourceVersion: "String"
+      Tags: 
+        Tags
+      TimeoutInMinutes: Number
+      Triggers:
+        BuildType: "String"
+        FilterGroups:
+          -
+        Webhook: String
+      Visibility: "false"
+      VpcConfig:
+        SecurityGroupIds:
+          -
+        Subnets:
+          -
+        VpcId: "String"
+
+  LogicalID:
+    Type: AWS::EMR::Cluster
+    Properties:
+      AdditionalInfo: JSON
+      Applications: 
+        Applications
+      AutoScalingRole: "String"
+      AutoTerminationPolicy:
+        IdleTimeout: Number
+      BootstrapActions: 
+        BootstrapActions
+      Configurations: 
+        Configurations
+      CustomAmiId: "String"
+      EbsRootVolumeSize: Number
+      Instances:
+        AdditionalMasterSecurityGroups:
+          -
+        AdditionalSlaveSecurityGroups:
+          -
+        Ec2KeyName: "String"
+        Ec2SubnetId: "String"
+        Ec2SubnetIds:
+          -
+        EmrManagedMasterSecurityGroup: "String"
+        EmrManagedSlaveSecurityGroup: "String"
+        HadoopVersion: "String"
+        KeepJobFlowAliveWhenNoSteps: false
+        ServiceAccessSecurityGroup: "String"
+        TaskInstanceFleets:
+          -
+        TaskInstanceGroups:
+          -
+        TerminationProtected: false
+      JobFlowRole: "String" # Required
+      KerberosAttributes:
+        ADDomainJoinPassword: "String"
+        ADDomainJoinUser: "String"
+        CrossRealmTrustPrincipalPassword: "String"
+        KdcAdminPassword: "String"
+        Realm: "String"
+      LogEncryptionKmsKeyId: "String"
+      LogUri: "String"
+      ManagedScalingPolicy:
+      Name: "String" # Required
+      OSReleaseLabel: "String"
+      ReleaseLabel: "String"
+      ScaleDownBehavior: "String"
+      SecurityConfiguration: "false"
+      ServiceRole: "String" # Required
+      StepConcurrencyLevel: Number
+      Steps: 
+        Steps
+      Tags: 
+        Tags
+      VisibleToAllUsers: false
