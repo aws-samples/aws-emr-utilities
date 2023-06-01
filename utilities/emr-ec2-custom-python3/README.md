@@ -49,7 +49,7 @@ aws emr create-cluster \
  --log-uri "s3n://${S3_BUCKET}/logs/emr/" \
  --release-label "emr-6.10.0" \
  --use-default-roles \
- --applications Name=Spark Name=Zeppelin \
+ --applications Name=Spark Name=Livy Name=JupyterEnterpriseGateway \
  --instance-fleets '[{"Name":"Primary","InstanceFleetType":"MASTER","TargetOnDemandCapacity":1,"TargetSpotCapacity":0,"InstanceTypeConfigs":[{"InstanceType":"c5a.2xlarge"},{"InstanceType":"m5a.2xlarge"},{"InstanceType":"r5a.2xlarge"}]},{"Name":"Core","InstanceFleetType":"CORE","TargetOnDemandCapacity":0,"TargetSpotCapacity":1,"InstanceTypeConfigs":[{"InstanceType":"c5a.2xlarge"},{"InstanceType":"m5a.2xlarge"},{"InstanceType":"r5a.2xlarge"}],"LaunchSpecifications":{"OnDemandSpecification":{"AllocationStrategy":"lowest-price"},"SpotSpecification":{"TimeoutDurationMinutes":10,"TimeoutAction":"SWITCH_TO_ON_DEMAND","AllocationStrategy":"capacity-optimized"}}}]' \
  --scale-down-behavior "TERMINATE_AT_TASK_COMPLETION" \
  --auto-termination-policy '{"IdleTimeout":14400}' \
@@ -61,7 +61,14 @@ Now, any Spark job you submit will automatically use the `PYSPARK_PYTHON` you pr
 ```python
 import sys
 
-assert (sys.version_info.major, sys.version_info.minor) == (3,11)
+from pyspark.sql import SparkSession
+
+spark = (
+    SparkSession.builder.appName("Python Spark SQL basic example")
+    .getOrCreate()
+)
+
+assert (sys.version_info.major, sys.version_info.minor) == (3, 11)
 ```
 
 ```bash
@@ -70,10 +77,43 @@ CLUSTER_ID=${YOUR_ID}
 
 aws emr add-steps \
     --cluster-id ${CLUSTER_ID} \
-    --steps Type=CUSTOM_JAR,Name="Spark Program",Jar="command-runner.jar",ActionOnFailure=CONTINUE,Args="[spark-submit,--deploy-mode,cluster,s3://${S3_BUCKET}/code/bootstrap/custompython/validate-python-version.py]"
+    --steps Type=CUSTOM_JAR,Name="Spark Program",Jar="command-runner.jar",ActionOnFailure=CONTINUE,Args="[spark-submit,--deploy-mode,client,s3://${S3_BUCKET}/code/bootstrap/custompython/validate-python-version.py]"
 ```
 
 The step should complete successfully!
+
+#### Reducing Cluster Start Time
+
+As mentioned above, while compiling Python as a bootstrap action may work for long-lived clusters, it's not ideal for ephemeral clusters. There are a few options here.
+
+1. [Use a custom AMI](https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-custom-ami.html)
+2. Build once and copy the resulting artifact using a bootstrap action
+3. Roll your own RPM
+
+As #1 is already well documented and #3 requires some deep Linux expertise, we'll show how to do #2. 
+
+Let's assume you used the bootstrap action above and have your Python installation in `/usr/local/python3.11.3`. Connect to your EMR cluster (I prefer SSM, you may have SSH enabled) and perform the following actions.
+
+- Create an archive of the installation
+
+```bash
+cd /usr/local
+tar czvf python3.11.tar.gz python3.11.3/
+```
+
+- Copy it up to S3
+
+```bash
+aws s3 cp python3.11.tar.gz s3://${S3_BUCKET}/artifacts/emr/
+```
+
+You can now download and unpack this archive in new cluster installations. See the [`copy-python.sh`](./custom-python/copy-python.sh) script for details - if you performed the `aws sync` command above, you'll already have this in your S3 bucket. Use the same `create-cluster` command, but replace `--bootstrap-actions` with this script and pass in an argument of the archive location.
+
+```
+--bootstrap-actions Path="s3://${S3_BUCKET}/code/bootstrap/custompython/copy-python.sh",Args=\[s3://${S3_BUCKET}/artifacts/emr/python3.11.tar.gz\]
+```
+
+The script will download and unpack the Python installation in `/usr/local`. It should only add ~10 seconds to cluster start time.
 
 ### 2. Container Images on YARN
 
@@ -106,38 +146,40 @@ Then we create a basic EMR cluster with some important configurations.
 - `spark-defaults` to specify `dockeras as the yarn container runtime and default all Spark jobs to our image.
 
 ```bash
-aws emr create-cluster --name "emr-docker-python3-spark" \
+aws emr create-cluster \
+    --name "emr-docker-python3-spark" \
     --region ${AWS_REGION} \
     --release-label emr-6.10.0 \
-    --ebs-root-volume-size 100 \
     --log-uri "s3n://${LOG_BUCKET}/elasticmapreduce/" \
+    --ebs-root-volume-size 100 \
     --applications Name=Spark Name=Livy Name=JupyterEnterpriseGateway \
     --use-default-roles \
-    --instance-groups '[{"InstanceCount":1,"EbsConfiguration":{"EbsBlockDeviceConfigs":[{"VolumeSpecification":{"SizeInGB":75,"VolumeType":"gp2"},"VolumesPerInstance":2}]},"InstanceGroupType":"CORE","InstanceType":"m5.xlarge","Name":"CORE"},{"InstanceCount":1,"EbsConfiguration":{"EbsBlockDeviceConfigs":[{"VolumeSpecification":{"SizeInGB":32,"VolumeType":"gp2"},"VolumesPerInstance":2}]},"InstanceGroupType":"MASTER","InstanceType":"m5.xlarge","Name":"MASTER"}]' \
+    --instance-fleets '[{"Name":"Primary","InstanceFleetType":"MASTER","TargetOnDemandCapacity":1,"TargetSpotCapacity":0,"InstanceTypeConfigs":[{"InstanceType":"c5a.2xlarge"},{"InstanceType":"m5a.2xlarge"},{"InstanceType":"r5a.2xlarge"}]},{"Name":"Core","InstanceFleetType":"CORE","TargetOnDemandCapacity":0,"TargetSpotCapacity":1,"InstanceTypeConfigs":[{"InstanceType":"c5a.2xlarge"},{"InstanceType":"m5a.2xlarge"},{"InstanceType":"r5a.2xlarge"}],"LaunchSpecifications":{"OnDemandSpecification":{"AllocationStrategy":"lowest-price"},"SpotSpecification":{"TimeoutDurationMinutes":10,"TimeoutAction":"SWITCH_TO_ON_DEMAND","AllocationStrategy":"capacity-optimized"}}}]' \
+    --auto-termination-policy '{"IdleTimeout":14400}' \
     --configurations '[
-    {
-        "Classification": "container-executor",
-        "Configurations": [
-            {
-                "Classification": "docker",
-                "Properties": {
-                    "docker.trusted.registries": "'${ACCOUNT_ID}'.dkr.ecr.'${AWS_REGION}'.amazonaws.com",
-                    "docker.privileged-containers.registries": "'${ACCOUNT_ID}'.dkr.ecr.'${AWS_REGION}'.amazonaws.com"
+        {
+            "Classification": "container-executor",
+            "Configurations": [
+                {
+                    "Classification": "docker",
+                    "Properties": {
+                        "docker.trusted.registries": "'${ACCOUNT_ID}'.dkr.ecr.'${AWS_REGION}'.amazonaws.com",
+                        "docker.privileged-containers.registries": "'${ACCOUNT_ID}'.dkr.ecr.'${AWS_REGION}'.amazonaws.com"
+                    }
                 }
+            ]
+        },
+        {
+            "Classification":"spark-defaults",
+            "Properties":{
+                "spark.executorEnv.YARN_CONTAINER_RUNTIME_TYPE":"docker",
+                "spark.yarn.appMasterEnv.YARN_CONTAINER_RUNTIME_TYPE":"docker",
+                "spark.executorEnv.YARN_CONTAINER_RUNTIME_DOCKER_IMAGE":"'${DOCKER_IMAGE_NAME}'",
+                "spark.yarn.appMasterEnv.YARN_CONTAINER_RUNTIME_DOCKER_IMAGE":"'${DOCKER_IMAGE_NAME}'",
+                "spark.executor.instances":"2"
             }
-        ]
-    },
-    {
-        "Classification":"spark-defaults",
-        "Properties":{
-            "spark.executorEnv.YARN_CONTAINER_RUNTIME_TYPE":"docker",
-            "spark.yarn.appMasterEnv.YARN_CONTAINER_RUNTIME_TYPE":"docker",
-            "spark.executorEnv.YARN_CONTAINER_RUNTIME_DOCKER_IMAGE":"'${DOCKER_IMAGE_NAME}'",
-            "spark.yarn.appMasterEnv.YARN_CONTAINER_RUNTIME_DOCKER_IMAGE":"'${DOCKER_IMAGE_NAME}'",
-            "spark.executor.instances":"2"
         }
-    }
-]'
+    ]'
 ```
 
 While that's starting, let's create a simple container image. To keep things small, we'll use `python:3.11-slim` as the base image and copy over OpenJDK 17 from `eclipse-temurin:17`.
@@ -177,7 +219,7 @@ docker run --rm -it local/pyspark-example python -c "import pyarrow; print(pyarr
 
 This should output `12.0.0`.
 
-Finally, we can create a repository in ECR and tag and push our image there. 
+Finally, we can create a repository in ECR and tag and push our image there.
 
 ```bash
 # login to ECR
