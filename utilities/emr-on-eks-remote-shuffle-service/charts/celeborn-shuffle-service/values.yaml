@@ -67,9 +67,8 @@ celeborn:
   # celeborn.rpc.io.serverThreads: 128
   celeborn.rpc.io.numConnectionsPerPeer: 8
   # celeborn.rpc.io.clientThreads: 4
-  celeborn.rpc.dispatcher.numThreads: 4
   celeborn.worker.flusher.buffer.size: 128k
-  celeborn.worker.flusher.threads: 24
+  celeborn.worker.flusher.threads: 64
   celeborn.worker.fetch.io.threads: 64                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
   celeborn.worker.push.io.threads: 128
   # celeborn.master.heartbeat.application.timeout: 300s
@@ -78,12 +77,14 @@ celeborn:
   celeborn.worker.replicate.threads: 128
   # celeborn.worker.commitFiles.threads: 64
   # celeborn.worker.readBuffer.target.changeThreshold: 4mb
-  celeborn.worker.readBuffer.toTriggerReadMin: 128
-  celeborn.worker.directMemoryRatioForReadBuffer: 0.4
+
+  # celeborn.worker.readBuffer.toTriggerReadMin: 128
+  # celeborn.worker.directMemoryRatioForReadBuffer: 0.4
+
   celeborn.worker.closeIdleConnections: true
   # celeborn.worker.partition.initial.readBuffersMin: 512
   celeborn.rpc.io.threads: 8
-  celeborn.rpc.askTimeout: 120s
+  # celeborn.rpc.askTimeout: 120s
   # celeborn.worker.partitionSorter.directMemoryRatioThreshold: 0.2
   # celeborn.worker.sortPartition.reservedMemoryPerPartition: 4mb
   # celeborn.worker.sortPartition.threads: 8

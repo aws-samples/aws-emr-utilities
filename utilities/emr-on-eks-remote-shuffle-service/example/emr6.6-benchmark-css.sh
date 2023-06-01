@@ -28,18 +28,17 @@ aws emr-containers start-job-run \
           "spark.kubernetes.container.image": "'$ECR_URL'/css-spark-benchmark:emr6.6",
           "spark.executor.memoryOverhead": "2G",
           "spark.kubernetes.executor.podNamePrefix": "emr-eks-tpcds-css",
-          "spark.serializer": "org.apache.spark.serializer.KryoSerializer",
+          "spark.kubernetes.node.selector.eks.amazonaws.com/nodegroup": "c59a",
 
+          "spark.serializer": "org.apache.spark.serializer.KryoSerializer",
           "spark.css.cluster.name": "mycss",
           "spark.css.zookeeper.address": "zookeeper-0.zookeeper-headless.zk.svc.cluster.local:2181,zookeeper-1.zookeeper-headless.zk.svc.cluster.local:2181",
-          "spark.shuffle.manager": "org.apache.spark.shuffle.css.CssShuffleManager",
-
-          "spark.kubernetes.node.selector.eks.amazonaws.com/nodegroup": "c59b"
+          "spark.shuffle.manager": "org.apache.spark.shuffle.css.CssShuffleManager"
       }},
       {
         "classification": "spark-log4j",
         "properties": {
-          "log4j.rootCategory":"ERROR, console"
+          "log4j.rootCategory":"WARN, console"
         }
       }
     ],

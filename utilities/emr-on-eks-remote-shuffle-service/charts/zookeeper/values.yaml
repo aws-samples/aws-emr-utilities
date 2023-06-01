@@ -1,4 +1,4 @@
-replicaCount: 2
+replicaCount: 3
 # heapSize: 1024
 # dataLogDir: "/zk1/logs"
 resources:

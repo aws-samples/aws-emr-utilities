@@ -4,7 +4,7 @@ image:
   tag: latest
   imagePullPolicy: IfNotPresent
 nodeSelector:
-    app: css
+    app: rss
 resources:
   requests:
     memory: "172G" #i3en.6xl
@@ -33,7 +33,8 @@ volumes:
       path: /local2
 command:
   JVM_HEAP_SIZE: "-Xmx8192m"
-  EXTRA_JAVA_OPT: "-XX:MaxDirectMemorySize=100000m"
+  EXTRA_JAVA_OPT: "-XX:MaxDirectMemorySize=20000m"
+  # EXTRA_JAVA_OPT: "-XX:MaxDirectMemorySize=100000m"
 ports:
   shuffleServer: 9099
 env:  
