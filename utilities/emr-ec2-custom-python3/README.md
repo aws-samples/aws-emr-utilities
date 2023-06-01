@@ -79,7 +79,7 @@ The step should complete successfully!
 
 You can also make use of container images to completely isolate your Python environment. 
 
-This repository contains a complete CodeBuild Pipeline template you can use to build and publish a Dockerfile with Python 3.11 and PyArrow. 
+This repository contains a complete [CodeBuild Pipeline template](container-image/codebuild-docker.cf) you can use to build and publish a Dockerfile with Python 3.11 and PyArrow. 
 
 For additional details, see the [EMR Spark with Docker](https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-spark-docker.html) and [CodeBuild Docker sample](https://docs.aws.amazon.com/codebuild/latest/userguide/sample-docker.html) docs.
 
@@ -140,15 +140,15 @@ aws emr create-cluster --name "emr-docker-python3-spark" \
 ]'
 ```
 
-While that's starting, let's create a simple container image. To keep things small, we'll use `python:3.11-slim` as the base image and copy over OpenJDK from `eclipse-temurin:17`.
+While that's starting, let's create a simple container image. To keep things small, we'll use `python:3.11-slim` as the base image and copy over OpenJDK 17 from `eclipse-temurin:17`.
 
-`content of the container-image/Dockerfile`
+**container-image/Dockerfile:**
 ```dockerfile
 FROM python:3.11-slim AS base
 
 # Copy OpenJDK 17
 ENV JAVA_HOME=/opt/java/openjdk
-COPY --from=eclipse-temurin:11 $JAVA_HOME $JAVA_HOME
+COPY --from=eclipse-temurin:17 $JAVA_HOME $JAVA_HOME
 ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
 # Upgrade pip
