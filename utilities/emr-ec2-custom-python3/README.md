@@ -5,7 +5,7 @@ EMR 6.x uses Amazon Linux 2, on which Python 3.7.16 is the default Python3 versi
 Additional versions of Python3 can be installed in different ways depending on your requirements:
 
 - [1. Installed as a seperate python version in `/usr/local`](#1-install-separate-python-version-in-usrlocal`)
-- [2. Installed as a container image for YARN](#2-container-images-for-yarn)
+- [2. Installed as a container image for YARN](#2-container-images-on-yarn)
 
 This example documents the above options, as well as benefits and limitations.
 
@@ -23,7 +23,7 @@ For step #3, you can clone this repository and use `aws s3 sync` to upload the s
 ```bash
 S3_BUCKET=<your-bucket-name>
 git clone https://github.com/aws-samples/aws-emr-utilities.git
-cd utilities/emr-ec2-custom-pyton3
+cd utilities/emr-ec2-custom-python3
 aws s3 sync custom-python s3://${S3_BUCKET}/code/bootstrap/custompython/
 ```
 
@@ -65,8 +65,8 @@ assert (sys.version_info.major, sys.version_info.minor) == (3,11)
 ```
 
 ```bash
-# Use the Cluster ID from the previous create-cluster command
-CLUSTER_ID=${YOUR_ID} #for example:j-2W2SS0V0RKG96
+# Use the Cluster ID from the previous create-cluster command or console. For example:j-2W2SS0V0RKG96
+CLUSTER_ID=${YOUR_ID} 
 
 aws emr add-steps \
     --cluster-id ${CLUSTER_ID} \
@@ -75,7 +75,7 @@ aws emr add-steps \
 
 The step should complete successfully!
 
-### 2.Container Images for YARN
+### 2. Container Images on YARN
 
 You can also make use of container images to completely isolate your Python environment. 
 
@@ -93,8 +93,10 @@ First we set a few variables we need. We use the AWS CLI and Docker.
 AWS_REGION=us-west-2 #change to your region
 ACCOUNT_ID=$(aws sts get-caller-identity --output text --query "Account")
 LOG_BUCKET=aws-logs-${ACCOUNT_ID}-${AWS_REGION}
-
-DOCKER_IMAGE_NAME=${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/emr-docker-examples:pyspark-example
+#login to ECR
+ECR_URL=$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_URL
+DOCKER_IMAGE_NAME=${ECR_URL}/emr-docker-examples:pyspark-example
 ```
 
 Then we create a basic EMR cluster with some important configurations.
@@ -110,7 +112,6 @@ aws emr create-cluster --name "emr-docker-python3-spark" \
     --ebs-root-volume-size 100 \
     --log-uri "s3n://${LOG_BUCKET}/elasticmapreduce/" \
     --applications Name=Spark Name=Livy Name=JupyterEnterpriseGateway \
-    --ec2-attributes '{"EmrManagedMasterSecurityGroup":"sg-08a74d8d93c01faf8","EmrManagedSlaveSecurityGroup":"sg-0545ef5ea866f944c","AdditionalMasterSecurityGroups":[],"AdditionalSlaveSecurityGroups":[],"SubnetId":"subnet-42a5183a"}' \
     --use-default-roles \
     --instance-groups '[{"InstanceCount":1,"EbsConfiguration":{"EbsBlockDeviceConfigs":[{"VolumeSpecification":{"SizeInGB":75,"VolumeType":"gp2"},"VolumesPerInstance":2}]},"InstanceGroupType":"CORE","InstanceType":"m5.xlarge","Name":"CORE"},{"InstanceCount":1,"EbsConfiguration":{"EbsBlockDeviceConfigs":[{"VolumeSpecification":{"SizeInGB":32,"VolumeType":"gp2"},"VolumesPerInstance":2}]},"InstanceGroupType":"MASTER","InstanceType":"m5.xlarge","Name":"MASTER"}]' \
     --configurations '[
@@ -141,6 +142,7 @@ aws emr create-cluster --name "emr-docker-python3-spark" \
 
 While that's starting, let's create a simple container image. To keep things small, we'll use `python:3.11-slim` as the base image and copy over OpenJDK from `eclipse-temurin:17`.
 
+`content of the container-image/Dockerfile`
 ```dockerfile
 FROM python:3.11-slim AS base
 
@@ -163,8 +165,8 @@ RUN pip3 install pyarrow==12.0.0
 Now build the image.
 
 ```bash
-cd utilities/emr-ec2-custom-pyton3
-docker build -f container-image/Dockerfile
+cd utilities/emr-ec2-custom-python3
+docker build -t local/pyspark-example -f container-image/Dockerfile .
 ```
 
 And you should be able to run a quick test.
@@ -178,11 +180,12 @@ This should output `12.0.0`.
 Finally, we can create a repository in ECR and tag and push our image there. 
 
 ```bash
-aws ecr create-repository --repository-name emr-docker-examples
+# login to ECR
+aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_URL}
+# create repo
+aws ecr create-repository --repository-name emr-docker-examples --image-scanning-configuration scanOnPush=true
+# push to ECR
 docker tag local/pyspark-example ${DOCKER_IMAGE_NAME}
-
-aws ecr get-login-password --region ${AWS_REGION} | \
-    docker login --username AWS --password-stdin ${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
 docker push ${DOCKER_IMAGE_NAME}
 ```
 
@@ -193,8 +196,8 @@ aws s3 cp container-image/docker-numpy.py s3://${S3_BUCKET}/code/pyspark/contain
 ```
 
 ```bash
-# Use the Cluster ID from the previous create-cluster command
-CLUSTER_ID=j-2845LE9NEI32S
+# Use the Cluster ID from the previous create-cluster command or console. For example:j-2845LE9NEI32S
+CLUSTER_ID=${YOUR_ID}
 
 aws emr add-steps \
     --cluster-id ${CLUSTER_ID} \
