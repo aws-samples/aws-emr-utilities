@@ -4,8 +4,8 @@ EMR 6.x uses Amazon Linux 2, on which Python 3.7.16 is the default Python3 versi
 
 Additional versions of Python3 can be installed in different ways depending on your requirements:
 
-- [1. Installed as a seperate python version in `/usr/local`](#1-install-separate-python-version-in-usrlocal`)
-- [2. Installed as a container image for YARN](#2-container-images-on-yarn)
+- [1. Installed as a seperate python version in `/usr/local`](#1-install-separate-python-version-in-usrlocal)
+- [2. Installed as a container image on YARN](#2-container-images-on-yarn)
 
 This example documents the above options, as well as benefits and limitations.
 
