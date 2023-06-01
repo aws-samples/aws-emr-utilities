@@ -4,13 +4,13 @@ Remote Shuffle Service provides the capability for Apache Spark applications to 
 on remote servers. See more details on Spark community document: 
 [[SPARK-25299][DISCUSSION] Improving Spark Shuffle Reliability](https://docs.google.com/document/d/1uCkzGGVG17oGC6BJ75TpzLAZNorvrAU3FRd2X-rVHSM/edit?ts=5e3c57b8).
 
-The high level design for Uber's Remote Shuffle Service (RSS) can be found [here](https://github.com/uber/RemoteShuffleService/blob/master/docs/server-high-level-design.md), ByteDance's Cloud Shuffle Service (CSS) can be found [here](https://github.com/bytedance/CloudShuffleService), Tecent's Apache Uniffle can be found [here](https://uniffle.apache.org/docs/intro).OPPO's Shuttle can be found [here](https://github.com/cubefs/shuttle/blob/master/docs/server-high-level-design.md)
+The high level design for Uber's Remote Shuffle Service (RSS) can be found [here](https://github.com/uber/RemoteShuffleService/blob/master/docs/server-high-level-design.md), ByteDance's Cloud Shuffle Service (CSS) can be found [here](https://github.com/bytedance/CloudShuffleService), Tecent's Apache Uniffle can be found [here](https://uniffle.apache.org/docs/intro).AliCloud's Apache Celeborn can be found [here](https://github.com/apache/incubator-celeborn). OPPO's Shuttle can be found [here](https://github.com/cubefs/shuttle/blob/master/docs/server-high-level-design.md)
 
 # Setup instructions:
 * [1. Install Uber's RSS](#1-install-rss-server-on-eks) 
 * [2. Install ByteDance's CSS](#1-install-css-server-on-eks) 
 * [3. Install Apache Uniffle (Tencent)](#1-install-uniffle-operator-on-eks)
-* 4. Install ByteDance's CSS on EMR on EC2 (WIP)
+* [4. Install Apache Celeborn (AliCloud)](#1-install-celeborn-server-on-eks)
 
 ## Infrastructure
 If you do not have your own environment to run Spark, run the command. Change the region if needed.
@@ -26,8 +26,8 @@ which provides a one-click experience to create an EMR on EKS environment and OS
 
 ## Quick Start: Run rmeote shuffle server in EMR
 ```bash
-git clone https://github.com/melodyyangaws/emr-on-eks-remote-shuffle-service.git
-cd emr-on-eks-remote-shuffle-service
+git clone https://github.com/aws-samples/aws-emr-utilities.git
+cd aws-emr-utilities/utilities/emr-on-eks-remote-shuffle-service
 ```
 ## **UBER's RSS option**
 ### 1. Install RSS server on EKS
@@ -160,21 +160,19 @@ docker pull $SRC_ECR_URL/spark/emr-6.6.0:latest
 
 docker build -t $ECR_URL/css-spark-benchmark:emr6.6 -f docker/css-emr-client/Dockerfile --build-arg SPARK_BASE_IMAGE=$SRC_ECR_URL/spark/emr-6.6.0:latest .
 docker push $ECR_URL/css-spark-benchmark:emr6.6
-
-docker build -t $ECR_URL/uniffle-spark-benchmark:3.2.0 -f docker/uniffle-oss-client/Dockerfile .
-docker push $ECR_URL/uniffle-spark-benchmark:3.2.0
 ```
 ## **Apache Uniffle RSS option**
 
 ### 1. Install Uniffle Operator on EKS
 Ensure you have [`wget`](https://formulae.brew.sh/formula/wget) and [`go 1.16`](https://formulae.brew.sh/formula/go@1.16) installed.
 
-#### Build Coordinator and Server docker image
+#### Build Uniffle Server Docker Images
 ```bash
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 ECR_URL=$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
 aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_URL
-
+aws ecr create-repository --repository-name uniffle-server --image-scanning-configuration scanOnPush=true
+# build uniffle server
 cd docker/uniffle-server
 export UNIFFLE_VERSION="0.7.0-snapshot"
 sh build.sh --hadoop-version 3.2.1 --registry $ECR_URL
@@ -184,14 +182,17 @@ sh build.sh --hadoop-version 3.2.1 --registry $ECR_URL
 aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_URL
 aws ecr create-repository --repository-name rss-webhook --image-scanning-configuration scanOnPush=true
 aws ecr create-repository --repository-name rss-controller --image-scanning-configuration scanOnPush=true
-
-cd ../../operator
+# build uniffle webhook and controller
+cd ../../charts/uniffle-operator
 export VERSION="0.7.0-snapshot"
+export GOPROXY=direct
+rm -rf local
 make REGISTRY=$ECR_URL docker-build docker-push -f Makefile
 ```
 #### Run Uniffle Operator in EKS 
-**TODO: a single-command deployment via helm chart**
-Replace docker image URLs in the definition files:`uniffle-webhook.yaml`, `uniffle-webhook.yaml`, `uniffle-operator.yaml`.
+**TODO: build helm chart for a single-command deployment**
+Before start, update the `example/configmap.yaml` file to config Uniffle operator.Replace docker image URLs by your images in the definition files:`example/uniffle-webhook.yaml`, `example/uniffle-webhook.yaml`, `example/uniffle-operator.yaml`.
+
 Note: server's key configs are `xmxSize=0.75 X server pod memory`, `rss.server.buffer.capacity=0.6 X xmxSize` and  `rss.server.read.buffer.capacity=0.2 X xmxSize`
 
 ```bash
@@ -231,6 +232,92 @@ docker build -t $ECR_URL/uniffle-spark-benchmark:emr6.6 -f docker/uniffle-emr-cl
 docker push $ECR_URL/uniffle-spark-benchmark:emr6.6
 ```
 
+## **Apache Celeborn RSS option**
+
+### 1. Install Celeborn server on EKS
+
+#### Create docker container repository
+```bash
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+ECR_URL=$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_URL
+# create a new ECR as an one-off task
+aws ecr create-repository --repository-name celeborn-server \
+  --image-scanning-configuration scanOnPush=true
+aws ecr create-repository --repository-name clb-spark-benchmark \
+  --image-scanning-configuration scanOnPush=true
+```  
+#### Build & push server & client docker images
+```
+SPARK_VERSION=3.2
+CELEBORN_VERSION=0.2
+# build server
+docker build -t $ECR_URL/celeborn-server:spark${SPARK_VERSION}_clb${CELEBORN_VERSION} \
+  --build-arg SPARK_VERSION=${SPARK_VERSION} \
+  --build-arg CELEBORN_VERSION=${CELEBORN_VERSION} \
+  -f docker/celeborn-server/Dockerfile .
+# push the image to ECR
+docker push $ECR_URL/celeborn-server:spark${SPARK_VERSION}_clb${CELEBORN_VERSION}
+
+# build client with benchmark tool
+docker build -t $ECR_URL/clb-spark-benchmark:emr6.6_clb${CELEBORN_VERSION} \
+  --build-arg SPARK_VERSION=${SPARK_VERSION} \
+  --build-arg CELEBORN_VERSION=${CELEBORN_VERSION} \
+  --build-arg SPARK_BASE_IMAGE=$SRC_ECR_URL/spark/emr-6.6.0:latest \
+  -f docker/celeborn-emr-client/Dockerfile .
+docker push $ECR_URL/clb-spark-benchmark:emr6.6_clb${CELEBORN_VERSION}
+```
+#### Run Celeborn shuffle service in EKS
+Celeborn helm chart comes with the monitoring feature via Prometheus. To install Prometheus in EKS and integrate with Amazon Managed Prometheus and Managed Grafana, check out this [installation script](https://github.com/melodyyangaws/karpenter-emr-on-eks/blob/main/provision/create-workshop-env.sh#L111).
+```bash
+# config celeborn environment variables and docker image
+vi charts/celeborn-shuffle-service/values.yaml
+```
+
+<details>
+<summary>OPTIONAL: Install prometheus monitoring</summary>
+We will use OSS Prometheus Operator, and the serverelss Amazon managed prometheus and managed Grafana to monitor Celeborn in this case.
+
+```bash
+kubectl create namespace prometheus
+eksctl create iamserviceaccount \
+    --cluster ${EKSCLUSTER_NAME} --namespace prometheus --name amp-iamproxy-ingest-service-account \
+    --role-name "${EKSCLUSTER_NAME}-prometheus-ingest" \
+    --attach-policy-arn "arn:aws:iam::aws:policy/AmazonPrometheusRemoteWriteAccess" \
+    --role-only \
+    --approve
+# create managed prometheus workspace
+amp=$(aws amp list-workspaces --query "workspaces[?alias=='$EKSCLUSTER_NAME'].workspaceId" --output text)
+if [ -z "$amp" ]; then
+    echo "Creating a new prometheus workspace..."
+    export WORKSPACE_ID=$(aws amp create-workspace --alias $EKSCLUSTER_NAME --query workspaceId --output text)
+else
+    echo "A prometheus workspace already exists"
+    export WORKSPACE_ID=$amp
+fi
+sed -i -- 's/{AWS_REGION}/'$AWS_REGION'/g' charts/celeborn-shuffle-service/prometheusoperator_values.yaml
+sed -i -- 's/{ACCOUNTID}/'$ACCOUNTID'/g' charts/celeborn-shuffle-service/prometheusoperator_values.yaml
+sed -i -- 's/{WORKSPACE_ID}/'$WORKSPACE_ID'/g' charts/celeborn-shuffle-service/prometheusoperator_values.yaml
+sed -i -- 's/{EKSCLUSTER_NAME}/'$EKSCLUSTER_NAME'/g' charts/celeborn-shuffle-service/prometheusoperator_values.yaml
+
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+# check the `yaml`, ensure varaibles are populated first
+helm upgrade --install prometheus prometheus-community/kube-prometheus-stack -n prometheus -f charts/celeborn-shuffle-service/prometheusoperator_values.yaml
+# validate on the webUI:localhost:9090, status->targets
+kubectl --namespace prometheus port-forward service/prometheus-kube-prometheus-prometheus 9090
+```
+</details>
+
+```bash
+# install celeborn
+helm install celeborn charts/celeborn-shuffle-service  -n celeborn --create-namespace
+# check progress
+kubectl get all -n celeborn
+# OPTIONAL: if prometheus operator is installed
+kubectl get podmonitor -n celeborn
+```
+
 ## Run Benchmark
 
 ### OPTIONAL: generate the TCP-DS source data
@@ -246,16 +333,18 @@ Update the docker image name to your ECR URL in the following file, then run:
 # go to the project root directory
 cd emr-on-eks-remote-shuffle-service
 export EMRCLUSTER_NAME=emr-on-eks-rss
-export AWS_REGION=us-east-1
+export AWS_REGION=<YOUR_REGION>
 # run the performance test with Uber's RSS
 ./example/emr6.6-benchmark-rss.sh
 # Or Bytedance's CSS
 ./example/emr6.6-benchmark-css.sh
 # Or Tecent's Apache Uniffle
 ./example/emr6.6-benchmark-uniffle.sh
+# Or Aliyun's Apache Celeborn
+./example/emr6.6-benchmark-celeborn.sh
 # check job progress
 kubectl get po -n emr
-kubectl logs DRIVER_POD_NAME -n emr spark-kubernetes-driver
+kubectl logs <DRIVER_POD_NAME> -n emr spark-kubernetes-driver
 ```
 
 **NOTE**: in Uber's RSS benchmark test, keep the server string like `rss-%s` for the config `spark.shuffle.rss.serverSequence.connectionString`, This is intended because `RssShuffleManager` can use it to format the connection string dynamically. In the following example, our Spark job will connect to 3 RSS servers:
@@ -273,6 +362,10 @@ The setting`"spark.shuffle.rss.serviceRegistry.type": "serverSequence"` means th
 NOTE: some queries may not be able to complete, due to the limited resources alloated to run such a large scale test. Update the docker image to your image repository URL, then test the performance for different remote shuffle service options, For example:
 ```bash
 kubectl apply -f oss-benchmark-uniffle.yaml
+# or 
+kubectl apply -f oss-benchmark-rss.yaml
+```
+```bash
 # check job progress
 kubectl get pod -n oss
 # check application logs

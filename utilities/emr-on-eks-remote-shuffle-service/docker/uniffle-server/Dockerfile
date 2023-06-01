@@ -1,6 +1,6 @@
 FROM openjdk:8-jdk-slim
 # FROM amazoncorretto:8 
-ARG MAVEN_VERSION=3.8.6
+ARG MAVEN_VERSION=3.8.8
 ARG BASE_URL=https://apache.osuosl.org/maven/maven-3/${MAVEN_VERSION}/binaries
 ARG HADOOP_VERSION
 ARG RSS_VERSION
@@ -13,10 +13,6 @@ LABEL git-commit=${GIT_COMMIT}
 
 RUN apt-get update && apt-get install -y curl git zlib1g zlib1g-dev lzop lsof netcat dnsutils less procps iputils-ping \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# RUN useradd -ms /bin/bash rssadmin \
-#     && mkdir -p /data/rssadmin/ \
-#     && chown -R rssadmin:rssadmin /data
 
 # Use EMR on EKS user ID 999 instead
 RUN addgroup -gid 1000 hadoop \    

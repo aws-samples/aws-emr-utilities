@@ -3,7 +3,7 @@
 ARG SPARK_BASE_IMAGE=755674844232.dkr.ecr.us-east-1.amazonaws.com/spark/emr-6.6.0:latest
 
 FROM amazoncorretto:8 as css-client
-ARG MAVEN_VERSION=3.8.6
+ARG MAVEN_VERSION=3.8.8
 ARG BASE_URL=https://apache.osuosl.org/maven/maven-3/${MAVEN_VERSION}/binaries
 
 # install maven
@@ -28,7 +28,6 @@ RUN mv css-*-bin.tgz css-bin.tgz \
     && rm -f /tmp/CloudShuffleService/css-bin.tgz
 
 FROM mozilla/sbt:8u292_1.5.4 as sbt
-ARG SPARK_VERSION=3.2.0
 
 # Build the Databricks SQL perf library
 RUN git clone -b spark-3.2.0 --single-branch https://github.com/aws-samples/emr-on-eks-benchmark.git /tmp/emr-on-eks-benchmark \
@@ -41,9 +40,6 @@ RUN cd /tmp/emr-on-eks-benchmark/ && mkdir /tmp/emr-on-eks-benchmark/benchmark/l
     && cd /tmp/emr-on-eks-benchmark/benchmark && sbt assembly
 
 FROM ${SPARK_BASE_IMAGE}
-ARG MAVEN_VERSION=3.8.6
-ARG BASE_URL=https://apache.osuosl.org/maven/maven-3/${MAVEN_VERSION}/binaries
-
 USER root
 
 COPY --from=css-client /usr/share/css/client/spark-3/*.jar ${SPARK_HOME}/jars

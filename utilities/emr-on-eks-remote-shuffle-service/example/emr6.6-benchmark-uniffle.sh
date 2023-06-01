@@ -49,7 +49,7 @@ aws emr-containers start-job-run \
       {
         "classification": "spark-log4j",
         "properties": {
-          "log4j.rootCategory":"WARN, console"
+          "log4j.rootCategory":"ERROR, console"
         }
       }
     ],

@@ -1,0 +1,172 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# Default values for celeborn.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# we provide a default celeborn image, you can also replace to your image
+# TODO rebuild celeborn official image
+image:
+  # repository: aliyunemr/remote-shuffle-service
+  repository: 633458367150.dkr.ecr.us-west-2.amazonaws.com/celeborn-server
+  pullPolicy: Always
+  # tag: 0.1.1-6badd20
+  tag: spark3.2_clb0.2
+
+nodeSelector: 
+  app: css
+
+# master replicas should not less than 3
+masterReplicas: 3
+# worker replicas set on demand, should less than node number
+workerReplicas: 3
+
+securityContext:
+  # celeborn user created in docker
+  fsGroup: 10006
+# configure the shuffle service volume owner as Celeborn user
+volumeUser: 10006
+volumeGroup: 10006
+# celeborn configurations
+celeborn:
+  celeborn.ha.enabled: false
+  celeborn.master.endpoints: celeborn-master-0.celeborn-master-svc.celeborn:9097,celeborn-master-1.celeborn-master-svc.celeborn:9097,celeborn-master-2.celeborn-master-svc.celeborn:9097
+  celeborn.ha.master.node.id: 1
+  celeborn.ha.master.node.1.host: celeborn-master-0.celeborn-master-svc.celeborn
+  celeborn.ha.master.node.1.port: 9097
+  celeborn.ha.master.node.1.ratis.port: 9872
+  celeborn.ha.master.node.2.host: celeborn-master-1.celeborn-master-svc.celeborn
+  celeborn.ha.master.node.2.port: 9097
+  celeborn.ha.master.node.2.ratis.port: 9872
+  celeborn.ha.master.node.3.host: celeborn-master-2.celeborn-master-svc.celeborn
+  celeborn.ha.master.node.3.port: 9097
+  celeborn.ha.master.node.3.ratis.port: 9872
+  celeborn.ha.master.ratis.raft.server.storage.dir: /rss1/rss_ratis/
+  celeborn.worker.storage.dirs: /rss1/data,/rss2/data
+  celeborn.volumes.hostpath: /local1,/local2
+  celeborn.metrics.enabled: true
+  celeborn.master.metrics.prometheus.port: 9098
+  celeborn.worker.metrics.prometheus.port: 9096
+  celeborn.worker.monitor.disk.enabled: false
+
+  # celeborn.rpc.io.serverThreads: 128
+  celeborn.rpc.io.numConnectionsPerPeer: 8
+  # celeborn.rpc.io.clientThreads: 4
+  celeborn.rpc.dispatcher.numThreads: 4
+  celeborn.worker.flusher.buffer.size: 128k
+  celeborn.worker.flusher.threads: 24
+  celeborn.worker.fetch.io.threads: 64                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+  celeborn.worker.push.io.threads: 128
+  # celeborn.master.heartbeat.application.timeout: 300s
+  # celeborn.master.heartbeat.worker.timeout: 120s
+  celeborn.network.timeout: 2000s
+  celeborn.worker.replicate.threads: 128
+  # celeborn.worker.commitFiles.threads: 64
+  # celeborn.worker.readBuffer.target.changeThreshold: 4mb
+  celeborn.worker.readBuffer.toTriggerReadMin: 128
+  celeborn.worker.directMemoryRatioForReadBuffer: 0.4
+  celeborn.worker.closeIdleConnections: true
+  # celeborn.worker.partition.initial.readBuffersMin: 512
+  celeborn.rpc.io.threads: 8
+  celeborn.rpc.askTimeout: 120s
+  # celeborn.worker.partitionSorter.directMemoryRatioThreshold: 0.2
+  # celeborn.worker.sortPartition.reservedMemoryPerPartition: 4mb
+  # celeborn.worker.sortPartition.threads: 8
+
+
+environments:
+  CELEBORN_MASTER_MEMORY: 15g
+  # CELEBORN_MASTER_MEMORY: 2g
+  CELEBORN_MASTER_JAVA_OPTS: "-XX:-PrintGC -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps -Xloggc:gc-master.out -Dio.netty.leakDetectionLevel=advanced"
+  # CELEBORN_WORKER_MEMORY: 2g
+  CELEBORN_WORKER_MEMORY: 15g
+  CELEBORN_WORKER_OFFHEAP_MEMORY: 20g
+  CELEBORN_WORKER_JAVA_OPTS: "-XX:-PrintGC -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps -Xloggc:gc-worker.out -Dio.netty.leakDetectionLevel=advanced"
+  CELEBORN_NO_DAEMONIZE: 1
+  TZ: "Australia/Melbourne"
+
+podMonitor:
+  enable: true
+  podMetricsEndpoint:
+    scheme: http
+    interval: 5s
+    portName: metrics
+
+service:
+  type: ClusterIP
+  port: 9097
+
+cluster:
+  name: cluster
+
+configmap: celeborn-conf
+
+resources:
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # master:
+  #  limits:
+  #    cpu: 100m
+  #    memory: 128Mi
+  #  requests:
+  #    cpu: 100m
+  #    memory: 128Mi
+  worker:
+   limits: #i3en.6xl
+     cpu: 24
+     memory: 192G
+   requests:
+     cpu: 21.6
+     memory: 172G
+
+podAnnotations: {}
+
+affinity:
+  master:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - celeborn
+              - key: app.kubernetes.io/role
+                operator: In
+                values:
+                  - master
+          topologyKey: kubernetes.io/hostname
+  worker:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - celeborn
+              - key: app.kubernetes.io/role
+                operator: In
+                values:
+                  - worker
+          topologyKey: "kubernetes.io/hostname"
+
+tolerations: []
+

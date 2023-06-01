@@ -37,9 +37,6 @@ RUN cd /tmp/emr-on-eks-benchmark/ && mkdir /tmp/emr-on-eks-benchmark/benchmark/l
     && cd /tmp/emr-on-eks-benchmark/benchmark && sbt assembly
 
 FROM ${SPARK_BASE_IMAGE}
-ARG MAVEN_VERSION=3.8.6
-ARG BASE_URL=https://apache.osuosl.org/maven/maven-3/${MAVEN_VERSION}/binaries
-
 USER root
 
 COPY --from=rss-client /tmp/uniffle/client-spark/spark3/target/shaded/rss-client-spark3-*-shaded.jar  ${SPARK_HOME}/jars/uniffle-rss-client.jar

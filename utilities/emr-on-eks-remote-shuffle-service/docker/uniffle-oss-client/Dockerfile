@@ -4,7 +4,7 @@ ARG SPARK_BASE_IMAGE=021732063925.dkr.ecr.us-east-1.amazonaws.com/spark:3.2.0_ha
 
 FROM openjdk:8-jdk-slim as rss-client
 ARG SPARK_VERSION=3.2.0
-ARG MAVEN_VERSION=3.8.6
+ARG MAVEN_VERSION=3.8.8
 ARG BASE_URL=https://apache.osuosl.org/maven/maven-3/${MAVEN_VERSION}/binaries
 
 # install maven

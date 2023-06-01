@@ -3,7 +3,7 @@
 ARG SPARK_BASE_IMAGE=755674844232.dkr.ecr.us-east-1.amazonaws.com/spark/emr-6.6.0:latest
 
 FROM amazoncorretto:8 as rss-client
-ARG MAVEN_VERSION=3.8.6
+ARG MAVEN_VERSION=3.8.8
 ARG BASE_URL=https://apache.osuosl.org/maven/maven-3/${MAVEN_VERSION}/binaries
 
 # install maven
@@ -40,9 +40,6 @@ RUN cd /tmp/emr-on-eks-benchmark/ && mkdir /tmp/emr-on-eks-benchmark/benchmark/l
     && cd /tmp/emr-on-eks-benchmark/benchmark && sbt assembly
 
 FROM ${SPARK_BASE_IMAGE}
-ARG MAVEN_VERSION=3.8.6
-ARG BASE_URL=https://apache.osuosl.org/maven/maven-3/${MAVEN_VERSION}/binaries
-
 USER root
 
 COPY --from=rss-client /tmp/RemoteShuffleService/target/remote-shuffle-service-client.jar  ${SPARK_HOME}/jars

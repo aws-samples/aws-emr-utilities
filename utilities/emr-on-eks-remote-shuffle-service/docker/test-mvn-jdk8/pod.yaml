@@ -9,6 +9,7 @@ spec:
     # eks.amazonaws.com/nodegroup: i3en2
   containers:
   - name: linuxbox
-    image: amazonlinux:latest
+    # image: amazonlinux:latest
+    image: eclipse-temurin:8-jdk-focal
     command: [ "/bin/bash", "-c", "--" ]
     args: [ "while true; do sleep 30; done;" ]

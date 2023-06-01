@@ -3,7 +3,7 @@
 # ARG SPARK_BASE_IMAGE=public.ecr.aws/myang-poc/spark:3.2.1_hadoop_3.3.1
 
 FROM amazoncorretto:11 as rss-jdk11
-ARG MAVEN_VERSION=3.8.6
+ARG MAVEN_VERSION=3.8.8
 ARG BASE_URL=https://apache.osuosl.org/maven/maven-3/${MAVEN_VERSION}/binaries
 
 # install maven
