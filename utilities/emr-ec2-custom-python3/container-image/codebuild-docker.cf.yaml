@@ -9,150 +9,171 @@ Conditions:
       - us-east-1
 
 Resources:
+  S3ArtifactsBucket:
+    Type: AWS::S3::Bucket
+
   PySparkECRRepo:
     Type: AWS::ECR::Repository
-    Properties:
-      EncryptionConfiguration:
-        EncryptionType: "String"
-        KmsKey: "String"
-      ImageScanningConfiguration:
-        ScanOnPush: String
-      ImageTagMutability: "String"
-      LifecyclePolicy:
-        LifecyclePolicyText: "String"
-        RegistryId: "String"
-      RepositoryName: "String"
-      RepositoryPolicyText: JSON
-      Tags: 
-        Tags
   
-  LogicalID:
+  # Helper custom resource and corresponding function to write buildspec and Dockerfile to S3
+  GenerateCodeBuildSpec:
+    Type: Custom::GenerateCodeBuildSpec
+    Properties:
+      ServiceToken: !GetAtt CreateS3Zip.Arn
+      BucketName: !Ref S3ArtifactsBucket
+      Prefix: artifacts/
+    
+  CreateS3Zip:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.handler
+      Runtime: python3.10
+      Timeout: 30
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+        ZipFile: |
+          import os
+          from base64 import b64decode
+          from io import BytesIO
+          from zipfile import ZipFile
+          import boto3
+          import cfnresponse
+          s3 = boto3.client("s3")
+          content = [
+              {"name": "buildspec.yml", "content":"dmVyc2lvbjogMC4yCgpwaGFzZXM6CiAgcHJlX2J1aWxkOgogICAgY29tbWFuZHM6CiAgICAgIC0gZWNobyBMb2dnaW5nIGluIHRvIEFtYXpvbiBFQ1IuLi4KICAgICAgLSBhd3MgZWNyIGdldC1sb2dpbi1wYXNzd29yZCAtLXJlZ2lvbiAkQVdTX0RFRkFVTFRfUkVHSU9OIHwgZG9ja2VyIGxvZ2luIC0tdXNlcm5hbWUgQVdTIC0tcGFzc3dvcmQtc3RkaW4gJEFXU19BQ0NPVU5UX0lELmRrci5lY3IuJEFXU19ERUZBVUxUX1JFR0lPTi5hbWF6b25hd3MuY29tCiAgYnVpbGQ6CiAgICBjb21tYW5kczoKICAgICAgLSBlY2hvIEJ1aWxkIHN0YXJ0ZWQgb24gYGRhdGVgCiAgICAgIC0gZWNobyBCdWlsZGluZyB0aGUgRG9ja2VyIGltYWdlLi4uICAgICAgICAgIAogICAgICAtIGRvY2tlciBidWlsZCAtdCAkSU1BR0VfUkVQT19OQU1FOiRJTUFHRV9UQUcgLgogICAgICAtIGRvY2tlciB0YWcgJElNQUdFX1JFUE9fTkFNRTokSU1BR0VfVEFHICRBV1NfQUNDT1VOVF9JRC5ka3IuZWNyLiRBV1NfREVGQVVMVF9SRUdJT04uYW1hem9uYXdzLmNvbS8kSU1BR0VfUkVQT19OQU1FOiRJTUFHRV9UQUcgICAgICAKICBwb3N0X2J1aWxkOgogICAgY29tbWFuZHM6CiAgICAgIC0gZWNobyBCdWlsZCBjb21wbGV0ZWQgb24gYGRhdGVgCiAgICAgIC0gZWNobyBQdXNoaW5nIHRoZSBEb2NrZXIgaW1hZ2UuLi4KICAgICAgLSBkb2NrZXIgcHVzaCAkQVdTX0FDQ09VTlRfSUQuZGtyLmVjci4kQVdTX0RFRkFVTFRfUkVHSU9OLmFtYXpvbmF3cy5jb20vJElNQUdFX1JFUE9fTkFNRTokSU1BR0VfVEFH"},
+              {"name": "Dockerfile", "content":"RlJPTSBweXRob246My4xMS1zbGltIEFTIGJhc2UKCiMgQ29weSBPcGVuSkRLIDE3CkVOViBKQVZBX0hPTUU9L29wdC9qYXZhL29wZW5qZGsKQ09QWSAtLWZyb209ZWNsaXBzZS10ZW11cmluOjE3ICRKQVZBX0hPTUUgJEpBVkFfSE9NRQpFTlYgUEFUSD0iJHtKQVZBX0hPTUV9L2Jpbjoke1BBVEh9IgoKIyBVcGdyYWRlIHBpcApSVU4gcGlwMyBpbnN0YWxsIC0tdXBncmFkZSBwaXAKCiMgQ29uZmlndXJlIFB5U3BhcmsKRU5WIFBZU1BBUktfRFJJVkVSX1BZVEhPTiBweXRob24zCkVOViBQWVNQQVJLX1BZVEhPTiBweXRob24zCgojIEluc3RhbGwgcHlhcnJvdwpSVU4gcGlwMyBpbnN0YWxsIHB5YXJyb3c9PTEyLjAuMA=="},
+          ]
+          zip_name = "docker-spec.zip"
+          def write_content_to_s3(bucket: str, prefix: str) -> None:
+              archive = BytesIO()
+              with ZipFile(archive, "w") as zip:
+                  for item in content:
+                      zip.writestr(item["name"], b64decode(item["content"]))
+              archive.seek(0)
+              s3.put_object(
+                  Body=archive,
+                  Bucket=bucket,
+                  Key=os.path.join(prefix, zip_name),
+                  ContentType="application/zip",
+              )
+              archive.close()
+          def delete_content_from_s3(bucket: str, prefix: str) -> None:
+              s3.delete_object(Bucket=bucket, Key=os.path.join(prefix, zip_name))
+          def handler(event, context):
+              bucket = event["ResourceProperties"]["BucketName"]
+              prefix = event["ResourceProperties"]["Prefix"]
+              responseData = {}
+              if event['RequestType'] == 'Create':
+                  write_content_to_s3(bucket, prefix)
+              elif event['RequestType'] == 'Delete':
+                  delete_content_from_s3(bucket, prefix)
+              cfnresponse.send(
+                  event, context, cfnresponse.SUCCESS, responseData, "CustomResourcePhysicalID"
+              )
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: "/"
+      Policies:
+      - PolicyName: root
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            Resource: arn:aws:logs:*:*:*
+          - Effect: Allow
+            Action:
+            - s3:PutObject
+            - s3:ListBucket
+            - s3:DeleteObject
+            Resource:
+              - !GetAtt S3ArtifactsBucket.Arn
+              - !Join [ "/", [ !GetAtt S3ArtifactsBucket.Arn, "*" ] ]
+
+  CodeBuildServiceRole: # IAM role for the codebuild project. 
+    Type: AWS::IAM::Role
+    DependsOn: CreateS3Zip
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action: ['sts:AssumeRole']
+            Effect: Allow
+            Principal:
+              Service: ['codebuild.amazonaws.com']
+      Policies:
+        - PolicyName: CodeBuild-EMRDocker-Policy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action: # Allow to push logs to cloudwatch
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Effect: Allow
+                Resource:
+                  - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/*
+              - Action: # Allow to push images to ECR
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:CompleteLayerUpload
+                  - ecr:GetAuthorizationToken
+                  - ecr:InitiateLayerUpload
+                  - ecr:PutImage
+                  - ecr:UploadLayerPart
+                Effect: Allow
+                Resource:
+                  - !GetAtt PySparkECRRepo.Arn
+              - Action: # Allow ECR authentication
+                  - ecr:GetAuthorizationToken
+                Effect: Allow
+                Resource:
+                  - "*"
+              - Effect: Allow # Allow access to S3
+                Action:
+                - s3:GetObject
+                - s3:GetObjectVersion
+                - s3:ListBucket
+                - s3:GetBucketAcl
+                - s3:GetBucketLocation
+                Resource:
+                  - !GetAtt S3ArtifactsBucket.Arn
+                  - !Join [ "/", [ !GetAtt S3ArtifactsBucket.Arn, "*" ] ]
+
+  EMRPythonBuild:
     Type: AWS::CodeBuild::Project
     Properties:
       Artifacts:
-        ArtifactIdentifier: "String"
-        EncryptionDisabled: false
-        Location: "String"
-        Name: "String"
-        NamespaceType: "String"
-        OverrideArtifactName: false
-        Packaging: "String"
-        Path: "String"
-        Type: "String"
-      BadgeEnabled: false
-      BuildBatchConfig:
-        BatchReportMode: "String"
-        CombineArtifacts: String
-        ServiceRole: "false"
-        TimeoutInMins: String
-      Cache:
-        Location: "String"
-        Modes:
-          -
-        Type: "false"
-      ConcurrentBuildLimit: String
-      Description: "false"
-      EncryptionKey: "String"
-      Environment:
-        Certificate: "String"
-        ComputeType: "String"
-        EnvironmentVariables:
-          -
-        Image: "String"
-        ImagePullCredentialsType: "String"
-        PrivilegedMode: false
-        Type: "String"
-      FileSystemLocations: 
-        FileSystemLocations
-      LogsConfig:
-      Name: "String"
-      QueuedTimeoutInMinutes: String
-      ResourceAccessRole: "false"
-      SecondaryArtifacts: 
-        SecondaryArtifacts
-      SecondarySourceVersions: 
-        SecondarySourceVersions
-      SecondarySources: 
-        SecondarySources
-      ServiceRole: "String" # Required
+        Type: "NO_ARTIFACTS"
       Source:
-        BuildSpec: "String"
-        GitCloneDepth: Number
-        InsecureSsl: false
-        Location: "String"
-        ReportBuildStatus: false
-        SourceIdentifier: "String"
-        Type: "String"
-      SourceVersion: "String"
-      Tags: 
-        Tags
-      TimeoutInMinutes: Number
-      Triggers:
-        BuildType: "String"
-        FilterGroups:
-          -
-        Webhook: String
-      Visibility: "false"
-      VpcConfig:
-        SecurityGroupIds:
-          -
-        Subnets:
-          -
-        VpcId: "String"
+        Type: "S3"
+        Location: !Sub "${S3ArtifactsBucket}/artifacts/docker-spec.zip"
+      Environment:
+        Type: LINUX_CONTAINER
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:5.0
+        ComputeType: BUILD_GENERAL1_SMALL
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - Name: AWS_DEFAULT_REGION
+            Value: !Ref "AWS::Region"
+          - Name: AWS_ACCOUNT_ID
+            Value: !Ref AWS::AccountId
+          - Name: IMAGE_REPO_NAME
+            Value: !Ref PySparkECRRepo
+          - Name: IMAGE_TAG
+            Value: latest
+      ServiceRole: !Ref CodeBuildServiceRole
 
-  LogicalID:
-    Type: AWS::EMR::Cluster
-    Properties:
-      AdditionalInfo: JSON
-      Applications: 
-        Applications
-      AutoScalingRole: "String"
-      AutoTerminationPolicy:
-        IdleTimeout: Number
-      BootstrapActions: 
-        BootstrapActions
-      Configurations: 
-        Configurations
-      CustomAmiId: "String"
-      EbsRootVolumeSize: Number
-      Instances:
-        AdditionalMasterSecurityGroups:
-          -
-        AdditionalSlaveSecurityGroups:
-          -
-        Ec2KeyName: "String"
-        Ec2SubnetId: "String"
-        Ec2SubnetIds:
-          -
-        EmrManagedMasterSecurityGroup: "String"
-        EmrManagedSlaveSecurityGroup: "String"
-        HadoopVersion: "String"
-        KeepJobFlowAliveWhenNoSteps: false
-        ServiceAccessSecurityGroup: "String"
-        TaskInstanceFleets:
-          -
-        TaskInstanceGroups:
-          -
-        TerminationProtected: false
-      JobFlowRole: "String" # Required
-      KerberosAttributes:
-        ADDomainJoinPassword: "String"
-        ADDomainJoinUser: "String"
-        CrossRealmTrustPrincipalPassword: "String"
-        KdcAdminPassword: "String"
-        Realm: "String"
-      LogEncryptionKmsKeyId: "String"
-      LogUri: "String"
-      ManagedScalingPolicy:
-      Name: "String" # Required
-      OSReleaseLabel: "String"
-      ReleaseLabel: "String"
-      ScaleDownBehavior: "String"
-      SecurityConfiguration: "false"
-      ServiceRole: "String" # Required
-      StepConcurrencyLevel: Number
-      Steps: 
-        Steps
-      Tags: 
-        Tags
-      VisibleToAllUsers: false
