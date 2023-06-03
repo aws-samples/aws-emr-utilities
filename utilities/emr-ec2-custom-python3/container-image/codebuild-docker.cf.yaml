@@ -12,9 +12,12 @@ Resources:
   S3ArtifactsBucket:
     Type: AWS::S3::Bucket
     Properties:
-      PublicAccessBlockConfiguration:
-        BlockPublicPolicy: True
-        BlockPublicAcls: True
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: Enabled
 
   PySparkECRRepo:
     Type: AWS::ECR::Repository
