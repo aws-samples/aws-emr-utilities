@@ -1,29 +1,22 @@
 #!/bin/bash
 # SPDX-FileCopyrightText: Copyright 2021 Amazon.com, Inc. or its affiliates.
 # SPDX-License-Identifier: MIT-0
+
+# 
+# "spark.celeborn.client.shuffle.writer": "SORT",
+# "spark.celeborn.client.push.blacklist.enabled": "true",
+# "spark.celeborn.client.blacklistSlave.enabled": "true",
+# "spark.celeborn.client.shuffle.batchHandleChangePartition.enabled": "true",
+# "spark.celeborn.client.shuffle.batchHandleCommitPartition.enabled": "true",
+# "spark.celeborn.client.shuffle.batchHandleReleasePartition.enabled": "true",
+
+#  "spark.shuffle.service.enabled": "false",
+#     "spark.sql.adaptive.enabled": "true",
+#     "spark.sql.adaptive.skewJoin.enabled": "true",
+# "spark.celeborn.push.unsafeRow.fastWrite.enabled": "false",
+# 
 # export EMRCLUSTER_NAME=emr-on-eks-rss
 # export AWS_REGION=us-east-1
-          # "spark.celeborn.shuffle.partitionSplit.threshold": "2g",
-          # "spark.celeborn.client.push.sort.pipeline.enabled": "true",
-          # "spark.celeborn.client.push.sort.randomizePartitionId.enabled": "true",
-          # "spark.celeborn.shuffle.partitionSplit.threshold": "2G",
-          # "spark.celeborn.shuffle.compression.codec": "LZ4",
-          # "spark.speculation":"false"
-          # "spark.celeborn.client.push.blacklist.enabled": "true",
-          # "spark.celeborn.client.blacklistSlave.enabled": "true",
-          # "spark.celeborn.client.shuffle.writer": "SORT",
-          # "spark.celeborn.client.fetch.timeout": "120s",
-          # "spark.celeborn.client.push.data.timeout": "120s",
-          # "spark.celeborn.push.limit.inFlight.timeout": "600s",
-          # "spark.celeborn.client.shuffle.batchHandleChangePartition.enabled": "true",
-          # "spark.celeborn.client.shuffle.batchHandleCommitPartition.enabled": "true",
-          # "spark.celeborn.client.shuffle.batchHandleReleasePartition.enabled": "true",
-          # "spark.celeborn.push.maxReqsInFlight": "64",
-
-          # "spark.shuffle.service.enabled": "false",
-          #  "spark.sql.adaptive.enabled": "true",
-          # "spark.sql.adaptive.skewJoin.enabled": "true",
-          # "spark.sql.adaptive.localShuffleReader.enabled":"false"
 export ACCOUNTID=$(aws sts get-caller-identity --query Account --output text)
 export VIRTUAL_CLUSTER_ID=$(aws emr-containers list-virtual-clusters --query "virtualClusters[?name == '$EMRCLUSTER_NAME' && state == 'RUNNING'].id" --output text)
 export EMR_ROLE_ARN=arn:aws:iam::$ACCOUNTID:role/$EMRCLUSTER_NAME-execution-role
@@ -32,7 +25,7 @@ export ECR_URL="$ACCOUNTID.dkr.ecr.$AWS_REGION.amazonaws.com"
 
 aws emr-containers start-job-run \
   --virtual-cluster-id $VIRTUAL_CLUSTER_ID \
-  --name em66-clb-delAQEset \
+  --name em66-clbv2-offEMRUnsafeRow \
   --execution-role-arn $EMR_ROLE_ARN \
   --release-label emr-6.6.0-latest \
   --job-driver '{
@@ -47,14 +40,15 @@ aws emr-containers start-job-run \
         "properties": {
           "spark.kubernetes.container.image": "'$ECR_URL'/clb-spark-benchmark:emr6.6_clb0.2",
           "spark.executor.memoryOverhead": "2G",
-          "spark.kubernetes.executor.podNamePrefix": "emr-eks-tpcds-clb",
+          "spark.kubernetes.executor.podNamePrefix": "emr-eks-tpcds-clbv2",
           "spark.kubernetes.node.selector.eks.amazonaws.com/nodegroup": "c59b",
 
           "spark.serializer": "org.apache.spark.serializer.KryoSerializer",
           "spark.celeborn.push.replicate.enabled": "true",
-          "spark.celeborn.shuffle.chunk.size": "4m",
           "spark.celeborn.shuffle.writer": "hash",
+          "spark.celeborn.shuffle.compression.codec": "zstd",
           "spark.celeborn.push.unsafeRow.fastWrite.enabled": "false",
+          "spark.sql.adaptive.localShuffleReader.enabled":"false",
           "spark.shuffle.manager": "org.apache.spark.shuffle.celeborn.RssShuffleManager",
           "spark.celeborn.master.endpoints": "celeborn-master-0.celeborn-master-svc.celeborn:9097,celeborn-master-1.celeborn-master-svc.celeborn:9097,celeborn-master-2.celeborn-master-svc.celeborn:9097"
           
@@ -62,7 +56,7 @@ aws emr-containers start-job-run \
       {
         "classification": "spark-log4j",
         "properties": {
-          "log4j.rootCategory":"WARN, console"
+          "log4j.rootCategory":"ERROR, console"
         }
       }
     ],

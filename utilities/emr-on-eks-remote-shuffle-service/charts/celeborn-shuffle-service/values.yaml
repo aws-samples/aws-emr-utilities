@@ -66,6 +66,8 @@ celeborn:
 
   # celeborn.rpc.io.serverThreads: 128
   celeborn.rpc.io.numConnectionsPerPeer: 8
+  celeborn.replicate.io.numConnectionsPerPeer: 24
+  celeborn.shuffle.chunk.size: 4m
   # celeborn.rpc.io.clientThreads: 4
   celeborn.worker.flusher.buffer.size: 128k
   celeborn.worker.flusher.threads: 64
@@ -75,9 +77,10 @@ celeborn:
   # celeborn.master.heartbeat.worker.timeout: 120s
   celeborn.network.timeout: 2000s
   celeborn.worker.replicate.threads: 128
+  celeborn.worker.replicate.io.threads: 128
+  # celeborn.worker.commit.threads: 128
   # celeborn.worker.commitFiles.threads: 64
   # celeborn.worker.readBuffer.target.changeThreshold: 4mb
-
   # celeborn.worker.readBuffer.toTriggerReadMin: 128
   # celeborn.worker.directMemoryRatioForReadBuffer: 0.4
 
@@ -91,12 +94,12 @@ celeborn:
 
 
 environments:
-  CELEBORN_MASTER_MEMORY: 15g
+  CELEBORN_MASTER_MEMORY: 8g
   # CELEBORN_MASTER_MEMORY: 2g
   CELEBORN_MASTER_JAVA_OPTS: "-XX:-PrintGC -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps -Xloggc:gc-master.out -Dio.netty.leakDetectionLevel=advanced"
   # CELEBORN_WORKER_MEMORY: 2g
-  CELEBORN_WORKER_MEMORY: 15g
-  CELEBORN_WORKER_OFFHEAP_MEMORY: 20g
+  CELEBORN_WORKER_MEMORY: 8g
+  CELEBORN_WORKER_OFFHEAP_MEMORY: 12g
   CELEBORN_WORKER_JAVA_OPTS: "-XX:-PrintGC -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps -Xloggc:gc-worker.out -Dio.netty.leakDetectionLevel=advanced"
   CELEBORN_NO_DAEMONIZE: 1
   TZ: "Australia/Melbourne"
@@ -118,6 +121,7 @@ cluster:
 configmap: celeborn-conf
 
 resources:
+# resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
   # resources, such as Minikube. If you do want to specify resources, uncomment the following

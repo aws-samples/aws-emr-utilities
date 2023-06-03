@@ -1,6 +1,8 @@
 replicaCount: 3
 # heapSize: 1024
-# dataLogDir: "/zk1/logs"
+# dataLogDir: "/zk/logs"
+commonLabels: 
+  name: zookeeper
 resources:
   limits: 
     memory: 4096Mi
@@ -9,12 +11,14 @@ resources:
     memory: 4096Mi
     cpu: 500m
 nodeSelector:
-  node.kubernetes.io/instance-type: i3en.6xlarge    
+  app: rss    
     
-# extraVolumeMounts:
-#   - name: zk-data-dir-1
-#     mountPath: /zk1
-# extraVolumes:
-#   - name: zk-data-dir-1
-#     hostPath:
-#       path: /local1
+podAntiAffinity:
+  requiredDuringSchedulingIgnoredDuringExecution:
+    - labelSelector:
+        matchExpressions:
+          - key: name
+            operator: In
+            values:
+              - zookeeper
+      topologyKey: "kubernetes.io/hostname"

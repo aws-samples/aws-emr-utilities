@@ -12,7 +12,7 @@ export ECR_URL="$ACCOUNTID.dkr.ecr.$AWS_REGION.amazonaws.com"
 
 aws emr-containers start-job-run \
   --virtual-cluster-id $VIRTUAL_CLUSTER_ID \
-  --name em66-3css \
+  --name em66-3csszk-3iter \
   --execution-role-arn $EMR_ROLE_ARN \
   --release-label emr-6.6.0-latest \
   --job-driver '{
@@ -32,13 +32,14 @@ aws emr-containers start-job-run \
 
           "spark.serializer": "org.apache.spark.serializer.KryoSerializer",
           "spark.css.cluster.name": "mycss",
-          "spark.css.zookeeper.address": "zookeeper-0.zookeeper-headless.zk.svc.cluster.local:2181,zookeeper-1.zookeeper-headless.zk.svc.cluster.local:2181",
+          "spark.sql.adaptive.localShuffleReader.enabled":"false",
+          "spark.css.zookeeper.address": "zookeeper-0.zookeeper-headless.zk.svc.cluster.local:2181,zookeeper-1.zookeeper-headless.zk.svc.cluster.local:2181,zookeeper-2.zookeeper-headless.zk.svc.cluster.local:2181",
           "spark.shuffle.manager": "org.apache.spark.shuffle.css.CssShuffleManager"
       }},
       {
         "classification": "spark-log4j",
         "properties": {
-          "log4j.rootCategory":"WARN, console"
+          "log4j.rootCategory":"ERROR, console"
         }
       }
     ],
