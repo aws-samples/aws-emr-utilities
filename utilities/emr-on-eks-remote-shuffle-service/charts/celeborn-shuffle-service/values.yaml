@@ -26,10 +26,10 @@ image:
   repository: 633458367150.dkr.ecr.us-west-2.amazonaws.com/celeborn-server
   pullPolicy: Always
   # tag: 0.1.1-6badd20
-  tag: spark3.2_clb
+  tag: spark3.2_clb0.2
 
 nodeSelector: 
-  app: rss
+  app: css
 
 # master replicas should not less than 3
 masterReplicas: 3
@@ -54,9 +54,6 @@ celeborn:
   celeborn.worker.metrics.prometheus.port: 9096
   celeborn.worker.monitor.disk.enabled: false
 
-  # celeborn.rpc.io.serverThreads: 128
-  # celeborn.rpc.io.threads: 32
-
   celeborn.push.io.numConnectionsPerPeer: 8
   celeborn.replicate.io.numConnectionsPerPeer: 24
   celeborn.worker.flusher.buffer.size: 128k
@@ -67,16 +64,8 @@ celeborn:
   # celeborn.master.heartbeat.worker.timeout: 120s
   celeborn.network.timeout: 2000s
   celeborn.worker.replicate.io.threads: 128
-  #0.2
-  # celeborn.worker.commit.threads: 128
-  #0.3+
-  celeborn.worker.commitFiles.threads: 128
+  celeborn.worker.commit.threads: 128
   celeborn.worker.closeIdleConnections: true
-
-  # celeborn.rpc.askTimeout: 120s
-  # celeborn.worker.partitionSorter.directMemoryRatioThreshold: 0.2
-  # celeborn.worker.sortPartition.reservedMemoryPerPartition: 4mb
-  # celeborn.worker.sortPartition.threads: 8
 
 
 environments:

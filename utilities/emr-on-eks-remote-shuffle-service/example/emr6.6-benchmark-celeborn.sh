@@ -2,19 +2,6 @@
 # SPDX-FileCopyrightText: Copyright 2021 Amazon.com, Inc. or its affiliates.
 # SPDX-License-Identifier: MIT-0
 
-# 
-# "spark.celeborn.client.shuffle.writer": "SORT",
-# "spark.celeborn.client.push.blacklist.enabled": "true",
-# "spark.celeborn.client.blacklistSlave.enabled": "true",
-# "spark.celeborn.client.shuffle.batchHandleChangePartition.enabled": "true",
-# "spark.celeborn.client.shuffle.batchHandleCommitPartition.enabled": "true",
-# "spark.celeborn.client.shuffle.batchHandleReleasePartition.enabled": "true",
-
-          # "spark.celeborn.fetch.maxReqsInFlight": "16",
-    
-# "spark.celeborn.shuffle.compression.codec": "zstd",
-# "spark.sql.optimizedUnsafeRowSerializers.enabled":"false
-# "spark.celeborn.push.unsafeRow.fastWrite.enabled": "false",
 # export EMRCLUSTER_NAME=emr-on-eks-rss
 # export AWS_REGION=us-east-1
 export ACCOUNTID=$(aws sts get-caller-identity --query Account --output text)
@@ -25,7 +12,7 @@ export ECR_URL="$ACCOUNTID.dkr.ecr.$AWS_REGION.amazonaws.com"
 
 aws emr-containers start-job-run \
   --virtual-cluster-id $VIRTUAL_CLUSTER_ID \
-  --name em66-v3-3iter-72reqsInFlight \
+  --name em66-v2-3iter-128reqsInFlight \
   --execution-role-arn $EMR_ROLE_ARN \
   --release-label emr-6.6.0-latest \
   --job-driver '{
@@ -38,10 +25,10 @@ aws emr-containers start-job-run \
       {
         "classification": "spark-defaults", 
         "properties": {
-          "spark.kubernetes.container.image": "'$ECR_URL'/clb-spark-benchmark:emr6.6_clb",
+          "spark.kubernetes.container.image": "'$ECR_URL'/clb-spark-benchmark:emr6.6_clb0.2",
           "spark.executor.memoryOverhead": "2G",
-          "spark.kubernetes.executor.podNamePrefix": "emr-eks-tpcds-v3",
-          "spark.kubernetes.node.selector.eks.amazonaws.com/nodegroup": "c59a",
+          "spark.kubernetes.executor.podNamePrefix": "emr-eks-tpcds-v2",
+          "spark.kubernetes.node.selector.eks.amazonaws.com/nodegroup": "c59b",
 
           "spark.serializer": "org.apache.spark.serializer.KryoSerializer",
           "celeborn.shuffle.chunk.size": "4m",
@@ -49,7 +36,7 @@ aws emr-containers start-job-run \
           "spark.celeborn.shuffle.writer": "hash",
           "spark.spactulation": "true",
 
-          "spark.celeborn.push.maxReqsInFlight": "72",
+          "spark.celeborn.push.maxReqsInFlight": "128",
 
           "spark.sql.optimizedUnsafeRowSerializers.enabled":"false",
           "spark.shuffle.service.enabled": "false",
