@@ -44,18 +44,8 @@ volumeUser: 10006
 volumeGroup: 10006
 # celeborn configurations
 celeborn:
-  celeborn.ha.enabled: false
-  celeborn.master.endpoints: celeborn-master-0.celeborn-master-svc.celeborn:9097,celeborn-master-1.celeborn-master-svc.celeborn:9097,celeborn-master-2.celeborn-master-svc.celeborn:9097
-  celeborn.ha.master.node.id: 1
-  celeborn.ha.master.node.1.host: celeborn-master-0.celeborn-master-svc.celeborn
-  celeborn.ha.master.node.1.port: 9097
-  celeborn.ha.master.node.1.ratis.port: 9872
-  celeborn.ha.master.node.2.host: celeborn-master-1.celeborn-master-svc.celeborn
-  celeborn.ha.master.node.2.port: 9097
-  celeborn.ha.master.node.2.ratis.port: 9872
-  celeborn.ha.master.node.3.host: celeborn-master-2.celeborn-master-svc.celeborn
-  celeborn.ha.master.node.3.port: 9097
-  celeborn.ha.master.node.3.ratis.port: 9872
+  # celeborn.ha.enabled: true
+  # celeborn.master.endpoints: celeborn-master-0.celeborn-master-svc.celeborn:9097,celeborn-master-1.celeborn-master-svc.celeborn:9097,celeborn-master-2.celeborn-master-svc.celeborn:9097
   celeborn.ha.master.ratis.raft.server.storage.dir: /rss1/rss_ratis/
   celeborn.worker.storage.dirs: /rss1/data,/rss2/data
   celeborn.volumes.hostpath: /local1,/local2
@@ -64,37 +54,24 @@ celeborn:
   celeborn.worker.metrics.prometheus.port: 9096
   celeborn.worker.monitor.disk.enabled: false
 
-  # celeborn.rpc.io.serverThreads: 128
-  celeborn.rpc.io.numConnectionsPerPeer: 8
-  # celeborn.rpc.io.clientThreads: 4
-  celeborn.rpc.dispatcher.numThreads: 4
+  celeborn.push.io.numConnectionsPerPeer: 8
+  celeborn.replicate.io.numConnectionsPerPeer: 24
   celeborn.worker.flusher.buffer.size: 128k
-  celeborn.worker.flusher.threads: 24
-  celeborn.worker.fetch.io.threads: 64                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+  celeborn.worker.flusher.threads: 64
+  celeborn.worker.fetch.io.threads: 256                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
   celeborn.worker.push.io.threads: 128
   # celeborn.master.heartbeat.application.timeout: 300s
   # celeborn.master.heartbeat.worker.timeout: 120s
   celeborn.network.timeout: 2000s
-  celeborn.worker.replicate.threads: 128
-  # celeborn.worker.commitFiles.threads: 64
-  # celeborn.worker.readBuffer.target.changeThreshold: 4mb
-  celeborn.worker.readBuffer.toTriggerReadMin: 128
-  celeborn.worker.directMemoryRatioForReadBuffer: 0.4
+  celeborn.worker.replicate.io.threads: 128
+  celeborn.worker.commit.threads: 128
   celeborn.worker.closeIdleConnections: true
-  # celeborn.worker.partition.initial.readBuffersMin: 512
-  celeborn.rpc.io.threads: 8
-  celeborn.rpc.askTimeout: 120s
-  # celeborn.worker.partitionSorter.directMemoryRatioThreshold: 0.2
-  # celeborn.worker.sortPartition.reservedMemoryPerPartition: 4mb
-  # celeborn.worker.sortPartition.threads: 8
 
 
 environments:
-  CELEBORN_MASTER_MEMORY: 15g
-  # CELEBORN_MASTER_MEMORY: 2g
+  CELEBORN_MASTER_MEMORY: 16g
   CELEBORN_MASTER_JAVA_OPTS: "-XX:-PrintGC -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps -Xloggc:gc-master.out -Dio.netty.leakDetectionLevel=advanced"
-  # CELEBORN_WORKER_MEMORY: 2g
-  CELEBORN_WORKER_MEMORY: 15g
+  CELEBORN_WORKER_MEMORY: 8g
   CELEBORN_WORKER_OFFHEAP_MEMORY: 20g
   CELEBORN_WORKER_JAVA_OPTS: "-XX:-PrintGC -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps -Xloggc:gc-worker.out -Dio.netty.leakDetectionLevel=advanced"
   CELEBORN_NO_DAEMONIZE: 1
@@ -116,7 +93,8 @@ cluster:
 
 configmap: celeborn-conf
 
-resources:
+# resources:
+resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
   # resources, such as Minikube. If you do want to specify resources, uncomment the following
@@ -128,13 +106,13 @@ resources:
   #  requests:
   #    cpu: 100m
   #    memory: 128Mi
-  worker:
-   limits: #i3en.6xl
-     cpu: 24
-     memory: 192G
-   requests:
-     cpu: 21.6
-     memory: 172G
+  # worker:
+  #  limits: #i3en.6xl
+  #    cpu: 24
+  #    memory: 192G
+  #  requests:
+  #    cpu: 21.6
+  #    memory: 176G
 
 podAnnotations: {}
 

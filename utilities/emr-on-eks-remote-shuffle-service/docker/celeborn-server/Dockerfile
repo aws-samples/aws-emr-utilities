@@ -19,7 +19,7 @@ ARG java_image_tag=8-jdk-focal
 
 FROM eclipse-temurin:${java_image_tag} as jdk8
 ARG SPARK_VERSION=3.2
-ARG CELEBORN_VERSION=branch-0.2
+ARG CELEBORN_VERSION=0.2
 
 RUN apt-get update && apt-get install -y git
 # build celeborn binary
