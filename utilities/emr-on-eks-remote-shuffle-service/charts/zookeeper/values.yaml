@@ -1,6 +1,6 @@
 replicaCount: 3
 # heapSize: 1024
-# dataLogDir: "/zk/logs"
+dataLogDir: "/zk/dataLog"
 commonLabels: 
   name: zookeeper
 resources:
@@ -12,7 +12,7 @@ resources:
     cpu: 500m
 nodeSelector:
   app: rss    
-    
+# distribute zookeeper instances across different node    
 podAntiAffinity:
   requiredDuringSchedulingIgnoredDuringExecution:
     - labelSelector:

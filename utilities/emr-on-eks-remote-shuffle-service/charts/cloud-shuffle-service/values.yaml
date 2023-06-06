@@ -40,6 +40,6 @@ ports:
 env:  
   CLUSTER_NAME: mycss
   REGISTRY_TYPE: zookeeper   
-  ZK_ADDRESS: "zookeeper-0.zookeeper-headless.zk.svc.cluster.local:2181,zookeeper-1.zookeeper-headless.zk.svc.cluster.local:2181"
+  ZK_ADDRESS: "zookeeper-0.zookeeper-headless.zk.svc.cluster.local:2181,zookeeper-1.zookeeper-headless.zk.svc.cluster.local:2181,zookeeper-2.zookeeper-headless.zk.svc.cluster.local:2181"
   SHUFFLE_DATA_DIR: "/css1/css,/css2/css"
   CSS_CONF_PARAMS: "css.disk.dir.num.min = 1;css.flush.queue.capacity = 4096;css.flush.buffer.size = 128k;css.network.timeout = 600s;css.epoch.rotate.threshold = 1g;css.push.io.numConnectionsPerPeer = 8;css.push.io.threads = 128;css.replicate.threads = 128;css.fetch.io.threads = 64;css.fetch.chunk.size = 4m;css.shuffle.server.chunkFetchHandlerThreadsPercent = 400"

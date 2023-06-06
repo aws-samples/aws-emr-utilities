@@ -116,6 +116,8 @@ docker push $ECR_URL/rss-spark-benchmark:3.2.0
 ```bash
 helm repo add bitnami https://charts.bitnami.com/bitnami
 helm install zookeeper bitnami/zookeeper -n zk -f charts/zookeeper/values.yaml --create-namespace
+# check the distribution. should be one replica per node.
+kubectl get po -n zk -o wide
 ```
 ```
 # uninstall zookeeper
@@ -127,8 +129,8 @@ Before the installation, take a look at the configuration [charts/cloud-shuffle-
 
 ```bash
 helm install css ./charts/cloud-shuffle-service -n css --create-namespace
-# check progress
-kubectl get all -n css
+# check progress and distribution. should be one replica per node.
+kubectl get po -n css -o wide
 ```
 ```
 # OPTIONAL: scale up or scale down the Shuffle server
@@ -314,6 +316,8 @@ kubectl --namespace prometheus port-forward service/prometheus-kube-prometheus-p
 helm install celeborn charts/celeborn-shuffle-service  -n celeborn --create-namespace
 # check progress
 kubectl get all -n celeborn
+# check if all workers are registered on a single leader node.
+kubectl logs celeborn-master-0 -n celeborn | grep Registered
 # OPTIONAL: if prometheus operator is installed
 kubectl get podmonitor -n celeborn
 ```
