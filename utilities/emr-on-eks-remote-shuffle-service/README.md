@@ -4,7 +4,7 @@ Remote Shuffle Service provides the capability for Apache Spark applications to 
 on remote servers. See more details on Spark community document: 
 [[SPARK-25299][DISCUSSION] Improving Spark Shuffle Reliability](https://docs.google.com/document/d/1uCkzGGVG17oGC6BJ75TpzLAZNorvrAU3FRd2X-rVHSM/edit?ts=5e3c57b8).
 
-The high level design for Uber's Remote Shuffle Service (RSS) can be found [here](https://github.com/uber/RemoteShuffleService/blob/master/docs/server-high-level-design.md), ByteDance's Cloud Shuffle Service (CSS) can be found [here](https://github.com/bytedance/CloudShuffleService), Tecent's Apache Uniffle can be found [here](https://uniffle.apache.org/docs/intro).AliCloud's Apache Celeborn can be found [here](https://github.com/apache/incubator-celeborn). OPPO's Shuttle can be found [here](https://github.com/cubefs/shuttle/blob/master/docs/server-high-level-design.md)
+The high level design for Uber's Remote Shuffle Service (RSS) can be found [here](https://github.com/uber/RemoteShuffleService/blob/master/docs/server-high-level-design.md), ByteDance's Cloud Shuffle Service (CSS) can be found [here](https://github.com/bytedance/CloudShuffleService), Tecent's Apache Uniffle can be found [here](https://uniffle.apache.org/docs/intro).AliCloud's Apache Celeborn can be found [here](https://github.com/apache/incubator-celeborn).
 
 # Setup instructions:
 * [1. Install Uber's RSS](#1-install-rss-server-on-eks) 
@@ -20,9 +20,10 @@ export AWS_REGION=us-east-1
 ./eks_provision.sh
 ```
 which provides a one-click experience to create an EMR on EKS environment and OSS Spark Operator on a common EKS cluster. The EKS cluster contains the following managed nodegroups which are located in a single AZ within the same [Cluster placment strategy](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/placement-groups.html) to achieve the low-latency network performance for the intercommunication between apps and shuffle servers:
-- 1 - [`rss-i3en`](https://github.com/melodyyangaws/emr-on-eks-remote-shuffle-service/blob/99e7b2efbbd25a72435cc00a8bed6e14e91f415b/eks_provision.sh#L104) that scales i3en.6xlarge instances from 1 to 20. They are labelled as `app=rss` to host the RSS servers. Only 1 out of 2 SSD disks is mounted to these instances for the RSS's rootdir limitation.
-- 2 - [`css-i3en`](https://github.com/melodyyangaws/emr-on-eks-remote-shuffle-service/blob/99e7b2efbbd25a72435cc00a8bed6e14e91f415b/eks_provision.sh#L128) that scales i3en.6xlarge instances from 1 to 20. They are labelled as `app=css` to host the CSS and Uniffle clusters.
-- 2 - [`c59a` & `c59b`](https://github.com/melodyyangaws/emr-on-eks-remote-shuffle-service/blob/e81ed02da9a470889dd806a7be6ed9f160510563/eks_provision.sh#L111) that can scale c5.9xlarge instances from 1 to 50 at AZ-a and AZ-b respectively. They are labelled as `app=sparktest` to run multiple EMR on EKS jobs or OSS Spark tests in parallel. Additionally, the node groups can be used to run TPCDS source data generation job if needed.
+- 1 - [`rss`](https://github.com/aws-samples/aws-emr-utilities/blob/975010d4de7d3566e0ef3e8b1c94cfdfe0e0a552/utilities/emr-on-eks-remote-shuffle-service/eks_provision.sh#L116) that scales i3en.6xlarge instances from 1 to 20. They are labelled as `app=rss` to host the RSS servers. Only 1 out of 2 SSD disks is mounted to these instances for the RSS's rootdir limitation.
+- 2 - [`css`](https://github.com/aws-samples/aws-emr-utilities/blob/975010d4de7d3566e0ef3e8b1c94cfdfe0e0a552/utilities/emr-on-eks-remote-shuffle-service/eks_provision.sh#L140) that scales i3en.6xlarge instances from 1 to 20. They are labelled as `app=css` to host the CSS and Uniffle clusters.
+- 3 - [`c59a` & `c59b`](https://github.com/aws-samples/aws-emr-utilities/blob/975010d4de7d3566e0ef3e8b1c94cfdfe0e0a552/utilities/emr-on-eks-remote-shuffle-service/eks_provision.sh#L160) that can scale c5.9xlarge instances from 1 to 50 at AZ-a and AZ-b respectively. They are labelled as `app=sparktest` to run multiple EMR on EKS jobs or OSS Spark tests in parallel. Additionally, the node groups can be used to run TPCDS source data generation job if needed.
+- 4 - [`c5d9a`](https://github.com/aws-samples/aws-emr-utilities/blob/975010d4de7d3566e0ef3e8b1c94cfdfe0e0a552/utilities/emr-on-eks-remote-shuffle-service/eks_provision.sh#L194)scales c5d.9xlarge instances from 1 to 6 at AZ-a. They are also labelled as `app=sparktest` to run a single EMR on EKS jobs without RSS.
 
 ## Quick Start: Run rmeote shuffle server in EMR
 ```bash
@@ -53,7 +54,7 @@ Before the installation, take a look at the [charts/remote-shuffle-service/value
 nodeSelector:
     app: rss
 ```    
-It means the RSS Server will only be installed on EC2 instances that have the label `app=rss`. By doing this, we can assign RSS service to a specific instance type with SSD disk mounted, [`i3en.6xlarge`](https://github.com/melodyyangaws/emr-on-eks-remote-shuffle-service/blob/de77e588a2c89080e448f75321f4174a51c77799/eks_provision.sh#L98) in this case. Change the label name based on your EKS setup or simply remove these two lines to run RSS on any instances.
+It means the RSS Server will only be installed on EC2 instances that have the label `app=rss`. By doing this, we can assign RSS service to a specific instance type with SSD disk mounted, [`i3en.6xlarge`](https://github.com/aws-samples/aws-emr-utilities/blob/975010d4de7d3566e0ef3e8b1c94cfdfe0e0a552/utilities/emr-on-eks-remote-shuffle-service/eks_provision.sh#L118) in this case. Change the label name based on your EKS setup or simply remove these two lines to run RSS on any instances.
 
 #### Access control to RSS data storage 
 At RSS client (Spark applications), we use `Hadoop` to run jobs. They are also the user to write to the shuffle service disks on the server. For EMR on EKS, you should run the RSS server under 999:1000 permission.
@@ -270,11 +271,7 @@ docker build -t $ECR_URL/clb-spark-benchmark:emr6.6_clb${CELEBORN_VERSION} \
 docker push $ECR_URL/clb-spark-benchmark:emr6.6_clb${CELEBORN_VERSION}
 ```
 #### Run Celeborn shuffle service in EKS
-Celeborn helm chart comes with the monitoring feature via Prometheus. To install Prometheus in EKS and integrate with Amazon Managed Prometheus and Managed Grafana, check out this [installation script](https://github.com/melodyyangaws/karpenter-emr-on-eks/blob/main/provision/create-workshop-env.sh#L111).
-```bash
-# config celeborn environment variables and docker image
-vi charts/celeborn-shuffle-service/values.yaml
-```
+Celeborn helm chart comes with the monitoring feature via Prometheus Operator. To install the Prometheus operator in EKS, check out the `OPTIONAL` step below. To Setup Amazon Managed Grafana dashboard sourced from Amazon Managed Prometheus, check the instruction [here](https://github.com/melodyyangaws/karpenter-emr-on-eks/blob/main/setup_grafana_dashboard.pdf)
 
 <details>
 <summary>OPTIONAL: Install prometheus monitoring</summary>
@@ -312,6 +309,11 @@ kubectl --namespace prometheus port-forward service/prometheus-kube-prometheus-p
 </details>
 
 ```bash
+# config celeborn environment variables and docker image
+vi charts/celeborn-shuffle-service/values.yaml
+```
+
+```bash
 # install celeborn
 helm install celeborn charts/celeborn-shuffle-service  -n celeborn --create-namespace
 # check progress
@@ -346,6 +348,8 @@ export AWS_REGION=<YOUR_REGION>
 ./example/emr6.6-benchmark-uniffle.sh
 # Or Aliyun's Apache Celeborn
 ./example/emr6.6-benchmark-celeborn.sh
+# Or EMR on EKS without RSS
+./example/emr6.6-benchmark-emr.sh
 # check job progress
 kubectl get po -n emr
 kubectl logs <DRIVER_POD_NAME> -n emr spark-kubernetes-driver
