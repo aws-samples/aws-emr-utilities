@@ -113,7 +113,7 @@ iam:
     roleName: $EKSCLUSTER_NAME-prometheus-ingest 
     roleOnly: true    
 managedNodeGroups: 
-  - name: rss-i3en
+  - name: rss
     availabilityZones: ["${AWS_REGION}a"] 
     preBootstrapCommands:
       # - "sudo yum -y install mdadm"
@@ -137,7 +137,7 @@ managedNodeGroups:
       # required for cluster-autoscaler auto-discovery
       k8s.io/cluster-autoscaler/enabled: "true"
       k8s.io/cluster-autoscaler/$EKSCLUSTER_NAME: "owned"  
-  - name: css-i3en
+  - name: css
     availabilityZones: ["${AWS_REGION}b"] 
     preBootstrapCommands:
       - "IDX=1;for DEV in /dev/nvme[1-9]n1;do sudo mkfs.xfs \${DEV}; sudo mkdir -p /local\${IDX}; sudo echo \${DEV} /local\${IDX} xfs defaults,noatime 1 2 >> /etc/fstab; IDX=\$((\${IDX} + 1)); done"
@@ -186,6 +186,23 @@ managedNodeGroups:
     maxSize: 50
     placement:
       groupName: $EKSCLUSTER_NAME-bgroup
+    labels:
+      app: sparktest
+    tags:
+      k8s.io/cluster-autoscaler/enabled: "true"
+      k8s.io/cluster-autoscaler/$EKSCLUSTER_NAME: "owned"
+  - name: c5d9a
+    availabilityZones: ["${AWS_REGION}a"] 
+    instanceType: c5d.9xlarge
+    preBootstrapCommands:
+      - "sudo systemctl restart docker --no-block"
+    volumeSize: 20
+    volumeType: gp3
+    minSize: 1
+    desiredCapacity: 1
+    maxSize: 6
+    placement:
+      groupName: $EKSCLUSTER_NAME-agroup
     labels:
       app: sparktest
     tags:

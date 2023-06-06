@@ -22,11 +22,9 @@
 # we provide a default celeborn image, you can also replace to your image
 # TODO rebuild celeborn official image
 image:
-  # repository: aliyunemr/remote-shuffle-service
-  repository: 633458367150.dkr.ecr.us-west-2.amazonaws.com/celeborn-server
+  repository: public.ecr.aws/myang-poc/celeborn-rss
   pullPolicy: Always
-  # tag: 0.1.1-6badd20
-  tag: spark3.2_clb0.2
+  tag: spark3.2_server0.2
 
 nodeSelector: 
   app: css
@@ -66,7 +64,6 @@ celeborn:
   celeborn.worker.replicate.io.threads: 128
   celeborn.worker.commit.threads: 128
   celeborn.worker.closeIdleConnections: true
-
 
 environments:
   CELEBORN_MASTER_MEMORY: 16g
