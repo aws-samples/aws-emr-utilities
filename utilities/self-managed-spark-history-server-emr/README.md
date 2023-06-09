@@ -11,6 +11,8 @@ It is possible to debug and monitor your Apache Spark jobs by logging directly i
 
 Even though we recommend customers to utilize managed SHS option wherever possible, not desirable due to above limitations for all the customers. **In this self-managed SHS solution**, we will setup SHS on EMR on EC2 single master (but customers can also expand this to work on [EC2 or containerized solution](https://docs.aws.amazon.com/glue/latest/dg/monitor-spark-ui-history.html)).
 
+For EMR Serverless instructions [click here]()
+
 ## Solution Overview
 
 ![Setup](images/D2134DB4-2879-4EC0-B2B8-11D6939CAD31.jpeg)
