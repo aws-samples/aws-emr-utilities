@@ -19,16 +19,16 @@ The high level design for Uber's Remote Shuffle Service (RSS) can be found [here
 4. [helm](https://helm.sh/docs/intro/install/)
 
 ## Infrastructure
-If you do not have your own environment to run Spark, run the command. Change the region if needed.
+If you do not have your own environment to test the remote shuffle solution, run the command to setup the infrastructure you need. Change the region if needed.
 ```
 export EKSCLUSTER_NAME=eks-rss
 export AWS_REGION=us-east-1
 ./eks_provision.sh
 ```
-which provides a one-click experience to create an EMR on EKS environment and OSS Spark Operator on a common EKS cluster. The EKS cluster contains the following managed nodegroups which are located in a single AZ within the same [Cluster placment strategy](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/placement-groups.html) to achieve the low-latency network performance for the intercommunication between apps and shuffle servers.
+It provides a one-click experience to create an EMR on EKS environment and OSS Spark Operator on a common EKS cluster. The EKS cluster contains the following managed nodegroups which are located in a single AZ within the same [Cluster placment strategy](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/placement-groups.html) to achieve the low-latency network performance for the intercommunication between Spark apps and shuffle services. Comment out unwanted EKS node groups from the `eks_provision.sh` file if needed.
 - 1 - [`rss`](https://github.com/aws-samples/aws-emr-utilities/blob/975010d4de7d3566e0ef3e8b1c94cfdfe0e0a552/utilities/emr-on-eks-remote-shuffle-service/eks_provision.sh#L116) can scale i3en.6xlarge instances from 1 to 20 in AZ-a. They are labelled as `app=rss` to host the RSS servers. 2 SSD disks are mounted to each instance.
 - 2 - [`css`](https://github.com/aws-samples/aws-emr-utilities/blob/975010d4de7d3566e0ef3e8b1c94cfdfe0e0a552/utilities/emr-on-eks-remote-shuffle-service/eks_provision.sh#L140) can scale i3en.6xlarge instances from 1 to 20 in in AZ-b. They are labelled as `app=css` to host the RSS servers. 2 SSD disks are mounted to each instance.
-- 3 - [`c59a` & `c59b`](https://github.com/aws-samples/aws-emr-utilities/blob/975010d4de7d3566e0ef3e8b1c94cfdfe0e0a552/utilities/emr-on-eks-remote-shuffle-service/eks_provision.sh#L160) can scale c5.9xlarge instances from 1 to 7 at AZ-a and AZ-b respectively, each of which only has 20GB root volume. They are labelled as `app=sparktest` to run multiple EMR on EKS jobs or OSS Spark tests in parallel. These nodegroups are used by Spark jobs with remote shuffle service.
+- 3 - [`c59a` & `c59b`](https://github.com/aws-samples/aws-emr-utilities/blob/975010d4de7d3566e0ef3e8b1c94cfdfe0e0a552/utilities/emr-on-eks-remote-shuffle-service/eks_provision.sh#L160) can scale c5.9xlarge instances from 1 to 7 at AZ-a and AZ-b respectively, each of which only has 30GB root volume. They are labelled as `app=sparktest` to run multiple EMR on EKS jobs or OSS Spark tests in parallel. These nodegroups are used by Spark jobs with remote shuffle service.
 - 4 - [`c5d9a`](https://github.com/aws-samples/aws-emr-utilities/blob/975010d4de7d3566e0ef3e8b1c94cfdfe0e0a552/utilities/emr-on-eks-remote-shuffle-service/eks_provision.sh#L194) can scales c5d.9xlarge instances from 1 to 7 at AZ-a. They are also labelled as `app=sparktest` to run EMR on EKS jobs or OSS Spark jobs without RSS.Additionally, the node groups can be used to run TPCDS source data generation job if needed. 
 
 ## Quick Start: Run rmeote shuffle server in EMR
@@ -250,6 +250,7 @@ This is an optional step. For the best practice in security, it's recommended to
 
 <details>
 <summary>OPTIONAL: Build your own docker images</summary>
+
 ```bash
 # create ECR as an one-off task
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
@@ -271,7 +272,9 @@ docker build -t $ECR_URL/celeborn-server:spark${SPARK_VERSION}_clb \
   -f docker/celeborn-server/Dockerfile .
 # push the image to ECR
 docker push $ECR_URL/celeborn-server:spark${SPARK_VERSION}_clb
+```
 
+```bash
 # build client on EMR on EKS
 EMR_VERSION=emr-6.10.0
 SRC_ECR_URL=755674844232.dkr.ecr.us-east-1.amazonaws.com
@@ -281,8 +284,11 @@ docker build -t $ECR_URL/clb-spark-benchmark:${EMR_VERSION}_clb \
   --build-arg SPARK_VERSION=${SPARK_VERSION} \
   --build-arg SPARK_BASE_IMAGE=${SRC_ECR_URL}/spark/${EMR_VERSION}:latest \
   -f docker/celeborn-emr-client/Dockerfile .
-docker push $ECR_URL/clb-spark-benchmark:${EMR_VERSION}_clb
 
+docker push $ECR_URL/clb-spark-benchmark:${EMR_VERSION}_clb
+```
+
+```bash
 # build client on OSS Spark
 SPARK_BASE_IMAGE=public.ecr.aws/myang-poc/spark:3.3.1_hadoop_3.3.1
 
@@ -290,18 +296,20 @@ docker build -t $ECR_URL/clb-spark-benchmark:spark${SPARK_VERSION}_client \
   --build-arg SPARK_VERSION=${SPARK_VERSION} \
   --build-arg SPARK_BASE_IMAGE=${SPARK_BASE_IMAGE} \
   -f docker/celeborn-oss-client/Dockerfile .
+
 docker push $ECR_URL/clb-spark-benchmark:spark${SPARK_VERSION}_client
 ```
+
 </details>
 
 #### Run Celeborn shuffle service in EKS
-Celeborn helm chart comes with a monitoring feature. Check out the below `OPTIONAL` step to install the Prometheus Operator, in order to collect the server metrics. 
+Celeborn helm chart comes with a monitoring feature. Check out the `OPTIONAL` step to install a Prometheus Operator in order to collect the server metrics on EKS. 
 
-To Setup Amazon Managed Grafana dashboard sourced from Amazon Managed Prometheus, check the instruction [here](https://github.com/melodyyangaws/karpenter-emr-on-eks/blob/main/setup_grafana_dashboard.pdf)
+To Setup Amazon Managed Grafana dashboard sourced from Amazon Managed Prometheus, check out the instruction [here](https://github.com/melodyyangaws/karpenter-emr-on-eks/blob/main/setup_grafana_dashboard.pdf)
 
 <details>
 <summary>OPTIONAL: Install prometheus monitoring</summary>
-We will use OSS Prometheus Operator, and the serverelss Amazon managed prometheus and managed Grafana to monitor Celeborn in this case.
+In this case, we will install a Prometheus Operator in EKS, and use the serverelss Amazon managed prometheus and managed Grafana to monitor Celeborn shuffle service in EKS.
 
 ```bash
 kubectl create namespace prometheus
@@ -324,7 +332,8 @@ sed -i -- 's/{AWS_REGION}/'$AWS_REGION'/g' charts/celeborn-shuffle-service/prome
 sed -i -- 's/{ACCOUNTID}/'$ACCOUNTID'/g' charts/celeborn-shuffle-service/prometheusoperator_values.yaml
 sed -i -- 's/{WORKSPACE_ID}/'$WORKSPACE_ID'/g' charts/celeborn-shuffle-service/prometheusoperator_values.yaml
 sed -i -- 's/{EKSCLUSTER_NAME}/'$EKSCLUSTER_NAME'/g' charts/celeborn-shuffle-service/prometheusoperator_values.yaml
-
+```
+```bash
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
 # check the `yaml`, ensure varaibles are populated first
