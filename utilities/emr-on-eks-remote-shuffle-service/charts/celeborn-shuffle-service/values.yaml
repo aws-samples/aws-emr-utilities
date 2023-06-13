@@ -22,11 +22,12 @@
 # we provide a default celeborn image, you can also replace to your image
 # TODO rebuild celeborn official image
 image:
-  repository: public.ecr.aws/myang-poc/celeborn-rss
+  # repository: public.ecr.aws/myang-poc/celeborn-rss
+  # tag: spark3.3_servertest
+  repository: 021732063925.dkr.ecr.us-east-1.amazonaws.com/celeborn-server
+  tag: spark3.3_clb
   pullPolicy: Always
-  tag: spark3.2_server0.2
-
-nodeSelector: 
+nodeSelector:
   app: css
 
 # master replicas should not less than 3
@@ -56,19 +57,24 @@ celeborn:
   celeborn.replicate.io.numConnectionsPerPeer: 24
   celeborn.worker.flusher.buffer.size: 128k
   celeborn.worker.flusher.threads: 64
-  celeborn.worker.fetch.io.threads: 256                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+  celeborn.worker.fetch.io.threads: 256                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
   celeborn.worker.push.io.threads: 128
-  # celeborn.master.heartbeat.application.timeout: 300s
-  # celeborn.master.heartbeat.worker.timeout: 120s
   celeborn.network.timeout: 2000s
+
   celeborn.worker.replicate.io.threads: 128
   celeborn.worker.commit.threads: 128
   celeborn.worker.closeIdleConnections: true
-
+  # worker recover
+  celeborn.worker.graceful.shutdown.enabled: true
+  celeborn.worker.graceful.shutdown.recoverPath: /rss2/recover
+  celeborn.worker.rpc.port: 9094
+  celeborn.worker.fetch.port: 9092
+  celeborn.worker.push.port: 9091
+  celeborn.worker.replicate.port: 9089
 environments:
-  CELEBORN_MASTER_MEMORY: 16g
+  CELEBORN_MASTER_MEMORY: 12g
   CELEBORN_MASTER_JAVA_OPTS: "-XX:-PrintGC -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps -Xloggc:gc-master.out -Dio.netty.leakDetectionLevel=advanced"
-  CELEBORN_WORKER_MEMORY: 8g
+  CELEBORN_WORKER_MEMORY: 12g
   CELEBORN_WORKER_OFFHEAP_MEMORY: 20g
   CELEBORN_WORKER_JAVA_OPTS: "-XX:-PrintGC -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps -Xloggc:gc-worker.out -Dio.netty.leakDetectionLevel=advanced"
   CELEBORN_NO_DAEMONIZE: 1

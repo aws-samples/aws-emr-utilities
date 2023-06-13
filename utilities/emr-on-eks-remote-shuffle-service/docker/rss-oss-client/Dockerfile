@@ -1,6 +1,6 @@
 # // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # // SPDX-License-Identifier: MIT-0
-ARG SPARK_BASE_IMAGE=ghcr.io/datapunchorg/spark:spark-3.2.1-1643336295
+ARG SPARK_BASE_IMAGE=public.ecr.aws/myang-poc/spark:3.2.0_hadoop_3.3.1
 
 FROM amazonlinux:2 as tpc-toolkit
 # compile tpcds kit

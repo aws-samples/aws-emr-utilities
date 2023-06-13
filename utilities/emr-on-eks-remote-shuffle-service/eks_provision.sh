@@ -8,7 +8,7 @@
 # export AWS_REGION=us-east-1
 export EMR_NAMESPACE=emr
 export OSS_NAMESPACE=oss
-export EKS_VERSION=1.22
+export EKS_VERSION=1.24
 export EMRCLUSTER_NAME=emr-on-$EKSCLUSTER_NAME
 export ROLE_NAME=${EMRCLUSTER_NAME}-execution-role
 export ACCOUNTID=$(aws sts get-caller-identity --query Account --output text)
@@ -162,11 +162,11 @@ managedNodeGroups:
     instanceType: c5.9xlarge
     preBootstrapCommands:
       - "sudo systemctl restart docker --no-block"
-    volumeSize: 50
+    volumeSize: 30
     volumeType: gp3
     minSize: 1
     desiredCapacity: 1
-    maxSize: 50
+    maxSize: 7
     placement:
       groupName: $EKSCLUSTER_NAME-agroup
     labels:
@@ -179,11 +179,11 @@ managedNodeGroups:
     instanceType: c5.9xlarge
     preBootstrapCommands:
       - "sudo systemctl restart docker --no-block"
-    volumeSize: 50
+    volumeSize: 30
     volumeType: gp3
     minSize: 1
     desiredCapacity: 1
-    maxSize: 50
+    maxSize: 7
     placement:
       groupName: $EKSCLUSTER_NAME-bgroup
     labels:
@@ -193,14 +193,16 @@ managedNodeGroups:
       k8s.io/cluster-autoscaler/$EKSCLUSTER_NAME: "owned"
   - name: c5d9a
     availabilityZones: ["${AWS_REGION}a"] 
-    instanceType: c5d.9xlarge
     preBootstrapCommands:
-      - "sudo systemctl restart docker --no-block"
+      - "IDX=1;for DEV in /dev/nvme[1-9]n1;do sudo mkfs.xfs \${DEV}; sudo mkdir -p /local\${IDX}; sudo echo \${DEV} /local\${IDX} xfs defaults,noatime 1 2 >> /etc/fstab; IDX=\$((\${IDX} + 1)); done"
+      - "sudo mount -a"
+      - "sudo chown ec2-user:ec2-user /local*"
+    instanceType: c5d.9xlarge
     volumeSize: 20
     volumeType: gp3
     minSize: 1
     desiredCapacity: 1
-    maxSize: 6
+    maxSize: 7
     placement:
       groupName: $EKSCLUSTER_NAME-agroup
     labels:

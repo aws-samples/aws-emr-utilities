@@ -3,51 +3,53 @@
 apiVersion: "sparkoperator.k8s.io/v1beta2"
 kind: SparkApplication
 metadata:
-  name: tpcds-data-generation-3t
+  name: oss-spark-benchmark
   namespace: oss
 spec:
+  nodeSelector:
+    app: sparktest
   type: Scala
   mode: cluster
-  image: ghcr.io/aws-samples/eks-spark-benchmark:3.1.2
+  image: public.ecr.aws/myang-poc/benchmark:oss-3.3.1
   imagePullPolicy: Always
-  sparkVersion: 3.1.2                    
-  mainClass: com.amazonaws.eks.tpcds.DataGeneration
+  sparkVersion: 3.3.1
+  mainClass: com.amazonaws.eks.tpcds.BenchmarkSQL
   mainApplicationFile: local:///opt/spark/examples/jars/eks-spark-benchmark-assembly-1.0.jar
   arguments:
   # TPC-DS data localtion
     - "s3://$(BUCKET_PARAM)/BLOG_TPCDS-TEST-3T-partitioned"
+  # results location
+    - "s3://$(BUCKET_PARAM)/OSS_TPCDS-TEST-3T-RESULT"
   # Path to kit in the docker image
     - "/opt/tpcds-kit/tools"
   # Data Format
     - "parquet"
   # Scale factor (in GB)
     - "3000"
-  # Generate data num partitions
-    - "200"
-  # Create the partitioned fact tables
-    - "true"
-  # Shuffle to get partitions coalesced into single files.
-    - "true"
+  # Number of iterations
+    - "3"
+  # Optimize queries with hive tables
+    - "false"
+  # Filter queries, will run all if empty - "q98-v2.4,q99-v2.4,ss_max-v2.4,q95-v2.4"
+    - "" 
   # Logging set to WARN
     - "true"
   sparkConf:
     "spark.network.timeout": "2000s"
-    "spark.executor.heartbeatInterval": "300s"
-    "spark.kubernetes.memoryOverheadFactor": "0.4"
-    "spark.sql.files.maxRecordsPerFile": "30000000"
-    "spark.serializer": "org.apache.spark.serializer.KryoSerializer"
-
-    "spark.kubernetes.node.selector.eks.amazonaws.com/nodegroup": "rss"
-
-    # S3 settings
+    "spark.executor.heartbeatInterval": "300s"  
+    # AQE
+    "spark.sql.adaptive.enabled": "true"
+    "spark.sql.adaptive.localShuffleReader.enabled": "true"
+    "spark.sql.adaptive.coalescePartitions.enabled": "true"
+    "spark.sql.adaptive.skewJoin.enabled": "true"
+    # IRSA for S3 connection
+    "spark.kubernetes.executor.podNamePrefix": "oss-spark-tpcds"
     "spark.hadoop.fs.s3a.aws.credentials.provider": "com.amazonaws.auth.WebIdentityTokenCredentialsProvider"
-    "spark.hadoop.fs.s3a.fast.upload": "true"
-    "spark.hadoop.fs.s3a.path.style.access": "true"
     "spark.hadoop.fs.s3.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem"
-    "spark.hadoop.mapreduce.fileoutputcommitter.algorithm.version": "2"
-    "spark.kubernetes.executor.podNamePrefix": "oss-data-gen"
-    "spark.executor.defaultJavaOptions": "-verbose:gc -XX:+UseG1GC"
-    "spark.driver.defaultJavaOptions": "-XX:+UseG1GC"
+    "spark.hadoop.mapreduce.fileoutputcommitter.algorithm.version": "2" 
+
+    "spark.kubernetes.node.selector.eks.amazonaws.com/nodegroup": "c5d9a"
+
   driver:
     initContainers:  
     - name: volume-permission
@@ -61,14 +63,15 @@ spec:
         valueFrom:
           configMapKeyRef:
             name: special-config
-            key: codeBucket
-    cores: 10
-    coreLimit: "10.1"
-    memory: "10g"
-    serviceAccount: oss
+            key: codeBucket   
+    cores: 3
+    coreLimit: "4.1"
+    memory: "4g"
+    memoryOverhead: "1000"
+    serviceAccount: oss 
     volumeMounts:
       - name: spark-local-dir-1
-        mountPath: /ossdata1      
+        mountPath: /ossdata1
   executor:
     initContainers:  
     - name: volume-permission
@@ -77,17 +80,18 @@ spec:
       volumeMounts:
         - name: spark-local-dir-1
           mountPath: /ossdata1
-    cores: 11
-    coreLimit: "11.1"
-    memory: "15g"
-    # 3 exec/9 nodes (c5d.9xl), 2 exec/14 nodes(i3en.6xlarge) 
-    instances: 26
+    cores: 4
+    coreLimit: "4.3"
+    memory: "7g"
+    memoryOverhead: "2g"
+    # 7 executors per node  
+    instances: 47
     volumeMounts:
       - name: spark-local-dir-1
         mountPath: /ossdata1
-  volumes:    
+  volumes:
     - name: spark-local-dir-1
       hostPath:
-        path: /local1     
-  restartPolicy:  
+        path: /local1
+  restartPolicy:
     type: Never

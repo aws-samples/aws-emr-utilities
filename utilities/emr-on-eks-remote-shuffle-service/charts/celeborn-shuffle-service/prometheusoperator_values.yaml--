@@ -20,7 +20,7 @@ prometheus:
     create: true
     name: amp-iamproxy-ingest-service-account
     annotations: 
-      eks.amazonaws.com/role-arn: arn:aws:iam::021732063925:role/eks-rss-prometheus-ingest
+      eks.amazonaws.com/role-arn: arn:aws:iam::021732063925:role/{EKSCLUSTER_NAME}-prometheus-ingest
   prometheusSpec:
     scrapeInterval: 15s
     evaluationInterval: 15s

@@ -87,7 +87,7 @@ spec:
       serviceAccountName: rss-controller
       containers:
         - name: rss-controller
-          image: 021732063925.dkr.ecr.us-east-1.amazonaws.com/rss-controller:0.7.0-snapshot
+          image: public.ecr.aws/myang-poc/uniffle-server:controller0.7.0-snapshot
           command:
             - "./controller"
           args:

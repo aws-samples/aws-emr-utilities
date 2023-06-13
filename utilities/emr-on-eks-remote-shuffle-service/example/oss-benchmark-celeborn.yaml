@@ -3,16 +3,16 @@
 apiVersion: "sparkoperator.k8s.io/v1beta2"
 kind: SparkApplication
 metadata:
-  name: rss-benchmark
+  name: celeborn-benchmark
   namespace: oss
 spec:
   nodeSelector:
     app: sparktest
   type: Scala
   mode: cluster
-  image: 021732063925.dkr.ecr.us-east-1.amazonaws.com/uniffle-spark-benchmark:3.2.0
+  image: public.ecr.aws/myang-poc/celeborn-rss:spark3.3_client
   imagePullPolicy: Always
-  sparkVersion: 3.2.0
+  sparkVersion: 3.3.1
   mainClass: com.amazonaws.eks.tpcds.BenchmarkSQL
   mainApplicationFile: local:///opt/spark/examples/jars/eks-spark-benchmark-assembly-1.0.jar
   arguments:
@@ -36,26 +36,30 @@ spec:
     - "true"
   sparkConf:
     "spark.network.timeout": "2000s"
-    "spark.executor.heartbeatInterval": "300s"  
+    "spark.executor.heartbeatInterval": "300s" 
+    # AQE
+    "spark.shuffle.service.enabled": "false"
+    "spark.sql.adaptive.enabled": "true"
+    "spark.sql.adaptive.skewJoin.enabled": "true"
+    "spark.sql.adaptive.localShuffleReader.enabled": "false"
+    "spark.serializer": "org.apache.spark.serializer.KryoSerializer" 
     # IRSA for S3 connection
-    "spark.kubernetes.executor.podNamePrefix": "oss-test-uniffle"
+    "spark.kubernetes.executor.podNamePrefix": "oss-test-clb"
     "spark.hadoop.fs.s3a.aws.credentials.provider": "com.amazonaws.auth.WebIdentityTokenCredentialsProvider"
     "spark.hadoop.fs.s3.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem"
     "spark.hadoop.mapreduce.fileoutputcommitter.algorithm.version": "2" 
-    "spark.serializer": "org.apache.spark.serializer.KryoSerializer"
-    # Enable Uniffle Remote Shuffle Service
-    "spark.shuffle.manager": "org.apache.spark.shuffle.RssShuffleManager"
-    "spark.rss.coordinator.quorum": "rss-coordinator-uniffle-rss-0.uniffle.svc.cluster.local:19997,rss-coordinator-uniffle-rss-1.uniffle.svc.cluster.local:19997"
-    "spark.rss.storage.type": "MEMORY_LOCALFILE"
-    "spark.rss.remote.storage.path": "/rss1/rssdata,/rss2/rssdata"
-    "spark.rss.writer.buffer.size": "1100k"
-    "spark.rss.client.send.threadPool.keepalive": "240"
-    "spark.rss.client.read.buffer.size": "20m"
-    "spark.rss.client.io.compression.codec": "SNAPPY"
-    # Assign the compute to the same AZ and replacement group as Uniffle RSS 
+    # Enable RSS
+    "spark.celeborn.shuffle.chunk.size": "4m"
+    "spark.celeborn.push.maxReqsInFlight": "64"
+    "spark.shuffle.manager": "org.apache.spark.shuffle.celeborn.RssShuffleManager"
+    "spark.celeborn.push.replicate.enabled": "true"
+    "spark.celeborn.shuffle.batchHandleChangePartition.enabled": "true"
+    "spark.celeborn.shuffle.batchHandleCommitPartition.enabled": "true"
+    "spark.celeborn.client.push.blacklist.enabled": "true"
+    "spark.celeborn.master.endpoints": "celeborn-master-0.celeborn-master-svc.celeborn:9097,celeborn-master-1.celeborn-master-svc.celeborn:9097,celeborn-master-2.celeborn-master-svc.celeborn:9097"
     "spark.kubernetes.node.selector.eks.amazonaws.com/nodegroup": "c59b"
+
   driver:
-    # javaOptions: "-Dlog4j.configuration=file:/etc/spark/conf/log4j.properties"
     env:
       - name: BUCKET_PARAM
         valueFrom:
@@ -65,10 +69,9 @@ spec:
     cores: 3
     coreLimit: "4.1"
     memory: "4g"
-    # memoryOverhead: "1g"
-    serviceAccount: oss 
+    # memoryOverhead: "1000"
+    serviceAccount: oss
   executor:
-    # javaOptions: "-Dlog4j.configuration=file:/etc/spark/conf/log4j.properties"
     cores: 4
     coreLimit: "4.3"
     memory: "7g"

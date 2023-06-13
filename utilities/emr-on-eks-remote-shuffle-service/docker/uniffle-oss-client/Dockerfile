@@ -1,6 +1,6 @@
 # // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # // SPDX-License-Identifier: MIT-0
-ARG SPARK_BASE_IMAGE=021732063925.dkr.ecr.us-east-1.amazonaws.com/spark:3.2.0_hadoop_3.3.1
+ARG SPARK_BASE_IMAGE=public.ecr.aws/myang-poc/spark:3.2.0_hadoop_3.3.1
 
 FROM openjdk:8-jdk-slim as rss-client
 ARG SPARK_VERSION=3.2.0
