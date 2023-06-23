@@ -99,6 +99,15 @@ iam:
       autoScaler: true
     roleName: eksctl-cluster-autoscaler-role
   - metadata:
+      name: aws-load-balancer-controller
+      namespace: kube-system
+      labels: {aws-usage: "cluster-ops"}
+    wellKnownPolicies:
+      awsLoadBalancerController: true
+    roleName: AmazonEKSLoadBalancerControllerRole
+    attachPolicyARNs:
+    - arn:aws:iam::$ACCOUNTID:policy/AWSLoadBalancerControllerIAMPolicy
+  - metadata:
       name: oss
       namespace: $OSS_NAMESPACE
       labels: {aws-usage: "application"}
@@ -175,6 +184,7 @@ managedNodeGroups:
       k8s.io/cluster-autoscaler/enabled: "true"
       k8s.io/cluster-autoscaler/$EKSCLUSTER_NAME: "owned" 
   - name: c59b
+    spot: false
     availabilityZones: ["${AWS_REGION}b"] 
     instanceType: c5.9xlarge
     preBootstrapCommands:
@@ -209,7 +219,44 @@ managedNodeGroups:
       app: sparktest
     tags:
       k8s.io/cluster-autoscaler/enabled: "true"
-      k8s.io/cluster-autoscaler/$EKSCLUSTER_NAME: "owned"     
+      k8s.io/cluster-autoscaler/$EKSCLUSTER_NAME: "owned"  
+  - name: 4xgp3c7gb
+    # graviton with gp3 volumes
+    availabilityZones: ["${AWS_REGION}b"] 
+    instanceType: c7g.8xlarge
+    preBootstrapCommands:
+      - "IDX=1;for DEV in /dev/nvme[1-9]n1;do sudo mkfs.xfs ${DEV}; sudo mkdir -p /local${IDX}; sudo echo ${DEV} /local${IDX} xfs defaults,noatime 1 2 >> /etc/fstab; IDX=$((${IDX} + 1)); done"
+      - "sudo mount -a"
+      - "sudo chown ec2-user:ec2-user /local*"
+    volumeSize: 30
+    volumeType: gp3
+    minSize: 1
+    desiredCapacity: 1
+    maxSize: 7
+    additionalVolumes:
+      - volumeName: '/dev/xvdf'
+        volumeSize: 128
+        volumeType: gp3
+        volumeIOPS: 16000
+      - volumeName: '/dev/xvdg'
+        volumeSize: 128
+        volumeType: gp3
+        volumeIOPS: 16000 
+      - volumeName: '/dev/xvdh'
+        volumeSize: 128
+        volumeType: gp3
+        volumeIOPS: 16000    
+      - volumeName: '/dev/xvdi'
+        volumeSize: 128
+        volumeType: gp3
+        volumeIOPS: 16000     
+    placement:
+      groupName: $EKSCLUSTER_NAME-bgroup
+    labels:
+      app: sparktest
+    tags:
+      k8s.io/cluster-autoscaler/enabled: "true"
+      k8s.io/cluster-autoscaler/$EKSCLUSTER_NAME: "owned"      
 # enable all of the control plane logs
 cloudWatch:
  clusterLogging:
@@ -246,6 +293,7 @@ echo "  Configure EKS Cluster ......"
 echo "==============================================="
 # Map the s3 bucket environment variable to EKS cluster
 kubectl create -n $OSS_NAMESPACE configmap special-config --from-literal=codeBucket=$S3TEST_BUCKET
+kubectl create -n $EMR_NAMESPACE configmap special-config --from-literal=codeBucket=$S3TEST_BUCKET
 
 # Install k8s metrics server
 kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
@@ -277,6 +325,14 @@ EOF
 
 helm repo add autoscaler https://kubernetes.github.io/autoscaler
 helm install nodescaler autoscaler/cluster-autoscaler --namespace kube-system --values /tmp/autoscaler-config.yaml --debug
+
+# install aws load balance controller
+helm repo add eks https://aws.github.io/eks-charts
+kubectl apply -k "github.com/aws/eks-charts/stable/aws-load-balancer-controller/crds?ref=master"
+helm upgrade -i aws-load-balancer-controller eks/aws-load-balancer-controller -n kube-system \
+--set clusterName=$EKSCLUSTER_NAME \
+--set serviceAccount.create=false \
+--set serviceAccount.name=aws-load-balancer-controller
 
 # config k8s rbac access to service account 'oss'
 cat <<EOF | kubectl apply -f - -n $OSS_NAMESPACE

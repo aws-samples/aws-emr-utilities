@@ -246,7 +246,7 @@ docker push $ECR_URL/uniffle-spark-benchmark:emr6.6
 ### 1. Install Celeborn server on EKS
 
 #### Build docker images
-This is an optional step. For the best practice in security, it's recommended to build your own images and publish them to your own container repository.
+For the best practice in security, it's recommended to build your own images and publish them to your own container repository.
 
 <details>
 <summary>OPTIONAL: Build your own docker images</summary>
@@ -313,13 +313,6 @@ In this case, we will install a Prometheus Operator in EKS, and use the serverel
 
 ```bash
 kubectl create namespace prometheus
-# eksctl create iamserviceaccount \
-#     --cluster ${EKSCLUSTER_NAME} --namespace prometheus --name amp-iamproxy-ingest-service-account \
-#     --role-name "${EKSCLUSTER_NAME}-prometheus-ingest" \
-#     --attach-policy-arn "arn:aws:iam::aws:policy/AmazonPrometheusRemoteWriteAccess" \
-#     --role-only \
-#     --approve
-# create managed prometheus workspace
 amp=$(aws amp list-workspaces --query "workspaces[?alias=='$EKSCLUSTER_NAME'].workspaceId" --output text)
 if [ -z "$amp" ]; then
     echo "Creating a new prometheus workspace..."
@@ -353,11 +346,15 @@ vi charts/celeborn-shuffle-service/values.yaml
 helm install celeborn charts/celeborn-shuffle-service  -n celeborn --create-namespace
 # check progress
 kubectl get all -n celeborn
-# check if all workers are registered on a single leader node.
+# check if all workers are registered on a single master node.
 kubectl logs celeborn-master-0 -n celeborn | grep Registered
-# OPTIONAL: if prometheus operator is installed
+kubectl logs celeborn-master-1 -n celeborn | grep Registered
+kubectl logs celeborn-master-2 -n celeborn | grep Registered
+
+# OPTIONAL: only if prometheus operator is installed
 kubectl get podmonitor -n celeborn
 ```
+
 ```bash
 # scale worker or master
 kubectl scale statefulsets celeborn-worker -n celeborn  --replicas=5

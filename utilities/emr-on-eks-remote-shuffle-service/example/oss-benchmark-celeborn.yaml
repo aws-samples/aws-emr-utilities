@@ -10,9 +10,10 @@ spec:
     app: sparktest
   type: Scala
   mode: cluster
-  image: public.ecr.aws/myang-poc/celeborn-rss:spark3.3_client
+  # image: public.ecr.aws/myang-poc/celeborn-rss:spark3.3_client
+  image: public.ecr.aws/myang-poc/celeborn-rss:spark3.3.2_dra
   imagePullPolicy: Always
-  sparkVersion: 3.3.1
+  sparkVersion: 3.3.2
   mainClass: com.amazonaws.eks.tpcds.BenchmarkSQL
   mainApplicationFile: local:///opt/spark/examples/jars/eks-spark-benchmark-assembly-1.0.jar
   arguments:
@@ -31,12 +32,19 @@ spec:
   # Optimize queries with hive tables
     - "false"
   # Filter queries, will run all if empty - "q98-v2.4,q99-v2.4,ss_max-v2.4,q95-v2.4"
-    - "" 
+    - "q23a-v2.4,q23b-v2.4,q24a-v2.4,q24b-v2.4,q4-v2.4,q5-v2.4,q50-v2.4,q51-v2.4,q67-v2.4,q78-v2.4,q8-v2.4,q87-v2.4,q93-v2.4,q94-v2.4" 
   # Logging set to WARN
     - "true"
   sparkConf:
+    # "spark.eventLog.enabled": "true",
+    # "spark.eventLog.dir": "s3://xxxx/oss-dra"
     "spark.network.timeout": "2000s"
     "spark.executor.heartbeatInterval": "300s" 
+    # "spark.dynamicAllocation.enabled": "true"
+    # "spark.dynamicAllocation.minExecutors": "1"
+    # "spark.dynamicAllocation.maxExecutors": "48"
+    # "spark.dynamicAllocation.shuffleTracking.enabled": "false"
+    "spark.kubernetes.node.selector.eks.amazonaws.com/nodegroup": "c59b"
     # AQE
     "spark.shuffle.service.enabled": "false"
     "spark.sql.adaptive.enabled": "true"
@@ -44,21 +52,33 @@ spec:
     "spark.sql.adaptive.localShuffleReader.enabled": "false"
     "spark.serializer": "org.apache.spark.serializer.KryoSerializer" 
     # IRSA for S3 connection
-    "spark.kubernetes.executor.podNamePrefix": "oss-test-clb"
+    "spark.kubernetes.executor.podNamePrefix": "oss-clb-dra"
     "spark.hadoop.fs.s3a.aws.credentials.provider": "com.amazonaws.auth.WebIdentityTokenCredentialsProvider"
     "spark.hadoop.fs.s3.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem"
     "spark.hadoop.mapreduce.fileoutputcommitter.algorithm.version": "2" 
     # Enable RSS
     "spark.celeborn.shuffle.chunk.size": "4m"
-    "spark.celeborn.push.maxReqsInFlight": "64"
-    "spark.shuffle.manager": "org.apache.spark.shuffle.celeborn.RssShuffleManager"
+    "spark.celeborn.push.maxReqsInFlight": "128"
     "spark.celeborn.push.replicate.enabled": "true"
     "spark.celeborn.shuffle.batchHandleChangePartition.enabled": "true"
     "spark.celeborn.shuffle.batchHandleCommitPartition.enabled": "true"
     "spark.celeborn.client.push.blacklist.enabled": "true"
+    "spark.celeborn.client.fetch.excludeWorkerOnFailure.enabled": "true"
+    "spark.celeborn.client.commitFiles.ignoreExcludedWorker": "true"
+    
+    "spark.shuffle.manager": "org.apache.spark.shuffle.celeborn.RssShuffleManager"
     "spark.celeborn.master.endpoints": "celeborn-master-0.celeborn-master-svc.celeborn:9097,celeborn-master-1.celeborn-master-svc.celeborn:9097,celeborn-master-2.celeborn-master-svc.celeborn:9097"
-    "spark.kubernetes.node.selector.eks.amazonaws.com/nodegroup": "c59b"
-
+  # dynamicAllocation:
+  #   enabled: true
+  #   initialExecutors: 1
+  #   minExecutors: 1
+  #   maxExecutors: 48
+  restartPolicy:
+    type: Always
+    onFailureRetries: 3
+    onFailureRetryInterval: 5
+    onSubmissionFailureRetries: 5
+    onSubmissionFailureRetryInterval: 20    
   driver:
     env:
       - name: BUCKET_PARAM
@@ -67,16 +87,13 @@ spec:
             name: special-config
             key: codeBucket   
     cores: 3
-    coreLimit: "4.1"
     memory: "4g"
-    # memoryOverhead: "1000"
     serviceAccount: oss
   executor:
     cores: 4
-    coreLimit: "4.3"
     memory: "7g"
     memoryOverhead: "2g"
     # 7 executors per node  
     instances: 47
-  restartPolicy:
-    type: Never
+  # restartPolicy:
+  #   type: Never

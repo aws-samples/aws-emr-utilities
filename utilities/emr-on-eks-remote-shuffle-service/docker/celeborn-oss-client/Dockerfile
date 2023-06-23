@@ -39,9 +39,26 @@ RUN cd /tmp/emr-on-eks-benchmark/ && mkdir /tmp/emr-on-eks-benchmark/benchmark/l
 
 FROM ${SPARK_BASE_IMAGE}
 USER root
+# ENV HADOOP_VERSION=3.3.1
+
+# # Download Hadoop
+# ADD http://archive.apache.org/dist/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz .
+# # Unzip Hadoop
+# RUN tar -xvzf hadoop-${HADOOP_VERSION}.tar.gz
+# RUN mv hadoop-${HADOOP_VERSION} /opt/hadoop
+# RUN rm -rf hadoop/share/doc
 
 COPY --from=rss-client /tmp/celeborn/spark  ${SPARK_HOME}/jars
 COPY --from=sbt /tmp/emr-on-eks-benchmark/benchmark/target/scala-2.12/*jar ${SPARK_HOME}/examples/jars/
+
+# ENV HADOOP_HOME /opt/hadoop
+# ENV SPARK_DIST_CLASSPATH="$HADOOP_HOME/etc/hadoop:$HADOOP_HOME/share/hadoop/common/lib/*:$HADOOP_HOME/share/hadoop/common/*:$HADOOP_HOME/share/hadoop/hdfs:$HADOOP_HOME/share/hadoop/hdfs/lib/*:$HADOOP_HOME/share/hadoop/hdfs/*:$HADOOP_HOME/share/hadoop/yarn:$HADOOP_HOME/share/hadoop/yarn/lib/*:$HADOOP_HOME/share/hadoop/yarn/*:$HADOOP_HOME/share/hadoop/mapreduce/lib/*:$HADOOP_HOME/share/hadoop/mapreduce/*:/contrib/capacity-scheduler/*.jar:$HADOOP_HOME/share/hadoop/tools/lib/*"
+# # Create a Hadoop user/group
+# RUN addgroup -gid 1000 hadoop && \
+# useradd -u 1000 -g hadoop -m -s /bin/sh hadoop && \
+# echo "hadoop:hadoop" | chpasswd
+# USER hadoop:hadoop
+# ENV SPARK_USER hadoop
 
 WORKDIR /home/hadoop   
 # Use hadoop user and group 
