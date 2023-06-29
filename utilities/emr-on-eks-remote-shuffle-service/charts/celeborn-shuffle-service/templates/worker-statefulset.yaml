@@ -131,3 +131,6 @@ spec:
             type: DirectoryOrCreate
           name: vol-{{ $index }}
         {{- end }} 
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+

@@ -90,8 +90,8 @@ podMonitor:
     portName: metrics
 
 service:
-  type: NodePort
-  port: 9097
+    type: NodePort
+    port: 9097
 
 cluster:
   name: cluster

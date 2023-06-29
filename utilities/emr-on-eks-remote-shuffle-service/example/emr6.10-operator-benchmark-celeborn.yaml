@@ -3,6 +3,8 @@ kind: SparkApplication
 metadata:
   name: emr-clb-3iter
   namespace: emr
+  annotations:
+    mytag: emr-clb-3iter
 spec:
   nodeSelector:
     app: sparktest
@@ -85,13 +87,12 @@ spec:
             name: special-config
             key: codeBucket   
     cores: 3
-    memory: "4g"
+    memory: 4g
     serviceAccount: driver-account-sa
   executor:
     cores: 4
-    memory: "7g"
-    memoryOverhead: "2g"
+    memory: 6g
+    memoryOverhead: 2g
     instances: 47
-    serviceAccount: driver-account-sa
   restartPolicy:
     type: Never
