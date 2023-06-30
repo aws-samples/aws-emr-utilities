@@ -121,6 +121,21 @@ def write_last_scale_ts(s3, s3_bucket: str, cluster_id: str, ts: datetime) -> No
 
 # validate input arguments have been provided, or synthesize them from the environment
 def validate_args(args: dict) -> None:
+    # load any missing args from the environment
+    args = load_args_from_env(args)
+
+    # if we've been provided a config dict, then use that
+    if args.get("config_object") is not None:
+        args = json.loads(args.get("config_object"))
+    else:
+        if args.get("config_s3_file") is not None:
+            tokens = args.get("config_s3_file").split("/")
+            response = s3.get_object(Bucket=tokens[2], Key="/".join(tokens[3:]))
+            if response is not None and response.get('Body') is not None:
+                print(f'Loading configuration from S3 Path {args.get("config_s3_file")}')
+                object_data = response['Body'].read()
+                args.update(json.loads(object_data))
+
     required = ["cluster_id", "s3_bucket", "region"]
 
     if args.get("region") is None:
@@ -130,12 +145,16 @@ def validate_args(args: dict) -> None:
         if args.get(x) is None:
             raise Exception(f"Argument {x} is required")
 
+
 # run the autoscaler
-def run_scaler(args):
+def run_scaler(args=None):
     validate_args(args)
 
-    # Configure logging
-    logging.basicConfig(level=args.get("log_level", "INFO"))
+    # Configure Logging
+    if len(logging.getLogger().handlers) > 0:
+        logging.getLogger().setLevel(args.get("log_level", "INFO"))
+    else:
+        logging.basicConfig(level=args.get("log_level", "INFO"))
 
     # Create a logger instance
     global logger
@@ -275,7 +294,12 @@ def load_args_from_env(dictionary):
     return dictionary
 
 
-if __name__ == '__main__':
+def lambda_handler(event, context):
+    args = setup_args()
+    run_scaler(args)
+
+
+def setup_args():
     # Create an argument parser
     parser = argparse.ArgumentParser(description='emr-custom-autoscaler')
 
@@ -307,22 +331,10 @@ if __name__ == '__main__':
 
     # Parse the arguments
     args = parser.parse_args()
-    args = vars(args)
+    return vars(args)
 
-    # if we've been provided a config dict, then use that
-    if args.get("config_object") is not None:
-        args = json.loads(args.get("config_object"))
-    else:
-        if args.get("config_s3_file") is not None:
-            tokens = args.get("config_s3_file").split("/")
-            response = s3.get_object(Bucket=tokens[2], Key="/".join(tokens[3:]))
-            if response is not None and response.get('Body') is not None:
-                print(f'Loading configuration from S3 Path {args.get("config_s3_file")}')
-                object_data = response['Body'].read()
-                args.update(json.loads(object_data))
 
-    # load any missing args from the environment
-    args = load_args_from_env(args)
-
+if __name__ == '__main__':
+    args = setup_args()
     # invoke the scaler
     run_scaler(args)
