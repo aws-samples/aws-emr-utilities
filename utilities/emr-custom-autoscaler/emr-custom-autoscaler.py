@@ -296,6 +296,7 @@ def load_args_from_env(dictionary):
 
 def lambda_handler(event, context):
     args = setup_args()
+    args.update(event)
     run_scaler(args)
 
 
