@@ -1,6 +1,8 @@
 #!/bin/bash
 #set -x
 
+VER=1.1
+
 HERE=$(cd "$(dirname "$BASH_SOURCE")"; cd -P "$(dirname "$(readlink "$BASH_SOURCE" || echo .)")"; pwd)
 
 cd $HERE/..
@@ -11,6 +13,6 @@ else
   rm dist/*
 fi
 
-zip dist/emr-custom-autoscaler.zip emr-custom-autoscaler.py
+zip dist/emr-custom-autoscaler-$VER.zip emr-custom-autoscaler.py
 
 cd -
