@@ -330,9 +330,13 @@ def setup_args():
     parser.add_argument('--s3_bucket', type=str, help='S3 bucket for log storage')
     parser.add_argument('--log_level', type=str, help='Log Level')
 
-    # Parse the arguments
-    args = parser.parse_args()
-    return vars(args)
+    if len(sys.argv) == 1:
+        parser.print_help()
+        sys.exit(-1)
+    else:
+        # Parse the arguments
+        args = parser.parse_args()
+        return vars(args)
 
 
 if __name__ == '__main__':
