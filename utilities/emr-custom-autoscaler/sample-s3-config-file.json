@@ -2,7 +2,7 @@
   "cluster_id": "my-cluster-id",
   "s3_bucket": "my-s3-bucket",
   "log_level": "DEBUG",
-  "ignore_cooldown": true,
+  "ignore_cooldown": false,
   "min_capacity": 2,
   "max_capacity": 100
 }
