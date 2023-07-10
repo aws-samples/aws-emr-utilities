@@ -136,7 +136,11 @@ def validate_args(args: dict) -> None:
                 object_data = response['Body'].read()
                 args.update(json.loads(object_data))
 
-    required = ["cluster_id", "s3_bucket", "region"]
+    if args.get("cluster_id") is None and (
+            args.get("for_all_clusters") is None or args.get("for_all_clusters") is False):
+        raise Exception("Args must supply a Cluster ID or the for_all_clusters boolean Argument")
+
+    required = ["s3_bucket", "region"]
 
     if args.get("region") is None:
         args["region"] = os.getenv("AWS_REGION")
@@ -146,32 +150,11 @@ def validate_args(args: dict) -> None:
             raise Exception(f"Argument {x} is required")
 
 
-# run the autoscaler
-def run_scaler(args=None):
-    validate_args(args)
-
-    # Configure Logging
-    if len(logging.getLogger().handlers) > 0:
-        logging.getLogger().setLevel(args.get("log_level", "INFO"))
-    else:
-        logging.basicConfig(level=args.get("log_level", "INFO"))
-
-    # Create a logger instance
+# run the scaling algo for 1 cluster
+def scale_cluster(cloudwatch, emr, args):
     global logger
-    logger = logging.getLogger(__name__)
 
-    # suppress debug logging in the AWS SDK
-    if args.get("log_level").upper() == "DEBUG":
-        logging.getLogger('boto3').setLevel(logging.INFO)
-        logging.getLogger('botocore').setLevel(logging.INFO)
-        logging.getLogger('urllib3').setLevel(logging.INFO)
-        logging.getLogger('s3transfer').setLevel(logging.INFO)
-
-    logger.debug(args)
-
-    # Create CloudWatch client
-    cloudwatch = boto3.client('cloudwatch', region_name=args.get("region"))
-    emr = boto3.client('emr', region_name=args.get("region"))
+    logger.info(f"Running custom autoscaler for cluster {args.get('cluster_id')}")
 
     # Retrieve the YARN Memory Available, Containers Pending, and Apps Pending
     yarn_memory_available = run_metric_query(cloudwatch, "YARNMemoryAvailablePercentage", args.get("cluster_id"))
@@ -219,20 +202,26 @@ def run_scaler(args=None):
                 args.get("container_pending_ratio_scale_factor")))
     else:
         logger.info("Cooldown period not met. Skipping.")
-        sys.exit(1)
+        return
 
     # Get the current capacity
     current_capacity = None
     instance_fleet_id = None
-    response = emr.list_instance_fleets(
-        ClusterId=args.get("cluster_id")
-    )
+    try:
+        response = emr.list_instance_fleets(
+            ClusterId=args.get("cluster_id")
+        )
+    except emr.exceptions.InvalidRequestException:
+        logger.error(
+            f"Cluster {args.get('cluster_id')} does not use Instance Fleets and is currently unsupported for scaling")
+        return
+
     instance_fleets = response['InstanceFleets']
     for fleet in instance_fleets:
         if fleet.get("InstanceFleetType") == "TASK":
             if fleet.get("Status").get("State") == "RESIZING":
                 logger.info("Try again later. Task Fleet is currently resizing")
-                sys.exit(-2)
+                return
 
             current_capacity = fleet.get("TargetSpotCapacity")
             instance_fleet_id = fleet.get("Id")
@@ -286,6 +275,55 @@ def run_scaler(args=None):
     write_last_scale_ts(s3, args.get("s3_bucket"), args.get("cluster_id"), last_scale_timestamp)
 
 
+# run the autoscaler
+def run_scaler(args=None):
+    validate_args(args)
+
+    # Configure Logging
+    if len(logging.getLogger().handlers) > 0:
+        logging.getLogger().setLevel(args.get("log_level", "INFO"))
+    else:
+        logging.basicConfig(level=args.get("log_level", "INFO"))
+
+    # Create a logger instance
+    global logger
+    logger = logging.getLogger(__name__)
+
+    # suppress debug logging in the AWS SDK
+    if args.get("log_level").upper() == "DEBUG":
+        logging.getLogger('boto3').setLevel(logging.INFO)
+        logging.getLogger('botocore').setLevel(logging.INFO)
+        logging.getLogger('urllib3').setLevel(logging.INFO)
+        logging.getLogger('s3transfer').setLevel(logging.INFO)
+
+    logger.debug(args)
+
+    # Create CloudWatch client
+    cloudwatch = boto3.client('cloudwatch', region_name=args.get("region"))
+    emr = boto3.client('emr', region_name=args.get("region"))
+
+    if args.get("cluster_id") is not None:
+        scale_cluster(cloudwatch, emr, args)
+    else:
+        del (args["for_all_clusters"])
+
+        # running for all clusters we can find
+        cycle = True
+        list_args = {"ClusterStates": ['RUNNING', 'WAITING']}
+        while cycle is True:
+            clusters = emr.list_clusters(**list_args)
+
+            for c in clusters.get("Clusters"):
+                args["cluster_id"] = c.get("Id")
+                scale_cluster(cloudwatch, emr, args)
+
+            if clusters.get("Marker") is not None:
+                list_args["Marker"] = clusters.get("Marker")
+            else:
+                # stop if we didn't get a pagination token
+                cycle = False
+
+
 def load_args_from_env(dictionary):
     for key, value in dictionary.items():
         env_var = os.getenv(key.upper())
@@ -306,6 +344,7 @@ def setup_args():
 
     # Add arguments
     parser.add_argument('--cluster_id', type=str, help='Cluster ID')
+    parser.add_argument('--for_all_clusters', type=bool, default=False, help='Run for all available Clusters')
     parser.add_argument('--config_object', type=str, help="Configuration Object (JSON)")
     parser.add_argument('--config_s3_file', type=str, help="Configuration S3 File")
     parser.add_argument('--up_threshold', type=int, default=20,
