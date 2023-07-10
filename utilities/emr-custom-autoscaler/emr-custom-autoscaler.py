@@ -137,8 +137,10 @@ def validate_args(args: dict) -> None:
                 args.update(json.loads(object_data))
 
     if args.get("cluster_id") is None and (
-            args.get("for_all_clusters") is None or args.get("for_all_clusters") is False):
-        raise Exception("Args must supply a Cluster ID or the for_all_clusters boolean Argument")
+            args.get("for_all_clusters") is None or args.get("for_all_clusters") is False) and args.get(
+        "for_tag_value") is None:
+        raise Exception(
+            "Args must supply a Cluster ID, the for_all_clusters boolean Argument, or a Tag Value to be matched against the EmrCustomAutoscaler tag")
 
     required = ["s3_bucket", "region"]
 
@@ -148,6 +150,10 @@ def validate_args(args: dict) -> None:
     for x in required:
         if args.get(x) is None:
             raise Exception(f"Argument {x} is required")
+
+        # remove the 's3://' bit if it's been provided
+        if args.get("s3_bucket").startswith("s3://"):
+            args["s3_bucket"] = args.get("s3_bucket").replace("s3://", "")
 
 
 # run the scaling algo for 1 cluster
@@ -194,12 +200,14 @@ def scale_cluster(cloudwatch, emr, args):
 
         if container_pending_ratio >= args.get("container_pending_ratio_up_threshold"):
             scale_factor_count += args.get("container_pending_ratio_scale_factor")
-            logger.info("Setting scale factor to (+{}) due to lower Container Pending Ratio threshold breach.".format(
-                args.get("container_pending_ratio_scale_factor")))
+            logger.info(
+                "Setting scale factor to (+{}) due to lower Container Pending Ratio threshold breach.".format(
+                    args.get("container_pending_ratio_scale_factor")))
         if container_pending_ratio < args.get("container_pending_ratio_down_threshold"):
             scale_factor_count -= args.get("container_pending_ratio_scale_factor")
-            logger.info("Setting scale factor to (-{}) due to upper Container Pending Ratio threshold breach.".format(
-                args.get("container_pending_ratio_scale_factor")))
+            logger.info(
+                "Setting scale factor to (-{}) due to upper Container Pending Ratio threshold breach.".format(
+                    args.get("container_pending_ratio_scale_factor")))
     else:
         logger.info("Cooldown period not met. Skipping.")
         return
@@ -290,7 +298,7 @@ def run_scaler(args=None):
     logger = logging.getLogger(__name__)
 
     # suppress debug logging in the AWS SDK
-    if args.get("log_level").upper() == "DEBUG":
+    if args.get("log_level") is not None and args.get("log_level").upper() == "DEBUG":
         logging.getLogger('boto3').setLevel(logging.INFO)
         logging.getLogger('botocore').setLevel(logging.INFO)
         logging.getLogger('urllib3').setLevel(logging.INFO)
@@ -305,8 +313,6 @@ def run_scaler(args=None):
     if args.get("cluster_id") is not None:
         scale_cluster(cloudwatch, emr, args)
     else:
-        del (args["for_all_clusters"])
-
         # running for all clusters we can find
         cycle = True
         list_args = {"ClusterStates": ['RUNNING', 'WAITING']}
@@ -315,7 +321,17 @@ def run_scaler(args=None):
 
             for c in clusters.get("Clusters"):
                 args["cluster_id"] = c.get("Id")
-                scale_cluster(cloudwatch, emr, args)
+
+                if args.get("for_all_clusters") is True:
+                    scale_cluster(cloudwatch, emr, args)
+                else:
+                    # describe the cluster to get the tag values
+                    cluster = emr.describe_cluster(ClusterId=c.get("Id"))
+
+                    if cluster.get("Cluster").get("Tags") is not None:
+                        for t in cluster.get("Cluster").get("Tags"):
+                            if t.get("Key") == "EmrCustomAutoscaler" and t.get("Value") == args.get("for_tag_value"):
+                                scale_cluster(cloudwatch, emr, args)
 
             if clusters.get("Marker") is not None:
                 list_args["Marker"] = clusters.get("Marker")
@@ -345,6 +361,7 @@ def setup_args():
     # Add arguments
     parser.add_argument('--cluster_id', type=str, help='Cluster ID')
     parser.add_argument('--for_all_clusters', type=bool, default=False, help='Run for all available Clusters')
+    parser.add_argument('--for_tag_value', type=str, help='Run for all tagged Clusters')
     parser.add_argument('--config_object', type=str, help="Configuration Object (JSON)")
     parser.add_argument('--config_s3_file', type=str, help="Configuration S3 File")
     parser.add_argument('--up_threshold', type=int, default=20,
@@ -356,7 +373,8 @@ def setup_args():
     parser.add_argument('--container_pending_ratio_down_threshold', type=int, default=0,
                         help='Threshold for Container Pending Ratio (down)')
     parser.add_argument('--apps_pending_up_threshold', type=int, default=5, help='Threshold for Apps Pending (up)')
-    parser.add_argument('--apps_pending_down_threshold', type=int, default=0, help='Threshold for Apps Pending (down)')
+    parser.add_argument('--apps_pending_down_threshold', type=int, default=0,
+                        help='Threshold for Apps Pending (down)')
     parser.add_argument('--cooldown_period', type=int, default=300, help='Cooldown period in seconds')
     parser.add_argument('--ignore_cooldown', type=bool, default=False, help='Ignore Cooldown')
     parser.add_argument('--min_capacity', type=int, default=2, help='Minimum capacity')

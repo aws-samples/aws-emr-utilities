@@ -48,6 +48,7 @@ When running in this mode, the autoscaler places a timestamping lock file onto A
 #### Instructions - CLI
 
 Simply clone this repository and then run:
+
 ```bash
 python3 emr-custom-autoscaler.py <options>
 
@@ -55,6 +56,10 @@ options:
   -h, --help            show this help message and exit
   --cluster_id CLUSTER_ID 
                         Cluster ID
+  --for_all_clusters FOR_ALL_CLUSTERS
+                        Run for all available Clusters
+  --for_tag_value FOR_TAG_VALUE
+                        Run for all tagged Clusters                      
   --config_object CONFIG_OBJECT
                         Configuration Object (JSON)
   --config_s3_file CONFIG_S3_FILE
@@ -92,7 +97,11 @@ options:
 
 ```
 
-Arguments `--cluster_id` and `--s3_bucket` are required.
+Argument `--s3_bucket` is required. Additionally, you must supply one of:
+
+* `cluster_id` - Runs for a single specified cluster
+* `for_all_clusters` - Runs for all RUNNING or WAITING clusters in the Account/Region
+* `for_tag_value` - Runs for all RUNNING or WAITING clusters in the Account/Region that are tagged with Key `EmrCustomAutoscaler` and the tag value that you provide. This option allows you to segment your clusters into N groups which each have a separate configuration for scaling.
 
 #### Instructions - AWS Lambda
 
@@ -103,7 +112,10 @@ the Lambda function on a 5 minute basis, and include the required configuration 
 naming convention) in the payload of the event sent to the function.
 
 ### Limitations
-1) Cooldown period is standardized and applies to all metrics. There is no flexibility to set different cooldown periods 
-for individual metrics.  c  0y6hjnan define the cool down period in seconds and it will evaulate it for all metrics (Yarn 
-memory, container pending, apps pending) . The evaluation will always be for 1 - 5 minute interval
-
+1. Cooldown period is standardized and applies to all metrics. There is no flexibility to set different cooldown periods 
+for individual metrics.
+1. When you define the cool down period in seconds, it will be evaluated for all metrics (Yarn 
+memory, container pending, apps pending)
+1. The evaluation will always be for 1 - 5 minute intervals
+1. When running with `for_all_clusters` or `for_tag_value`, you cannot specify different scaling thresholds or values
+1. You cannot modify the Tag Key for `for_tag_value` argument.
