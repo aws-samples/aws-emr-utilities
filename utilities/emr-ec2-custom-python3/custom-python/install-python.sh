@@ -4,7 +4,7 @@ set -e
 PYTHON_VERSION=3.11.3
 
 # Replace old OpenSSL and add build utilities
-sudo yum -y remove openssl-devel-1.0.2k-24.amzn2.0.6.x86_64 && \
+sudo yum -y remove openssl-devel* && \
 sudo yum -y install gcc openssl11-devel bzip2-devel libffi-devel tar gzip wget make expat-devel
 
 # Install Python
