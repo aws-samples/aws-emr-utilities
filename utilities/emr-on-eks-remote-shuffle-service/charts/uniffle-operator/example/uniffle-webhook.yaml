@@ -100,7 +100,7 @@ spec:
       serviceAccountName: rss-webhook
       containers:
         - name: rss-webhook
-          image: 021732063925.dkr.ecr.us-east-1.amazonaws.com/rss-webhook:0.7.0-snapshot
+          image:  public.ecr.aws/myang-poc/uniffle-server:webhook0.7.0-snapshot
           command:
             - "./webhook"
           args:

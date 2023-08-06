@@ -26,7 +26,7 @@ spec:
   coordinator:
     nodeSelector:
       app: css   
-    image: 021732063925.dkr.ecr.us-east-1.amazonaws.com/uniffle-server:0.7.0-snapshot
+    image: public.ecr.aws/myang-poc/uniffle-server:0.7.0-snapshot
     initContainerImage: "busybox:latest"
     rpcNodePort:
       - 30001
@@ -51,7 +51,7 @@ spec:
     nodeSelector:
       app: css
     replicas: 3
-    image: 021732063925.dkr.ecr.us-east-1.amazonaws.com/uniffle-server:0.7.0-snapshot 
+    image: public.ecr.aws/myang-poc/uniffle-server:0.7.0-snapshot
     initContainerImage: "busybox:latest"
     xmxSize: 144G
     configDir: "/data/rssadmin/rss/conf"

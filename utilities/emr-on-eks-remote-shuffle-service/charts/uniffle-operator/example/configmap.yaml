@@ -81,5 +81,5 @@ data:
     rss.server.shuffle.expired.timeout.ms 120000
     rss.server.write.retry.max 2
     rss.storage.basePath /rss1/rssdata,/rss2/rssdata
-    rss.storage.type MEMORY_LOCALFILE_HDFS
+    rss.storage.type MEMORY_LOCALFILE
     rss.server.cleanup.threshold 80.0

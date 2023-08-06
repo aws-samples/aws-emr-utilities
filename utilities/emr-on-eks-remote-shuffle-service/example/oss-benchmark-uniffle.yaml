@@ -62,18 +62,18 @@ spec:
           configMapKeyRef:
             name: special-config
             key: codeBucket   
-    cores: 2
-    coreLimit: "2.1"
-    memory: "3g"
-    memoryOverhead: "1g"
+    cores: 3
+    coreLimit: "4.1"
+    memory: "4g"
+    # memoryOverhead: "1g"
     serviceAccount: oss 
   executor:
     # javaOptions: "-Dlog4j.configuration=file:/etc/spark/conf/log4j.properties"
     cores: 4
     coreLimit: "4.3"
-    memory: "6g"
+    memory: "7g"
     memoryOverhead: "2g"
-    # 8 executors per node  
+    # 7 executors per node  
     instances: 47
   restartPolicy:
     type: Never

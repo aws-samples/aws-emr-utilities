@@ -10,7 +10,7 @@ spec:
     app: sparktest
   type: Scala
   mode: cluster
-  image: 021732063925.dkr.ecr.us-east-1.amazonaws.com/rss-spark-benchmark:3.2.0
+  image: public.ecr.aws/myang-poc/benchmark:rss-spark3.2
   imagePullPolicy: Always
   sparkVersion: 3.2.0
   mainClass: com.amazonaws.eks.tpcds.BenchmarkSQL
@@ -64,14 +64,14 @@ spec:
     cores: 2
     coreLimit: "2.1"
     memory: "3g"
-    memoryOverhead: "1g"
+    # memoryOverhead: "1g"
     serviceAccount: oss 
   executor:
     cores: 4
     coreLimit: "4.3"
-    memory: "6g"
+    memory: "7g"
     memoryOverhead: "2g"
-    # 8 executors per node  
+    # 7 executors per node  
     instances: 47
   restartPolicy:
     type: Never

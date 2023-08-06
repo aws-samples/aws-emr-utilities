@@ -17,13 +17,13 @@
 
 ARG java_image_tag=8-jdk-focal
 
-FROM eclipse-temurin:${java_image_tag} as jdk8
+FROM eclipse-temurin:${java_image_tag} as jdk
 ARG SPARK_VERSION=3.2
-ARG CELEBORN_VERSION=0.2
 
 RUN apt-get update && apt-get install -y git
 # build celeborn binary
-RUN git clone https://github.com/apache/incubator-celeborn.git -b branch-${CELEBORN_VERSION}
+RUN git clone https://github.com/apache/incubator-celeborn.git -b v0.3.0-incubating-rc2
+# RUN git clone https://github.com/apache/incubator-celeborn.git -b branch-${CELEBORN_VERSION}
 WORKDIR incubator-celeborn
 RUN ./build/make-distribution.sh -Pspark-${SPARK_VERSION} && \
     cat *.tgz | tar -xvzf - && \
@@ -47,12 +47,12 @@ RUN set -ex && \
     useradd  --uid=${celeborn_uid} --gid=${celeborn_gid} celeborn -d /home/celeborn -m && \
     mkdir -p ${CELEBORN_HOME}
 
-COPY --from=jdk8 /opt/celeborn/bin /opt/celeborn/bin
-COPY --from=jdk8 /opt/celeborn/sbin /opt/celeborn/sbin
-COPY --from=jdk8 /opt/celeborn/master-jars /opt/celeborn/master-jars
-COPY --from=jdk8 /opt/celeborn/worker-jars /opt/celeborn/worker-jars
-COPY --from=jdk8 /opt/celeborn/jars /opt/celeborn/jars
-COPY --from=jdk8 /opt/celeborn/RELEASE /opt/celeborn/RELEASE
+COPY --from=jdk /opt/celeborn/bin /opt/celeborn/bin
+COPY --from=jdk /opt/celeborn/sbin /opt/celeborn/sbin
+COPY --from=jdk /opt/celeborn/master-jars /opt/celeborn/master-jars
+COPY --from=jdk /opt/celeborn/worker-jars /opt/celeborn/worker-jars
+COPY --from=jdk /opt/celeborn/jars /opt/celeborn/jars
+COPY --from=jdk /opt/celeborn/RELEASE /opt/celeborn/RELEASE
 
 RUN chown -R celeborn:celeborn ${CELEBORN_HOME} && \
     chmod -R ug+rw ${CELEBORN_HOME} && \

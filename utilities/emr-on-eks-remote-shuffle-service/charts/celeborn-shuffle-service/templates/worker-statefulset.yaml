@@ -77,15 +77,16 @@ spec:
       initContainers:  
     {{- $dirs := get .Values.celeborn "celeborn.worker.storage.dirs" | splitList ","}}
     {{- range $index, $dir := $dirs }}
+    {{- $dir := index ($dir | splitList ":") 0 }}
       - name: volume-permission-{{ $index }}
         image: public.ecr.aws/docker/library/busybox
         # grant volume access to hadoop user  
-        command: ['sh', '-c', 'mkdir {{ $dir }} ;chown -R {{ $userId}}:{{ $userGroup }} {{ $dir }}']  
+        command: ['sh', '-c', 'mkdir {{ $dir }};chown -R {{ $userId}}:{{ $userGroup }} {{ $dir }}']  
         volumeMounts:
         - mountPath: {{ $dir }} 
           name: vol-{{ $index }}
     {{- end }} 
-    {{- end }}    
+    {{- end }}
       containers:
       - name: {{ .Chart.Name }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
@@ -111,6 +112,7 @@ spec:
           {{- end }}
           {{- $dirs := get .Values.celeborn "celeborn.worker.storage.dirs" | splitList "," -}}
           {{- range $index, $dir := $dirs }}
+          {{- $dir := index ($dir | splitList ":") 0 }}
           - mountPath: {{ $dir }} 
             name: vol-{{ $index }}
           {{- end }}
@@ -131,3 +133,6 @@ spec:
             type: DirectoryOrCreate
           name: vol-{{ $index }}
         {{- end }} 
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+

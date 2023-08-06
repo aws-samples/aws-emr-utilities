@@ -23,10 +23,11 @@
 # TODO rebuild celeborn official image
 image:
   repository: public.ecr.aws/myang-poc/celeborn-rss
+  tag: spark3.3_17-jdk
+  # repository: 021732063925.dkr.ecr.us-east-1.amazonaws.com/celeborn-server
+  # tag: spark3.3_clb_rc2
   pullPolicy: Always
-  tag: spark3.2_server0.2
-
-nodeSelector: 
+nodeSelector:
   app: css
 
 # master replicas should not less than 3
@@ -42,34 +43,43 @@ volumeUser: 10006
 volumeGroup: 10006
 # celeborn configurations
 celeborn:
-  # celeborn.ha.enabled: true
+  celeborn.ha.enabled: true
   # celeborn.master.endpoints: celeborn-master-0.celeborn-master-svc.celeborn:9097,celeborn-master-1.celeborn-master-svc.celeborn:9097,celeborn-master-2.celeborn-master-svc.celeborn:9097
   celeborn.ha.master.ratis.raft.server.storage.dir: /rss1/rss_ratis/
-  celeborn.worker.storage.dirs: /rss1/data,/rss2/data
+  celeborn.worker.storage.dirs: /rss1:disktype=SSD,/rss2:disktype=SSD
   celeborn.volumes.hostpath: /local1,/local2
   celeborn.metrics.enabled: true
   celeborn.master.metrics.prometheus.port: 9098
   celeborn.worker.metrics.prometheus.port: 9096
-  celeborn.worker.monitor.disk.enabled: false
+  # celeborn.worker.monitor.disk.enabled: false
 
   celeborn.push.io.numConnectionsPerPeer: 8
   celeborn.replicate.io.numConnectionsPerPeer: 24
   celeborn.worker.flusher.buffer.size: 128k
-  celeborn.worker.flusher.threads: 64
-  celeborn.worker.fetch.io.threads: 256                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+  # celeborn.worker.flusher.threads: 512
+  celeborn.worker.flusher.ssd.threads: 512
+  celeborn.worker.fetch.io.threads: 256                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
   celeborn.worker.push.io.threads: 128
-  # celeborn.master.heartbeat.application.timeout: 300s
-  # celeborn.master.heartbeat.worker.timeout: 120s
   celeborn.network.timeout: 2000s
-  celeborn.worker.replicate.io.threads: 128
-  celeborn.worker.commit.threads: 128
-  celeborn.worker.closeIdleConnections: true
 
+  # celeborn.network.memory.allocator.share: true
+  celeborn.worker.directMemoryRatioToResume: 0.65
+
+  # celeborn.worker.replicate.io.threads: 128
+  celeborn.worker.commitFiles.threads: 128
+  celeborn.worker.closeIdleConnections: true
+  # # worker recover - ip & port must be the same after a worker-restart.
+  # celeborn.worker.graceful.shutdown.enabled: true
+  # celeborn.worker.graceful.shutdown.recoverPath: /tmp/recover
+  # celeborn.worker.rpc.port: 9094
+  # celeborn.worker.fetch.port: 9092
+  # celeborn.worker.push.port: 9091
+  # celeborn.worker.replicate.port: 9089
 environments:
-  CELEBORN_MASTER_MEMORY: 16g
+  CELEBORN_MASTER_MEMORY: 8g
   CELEBORN_MASTER_JAVA_OPTS: "-XX:-PrintGC -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps -Xloggc:gc-master.out -Dio.netty.leakDetectionLevel=advanced"
   CELEBORN_WORKER_MEMORY: 8g
-  CELEBORN_WORKER_OFFHEAP_MEMORY: 20g
+  CELEBORN_WORKER_OFFHEAP_MEMORY: 130g
   CELEBORN_WORKER_JAVA_OPTS: "-XX:-PrintGC -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps -Xloggc:gc-worker.out -Dio.netty.leakDetectionLevel=advanced"
   CELEBORN_NO_DAEMONIZE: 1
   TZ: "Australia/Melbourne"
@@ -82,8 +92,8 @@ podMonitor:
     portName: metrics
 
 service:
-  type: ClusterIP
-  port: 9097
+    type: NodePort
+    port: 9097
 
 cluster:
   name: cluster

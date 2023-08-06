@@ -123,3 +123,5 @@ spec:
             path: {{ index $vols 0 }}/ratis
             type: DirectoryOrCreate
           name: {{ include "celeborn.fullname" . }}-master-ratis
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet

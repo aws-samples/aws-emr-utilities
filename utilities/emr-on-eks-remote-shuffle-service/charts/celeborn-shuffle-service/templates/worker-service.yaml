@@ -27,8 +27,17 @@ metadata:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     {{- include "celeborn.labels" . | nindent 4 }}
 spec:
+  # type: ClusterIP
   type: {{ .Values.service.type }}
-  clusterIP: None
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.port }}
+    {{ if ne .Values.service.type "ClusterIP" }}
+      nodePort: 30002
+    {{- end }}
+      protocol: TCP
+      name: celeborn-worker
+  clusterIP: Null
   selector:
     app.kubernetes.io/name: {{ .Chart.Name }}
     app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}

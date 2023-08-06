@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  namespace: {{- $namespace := .Release.Namespace }}
+  name: clb-alb
+  annotations:
+    # kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/load-balancer-name: clb-alb
+    alb.ingress.kubernetes.io/tags: app=celeborn
+    # alb.ingress.kubernetes.io/success-codes: 200-299
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 9097}]'
+spec:
+  ingressClassName: alb
+  rules:
+    - http:
+        paths:
+        - path: /
+          pathType: Exact
+          backend:
+            service:
+              name: celeborn-master-svc
+              port:
+                number: 9097

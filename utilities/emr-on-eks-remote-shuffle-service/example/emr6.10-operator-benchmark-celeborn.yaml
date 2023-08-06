@@ -1,0 +1,98 @@
+apiVersion: "sparkoperator.k8s.io/v1beta2"
+kind: SparkApplication
+metadata:
+  name: emr-clb-3iter
+  namespace: emr
+  annotations:
+    mytag: emr-clb-3iter
+spec:
+  nodeSelector:
+    app: sparktest
+  type: Scala
+  mode: cluster
+  # EMR optimized runtime image
+  image: 021732063925.dkr.ecr.us-east-1.amazonaws.com/clb-spark-benchmark:emr-6.10.0_clbtest
+  imagePullPolicy: Always
+  sparkVersion: 3.3.1
+  mainClass: com.amazonaws.eks.tpcds.BenchmarkSQL
+  mainApplicationFile: local:///usr/lib/spark/examples/jars/eks-spark-benchmark-assembly-1.0.jar
+  arguments:
+ # TPC-DS data localtion
+    - "s3://$(BUCKET_PARAM)/BLOG_TPCDS-TEST-3T-partitioned"
+  # results location
+    - "s3://$(BUCKET_PARAM)/EMRONEKS_TPCDS-TEST-3T-RESULT"
+  # Path to kit in the docker image
+    - "/opt/tpcds-kit/tools"
+  # Data Format
+    - "parquet"
+  # Scale factor (in GB)
+    - "3000"
+  # Number of iterations
+    - "1"
+  # Optimize queries with hive tables
+    - "false"
+  # Filter queries, will run all if empty - "q98-v2.4,q99-v2.4,ss_max-v2.4,q95-v2.4"
+    - "q98-v2.4,q99-v2.4,ss_max-v2.4" 
+  # Logging set to WARN
+    - "true"
+  hadoopConf:
+    # EMRFS filesystem
+    fs.s3.customAWSCredentialsProvider: com.amazonaws.auth.WebIdentityTokenCredentialsProvider
+    fs.s3.impl: com.amazon.ws.emr.hadoop.fs.EmrFileSystem
+    fs.AbstractFileSystem.s3.impl: org.apache.hadoop.fs.s3.EMRFSDelegate
+    fs.s3.buffer.dir: /mnt/s3
+    fs.s3.getObject.initialSocketTimeoutMilliseconds: "2000"
+    mapreduce.fileoutputcommitter.algorithm.version.emr_internal_use_only.EmrFileSystem: "2"
+    mapreduce.fileoutputcommitter.cleanup-failures.ignored.emr_internal_use_only.EmrFileSystem: "true"
+  sparkConf:
+    spark.network.timeout: "2000s"
+    spark.executor.heartbeatInterval: "300s" 
+    spark.serializer: "org.apache.spark.serializer.KryoSerializer" 
+    spark.kubernetes.executor.podNamePrefix: "emr-eks-clb"
+    spark.kubernetes.node.selector.eks.amazonaws.com/nodegroup: "c59b"
+    # AQE
+    spark.shuffle.service.enabled: "false"
+    spark.sql.adaptive.enabled: "true"
+    spark.sql.adaptive.skewJoin.enabled: "true"
+    spark.sql.adaptive.localShuffleReader.enabled: "false"
+    # Enable RSS
+    spark.celeborn.shuffle.chunk.size: "4m"
+    spark.celeborn.push.maxReqsInFlight: "128"
+    spark.celeborn.push.replicate.enabled: "true"
+    spark.celeborn.shuffle.batchHandleChangePartition.enabled: "true"
+    spark.celeborn.shuffle.batchHandleCommitPartition.enabled: "true"
+    spark.celeborn.client.push.blacklist.enabled: "true"
+    spark.celeborn.client.fetch.excludeWorkerOnFailure.enabled: "true"
+    spark.celeborn.client.commitFiles.ignoreExcludedWorker: "true"
+    spark.sql.optimizedUnsafeRowSerializers.enabled: "false"
+    
+    spark.shuffle.manager: "org.apache.spark.shuffle.celeborn.RssShuffleManager"
+    spark.celeborn.master.endpoints: "celeborn-master-0.celeborn-master-svc.celeborn:9097,celeborn-master-1.celeborn-master-svc.celeborn:9097,celeborn-master-2.celeborn-master-svc.celeborn:9097"
+   # Required for EMR Runtime
+    spark.driver.extraClassPath: /usr/lib/hadoop-lzo/lib/*:/usr/lib/hadoop/hadoop-aws.jar:/usr/share/aws/aws-java-sdk/*:/usr/share/aws/emr/emrfs/conf:/usr/share/aws/emr/emrfs/lib/*:/usr/share/aws/emr/emrfs/auxlib/*:/usr/share/aws/emr/security/conf:/usr/share/aws/emr/security/lib/*:/usr/share/aws/hmclient/lib/aws-glue-datacatalog-spark-client.jar:/usr/share/java/Hive-JSON-Serde/hive-openx-serde.jar:/usr/share/aws/sagemaker-spark-sdk/lib/sagemaker-spark-sdk.jar:/home/hadoop/extrajars/*
+    spark.driver.extraLibraryPath: /usr/lib/hadoop/lib/native:/usr/lib/hadoop-lzo/lib/native:/docker/usr/lib/hadoop/lib/native:/docker/usr/lib/hadoop-lzo/lib/native
+    spark.executor.extraClassPath: /usr/lib/hadoop-lzo/lib/*:/usr/lib/hadoop/hadoop-aws.jar:/usr/share/aws/aws-java-sdk/*:/usr/share/aws/emr/emrfs/conf:/usr/share/aws/emr/emrfs/lib/*:/usr/share/aws/emr/emrfs/auxlib/*:/usr/share/aws/emr/security/conf:/usr/share/aws/emr/security/lib/*:/usr/share/aws/hmclient/lib/aws-glue-datacatalog-spark-client.jar:/usr/share/java/Hive-JSON-Serde/hive-openx-serde.jar:/usr/share/aws/sagemaker-spark-sdk/lib/sagemaker-spark-sdk.jar:/home/hadoop/extrajars/*
+    spark.executor.extraLibraryPath: /usr/lib/hadoop/lib/native:/usr/lib/hadoop-lzo/lib/native:/docker/usr/lib/hadoop/lib/native:/docker/usr/lib/hadoop-lzo/lib/native
+    # EMRFS commiter
+    spark.sql.parquet.output.committer.class: com.amazon.emr.committer.EmrOptimizedSparkSqlParquetOutputCommitter
+    spark.sql.parquet.fs.optimized.committer.optimization-enabled: "true"
+    spark.sql.emr.internal.extensions: com.amazonaws.emr.spark.EmrSparkSessionExtensions
+    spark.executor.defaultJavaOptions: -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseParallelGC -XX:InitiatingHeapOccupancyPercent=70 -XX:OnOutOfMemoryError='kill -9 %p'
+    spark.driver.defaultJavaOptions:  -XX:OnOutOfMemoryError='kill -9 %p' -XX:+UseParallelGC -XX:InitiatingHeapOccupancyPercent=70
+  driver:
+    env:
+      - name: BUCKET_PARAM
+        valueFrom:
+          configMapKeyRef:
+            name: special-config
+            key: codeBucket   
+    cores: 3
+    memory: 4g
+    serviceAccount: driver-account-sa
+  executor:
+    cores: 4
+    memory: 6g
+    memoryOverhead: 2g
+    instances: 47
+  restartPolicy:
+    type: Never

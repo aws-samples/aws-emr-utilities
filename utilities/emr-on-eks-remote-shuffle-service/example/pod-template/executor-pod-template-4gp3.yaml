@@ -1,0 +1,45 @@
+# // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# // SPDX-License-Identifier: MIT-0
+apiVersion: v1
+kind: Pod
+spec:
+  nodeSelector:
+    app: sparktest   
+  volumes:
+    - name: spark-local-dir-1
+      hostPath:
+        path: /local1 
+    - name: spark-local-dir-2
+      hostPath:
+        path: /local2
+    - name: spark-local-dir-3
+      hostPath:
+        path: /local3
+    - name: spark-local-dir-4
+      hostPath:
+        path: /local4             
+  initContainers:  
+  - name: volume-permission
+    image: public.ecr.aws/docker/library/busybox
+    # grant volume access to hadoop user
+    command: ['sh', '-c', 'mkdir /data1 /data2 /data3 /data4; chown -R 999:1000 /data[1-9]']  
+    volumeMounts:
+      - name: spark-local-dir-1
+        mountPath: /data1
+      - name: spark-local-dir-2
+        mountPath: /data2
+      - name: spark-local-dir-3
+        mountPath: /data3
+      - name: spark-local-dir-4
+        mountPath: /data4
+  containers:
+  - name: spark-kubernetes-executor
+    volumeMounts:
+      - name: spark-local-dir-1
+        mountPath: /data1
+      - name: spark-local-dir-2
+        mountPath: /data2
+      - name: spark-local-dir-3
+        mountPath: /data3
+      - name: spark-local-dir-4
+        mountPath: /data4   

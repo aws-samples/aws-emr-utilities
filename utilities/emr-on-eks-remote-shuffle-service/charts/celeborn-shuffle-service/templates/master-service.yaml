@@ -31,9 +31,12 @@ spec:
   ports:
     - port: {{ .Values.service.port }}
       targetPort: {{ .Values.service.port }}
+    {{ if ne .Values.service.type "ClusterIP" }}
+      nodePort: 30001
+    {{- end }}
       protocol: TCP
       name: celeborn-master
-  clusterIP: None
+  clusterIP: Null
   selector:
     app.kubernetes.io/name: {{ .Chart.Name }}
     app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
