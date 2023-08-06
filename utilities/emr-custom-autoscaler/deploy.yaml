@@ -1,0 +1,53 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Resources:
+  EmrCustomAutoscalerPolicy:
+    Type: "AWS::IAM::Policy"
+    Properties:
+      PolicyName: "EmrCustomAutoscalerPolicy"
+      Roles:
+        - !Ref EmrCustomAutoscalerRole
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Action:
+              - "s3:GetObject"
+              - "s3:PutObject"
+            Resource: "*"
+          - Effect: "Allow"
+            Action:
+              - "elasticmapreduce:ListInstanceFleets"
+              - "elasticmapreduce:ModifyInstanceFleets"
+            Resource: "*"
+          - Effect: "Allow"
+            Action:
+              - "cloudwatch:GetMetricData"
+            Resource: "*"
+  EmrCustomAutoscalerRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: 'EmrCustomAutoscalerRole'
+      Path: "/"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+  EmrCustomAutoscalerFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      FunctionName: 'EmrCustomAutoscaler'
+      Handler: emr-custom-autoscaler.lambda_handler
+      Role:
+        !GetAtt EmrCustomAutoscalerRole.Arn
+      Code:
+        S3Bucket: "awslabs-code-us-east-1"
+        S3Key: 'EmrCustomAutoscaler/emr-custom-autoscaler-1.1.zip'
+      Runtime: python3.10
+      Timeout: 300
