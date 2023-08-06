@@ -17,6 +17,7 @@ The high level design for Uber's Remote Shuffle Service (RSS) can be found [here
 2. [kubectl >=1.24](https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html)
 3. [eksctl >= 0.143.0](https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html)
 4. [helm](https://helm.sh/docs/intro/install/)
+5. [Buildx included by Docker Desktop installation](https://docs.docker.com/desktop/)
 
 ## Infrastructure
 If you do not have your own environment to test the remote shuffle solution, run the command to setup the infrastructure you need. Change the region if needed.
@@ -265,17 +266,37 @@ aws ecr create-repository --repository-name clb-spark-benchmark \
 
 ```bash
 # Build & push server & client docker images
+JAVA_TAG=17-jdk
 SPARK_VERSION=3.3
 # build server
-docker build -t $ECR_URL/celeborn-server:spark${SPARK_VERSION}_clb \
+docker build -t $ECR_URL/celeborn-server:spark${SPARK_VERSION}_${JAVA_TAG} \
   --build-arg SPARK_VERSION=${SPARK_VERSION} \
+  --build-arg java_image_tag=${JAVA_TAG}-focal \
   -f docker/celeborn-server/Dockerfile .
 # push the image to ECR
-docker push $ECR_URL/celeborn-server:spark${SPARK_VERSION}_clb
+docker push $ECR_URL/celeborn-server:spark${SPARK_VERSION}_${JAVA_TAG}
+```
+Alternatively, we can build a single multi-arch docker image (x86_64 and arm64) by the following steps:
+```bash
+# validate if the Docker Buildx CLI extension is installed
+docker buildx version
+# (once-off task) create a new builder that gives access to the new multi-architecture features
+docker buildx create --name mybuilder --use
+# build and push the custom image supporting multi-platform
+JAVA_TAG=17-jdk
+SPARK_VERSION=3.3
+docker buildx build \
+--platform linux/amd64,linux/arm64 \
+-t $ECR_URL/celeborn-server:spark${SPARK_VERSION}_${JAVA_TAG} \
+--build-arg SPARK_VERSION=${SPARK_VERSION} \
+--build-arg java_image_tag=${JAVA_TAG}-focal \
+-f docker/celeborn-server/Dockerfile \
+--push .
 ```
 
 ```bash
 # build client on EMR on EKS
+SPARK_VERSION=3.3
 EMR_VERSION=emr-6.10.0
 SRC_ECR_URL=755674844232.dkr.ecr.us-east-1.amazonaws.com
 aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $SRC_ECR_URL

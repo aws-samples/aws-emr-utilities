@@ -225,7 +225,7 @@ managedNodeGroups:
     availabilityZones: ["${AWS_REGION}b"] 
     instanceType: c7g.8xlarge
     preBootstrapCommands:
-      - "IDX=1;for DEV in /dev/nvme[1-9]n1;do sudo mkfs.xfs ${DEV}; sudo mkdir -p /local${IDX}; sudo echo ${DEV} /local${IDX} xfs defaults,noatime 1 2 >> /etc/fstab; IDX=$((${IDX} + 1)); done"
+      - "IDX=1;for DEV in /dev/nvme[1-9]n1;do sudo mkfs.xfs \${DEV}; sudo mkdir -p /local\${IDX}; sudo echo \${DEV} /local\${IDX} xfs defaults,noatime 1 2 >> /etc/fstab; IDX=\$((\${IDX} + 1)); done"
       - "sudo mount -a"
       - "sudo chown ec2-user:ec2-user /local*"
     volumeSize: 30
