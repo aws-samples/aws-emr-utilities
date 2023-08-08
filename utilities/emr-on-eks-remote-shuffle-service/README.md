@@ -266,7 +266,7 @@ aws ecr create-repository --repository-name clb-spark-benchmark \
 
 ```bash
 # Build & push server & client docker images
-JAVA_TAG=17-jdk
+JAVA_TAG=8-jdk
 SPARK_VERSION=3.3
 # build server
 docker build -t $ECR_URL/celeborn-server:spark${SPARK_VERSION}_${JAVA_TAG} \
@@ -283,7 +283,7 @@ docker buildx version
 # (once-off task) create a new builder that gives access to the new multi-architecture features
 docker buildx create --name mybuilder --use
 # build and push the custom image supporting multi-platform
-JAVA_TAG=17-jdk
+JAVA_TAG=8-jdk
 SPARK_VERSION=3.3
 docker buildx build \
 --platform linux/amd64,linux/arm64 \
