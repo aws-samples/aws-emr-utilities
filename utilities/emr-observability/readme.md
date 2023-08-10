@@ -27,7 +27,7 @@ Metrics can be viewed only per cluster and it becomes difficult to monitor when 
 * Yarn Node Manager metrics
 * HDFS NameNode metrics
 * HDFS DataNode metrics
-* Spark metrics when not run concurrently
+* Hbase metrics
  
 **Other AWS Services used for option 2**
  
@@ -49,7 +49,7 @@ Refer this doc for AMG pricing - https://aws.amazon.com/grafana/pricing/
 3)While launching the EMR clusters
 Use the script as the bootstrap action
 ```
---bootstrap-actions '[{"Path":"s3://bucket-name/path/install_prometheus.sh","Name":"Install Prometheus"}]'
+--bootstrap-actions '[{"Path":"s3://bucket-name/path/install_prometheus_v2.sh","Name":"Install Prometheus"}]'
 ```
 Optimization-1.pngUse the below EMR configuration classification json
 ```
