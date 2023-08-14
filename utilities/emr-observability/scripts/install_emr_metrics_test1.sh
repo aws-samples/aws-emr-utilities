@@ -4,7 +4,7 @@
 # (Hadoop and HBase) metrics from all cluster nodes. It can also configured to export metrics to
 # your AWS Prometheus workspace via the remote_write endpoint. AWS Prometheus workspace id is an optional argument,
 # that, if passed, configures the on-cluster Prometheus instance to export metrics to AWS Prometheus
-# Usage in BA: --bootstrap-actions '[{"Path":"s3://<s3_path>/prometheus.sh","Args":["ws-537c7364-f10f-4210-a0fa-deedd3ea1935"]
+# Usage in BA: --bootstrap-actions '[{"Path":"s3://<s3_path>/install_emr_metrics_test1.sh","Args":["ws-537c7364-f10f-4210-a0fa-deedd3ea1935"]
 
 #set up node_exporter for pushing OS level metrics
 function install_node_exporter() {
