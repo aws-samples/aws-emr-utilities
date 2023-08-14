@@ -129,3 +129,6 @@ If Yarn memory utilization is at 100% while the OS memory utilization is low, it
 
 ### Best Practices
 Coming soon
+
+### Note
+1)Prometheus runs on port 9091 in this utility. For example: http://ec2-3-90-213-1.compute-1.amazonaws.com:9091/
