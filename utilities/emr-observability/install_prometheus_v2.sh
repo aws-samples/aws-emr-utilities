@@ -4,7 +4,7 @@
 # (Hadoop and HBase) metrics from all cluster nodes. It can also configured to export metrics to
 # your AWS Prometheus workspace via the remote_write endpoint. AWS Prometheus workspace id is an optional argument,
 # that, if passed, configures the on-cluster Prometheus instance to export metrics to AWS Prometheus
-# Usage in BA: --bootstrap-actions '[{"Path":"s3://<s3_path>/prometheus.sh","Args":["ws-537c7364-f10f-4210-a0fa-deedd3ea1935"]
+# Usage in BA: --bootstrap-actions '[{"Path":"s3://<s3_path>/install_prometheus_v2.sh","Args":["ws-537c7364-f10f-4210-a0fa-deedd3ea1935"]
 
 #set up node_exporter for pushing OS level metrics
 function install_node_exporter() {
@@ -98,21 +98,6 @@ EOF
   sudo cp hbase-env-thrift.sh /etc/hbase/conf
   sudo cp hbase-env-rest.sh /etc/hbase/conf
   sudo cp hbase-env-regionserver.sh /etc/hbase/conf
-}
-
-# Download the graphite_exporter_mapping.conf from GitHub repository
-function download_graphite_mapping_file() {
-  wget https://raw.githubusercontent.com/aws-samples/aws-emr-utilities/main/utilities/emr-observability/conf_files/graphite_exporter_mapping.conf -O /tmp/graphite_exporter_mapping.conf
-}
-
-# Install graphite_exporter
-function install_graphite_exporter() {
-  download_graphite_mapping_file
-
-  wget https://github.com/prometheus/graphite_exporter/releases/download/v0.14.0/graphite_exporter-0.14.0.linux-amd64.tar.gz
-  tar -xzf graphite_exporter-0.14.0.linux-amd64.tar.gz graphite_exporter-0.14.0.linux-amd64/
-  cd graphite_exporter-0.14.0.linux-amd64/
-  ./graphite_exporter --graphite.mapping-config /tmp/graphite_exporter_mapping.conf &
 }
 
 function install_prometheus() {
