@@ -7,7 +7,7 @@ ARG BASE_URL=https://apache.osuosl.org/maven/maven-3/${MAVEN_VERSION}/binaries
 # install maven
 
 # uncomment the line if run amazonlinux2 as the base image
-# RUN yum update -y && yum install -y tar git  
+# RUN yum update -y && yum install -y tar git curl
 RUN apt-get update && apt-get install -y curl git tar procps
 RUN mkdir -p /usr/share/maven /usr/share/maven/ref \
  && curl -fsSL -o /tmp/apache-maven.tar.gz ${BASE_URL}/apache-maven-${MAVEN_VERSION}-bin.tar.gz \

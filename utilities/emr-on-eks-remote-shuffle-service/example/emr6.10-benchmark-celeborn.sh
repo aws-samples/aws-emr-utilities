@@ -2,15 +2,15 @@
 # SPDX-FileCopyrightText: Copyright 2021 Amazon.com, Inc. or its affiliates.
 # SPDX-License-Identifier: MIT-0
 
-          # "spark.celeborn.client.spark.push.unsafeRow.fastWrite.enabled": "false",
-          # "spark.decommission.enabled": "true",
-          # "spark.storage.decommission.rddBlocks.enabled": "true",
-          # "spark.storage.decommission.shuffleBlocks.enabled" : "true",
-          # "spark.storage.decommission.enabled": "true",
-          # "spark.storage.decommission.fallbackStorage.path": "'$ECR_URL'/fallback",
-          # "spark.storage.decommission.fallbackStorage.cleanUp": "true",
-          #  "spark.celeborn.shuffle.batchHandleChangePartition.enabled": "true",
-          # "spark.celeborn.shuffle.batchHandleCommitPartition.enabled": "true",
+# "spark.celeborn.client.spark.push.unsafeRow.fastWrite.enabled": "false",
+# "spark.decommission.enabled": "true",
+# "spark.storage.decommission.rddBlocks.enabled": "true",
+# "spark.storage.decommission.shuffleBlocks.enabled" : "true",
+# "spark.storage.decommission.enabled": "true",
+# "spark.storage.decommission.fallbackStorage.path": "'$ECR_URL'/fallback",
+# "spark.storage.decommission.fallbackStorage.cleanUp": "true",
+#  "spark.celeborn.shuffle.batchHandleChangePartition.enabled": "true",
+# "spark.celeborn.shuffle.batchHandleCommitPartition.enabled": "true",
 
 # export EMRCLUSTER_NAME=emr-on-eks-rss
 # export AWS_REGION=us-east-1
@@ -36,11 +36,11 @@ aws emr-containers start-job-run \
       {
         "classification": "spark-defaults", 
         "properties": {
-          "spark.kubernetes.container.image": "'$ECR_URL'/clb-spark-benchmark:emr-6.10.0_clb",
+          "spark.kubernetes.container.image": "'$ECR_URL'/clb-spark-benchmark:emr6.10_clb",
           "spark.executor.memoryOverhead": "2G",
           "spark.network.timeout": "2000s",
           "spark.executor.heartbeatInterval": "300s",
-          "spark.kubernetes.executor.podNamePrefix": "emr-clb-single",
+          "spark.kubernetes.executor.podNamePrefix": "emr-clb-grafana",
 
           "spark.shuffle.service.enabled": "false",
           "spark.sql.adaptive.enabled": "true",
@@ -60,21 +60,23 @@ aws emr-containers start-job-run \
           "spark.shuffle.manager": "org.apache.spark.shuffle.celeborn.RssShuffleManager",
           "spark.celeborn.master.endpoints": "celeborn-master-0.celeborn-master-svc.celeborn:9097,celeborn-master-1.celeborn-master-svc.celeborn:9097,celeborn-master-2.celeborn-master-svc.celeborn:9097",
           "spark.sql.optimizedUnsafeRowSerializers.enabled":"false",
+          
+          "spark.metrics.appStatusSource.enabled":"true",
+          "spark.ui.prometheus.enabled":"true",
+          "spark.executor.processTreeMetrics.enabled":"true",
+          "spark.kubernetes.driver.annotation.prometheus.io/scrape":"true",
+          "spark.kubernetes.driver.annotation.prometheus.io/path":"/metrics/executors/prometheus/",
+          "spark.kubernetes.driver.annotation.prometheus.io/port":"4040",
+          "spark.kubernetes.driver.service.annotation.prometheus.io/scrape":"true",
+          "spark.kubernetes.driver.service.annotation.prometheus.io/path":"/metrics/driver/prometheus/",
+          "spark.kubernetes.driver.service.annotation.prometheus.io/port":"4040",
+          "spark.metrics.conf.*.sink.prometheusServlet.class":"org.apache.spark.metrics.sink.PrometheusServlet",
+          "spark.metrics.conf.*.sink.prometheusServlet.path":"/metrics/driver/prometheus/",
+          "spark.metrics.conf.master.sink.prometheusServlet.path":"/metrics/master/prometheus/",
+          "spark.metrics.conf.applications.sink.prometheusServlet.path":"/metrics/applications/prometheus/",
 
-          "spark.ui.prometheus.enabled": "true",
-          "spark.executor.processTreeMetrics.enabled": "true",
-          "spark.kubernetes.driver.annotation.prometheus.io/scrape": "true",
-          "spark.kubernetes.driver.annotation.prometheus.io/path": "/metrics/executors/prometheus/",
-          "spark.kubernetes.driver.annotation.prometheus.io/port": "4040",
-          "spark.kubernetes.driver.service.annotation.prometheus.io/scrape": "true",
-          "spark.kubernetes.driver.service.annotation.prometheus.io/path": "/metrics/driver/prometheus/",
-          "spark.kubernetes.driver.service.annotation.prometheus.io/port": "4040",
-          "spark.metrics.conf.*.sink.prometheusServlet.class": "org.apache.spark.metrics.sink.PrometheusServlet",
-          "spark.metrics.conf.*.sink.prometheusServlet.path": "/metrics/driver/prometheus/",
-          "spark.metrics.conf.master.sink.prometheusServlet.path": "/metrics/master/prometheus/",   
-          "spark.metrics.conf.applications.sink.prometheusServlet.path": "/metrics/applications/prometheus/",
-
-          "spark.kubernetes.node.selector.eks.amazonaws.com/nodegroup": "c59b"
+          "spark.kubernetes.driver.annotation.name":"emr-eks-clb",
+          "spark.kubernetes.node.selector.eks.amazonaws.com/nodegroup": "c59a"
 
       }},
       {

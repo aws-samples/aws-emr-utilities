@@ -253,7 +253,6 @@ For the best practice in security, it's recommended to build your own images and
 <summary>OPTIONAL: Build your own docker images</summary>
 
 ```bash
-# create ECR as an one-off task
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 ECR_URL=$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
 aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_URL
@@ -266,7 +265,7 @@ aws ecr create-repository --repository-name clb-spark-benchmark \
 
 ```bash
 # Build & push server & client docker images
-JAVA_TAG=17-jdk
+JAVA_TAG=8-jdk  #17-jdk
 SPARK_VERSION=3.3
 # build server
 docker build -t $ECR_URL/celeborn-server:spark${SPARK_VERSION}_${JAVA_TAG} \
@@ -283,7 +282,7 @@ docker buildx version
 # (once-off task) create a new builder that gives access to the new multi-architecture features
 docker buildx create --name mybuilder --use
 # build and push the custom image supporting multi-platform
-JAVA_TAG=17-jdk
+JAVA_TAG=8-jdk
 SPARK_VERSION=3.3
 docker buildx build \
 --platform linux/amd64,linux/arm64 \
@@ -296,6 +295,7 @@ docker buildx build \
 
 ```bash
 # build client on EMR on EKS
+JAVA_TAG=8-jdk
 SPARK_VERSION=3.3
 EMR_VERSION=emr-6.10.0
 SRC_ECR_URL=755674844232.dkr.ecr.us-east-1.amazonaws.com
@@ -304,6 +304,7 @@ aws ecr get-login-password --region us-east-1 | docker login --username AWS --pa
 docker build -t $ECR_URL/clb-spark-benchmark:${EMR_VERSION}_clb \
   --build-arg SPARK_VERSION=${SPARK_VERSION} \
   --build-arg SPARK_BASE_IMAGE=${SRC_ECR_URL}/spark/${EMR_VERSION}:latest \
+  --build-arg java_image_tag=${JAVA_TAG}-focal \
   -f docker/celeborn-emr-client/Dockerfile .
 
 docker push $ECR_URL/clb-spark-benchmark:${EMR_VERSION}_clb
@@ -324,12 +325,12 @@ docker push $ECR_URL/clb-spark-benchmark:spark${SPARK_VERSION}_client
 </details>
 
 #### Run Celeborn shuffle service in EKS
-Celeborn helm chart comes with a monitoring feature. Check out the `OPTIONAL` step to install a Prometheus Operator in order to collect the server metrics on EKS. 
+Celeborn helm chart comes with a monitoring feature. Check out the `OPTIONAL` step to install Prometheus Operator in order to collect the server metrics on EKS. 
 
 To Setup Amazon Managed Grafana dashboard sourced from Amazon Managed Prometheus, check out the instruction [here](https://github.com/melodyyangaws/karpenter-emr-on-eks/blob/main/setup_grafana_dashboard.pdf)
 
 <details>
-<summary>OPTIONAL: Install prometheus monitoring</summary>
+<summary>OPTIONAL: Install Prometheus for monitoring</summary>
 In this case, we will install a Prometheus Operator in EKS, and use the serverelss Amazon managed prometheus and managed Grafana to monitor Celeborn shuffle service in EKS.
 
 ```bash
@@ -354,6 +355,9 @@ helm repo update
 helm upgrade --install prometheus prometheus-community/kube-prometheus-stack -n prometheus -f charts/celeborn-shuffle-service/prometheusoperator_values.yaml --debug
 # validate on the webUI:localhost:9090, status->targets
 kubectl --namespace prometheus port-forward service/prometheus-kube-prometheus-prometheus 9090
+
+# create pod monitor for Spark apps
+kubectl apply -f charts/celeborn-shuffle-service/spark-podmonitor.yaml
 ```
 </details>
 
@@ -398,7 +402,7 @@ Update the docker image name to your ECR URL in the following file, then run:
 ```bash
 # go to the project root directory
 cd emr-on-eks-remote-shuffle-service
-export EMRCLUSTER_NAME=emr-on-eks-rss
+export EMRCLUSTER_NAME=<EKS_CLUSTER_NAME>
 export AWS_REGION=<YOUR_REGION>
 # run the performance test with Uber's RSS
 ./example/emr6.6-benchmark-rss.sh
@@ -407,9 +411,9 @@ export AWS_REGION=<YOUR_REGION>
 # Or Tecent's Apache Uniffle
 ./example/emr6.6-benchmark-uniffle.sh
 # Or Aliyun's Apache Celeborn
-./example/emr6.6-benchmark-celeborn.sh
+./example/emr6.10-benchmark-celeborn.sh
 # Or EMR on EKS without RSS
-./example/emr6.6-benchmark-emr.sh
+./example/emr6.10-benchmark-emr.sh
 # check job progress
 kubectl get po -n emr
 kubectl logs <DRIVER_POD_NAME> -n emr spark-kubernetes-driver

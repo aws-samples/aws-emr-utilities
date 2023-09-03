@@ -1,0 +1,8 @@
+ARG SPARK_BASE_IMAGE=755674844232.dkr.ecr.us-east-1.amazonaws.com/spark/emr-6.5.0:latest
+FROM ${SPARK_BASE_IMAGE}
+USER root
+
+RUN pip3 install --upgrade numpy==1.19.3 pandas==0.23.4 boto3==1.9.238 botocore==1.12.253 s3fs==0.2.0 pyarrow==1.0.0
+# pyspark==3.1.2
+
+USER hadoop:hadoop

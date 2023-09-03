@@ -2,76 +2,38 @@ apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
   labels:
-    app: spark-monitoring
-  name: spark-driver-metrics
-  namespace: prometheus
+    prometheus: "true"
+  name: spark-driver-monitoring
+  namespace: emr
 spec:
-  jobLabel: spark-driver-metrics
+  jobLabel: spark-driver-monitoring
   namespaceSelector:
-    matchNames: 
-    - emr
+    matchNames:
+      - emr
+  podMetricsEndpoints:
+    - port: "web-ui"
+      path: /metrics/executors/prometheus/
   selector:
     matchLabels:
-      emr_containers_amazonaws_com_component: driver  
       spark-role: driver
-  podMetricsEndpoints:
-    - interval: 10s
-      port: "spark-ui"
-      scheme: http
-      path: /metrics/executors/prometheus/
-    # - honorLabels: true
-    #   metricRelabelings:
-    #     - sourceLabels: [__name__]
-    #       regex: 'metrics_executor_(.*)'
-    #       targetLabel: __name__
-    #       replacement: $1
-    #     - sourceLabels: [__name__]
-    #       regex: 'metrics_executor_(.*)'
-    #       targetLabel: resource_type
-    #       replacement: executor
-    #     - sourceLabels: [__name__]
-    #       regex: metrics_spark_(.+)_driver_(.*)
-    #       targetLabel: resource_type
-    #       replacement: driver
-    #     - sourceLabels: [__name__]
-    #       regex: metrics_spark_(.+)_driver_(.*)
-    #       targetLabel: __name__
-    #       replacement: $2
-    #   relabelings:
-    #   - action: replace
-    #     regex: (.*)
-    #     replacement: $1
-    #     sourceLabels:
-    #     - __meta_kubernetes_pod_node_name
-    #     targetLabel: instance
-    #   - action: replace
-    #     regex: (.*)
-    #     replacement: $1
-    #     sourceLabels:
-    #     - __meta_kubernetes_namespace
-    #     targetLabel: namespace
-    #   targetPort: 4040
-    #   path: /metrics/executors/prometheus/
+      emr-containers.amazonaws.com/resource.type: job.run
 
-# ---
-# apiVersion: monitoring.coreos.com/v1
-# kind: PodMonitor
-# metadata:
-#   labels:
-#     app: spark-monitoring
-#   name: spark-executor-metrics
-#   namespace: prometheus
-# spec:
-#   jobLabel: spark-executor-metrics
-#   namespaceSelector:
-#     matchNames: 
-#     - emr
-#   selector:
-#     matchLabels:
-#       emr_containers_amazonaws_com_component: executor  
-#       spark-role: executor
-#   podMetricsEndpoints:
-#     - interval: 10s
-#       port: "blockmanager"
-#       scheme: http
-#       path: /metrics/driver/prometheus/
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    prometheus: "true"
+  name: spark-service-monitoring
+  namespace: emr
+spec:
+  namespaceSelector:
+    matchNames:
+      - emr
+  endpoints:
+    - port: "web-ui"
+      path: /metrics/driver/prometheus/
+  selector:
+    matchLabels:
+      spark_role: driver
+      emr-containers.amazonaws.com/resource.type: job.run

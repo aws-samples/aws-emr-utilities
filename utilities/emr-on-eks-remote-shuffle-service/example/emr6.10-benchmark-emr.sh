@@ -1,10 +1,6 @@
 #!/bin/bash
 # SPDX-FileCopyrightText: Copyright 2021 Amazon.com, Inc. or its affiliates.
 # SPDX-License-Identifier: MIT-0
-# "spark.driver.extraJavaOptions": "-XX:+UnlockDiagnosticVMOptions -XX:+UseAESCTRIntrinsics",
-# "spark.executor.extraJavaOptions": "-XX:+UnlockDiagnosticVMOptions -XX:+UseAESCTRIntrinsics",
-
-
         
 # export EMRCLUSTER_NAME=emr-on-eks-rss
 # export AWS_REGION=us-east-1
@@ -30,16 +26,30 @@ aws emr-containers start-job-run \
       {
         "classification": "spark-defaults", 
         "properties": {
+          "spark.kubernetes.driver.podTemplateFile": "s3://'$S3BUCKET'/app_code/pod-template/driver-pod-template.yaml",
+          "spark.kubernetes.executor.podTemplateFile": "s3://'$S3BUCKET'/app_code/pod-template/executor-pod-template.yaml",
           "spark.kubernetes.container.image": "'$ECR_URL'/eks-spark-benchmark:emr6.12_jdk8",
+
           "spark.executor.memoryOverhead": "2G",
           "spark.network.timeout": "2000s",
           "spark.executor.heartbeatInterval": "300s",
-          "spark.kubernetes.driver.podTemplateFile": "s3://'$S3BUCKET'/app_code/pod-template/driver-pod-template.yaml",
-          "spark.kubernetes.executor.podTemplateFile": "s3://'$S3BUCKET'/app_code/pod-template/executor-pod-template.yaml",
-
           "spark.kubernetes.executor.podNamePrefix": "emr-eks-q14b-c5d9a",
-          "spark.kubernetes.node.selector.eks.amazonaws.com/nodegroup": "c5d9",
-          "spark.kubernetes.driver.annotation.name":"emr-eks-app-q14b"
+          "spark.kubernetes.node.selector.eks.amazonaws.com/nodegroup": "c5d9a",
+          "spark.kubernetes.driver.annotation.name":"emr-eks-app-q14b",
+                    
+          "spark.metrics.appStatusSource.enabled":"true",
+          "spark.ui.prometheus.enabled":"true",
+          "spark.executor.processTreeMetrics.enabled":"true",
+          "spark.kubernetes.driver.annotation.prometheus.io/scrape":"true",
+          "spark.kubernetes.driver.annotation.prometheus.io/path":"/metrics/executors/prometheus/",
+          "spark.kubernetes.driver.annotation.prometheus.io/port":"4040",
+          "spark.kubernetes.driver.service.annotation.prometheus.io/scrape":"true",
+          "spark.kubernetes.driver.service.annotation.prometheus.io/path":"/metrics/driver/prometheus/",
+          "spark.kubernetes.driver.service.annotation.prometheus.io/port":"4040",
+          "spark.metrics.conf.*.sink.prometheusServlet.class":"org.apache.spark.metrics.sink.PrometheusServlet",
+          "spark.metrics.conf.*.sink.prometheusServlet.path":"/metrics/driver/prometheus/",
+          "spark.metrics.conf.master.sink.prometheusServlet.path":"/metrics/master/prometheus/",
+          "spark.metrics.conf.applications.sink.prometheusServlet.path":"/metrics/applications/prometheus/"
       }},
       {
         "classification": "spark-log4j",

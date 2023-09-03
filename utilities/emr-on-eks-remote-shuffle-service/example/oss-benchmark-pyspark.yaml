@@ -1,0 +1,75 @@
+# // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# // SPDX-License-Identifier: MIT-0
+apiVersion: "sparkoperator.k8s.io/v1beta2"
+kind: SparkApplication
+metadata:
+  name: oss-spark-multithreaded-func
+  namespace: oss
+spec:
+  nodeSelector:
+    app: sparktest
+  type: Python
+  pythonVersion: "3"
+  deps:
+    pyFiles:
+       - local:///opt/spark/jars/benchmarks.zip
+  mode: cluster
+  image: 633458367150.dkr.ecr.us-west-2.amazonaws.com/spark:3.1.2_hadoop_3.3.1
+  imagePullPolicy: Always
+  sparkVersion: 3.1.2
+  mainApplicationFile: local:///opt/spark/examples/multithreaded_functions.py
+  hadoopConf:
+    # IRSA for S3 connection
+    fs.s3.impl: org.apache.hadoop.fs.s3a.S3AFileSystem
+    fs.s3.aws.credentials.provider: com.amazonaws.auth.WebIdentityTokenCredentialsProvider
+    fs.s3a.fast.upload": "true"
+  sparkConf:
+    "spark.kubernetes.executor.podNamePrefix": "oss-spark-multithreaded-func"
+    "spark.dynamicAllocation.enabled": "true"
+    "spark.dynamicAllocation.shuffleTracking.enabled": "true"
+    "spark.dynamicAllocation.minExecutors": "8"
+    "spark.dynamicAllocation.maxExecutors": "80"
+
+    "spark.kubernetes.node.selector.eks.amazonaws.com/nodegroup": "c5d9a"
+
+  driver:
+    initContainers:  
+    - name: volume-permission
+      image: public.ecr.aws/y4g4v0z7/busybox
+      command: ['sh', '-c', 'if [ ! -d /ossdata1 ]; then mkdir /ossdata1;fi; chown -R 1000:1000 /ossdata1']
+      volumeMounts:
+        - name: spark-local-dir-1
+          mountPath: /ossdata1
+    env:
+      - name: BUCKET_PARAM
+        valueFrom:
+          configMapKeyRef:
+            name: special-config
+            key: codeBucket   
+    cores: 1
+    memory: "2g"
+    serviceAccount: oss 
+    volumeMounts:
+      - name: spark-local-dir-1
+        mountPath: /ossdata1
+  executor:
+    initContainers:  
+    - name: volume-permission
+      image: public.ecr.aws/y4g4v0z7/busybox
+      command: ['sh', '-c', 'if [ ! -d /ossdata1 ]; then mkdir /ossdata1;fi; chown -R 1000:1000 /ossdata1']
+      volumeMounts:
+        - name: spark-local-dir-1
+          mountPath: /ossdata1
+    cores: 4
+    memory: "5g"
+    instances: 16
+    # 8 executors per node  
+    volumeMounts:
+      - name: spark-local-dir-1
+        mountPath: /ossdata1
+  volumes:
+    - name: spark-local-dir-1
+      hostPath:
+        path: /local1
+  restartPolicy:
+    type: Never
