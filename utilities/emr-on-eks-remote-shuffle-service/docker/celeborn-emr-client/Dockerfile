@@ -9,7 +9,7 @@ ARG SPARK_VERSION=3.2
 # install maven
 RUN apt-get update && apt-get install -y git
 # build celeborn binary
-RUN git clone https://github.com/apache/incubator-celeborn.git -b v0.3.0-incubating-rc2
+RUN git clone https://github.com/apache/incubator-celeborn.git -b v0.3.0-incubating
 WORKDIR incubator-celeborn
 RUN ./build/make-distribution.sh -Pspark-${SPARK_VERSION} && \
     cat *.tgz | tar -xvzf - && \

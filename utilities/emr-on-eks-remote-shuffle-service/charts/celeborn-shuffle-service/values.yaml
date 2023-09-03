@@ -79,7 +79,7 @@ environments:
   CELEBORN_MASTER_MEMORY: 8g
   CELEBORN_MASTER_JAVA_OPTS: "-XX:-PrintGC -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps -Xloggc:gc-master.out -Dio.netty.leakDetectionLevel=advanced"
   CELEBORN_WORKER_MEMORY: 8g
-  CELEBORN_WORKER_OFFHEAP_MEMORY: 130g
+  CELEBORN_WORKER_OFFHEAP_MEMORY: 20g # consistent with other RSS server settings.
   CELEBORN_WORKER_JAVA_OPTS: "-XX:-PrintGC -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps -Xloggc:gc-worker.out -Dio.netty.leakDetectionLevel=advanced"
   CELEBORN_NO_DAEMONIZE: 1
   TZ: "Australia/Melbourne"
