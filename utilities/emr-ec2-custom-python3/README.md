@@ -23,7 +23,7 @@ For step #3, you can clone this repository and use `aws s3 sync` to upload the s
 ```bash
 S3_BUCKET=<your-bucket-name>
 git clone https://github.com/aws-samples/aws-emr-utilities.git
-cd utilities/emr-ec2-custom-python3
+cd aws-emr-utilities/utilities/emr-ec2-custom-python3
 aws s3 sync custom-python s3://${S3_BUCKET}/code/bootstrap/custompython/
 ```
 
