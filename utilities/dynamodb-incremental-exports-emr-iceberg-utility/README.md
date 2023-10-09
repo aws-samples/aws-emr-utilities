@@ -25,7 +25,9 @@ Iceberg tables are columnar so it's necessary to construct them by enumerating a
 
 ```bash
 spark-submit detect_schema_from_full_export.py [input_s3_path_to_export_folder] [input_s3_path_to_schema_file]
+```
 
+```
 Example:
 spark-submit detect_schema_from_full_export.py s3://my-bucket/any-prefix/01234-export-folder/ s3://my-bucket/output-schema.json
 ```
