@@ -12,7 +12,7 @@ b. The second script (`create_iceberg_from_full_export.py`) initializes your Ice
 c. The third script (`update_iceberg_from_incremental_export.py`) executes incremental updates on your target Iceberg data lake table and sets the stage for future updates.
 Together, these scripts offer a comprehensive solution for managing full and incremental data loads into Iceberg tables.
 
-<img src="img/Screenshot 2023-10-10 at 8.12.45 AM.png" width="600">
+<img src="img/Image 10-10-23 at 8.13 AM.jpeg" width="600">
 
 ## Description
 Scripts to perform full table and incremental data loads from DynamoDB extracts. In incremental script, we will provide you 2 approaches to handle data and schema changes to the target table and list down pros/cons for each approach, but we will default the script to pick the robust approach, other one will commented within the script, so you can choose to pick what's right for your use-case.
