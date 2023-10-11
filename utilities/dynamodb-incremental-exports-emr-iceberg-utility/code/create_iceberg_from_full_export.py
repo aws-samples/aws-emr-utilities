@@ -3,8 +3,8 @@
 #
 # Suggest using EMR Serverless with Apache Spark for parallel execution.
 #
-# Usage: spark-submit create_iceberg_from_full_export.py <input_s3_path_to_export_folder> <input_s3_path_to_schema_file> <desired_iceberg_table_name> <s3_path_to_iceberg_datalake_bucket>
-# Example: spark-submit create_iceberg_from_full_export.py "s3://my-bucket/any-prefix/01234-export-folder/" "s3://my-bucket/schema.json" "table_name" "s3://my-data-lake-bucket/example-prefix/"
+# Usage: spark-submit create_iceberg_from_full_export.py <dynamodb_export_bucket_with_prefix> <iceberg_bucket_with_schema_file_name> <iceberg_table_name> <iceberg_bucket_with_prefix>
+# Example: spark-submit create_iceberg_from_full_export.py "s3://dynamodb-export-bucket/any-prefix/01234-export-folder/" "s3://iceberg-bucket/prefix/schema.json" "table_name" "s3://iceberg-bucket/example-prefix/"
 
 from pyspark.sql import SparkSession
 from botocore.exceptions import ClientError
@@ -66,14 +66,15 @@ def check_manifest_file_in_s3_path(s3_path):
     return False
 
 
-def load_full_table(full_file_path, user_schema, full_table_name, iceberg_datalake_bucket):
+def load_full_table(dynamodb_export_bucket_with_prefix, user_schema, full_table_name, iceberg_datalake_bucket):
     """
-    When pointing to an S3 directory (full_file_path), Spark will read all files within that directory.
+    When pointing to an S3 directory (dynamodb_export_bucket_with_prefix), Spark will read all files within that directory.
     If the files are compressed, Spark will automatically decompress and treat them as a single dataset.
     Here, we're pointing at the export folder, not the data folder within the export, to ensure the behavior matches with incremental loads.
     """
 
     # Initializing Spark session with necessary configurations for Iceberg
+    # If you prefer to use external Hive Meta store you can by enabling config --conf "spark.sql.catalog.dev.type=hadoop" and turning off Glue configs in your job (--conf spark.sql.catalog.dev.catalog-impl=org.apache.iceberg.aws.glue.GlueCatalog --conf spark.hadoop.hive.metastore.client.factory.class=com.amazonaws.glue.catalog.metastore.AWSGlueDataCatalogHiveClientFactory"). 
     spark = SparkSession.builder \
         .appName("Load full export to Apache Iceberg") \
         .config("spark.sql.extensions", "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions") \
@@ -85,7 +86,7 @@ def load_full_table(full_file_path, user_schema, full_table_name, iceberg_datala
         .getOrCreate()
 
     # Read JSON files from the specified S3 folder into a DataFrame, data/ is appended to look under full export path
-    df_full = spark.read.json(f"{full_file_path}data/")
+    df_full = spark.read.json(f"{dynamodb_export_bucket_with_prefix}data/")
 
     # Register the DataFrame as a temporary table for SQL operations
     df_full.createOrReplaceTempView("tmp_full_table")
@@ -103,50 +104,50 @@ def load_full_table(full_file_path, user_schema, full_table_name, iceberg_datala
 if __name__ == "__main__":
     # Check the correct number of command-line arguments are provided
     if len(sys.argv) != 5:
-        print("Usage: create_iceberg_from_full_export.py <input_s3_path_to_export_folder> <input_s3_path_to_schema_file> <desired_iceberg_table_name> <s3_path_to_iceberg_datalake_bucket>")
+        print("Usage: create_iceberg_from_full_export.py <dynamodb_export_bucket_with_prefix> <iceberg_bucket_with_schema_file_name> <iceberg_table_name> <iceberg_bucket_with_prefix>")
         sys.exit(1)
 
     # Loading command-line arguments
-    full_file_path = sys.argv[1]
-    schema_s3_path = sys.argv[2]
+    dynamodb_export_bucket_with_prefix = sys.argv[1]
+    iceberg_bucket_with_schema_file_name = sys.argv[2]
     full_table_name = sys.argv[3]
     iceberg_datalake_bucket = sys.argv[4]
 
     print(f"Provided Arguments:")
-    print(f"  full_file_path: {full_file_path}")
-    print(f"  schema_s3_path: {schema_s3_path}")
+    print(f"  dynamodb_export_bucket_with_prefix: {dynamodb_export_bucket_with_prefix}")
+    print(f"  iceberg_bucket_with_schema_file_name: {iceberg_bucket_with_schema_file_name}")
     print(f"  iceberg_table_name: {full_table_name}")
-    print(f"  s3_path_to_iceberg_datalake_bucket: {iceberg_datalake_bucket}")
+    print(f"  iceberg_bucket_with_prefix: {iceberg_datalake_bucket}")
     print("-----------------------")
 
     # Validate S3 arguments
-    validate_s3_argument(full_file_path, "input_s3_path_to_export_folder")
-    validate_s3_argument(schema_s3_path, "input_s3_path_to_schema_file")
-    validate_s3_argument(iceberg_datalake_bucket, "s3_path_to_iceberg_datalake_bucket")
+    validate_s3_argument(dynamodb_export_bucket_with_prefix, "dynamodb_export_bucket_with_prefix")
+    validate_s3_argument(iceberg_bucket_with_schema_file_name, "iceberg_bucket_with_schema_file_name")
+    validate_s3_argument(iceberg_datalake_bucket, "iceberg_bucket_with_prefix")
 
     # Ensure the input path is to the export folder and not the data folder
-    if full_file_path.endswith('data/'):
+    if dynamodb_export_bucket_with_prefix.endswith('data/'):
         print("Validation Failed: Please point to the export folder, not the data folder within the export.")
         sys.exit(1)
 
     # Sanity check that the input path is a full export that has successfully completed,verify if manifest exists
-    if not check_manifest_file_in_s3_path(full_file_path):
+    if not check_manifest_file_in_s3_path(dynamodb_export_bucket_with_prefix):
         print("Validation Failed: The input path either isn't a full export or hasn't completed successfully.")
         sys.exit(1) 
 
     # Sanity check to ensure the iceberg_datalake_bucket path points to a folder and not a specific file
     if not iceberg_datalake_bucket.endswith('/'):
-        print("Validation Failed: The s3_path_to_iceberg_datalake_bucket should point to a folder. Ensure it ends with a '/'")
+        print("Validation Failed: The iceberg_bucket_with_prefix should point to a folder. Ensure it ends with a '/'")
         sys.exit(1)
 
     # Ensure the provided schema path is a file and not a folder (prefix)
     try:
-      s3_parts = schema_s3_path.replace("s3://", "").split("/")
+      s3_parts = iceberg_bucket_with_schema_file_name.replace("s3://", "").split("/")
       bucket = s3_parts[0]
       key = "/".join(s3_parts[1:])
       boto3.client('s3').head_object(Bucket=bucket, Key=key)
     except ClientError:
-      print("Validation Failed: The input_s3_path_to_schema_file should point to a file, not a folder.")
+      print("Validation Failed: The iceberg_bucket_with_schema_file_name should point to a file, not a folder.")
       sys.exit(1)
 
     print("All parameter validations passed.")
@@ -158,7 +159,7 @@ if __name__ == "__main__":
 
     try:
         # Load schema from the provided S3 path
-        user_schema = load_schema_file_from_s3(schema_s3_path, spark_init)
+        user_schema = load_schema_file_from_s3(iceberg_bucket_with_schema_file_name, spark_init)
     except Exception as e:
         print(f"Error loading schema: {str(e)}")
         spark_init.stop()
@@ -166,7 +167,7 @@ if __name__ == "__main__":
     
     try:
         # Process and load the full table into Iceberg using the provided schema
-        load_full_table(full_file_path, user_schema, full_table_name, iceberg_datalake_bucket)
+        load_full_table(dynamodb_export_bucket_with_prefix, user_schema, full_table_name, iceberg_datalake_bucket)
     except Exception as e:
         print(f"Error processing and loading table into Iceberg: {str(e)}")
         spark_init.stop()

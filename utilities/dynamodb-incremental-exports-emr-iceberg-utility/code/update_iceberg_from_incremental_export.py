@@ -5,11 +5,11 @@
 # 
 # Script expects input_export_path, 
 # iceberg_table_name (target iceberg table),
-# schema_file, s3_path_to_iceberg_datalake_bucket is bucket with prefix where iceberg 
+# schema_file, iceberg_bucket_with_prefix is bucket with prefix where iceberg 
 # data lake is hosted
 #
-# Usage: update_iceberg_from_incremental_export.py <input_s3_path_to_export_folder> <iceberg_table_name> <input_s3_path_to_schema_file> <s3_path_to_iceberg_datalake_bucket>
-# Example: spark-submit update_iceberg_from_incremental_export.py "s3://my-bucket/any-prefix/01234-export-folder/" "full_table_name" "s3://my-bucket/schema.json" "s3://my-data-lake-bucket/example-prefix/"
+# Usage: update_iceberg_from_incremental_export.py <dynamodb_export_bucket_with_prefix> <iceberg_bucket_with_schema_file_name> <iceberg_table_name> <iceberg_bucket_with_prefix>
+# Example: spark-submit update_iceberg_from_incremental_export.py "s3://dynamodb-export-bucket/optional-prefix/01234-export-folder/" "s3://iceberg-bucket/prefix/schema.json" "full_table_name" "s3://iceberg-bucket/example-prefix/"
 
 from pyspark.sql import SparkSession
 import sys
@@ -161,26 +161,26 @@ def load_incremental(spark, data_file_path, user_schema, delta_table_name, full_
 if __name__ == "__main__":
     # Check the correct number of command-line arguments are provided
     if len(sys.argv) != 5:
-        print("Usage: update_iceberg_from_incremental_export.py <input_s3_path_to_export_folder> <iceberg_table_name> <input_s3_path_to_schema_file> <s3_path_to_iceberg_datalake_bucket>")
+        print("Usage: update_iceberg_from_incremental_export.py <dynamodb_export_bucket_with_prefix> <iceberg_table_name> <iceberg_bucket_with_schema_file_name> <iceberg_bucket_with_prefix>")
         sys.exit(1)
 
     s3_delta_manifest_file_path = sys.argv[1]
     schema_s3_path = sys.argv[2]
     full_table_name = sys.argv[3]
-    s3_path_to_iceberg_datalake_bucket = sys.argv[4]
+    iceberg_bucket_with_prefix = sys.argv[4]
     delta_table_name = f"{full_table_name}_stage"
    
     print(f"Provided Arguments:")
     print(f"  s3_delta_manifest_file_path: {s3_delta_manifest_file_path}")
     print(f"  schema_s3_path: {schema_s3_path}")
     print(f"  iceberg_table_name: {full_table_name}")
-    print(f"  s3_path_to_iceberg_datalake_bucket: {s3_path_to_iceberg_datalake_bucket}")
+    print(f"  iceberg_bucket_with_prefix: {iceberg_bucket_with_prefix}")
     print("-----------------------")
  
     # Validate S3 arguments
-    validate_s3_argument(s3_delta_manifest_file_path, "input_s3_path_to_export_folder")
-    validate_s3_argument(schema_s3_path, "input_s3_path_to_schema_file")
-    validate_s3_argument(s3_path_to_iceberg_datalake_bucket, "s3_path_to_iceberg_datalake_bucket")
+    validate_s3_argument(s3_delta_manifest_file_path, "dynamodb_export_bucket_with_prefix")
+    validate_s3_argument(schema_s3_path, "iceberg_bucket_with_schema_file_name")
+    validate_s3_argument(iceberg_bucket_with_prefix, "iceberg_bucket_with_prefix")
 
     # Ensure the input path is to the export folder and not the data folder
     if s3_delta_manifest_file_path.endswith('data/'):
@@ -192,9 +192,9 @@ if __name__ == "__main__":
         print("Validation Failed: The input path either isn't a ddb incremental export or hasn't completed successfully.")
         sys.exit(1)
 
-    # Sanity check to ensure the s3_path_to_iceberg_datalake_bucket path points to a folder and not a specific file
-    if not s3_path_to_iceberg_datalake_bucket.endswith('/'):
-        print("Validation Failed: The s3_path_to_iceberg_datalake_bucket should point to a folder. Ensure it ends with a '/'")
+    # Sanity check to ensure the iceberg_bucket_with_prefix path points to a folder and not a specific file
+    if not iceberg_bucket_with_prefix.endswith('/'):
+        print("Validation Failed: The iceberg_bucket_with_prefix should point to a folder. Ensure it ends with a '/'")
         sys.exit(1)
 
     # Ensure the provided schema path is a file and not a folder (prefix)
@@ -204,7 +204,7 @@ if __name__ == "__main__":
       key = "/".join(s3_parts[1:])
       boto3.client('s3').head_object(Bucket=bucket, Key=key)
     except ClientError:
-      print("Validation Failed: The input_s3_path_to_schema_file should point to a file, not a folder.")
+      print("Validation Failed: The iceberg_bucket_with_schema_file_name should point to a file, not a folder.")
       sys.exit(1)
 
     print("All parameter validations passed.") 
@@ -217,7 +217,7 @@ if __name__ == "__main__":
         .config("spark.sql.catalog.dev", "org.apache.iceberg.spark.SparkCatalog") \
         .config("spark.sql.catalog.dev.catalog-impl", "org.apache.iceberg.aws.glue.GlueCatalog") \
         .config("spark.hadoop.hive.metastore.client.factory.class", "com.amazonaws.glue.catalog.metastore.AWSGlueDataCatalogHiveClientFactory") \
-        .config("spark.sql.catalog.dev.warehouse", f"{s3_path_to_iceberg_datalake_bucket}") \
+        .config("spark.sql.catalog.dev.warehouse", f"{iceberg_bucket_with_prefix}") \
         .getOrCreate()
 
     try:

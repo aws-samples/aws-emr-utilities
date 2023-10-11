@@ -5,7 +5,7 @@
 # Suggest using EMR Serverless with Apache Spark for parallel execution.
 #
 # Example Usage:
-# spark-submit detect_schema_from_full_export.py s3://my-bucket/any-prefix/01234-export-folder/ s3://my-bucket/output-schema.json
+# spark-submit detect_schema_from_full_export.py s3://dynamodb-export-bucket/any-prefix/01234-export-folder/ s3://iceberg-bucket/output-schema.json
 
 from botocore.exceptions import ClientError
 from pyspark.sql import SparkSession
@@ -72,35 +72,35 @@ def upload_to_s3(bucket, key, data):
 
 # Check the correct number of command-line arguments are provided
 if len(sys.argv) != 3:
-    print("Usage: detect_schema_from_full_export.py <input_s3_path_to_export_folder> <output_s3_path_to_schema_file>")
+    print("Usage: detect_schema_from_full_export.py <dynamodb_export_bucket_with_prefix> <iceberg_bucket_with_schema_file_name>")
     sys.exit(1)
 
 # Extract the params
-input_s3_path = sys.argv[1]
-output_s3_path = sys.argv[2]
+dynamodb_export_bucket_with_prefix = sys.argv[1]
+iceberg_bucket_with_schema_file_name = sys.argv[2]
 
 print(f"Provided Arguments:")
-print(f"  input_s3_path: {input_s3_path}")
-print(f"  output_s3_path: {output_s3_path}")
+print(f"  dynamodb_export_bucket_with_prefix: {dynamodb_export_bucket_with_prefix}")
+print(f"  iceberg_bucket_with_schema_file_name: {iceberg_bucket_with_schema_file_name}")
 print("-----------------------")
 
 # Ensure the input path is to the export folder and not the data folder
-if input_s3_path.endswith('data/'):
+if dynamodb_export_bucket_with_prefix.endswith('data/'):
     print("Validation Failed: Please point to the export folder, not the data folder within the export.")
     sys.exit(1)
 
 # Sanity check to ensure the input path points to a folder and not a specific file
-if not input_s3_path.endswith('/'):
+if not dynamodb_export_bucket_with_prefix.endswith('/'):
   print("Validation Failed: The input path should point to a folder. Ensure it ends with a '/'")
   sys.exit(1)
 
 # Sanity check that the input path is a full export that has successfully completed,verify if manifest exists
-if not check_manifest_file_in_s3_path(input_s3_path):
+if not check_manifest_file_in_s3_path(dynamodb_export_bucket_with_prefix):
     print("Validation Failed: The input path either isn't a full export or hasn't completed successfully.")
     sys.exit(1)
 
 # Sanity check to ensure the output path points to an object and not a folder
-if output_s3_path.endswith('/'):
+if iceberg_bucket_with_schema_file_name.endswith('/'):
   print("Validation Failed: The output path should point to a file object and not a folder. Ensure it doesn't end with a '/'")
   sys.exit(1)
 
@@ -110,7 +110,7 @@ print("All parameter validations passed.")
 spark = SparkSession.builder.appName("DynamoDB JSON Schema Inference for Spark").getOrCreate()
 
 # Read all the JSON data from the input path into a DataFrame, data/ is appended to look under full export path
-df = read_from_s3_with_spark(spark,f"{input_s3_path}data/")
+df = read_from_s3_with_spark(spark,f"{dynamodb_export_bucket_with_prefix}data/")
 df.printSchema()
 
 # Full exports use an "Item" field, so let's extract the nested schema
@@ -144,14 +144,14 @@ if alerts:
         print(f"- {alert}")
 
 # Extract bucket and key from the output path
-output_bucket = output_s3_path.split('/')[2]
-output_key = '/'.join(output_s3_path.split('/')[3:])
+output_bucket = iceberg_bucket_with_schema_file_name.split('/')[2]
+output_key = '/'.join(iceberg_bucket_with_schema_file_name.split('/')[3:])
 
 # Upload the schema string to the output S3 location
 upload_to_s3(output_bucket, output_key, schema_str)
 
 # Print a success message with the output path
-print(f"Schema saved to {output_s3_path}")
+print(f"Schema saved to {iceberg_bucket_with_schema_file_name}")
 
 # Gracefully stop the Spark session
 spark.stop()
