@@ -24,7 +24,7 @@ Scripts to perform full table and incremental data loads from DynamoDB extracts.
 Iceberg tables are columnar so it's necessary to construct them by enumerating all the columns that might exist across all items in the DynamoDB table. To make this easy, you can run a Spark job that analyzes the full table export and calculates a schema that can fully represent all attributes that exist across all the items in the DynamoDB table. You could also just define the schema manually.
 
 ```bash
-spark-submit detect_schema_from_full_export.py [input_s3_path_to_export_folder] [input_s3_path_to_schema_file]
+spark-submit detect_schema_from_full_export.py [dynamodb_export_bucket_with_prefix] [iceberg_bucket_with_schema_file_name]
 ```
 
 ```
@@ -34,12 +34,12 @@ spark-submit detect_schema_from_full_export.py s3://my-bucket/any-prefix/01234-e
 
 ### Full Table Load
 ```bash
-spark-submit create_iceberg_from_full_export.py [input_s3_path_to_export_folder] [input_s3_path_to_schema_file] [desired_iceberg_table_name] [s3_path_to_iceberg_datalake_bucket]
+spark-submit create_iceberg_from_full_export.py [dynamodb_export_bucket_with_prefix] [iceberg_bucket_with_schema_file_name] [iceberg_table_name] [iceberg_bucket_with_prefix]
 ```
 
 ### Incremental Load
 ```bash
-spark-submit update_iceberg_from_incremental_export.py [input_s3_path_to_export_folder] [iceberg_table_name] [input_s3_path_to_schema_file] [s3_path_to_iceberg_datalake_bucket]
+spark-submit update_iceberg_from_incremental_export.py [dynamodb_export_bucket_with_prefix] [iceberg_bucket_with_schema_file_name] [iceberg_table_name] [iceberg_bucket_with_prefix]
 ```
 
 ## Dependencies
@@ -77,11 +77,11 @@ Generates a list of data files from DynamoDB's manifest files for incremental ex
 Details about how the full table load script functions.
 
 1. Expects 4 arguments
-    a. [input_s3_path_to_export_folder] S3 full data file path (For example: s3://{bucket_name}/{prefix}/{export_id}/). 
+    a. [dynamodb_export_bucket_with_prefix] S3 full data file path (For example: s3://{bucket_name}/{prefix}/{export_id}/). 
     It assumes you've provided the full S3 path as an argument. No metadata file is needed in the case of a full load, because this is one-time activity.
-    b. [input_s3_path_to_schema_file] S3 path with file name for the schema.
-    c. [desired_iceberg_table_name] Table Name to be created in Glue/Hive Metastore in iceberg format.
-    d. [s3_path_to_iceberg_datalake_bucket] S3 prefix where iceberg data lake table will be created.
+    b. [iceberg_bucket_with_schema_file_name] S3 path with file name for the schema.
+    c. [iceberg_table_name] Table Name to be created in Glue/Hive Metastore in iceberg format.
+    d. [iceberg_bucket_with_prefix] S3 prefix where iceberg data lake table will be created.
      
 3. Read Data into DataFrame
     It reads the JSON data file into a Spark DataFrame.
@@ -102,10 +102,10 @@ Details about how the full table load script functions.
 Details about how the incremental table load script functions.
 
 1. Expects 4 arguments
-    a.  [input_s3_path_to_export_folder] DynamoDB incremental export S3 path.
-    b.  [input_s3_path_to_schema_file] Generated or User-provided schema for the JSON table
+    a.  [dynamodb_export_bucket_with_prefix] DynamoDB incremental export S3 path.
+    b.  [iceberg_bucket_with_schema_file_name] Generated or User-provided schema for the JSON table
     c.  [iceberg_table_name] Full Iceberg table name (Scripts automatically appends _stage to the full table name for incremental data in your Hive Metastore for troubleshooting needs)
-    d. [s3_path_to_iceberg_datalake_bucket] S3 prefix where iceberg data lake table will be created.
+    d.  [iceberg_bucket_with_prefix] S3 prefix where iceberg data lake table will be created.
 
 2. Read Data into DataFrame
     It reads this incremental data file into a Spark DataFrame.
