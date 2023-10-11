@@ -13,7 +13,7 @@ aws iam create-role --role-name emr-serverless-job-role --assume-role-policy-doc
     ]
   }'
 
-## Attaches IAM policy to the role created above, replace with your DDB-EXPORT-BUCKET-NAME,ICEBERG-BUCKET-NAME
+## Attaches IAM policy to the role created above, replace with your dynamodb-export-bucket,spark-script-bucket and iceberg-bucket
 aws iam put-role-policy --role-name emr-serverless-job-role --policy-name S3Access --policy-document '{
     "Version": "2012-10-17",
     "Statement": [
@@ -25,10 +25,10 @@ aws iam put-role-policy --role-name emr-serverless-job-role --policy-name S3Acce
                 "s3:ListBucket"
             ],
             "Resource": [
-                "arn:aws:s3:::DDB-EXPORT-BUCKET-NAME",
-                "arn:aws:s3:::DDB-EXPORT-BUCKET-NAME/*",
-                "arn:aws:s3:::YOUR-S3-SCRIPT-BUCKET",
-                "arn:aws:s3:::YOUR-S3-SCRIPT-BUCKET/*"
+                "arn:aws:s3:::dynamodb-export-bucket",
+                "arn:aws:s3:::dynamodb-export-bucket/*",
+                "arn:aws:s3:::spark-script-bucket",
+                "arn:aws:s3:::spark-script-bucket/*"
             ]
         },
         {
@@ -39,7 +39,7 @@ aws iam put-role-policy --role-name emr-serverless-job-role --policy-name S3Acce
                 "s3:DeleteObject"
             ],
             "Resource": [
-                "arn:aws:s3:::ICEBERG-BUCKET-NAME/*"
+                "arn:aws:s3:::iceberg-bucket/*"
             ]
         }
     ]
