@@ -22,7 +22,7 @@ def generate_simple_dynamodb_schema(field):
         for nested_field in field.dataType.fields:
             nested_field_name = nested_field.name
             # Check directly in a list of known DynamoDB types
-            dynamodb_types = ["S", "N", "B", "BOOL", "L", "M", "NULL"]
+            dynamodb_types = ["S", "N", "B", "BOOL", "L", "M", "NULL", "SS", "NS", "BS"]
             if nested_field_name in dynamodb_types:
                     # If the type is "BOOL" or "NULL", we append the whole type and break out of the loop
                 if nested_field_name in ["BOOL", "NULL"]:
