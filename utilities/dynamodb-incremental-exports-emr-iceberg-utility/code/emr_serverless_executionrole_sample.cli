@@ -35,6 +35,8 @@ aws iam put-role-policy --role-name emr-serverless-job-role --policy-name S3Acce
             "Sid": "WriteToOutputDataBucket",
             "Effect": "Allow",
             "Action": [
+                "s3:GetObject",
+                "s3:ListBucket",
                 "s3:PutObject",
                 "s3:DeleteObject"
             ],
