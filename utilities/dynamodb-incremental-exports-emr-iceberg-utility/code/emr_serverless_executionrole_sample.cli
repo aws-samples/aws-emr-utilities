@@ -4,6 +4,7 @@ aws iam create-role --role-name emr-serverless-job-role --assume-role-policy-doc
     "Version": "2012-10-17",
     "Statement": [
       {
+        "Sid": "EMRServerlessIAMExecutionRole",
         "Effect": "Allow",
         "Principal": {
           "Service": "emr-serverless.amazonaws.com"
