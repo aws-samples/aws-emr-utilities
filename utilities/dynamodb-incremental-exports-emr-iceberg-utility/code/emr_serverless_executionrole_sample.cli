@@ -19,7 +19,7 @@ aws iam put-role-policy --role-name emr-serverless-job-role --policy-name S3Acce
     "Version": "2012-10-17",
     "Statement": [
         {
-            "Sid": "ReadFromOutputAndInputBuckets",
+            "Sid": "ReadFromDynamoDBExportScriptBucket",
             "Effect": "Allow",
             "Action": [
                 "s3:GetObject",
