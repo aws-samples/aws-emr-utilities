@@ -112,18 +112,23 @@ def check_manifest_file_in_s3_path(s3_path):
 
 # Function to load incremental data and update Iceberg tables
 def load_incremental(spark, data_file_path, user_schema, delta_table_name, full_table_name, partition_key, sort_key=None):
-    """
-    Reads incremental data, creates a staging dataframe, and merges it into the target Iceberg table.
-    """
-
-    # Read the data into a staging Iceberg table. This table persists after the run in case
-    # there's a need to debug. Each run overwrites the past run.
     df = spark.read.json(data_file_path)
     df.createOrReplaceTempView("stg_table")
 
+    # Function to get common columns between the inferred schema and user schema
+    def get_common_columns(df, user_schema):
+        inferred_columns = [field.name for field in df.schema["NewImage"].dataType.fields]
+        user_columns = list(user_schema.keys())
+        common_columns = set(inferred_columns).intersection(set(user_columns))
+        return list(common_columns)
+    common_columns = get_common_columns(df, user_schema)
+    common_columns_with_types = {col: user_schema[col] for col in common_columns}
+
+    queryDelta = ", ".join([f"NewImage.{col}.{dtype} as {col}" for col, dtype in common_columns_with_types.items()])
+
     # Create DataFrame using the user-provided schema
     # Dynamically construct the query based on schema and keys extracted
-    queryDelta = ", ".join([f"NewImage.{col}.{type} as {col}" for col, type in user_schema.items()])
+
     keys_query = [f"Keys.{pk}.{user_schema[pk]} as Keys_{pk}" for pk in partition_key]
     if sort_key:
         for sk in sort_key:
@@ -145,14 +150,19 @@ def load_incremental(spark, data_file_path, user_schema, delta_table_name, full_
 	    delete_conditions += [f"source.{key} is null" for key in sort_key]
     delete_condition_str = ' AND '.join(delete_conditions)
 
+    update_columns = ", ".join([f"target.{col} = source.{col}" for col in common_columns])
+    insert_columns_names = ", ".join(list(user_schema.keys()))
+    insert_columns_values = ", ".join([f"source.{col}" if col in common_columns else "NULL" for col in list(user_schema.keys())])
+
     # Iceberg: MERGE INTO updates a table, called the target table(full_table_name), using a set of updates from another query, called the source(delta_table_name). The update for a row in the target table is found using the ON clause that is like a join condition.
     merge_query = f"""
     MERGE INTO dev.db.{full_table_name} AS target
     USING dev.db.{delta_table_name} AS source
     ON {join_condition}
     WHEN MATCHED AND {delete_condition_str} THEN DELETE
-    WHEN MATCHED THEN UPDATE SET *
-    WHEN NOT MATCHED THEN INSERT *
+    WHEN MATCHED THEN UPDATE SET {update_columns}
+    WHEN NOT MATCHED THEN INSERT ({insert_columns_names}) 
+    VALUES ({insert_columns_values})
     """ 
     
     # Execute merge query
