@@ -22,6 +22,14 @@ def validate_s3_argument(s3_arg, arg_name):
         print(f"The argument {arg_name} does not start with 's3://'. Please provide a valid S3 URI.")
         sys.exit(1)
 
+# Check if the table name contains only alphanumeric characters or underscores
+def is_valid_table_name(table_name):
+    if all(char.isalnum() or char == "_" for char in table_name):
+        return "Table name is valid."
+    else:
+        print("Invalid table name. Please use only numbers, characters, or underscores in table name.")
+        sys.exit(1)
+
 # Function to download and read a metadata file from S3
 def read_metadata(s3_export_folder):
     """
@@ -217,6 +225,9 @@ if __name__ == "__main__":
       print("Validation Failed: The iceberg_bucket_with_schema_file_name should point to a file, not a folder.")
       sys.exit(1)
 
+    #check if table name is valid per Hive Meta store standards (alphanumeric,underscore only)
+    is_valid_table_name(full_table_name)
+    
     print("All parameter validations passed.") 
      
     # Initialize a Spark session. Since it's on EMR, IAM roles grant necessary S3 permissions
