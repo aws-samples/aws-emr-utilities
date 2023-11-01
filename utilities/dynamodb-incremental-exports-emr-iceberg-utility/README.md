@@ -1,8 +1,8 @@
 
 # DynamoDB Incremental Exports EMR Spark Iceberg Utility
 
-Note: This utility is a supplement for AWS Blog, please follow blog steps for setup end to end.
-https://aws.amazon.com/blogs/database/use-amazon-dynamodb-incremental-export-to-update-apache-iceberg-tables/
+Note: This utility is a supplement for AWS Blog [https://aws.amazon.com/blogs/database/use-amazon-dynamodb-incremental-export-to-update-apache-iceberg-tables/], please follow blog steps for setup end to end.
+
 
 ## Summary
 
