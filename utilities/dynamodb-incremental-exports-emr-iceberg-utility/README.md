@@ -1,6 +1,9 @@
 
 # DynamoDB Incremental Exports EMR Spark Iceberg Utility
 
+Note: This utility is a supplement for AWS Blog, please follow blog steps for setup end to end.
+https://aws.amazon.com/blogs/database/use-amazon-dynamodb-incremental-export-to-update-apache-iceberg-tables/
+
 ## Summary
 
 Utility scripts for ingesting data into Iceberg tables via PySpark and AWS S3 are provided in this package. It contains three key scripts to facilitate the ingestion of incremental exports from DynamoDB on S3 into Iceberg tables hosted on AWS Glue or Hive Metastore, utilizing Amazon EMR.
