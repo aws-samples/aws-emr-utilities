@@ -89,9 +89,12 @@ def extract_keys_from_delta_file(spark, data_file_path):
     """
     Extracts primary and sort keys from a delta file.
     """
-    first_line = spark.read.text(data_file_path).head()[0]
-    # Parse the first line (assuming it's in JSON format)
-    first_record = json.loads(first_line)
+    first_line = spark.read.text(data_file_path).head()
+    # Check if the file is empty or the first line is an empty JSON
+    if not first_line or not first_line[0].strip() or first_line[0] == '{}':
+        print("Empty incremental file received. Exiting gracefully.")
+        sys.exit(0)
+    first_record = json.loads(first_line[0])
     # Check if the record has "Keys" to determine its structure
     if "Keys" in first_record:
         # Extract all keys present in the "Keys" dictionary
