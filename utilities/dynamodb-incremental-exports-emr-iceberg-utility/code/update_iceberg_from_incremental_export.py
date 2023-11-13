@@ -24,10 +24,11 @@ def validate_s3_argument(s3_arg, arg_name):
 
 # Check if the table name contains only alphanumeric characters or underscores
 def is_valid_table_name(table_name):
-    if all(char.isalnum() or char == "_" for char in table_name):
+    # Check if the table name contains only lowercase alphanumeric characters or underscores
+    if all(char.isalnum() or char == "_" for char in table_name) and table_name.islower():
         return "Table name is valid."
     else:
-        print("Invalid table name. Please use only numbers, characters, or underscores in table name.")
+        print("Invalid table name. Please use only numbers,lowercase characters, or underscores in table name.")
         sys.exit(1)
 
 # Function to download and read a metadata file from S3
