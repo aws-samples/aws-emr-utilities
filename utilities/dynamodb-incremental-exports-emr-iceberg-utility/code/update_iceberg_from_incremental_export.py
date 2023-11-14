@@ -92,7 +92,7 @@ def extract_keys_from_delta_file(spark, data_file_path):
     first_line = spark.read.text(data_file_path).head()
     # Check if the file is empty or the first line is an empty JSON
     if not first_line or not first_line[0].strip() or first_line[0] == '{}':
-        print("Empty incremental file received. Exiting gracefully.")
+        print("Incremental export includes no changes to process. Exiting gracefully.")
         sys.exit(0)
     first_record = json.loads(first_line[0])
     # Check if the record has "Keys" to determine its structure
