@@ -16,7 +16,7 @@ docker build -t $ECR_URL/hdfs:3.3.4 -f docker/Dockerfile_oss.yaml --build-arg HA
 docker push $ECR_URL/hdfs:3.3.4
 
 # EXAMPLE#2: build based on the EMR on EKS image under Hadoop version 3.3.3
-docker build -t $ECR_URL/hdfs:emr3.3.3 -f docker/Dockerfile_oss.yaml --build-arg BASE_IMAGE_NAME=895885662937.dkr.ecr.us-west-2.amazonaws.com/spark/emr-6.9.0 .
+docker build -t $ECR_URL/hdfs:emr3.3.3 -f docker/Dockerfile_emr.yaml --build-arg BASE_IMAGE_NAME=895885662937.dkr.ecr.us-west-2.amazonaws.com/spark/emr-6.9.0 .
 docker push $ECR_URL/hdfs:emr3.3.3
 ```
 Then configure the Helm Chart to use them:
