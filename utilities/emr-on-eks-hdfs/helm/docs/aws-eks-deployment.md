@@ -22,9 +22,6 @@ docker push $ECR_URL/hdfs:emr3.3.3
 Then configure the Helm Chart to use them:
 
 ```bash
-
-  REPO_PREFIX="${ACCOUNT}.dkr.ecr.${REGION}.amazonaws.com/gchq"
-
   EXTRA_HELM_ARGS=""
   EXTRA_HELM_ARGS+="--set namenode.repository=${ECR_URL}/hdfs"
   EXTRA_HELM_ARGS+="--set datanode.repository=${ECR_URL}/hdfs"
