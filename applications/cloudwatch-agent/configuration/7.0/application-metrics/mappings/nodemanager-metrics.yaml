@@ -1,0 +1,121 @@
+rules:
+  - bean: "Hadoop:service=NodeManager,name=JvmMetrics"
+    metricAttribute:
+      jobflow.id: const(REPLACE_ME_CLUSTERID)
+      instance.id: const(REPLACE_ME_INSTANCEID)
+    mapping:
+      MemNonHeapUsedM: {}
+      MemNonHeapCommittedM: {}
+      MemNonHeapMaxM: {}
+      MemHeapUsedM: {}
+      MemHeapCommittedM: {}
+      MemHeapMaxM: {}
+      MemMaxM: {}
+      GcCount: {}
+      GcTimeMillis: {}
+      ThreadsNew: {}
+      ThreadsRunnable: {}
+      ThreadsBlocked: {}
+      ThreadsWaiting: {}
+      ThreadsTimedWaiting: {}
+      ThreadsTerminated: {}
+      LogFatal: {}
+      LogError: {}
+      LogWarn: {}
+      LogInfo: {}
+    prefix: "yarn.JvmMetrics."
+    type: "gauge"
+  - bean: "Hadoop:service=NodeManager,name=MetricsSystem,sub=Stats"
+    metricAttribute:
+      jobflow.id: const(REPLACE_ME_CLUSTERID)
+      instance.id: const(REPLACE_ME_INSTANCEID)
+    mapping:
+      NumActiveSources: {}
+      NumAllSources: {}
+      NumActiveSinks: {}
+      NumAllSinks: {}
+      DroppedPubAll: {}
+      PublishNumOps: {}
+      PublishAvgTime: {}
+      SnapshotNumOps: {}
+      SnapshotAvgTime: {}
+    prefix: "yarn.MetricsSystem.Stats."
+    type: "gauge"
+  - bean: "Hadoop:service=NodeManager,name=UgiMetrics"
+    metricAttribute:
+      jobflow.id: const(REPLACE_ME_CLUSTERID)
+      instance.id: const(REPLACE_ME_INSTANCEID)
+    mapping:
+      GetGroupsNumOps: {}
+      GetGroupsAvgTime: {}
+      LoginFailureNumOps: {}
+      LoginFailureAvgTime: {}
+      LoginSuccessNumOps: {}
+      LoginSuccessAvgTime: {}
+      RenewalFailures: {}
+      RenewalFailuresTotal: {}
+    prefix: "yarn.UgiMetrics."
+    type: "gauge"
+  - bean: "Hadoop:service=NodeManager,name=NodeManagerMetrics"
+    metricAttribute:
+      jobflow.id: const(REPLACE_ME_CLUSTERID)
+      instance.id: const(REPLACE_ME_INSTANCEID)
+    mapping:
+      ContainersCompleted: {}
+      ContainersFailed: {}
+      ContainersKilled: {}
+      ContainersLaunched: {}
+      ContainersRolledBackOnFailure: {}
+      LocalizedCacheHitBytes: {}
+      LocalizedCacheHitFiles: {}
+      LocalizedCacheMissBytes: {}
+      LocalizedCacheMissFiles: {}
+      AllocatedContainers: {}
+      AllocatedGB: {}
+      AllocatedOpportunisticGB: {}
+      AllocatedOpportunisticVCores: {}
+      AllocatedVCores: {}
+      ApplicationsRunning: {}
+      AvailableGB: {}
+      AvailableVCores: {}
+      BadLocalDirs: {}
+      BadLogDirs: {}
+      CacheSizeBeforeClean: {}
+      ContainerCpuUtilization: {}
+      ContainersGuaranteedQueued: {}
+      ContainersIniting: {}
+      ContainersOpportunisticQueued: {}
+      ContainersPaused: {}
+      ContainersReIniting: {}
+      ContainersRunning: {}
+      ContainerUsedMemGB: {}
+      ContainerUsedVMemGB: {}
+      GoodLocalDirsDiskUtilizationPerc: {}
+      GoodLogDirsDiskUtilizationPerc: {}
+      LocalizedCacheHitBytesRatio: {}
+      LocalizedCacheHitFilesRatio: {}
+      NodeCpuUtilization: {}
+      NodeGpuUtilization: {}
+      NodeUsedMemGB: {}
+      NodeUsedVMemGB: {}
+      PrivateBytesDeleted: {}
+      PublicBytesDeleted: {}
+      RunningOpportunisticContainers: {}
+      TotalBytesDeleted: {}
+      ContainerLaunchDurationNumOps: {}
+      ContainerLaunchDurationAvgTime: {}
+      LocalizationDurationMillisNumOps: {}
+      LocalizationDurationMillisAvgTime: {}
+    prefix: "yarn.NodeManagerMetrics."
+    type: "gauge"
+  - bean: "Hadoop:service=NodeManager,name=ShuffleMetrics"
+    metricAttribute:
+      jobflow.id: const(REPLACE_ME_CLUSTERID)
+      instance.id: const(REPLACE_ME_INSTANCEID)
+    mapping:
+      ShuffleConnections: {}
+      ShuffleOutputBytes: {}
+      ShuffleOutputsFailed: {}
+      ShuffleOutputsOK: {}
+    prefix: "yarn.ShuffleMetrics."
+    type: "gauge"

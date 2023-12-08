@@ -1,0 +1,147 @@
+{
+   "agent": {
+      "metrics_collection_interval": 60,
+      "logfile": "/var/log/emr-cluster-metrics/amazon-cloudwatch-agent/amazon-cloudwatch-agent.log",
+      "run_as_user": "root",
+      "omit_hostname": true
+   },
+   "metrics": {
+      "aggregation_dimensions": [
+         [
+            "instance.id",
+            "jobflow.id",
+            "service.name"
+         ]
+      ],
+      "metrics_collected": {
+         "cpu": {
+            "measurement": [
+               "cpu_usage_active"
+            ],
+            "append_dimensions": {
+               "jobflow.id": "REPLACE_ME_CLUSTERID",
+               "instance.id": "REPLACE_ME_INSTANCEID",
+               "service.name": "system"
+            },
+            "metrics_collection_interval": 60,
+            "resources": [
+               "*"
+            ],
+            "drop_original_metrics": [
+               "cpu_usage_active"
+            ],
+            "totalcpu": true
+         },
+         "diskio": {
+            "measurement": [
+               "read_bytes",
+               "write_bytes"
+            ],
+            "append_dimensions": {
+               "jobflow.id": "REPLACE_ME_CLUSTERID",
+               "instance.id": "REPLACE_ME_INSTANCEID",
+               "service.name": "system"
+            },
+            "metrics_collection_interval": 60,
+            "resources": [
+               "*"
+            ],
+            "drop_original_metrics": [
+               "read_bytes",
+               "write_bytes"
+            ]
+         },
+         "mem": {
+            "measurement": [
+               "mem_available_percent",
+               "mem_used_percent"
+            ],
+            "append_dimensions": {
+               "jobflow.id": "REPLACE_ME_CLUSTERID",
+               "instance.id": "REPLACE_ME_INSTANCEID",
+               "service.name": "system"
+            },
+            "metrics_collection_interval": 60
+         },
+         "net": {
+            "measurement": [
+               "bytes_recv",
+               "bytes_sent"
+            ],
+            "append_dimensions": {
+               "jobflow.id": "REPLACE_ME_CLUSTERID",
+               "instance.id": "REPLACE_ME_INSTANCEID",
+               "service.name": "system"
+            },
+            "metrics_collection_interval": 60,
+            "resources": [
+               "*"
+            ],
+            "drop_original_metrics": [
+               "bytes_recv",
+               "bytes_sent"
+            ]
+         },
+         "netstat": {
+            "measurement": [
+               "tcp_syn_sent",
+               "tcp_syn_recv"
+            ],
+            "append_dimensions": {
+               "jobflow.id": "REPLACE_ME_CLUSTERID",
+               "instance.id": "REPLACE_ME_INSTANCEID",
+               "service.name": "system"
+            },
+            "metrics_collection_interval": 60
+         },
+         "swap": {
+            "measurement": [
+               "swap_used_percent"
+            ],
+            "append_dimensions": {
+               "jobflow.id": "REPLACE_ME_CLUSTERID",
+               "instance.id": "REPLACE_ME_INSTANCEID",
+               "service.name": "system"
+            },
+            "metrics_collection_interval": 60
+         },
+         "disk": {
+            "measurement": [
+               "free",
+               "total",
+               "used",
+               "used_percent"
+            ],
+            "append_dimensions": {
+               "jobflow.id": "REPLACE_ME_CLUSTERID",
+               "instance.id": "REPLACE_ME_INSTANCEID",
+               "service.name": "system"
+            },
+            "metrics_collection_interval": 60,
+            "resources": [
+               "*"
+            ],
+            "drop_original_metrics": [
+               "free",
+               "total",
+               "used",
+               "used_percent"
+            ]
+         },
+         "otlp": [
+            {
+               "grpc_endpoint": "127.0.0.1:4317"
+            },
+            {
+               "grpc_endpoint": "0.0.0.0:4318",
+               "tls": {
+                  "insecure": false,
+                  "key_file": "/etc/emr-cluster-metrics/amazon-cloudwatch-agent/tls-artifacts/key.pem",
+                  "cert_file": "/etc/emr-cluster-metrics/amazon-cloudwatch-agent/tls-artifacts/cert.pem",
+                  "ca_file": "/etc/emr-cluster-metrics/amazon-cloudwatch-agent/tls-artifacts/ca-cert.pem"
+               }
+            }
+         ]
+      }
+   }
+}
