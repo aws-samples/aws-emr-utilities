@@ -1,0 +1,174 @@
+rules:
+  - bean: "Hadoop:service=DataNode,name=JvmMetrics"
+    metricAttribute:
+      jobflow.id: const(REPLACE_ME_CLUSTERID)
+      instance.id: const(REPLACE_ME_INSTANCEID)
+    mapping:
+      MemNonHeapUsedM: {}
+      MemNonHeapCommittedM: {}
+      MemNonHeapMaxM: {}
+      MemHeapUsedM: {}
+      MemHeapCommittedM: {}
+      MemHeapMaxM: {}
+      MemMaxM: {}
+      GcCount: {}
+      GcTimeMillis: {}
+      ThreadsNew: {}
+      ThreadsRunnable: {}
+      ThreadsBlocked: {}
+      ThreadsWaiting: {}
+      ThreadsTimedWaiting: {}
+      ThreadsTerminated: {}
+      LogFatal: {}
+      LogError: {}
+      LogWarn: {}
+      LogInfo: {}
+    prefix: "dfs.JvmMetrics."
+    type: "gauge"
+  - bean: "Hadoop:service=DataNode,name=MetricsSystem,sub=Stats"
+    metricAttribute:
+      jobflow.id: const(REPLACE_ME_CLUSTERID)
+      instance.id: const(REPLACE_ME_INSTANCEID)
+    mapping:
+      NumActiveSources: {}
+      NumAllSources: {}
+      NumActiveSinks: {}
+      NumAllSinks: {}
+      DroppedPubAll: {}
+      PublishNumOps: {}
+      PublishAvgTime: {}
+      SnapshotNumOps: {}
+      SnapshotAvgTime: {}
+    prefix: "dfs.MetricsSystem.Stats."
+    type: "gauge"
+  - bean: "Hadoop:service=DataNode,name=UgiMetrics"
+    metricAttribute:
+      jobflow.id: const(REPLACE_ME_CLUSTERID)
+      instance.id: const(REPLACE_ME_INSTANCEID)
+    mapping:
+      GetGroupsNumOps: {}
+      GetGroupsAvgTime: {}
+      LoginFailureNumOps: {}
+      LoginFailureAvgTime: {}
+      LoginSuccessNumOps: {}
+      LoginSuccessAvgTime: {}
+      RenewalFailures: {}
+      RenewalFailuresTotal: {}
+    prefix: "dfs.UgiMetrics."
+    type: "gauge"
+  - bean: "Hadoop:service=DataNode,name=FSDatasetState"
+    metricAttribute:
+      jobflow.id: const(REPLACE_ME_CLUSTERID)
+      instance.id: const(REPLACE_ME_INSTANCEID)
+    mapping:
+      Capacity: {}
+      DfsUsed: {}
+      Remaining: {}
+      NumFailedVolumes: {}
+      LastVolumeFailureDate: {}
+      EstimatedCapacityLostTotal: {}
+      CacheUsed: {}
+      CacheCapacity: {}
+      NumBlocksCached: {}
+      NumBlocksFailedToCache: {}
+      NumBlocksFailedToUnCache: {}
+    prefix: "dfs.FSDatasetState."
+    type: "gauge"
+  - bean: "Hadoop:service=DataNode,name=DataNodeActivity-*"
+    metricAttribute:
+      jobflow.id: const(REPLACE_ME_CLUSTERID)
+      instance.id: const(REPLACE_ME_INSTANCEID)
+    mapping:
+      BlocksCached: {}
+      BlocksGetLocalPathInfo: {}
+      BlocksRead: {}
+      BlocksRemoved: {}
+      BlocksReplicated: {}
+      BlocksUncached: {}
+      BlocksVerified: {}
+      BlocksWritten: {}
+      BlockVerificationFailures: {}
+      BytesRead: {}
+      BytesWritten: {}
+      DatanodeNetworkErrors: {}
+      EcDecodingTimeNanos: {}
+      EcFailedReconstructionTasks: {}
+      EcInvalidReconstructionTasks: {}
+      EcReconstructionBytesRead: {}
+      EcReconstructionBytesWritten: {}
+      EcReconstructionDecodingTimeMillis: {}
+      EcReconstructionReadTimeMillis: {}
+      EcReconstructionRemoteBytesRead: {}
+      EcReconstructionTasks: {}
+      EcReconstructionValidateTimeMillis: {}
+      EcReconstructionWriteTimeMillis: {}
+      FsyncCount: {}
+      NumProcessedCommands: {}
+      RamDiskBlocksDeletedBeforeLazyPersisted: {}
+      RamDiskBlocksEvicted: {}
+      RamDiskBlocksEvictedWithoutRead: {}
+      RamDiskBlocksLazyPersisted: {}
+      RamDiskBlocksReadHits: {}
+      RamDiskBlocksWrite: {}
+      RamDiskBlocksWriteFallback: {}
+      RamDiskBytesLazyPersisted: {}
+      RamDiskBytesWrite: {}
+      ReadsFromLocalClient: {}
+      ReadsFromRemoteClient: {}
+      RemoteBytesRead: {}
+      RemoteBytesWritten: {}
+      SumOfActorCommandQueueLength: {}
+      TotalReadTime: {}
+      TotalWriteTime: {}
+      VolumeFailures: {}
+      WritesFromLocalClient: {}
+      WritesFromRemoteClient: {}
+      BlocksDeletedInPendingIBR: {}
+      BlocksInPendingIBR: {}
+      BlocksReceivedInPendingIBR: {}
+      BlocksReceivingInPendingIBR: {}
+      DataNodeActiveXceiversCount: {}
+      DataNodeBlockRecoveryWorkerCount: {}
+      DataNodePacketResponderCount: {}
+      BlockChecksumOpNumOps: {}
+      BlockChecksumOpAvgTime: {}
+      BlockReportsNumOps: {}
+      BlockReportsAvgTime: {}
+      CacheReportsNumOps: {}
+      CacheReportsAvgTime: {}
+      CopyBlockOpNumOps: {}
+      CopyBlockOpAvgTime: {}
+      FlushNanosNumOps: {}
+      FlushNanosAvgTime: {}
+      FsyncNanosNumOps: {}
+      FsyncNanosAvgTime: {}
+      HeartbeatsNumOps: {}
+      HeartbeatsAvgTime: {}
+      HeartbeatsTotalNumOps: {}
+      HeartbeatsTotalAvgTime: {}
+      IncrementalBlockReportsNumOps: {}
+      IncrementalBlockReportsAvgTime: {}
+      LifelinesNumOps: {}
+      LifelinesAvgTime: {}
+      PacketAckRoundTripTimeNanosNumOps: {}
+      PacketAckRoundTripTimeNanosAvgTime: {}
+      ProcessedCommandsOpNumOps: {}
+      ProcessedCommandsOpAvgTime: {}
+      RamDiskBlocksEvictionWindowMsNumOps: {}
+      RamDiskBlocksEvictionWindowMsAvgTime: {}
+      RamDiskBlocksLazyPersistWindowMsNumOps: {}
+      RamDiskBlocksLazyPersistWindowMsAvgTime: {}
+      ReadBlockOpNumOps: {}
+      ReadBlockOpAvgTime: {}
+      ReadTransferRateNumOps: {}
+      ReadTransferRateAvgTime: {}
+      ReplaceBlockOpNumOps: {}
+      ReplaceBlockOpAvgTime: {}
+      SendDataPacketBlockedOnNetworkNanosNumOps: {}
+      SendDataPacketBlockedOnNetworkNanosAvgTime: {}
+      SendDataPacketTransferNanosNumOps: {}
+      SendDataPacketTransferNanosAvgTime: {}
+      WriteBlockOpNumOps: {}
+      WriteBlockOpAvgTime: {}
+    prefix: "dfs.DataNodeActivity."
+    type: "gauge"

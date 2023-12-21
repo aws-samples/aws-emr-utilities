@@ -1,0 +1,151 @@
+rules:
+  - bean: 'Hadoop:service=ResourceManager,name=JvmMetrics'
+    metricAttribute:
+      jobflow.id: const(REPLACE_ME_CLUSTERID)
+      instance.id: const(REPLACE_ME_INSTANCEID)
+    mapping:
+      MemNonHeapUsedM: {}
+      MemNonHeapCommittedM: {}
+      MemNonHeapMaxM: {}
+      MemHeapUsedM: {}
+      MemHeapCommittedM: {}
+      MemHeapMaxM: {}
+      MemMaxM: {}
+      GcCount: {}
+      GcTimeMillis: {}
+      ThreadsNew: {}
+      ThreadsRunnable: {}
+      ThreadsBlocked: {}
+      ThreadsWaiting: {}
+      ThreadsTimedWaiting: {}
+      ThreadsTerminated: {}
+      LogFatal: {}
+      LogError: {}
+      LogWarn: {}
+      LogInfo: {}
+    prefix: 'yarn.JvmMetrics.'
+    type: 'gauge'
+  - bean: 'Hadoop:service=ResourceManager,name=MetricsSystem,sub=Stats'
+    metricAttribute:
+      jobflow.id: const(REPLACE_ME_CLUSTERID)
+      instance.id: const(REPLACE_ME_INSTANCEID)
+    mapping:
+      NumActiveSources: {}
+      NumAllSources: {}
+      NumActiveSinks: {}
+      NumAllSinks: {}
+      DroppedPubAll: {}
+      PublishNumOps: {}
+      PublishAvgTime: {}
+      SnapshotNumOps: {}
+      SnapshotAvgTime: {}
+    prefix: 'yarn.MetricsSystem.Stats.'
+    type: 'gauge'
+  - bean: 'Hadoop:service=ResourceManager,name=UgiMetrics'
+    metricAttribute:
+      jobflow.id: const(REPLACE_ME_CLUSTERID)
+      instance.id: const(REPLACE_ME_INSTANCEID)
+    mapping:
+      GetGroupsNumOps: {}
+      GetGroupsAvgTime: {}
+      LoginFailureNumOps: {}
+      LoginFailureAvgTime: {}
+      LoginSuccessNumOps: {}
+      LoginSuccessAvgTime: {}
+      RenewalFailures: {}
+      RenewalFailuresTotal: {}
+    prefix: 'yarn.UgiMetrics.'
+    type: 'gauge'
+  - bean: 'Hadoop:service=ResourceManager,name=ClusterMetrics'
+    metricAttribute:
+      jobflow.id: const(REPLACE_ME_CLUSTERID)
+      instance.id: const(REPLACE_ME_INSTANCEID)
+    mapping:
+      AMContainerAllocationDelayNumOps: {}
+      AMContainerAllocationDelayAvgTime: {}
+      AMLaunchDelayNumOps: {}
+      AMLaunchDelayAvgTime: {}
+      AMRegisterDelayNumOps: {}
+      AMRegisterDelayAvgTime: {}
+      CapabilityMB: {}
+      CapabilityVirtualCores: {}
+      NumActiveNMs: {}
+      NumDecommissionedNMs: {}
+      NumDecommissioningNMs: {}
+      NumLostNMs: {}
+      NumRebootedNMs: {}
+      NumShutdownNMs: {}
+      NumUnhealthyNMs: {}
+      RmEventProcCPUAvg: {}
+      RmEventProcCPUMax: {}
+      UtilizedMB: {}
+      UtilizedVirtualCores: {}
+    prefix: 'yarn.ClusterMetrics.'
+    type: 'gauge'
+  - bean: 'Hadoop:service=ResourceManager,name=CapacitySchedulerMetrics'
+    metricAttribute:
+      jobflow.id: const(REPLACE_ME_CLUSTERID)
+      instance.id: const(REPLACE_ME_INSTANCEID)
+    mapping:
+      AllocateNumOps: {}
+      AllocateAvgTime: {}
+      CommitFailureNumOps: {}
+      CommitFailureAvgTime: {}
+      CommitSuccessNumOps: {}
+      CommitSuccessAvgTime: {}
+      NodeUpdateNumOps: {}
+      NodeUpdateAvgTime: {}
+    prefix: 'yarn.CapacitySchedulerMetrics.'
+    type: 'gauge'
+  - bean: 'Hadoop:service=ResourceManager,name=QueueMetrics,q0=root'
+    metricAttribute:
+      jobflow.id: const(REPLACE_ME_CLUSTERID)
+      instance.id: const(REPLACE_ME_INSTANCEID)
+    mapping:
+      AMResourceLimitMB: {}
+      AMResourceLimitVCores: {}
+      AbsoluteUsedCapacity: {}
+      GuaranteedAbsoluteCapacity: {}
+      GuaranteedCapacity: {}
+      GuaranteedMB: {}
+      GuaranteedVCores: {}
+      MaxAbsoluteCapacity: {}
+      MaxCapacity: {}
+      MaxCapacityMB: {}
+      MaxCapacityVCores: {}
+      UsedAMResourceMB: {}
+      UsedAMResourceVCores: {}
+      UsedCapacity: {}
+      ActiveApplications: {}
+      ActiveUsers: {}
+      AggregateContainersAllocated: {}
+      AggregateContainersPreempted: {}
+      AggregateContainersReleased: {}
+      AggregateMemoryMBPreempted: {}
+      AggregateMemoryMBSecondsPreempted: {}
+      AggregateNodeLocalContainersAllocated: {}
+      AggregateOffSwitchContainersAllocated: {}
+      AggregateRackLocalContainersAllocated: {}
+      AggregateVcoreSecondsPreempted: {}
+      AggregateVcoresPreempted: {}
+      AllocatedContainers: {}
+      AllocatedMB: {}
+      AllocatedVCores: {}
+      AppAttemptFirstContainerAllocationDelayNumOps: {}
+      AppAttemptFirstContainerAllocationDelayAvgTime: {}
+      AppsCompleted: {}
+      AppsFailed: {}
+      AppsKilled: {}
+      AppsPending: {}
+      AppsRunning: {}
+      AppsSubmitted: {}
+      AvailableMB: {}
+      AvailableVCores: {}
+      PendingContainers: {}
+      PendingMB: {}
+      PendingVCores: {}
+      ReservedContainers: {}
+      ReservedMB: {}
+      ReservedVCores: {}
+    prefix: 'yarn.QueueMetrics.root.'
+    type: 'gauge'
