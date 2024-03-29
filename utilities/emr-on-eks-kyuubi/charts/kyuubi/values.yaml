@@ -1,0 +1,308 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# Default values for kyuubi.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Kyuubi server numbers
+replicaCount: 2
+
+# controls how Kyuubi server pods are created during initial scale up,
+# when replacing pods on nodes, or when scaling down.
+# The default policy is `OrderedReady`, alternative policy is `Parallel`.
+podManagementPolicy: OrderedReady
+
+# Minimum number of seconds for which a newly created kyuubi server
+# should be ready without any of its container crashing for it to be considered available.
+minReadySeconds: 30
+
+# maximum number of revisions that will be maintained in the StatefulSet's revision history.
+revisionHistoryLimit: 10
+
+# indicates the StatefulSetUpdateStrategy that will be employed to update Kyuubi server Pods in the StatefulSet
+# when a revision is made to Template.
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+    partition: 0
+
+image:
+  repository: apache/kyuubi
+  pullPolicy: IfNotPresent
+  tag: ~
+
+imagePullSecrets: []
+
+# ServiceAccount used for Kyuubi create/list/delete pod in Kubernetes
+serviceAccount:
+  # Specifies whether a ServiceAccount should be created
+  create: true
+  # Specifies ServiceAccount name to be used (created if `create: true`)
+  name: ~
+
+# priorityClass used for Kyuubi server pod
+priorityClass:
+  # Specifies whether a priorityClass should be created
+  create: false
+  # Specifies priorityClass name to be used (created if `create: true`)
+  name: ~
+  # half of system-cluster-critical by default
+  value: 1000000000
+
+# Role-based access control
+rbac:
+  # Specifies whether RBAC resources should be created
+  create: true
+  # RBAC rules
+  rules:
+    - apiGroups: [""]
+      resources: ["pods"]
+      verbs: ["create", "list", "delete"]
+
+server:
+  # Thrift Binary protocol (HiveServer2 compatible)
+  thriftBinary:
+    enabled: true
+    port: 10009
+    service:
+      type: ClusterIP
+      port: "{{ .Values.server.thriftBinary.port }}"
+      nodePort: ~
+      annotations: {}
+      # candidates are ClientIP or None
+      # https://kubernetes.io/docs/reference/kubernetes-api/service-resources/service-v1/
+      sessionAffinity: ~
+      sessionAffinityConfig: {}
+      #  sessionAffinityConfig:
+      #    clientIP:
+      #      timeoutSeconds: 10800
+
+  # Thrift HTTP protocol (HiveServer2 compatible)
+  thriftHttp:
+    enabled: false
+    port: 10010
+    service:
+      type: ClusterIP
+      port: "{{ .Values.server.thriftHttp.port }}"
+      nodePort: ~
+      annotations: {}
+      # candidates are ClientIP or None
+      # https://kubernetes.io/docs/reference/kubernetes-api/service-resources/service-v1/
+      sessionAffinity: ~
+      sessionAffinityConfig: {}
+      #  sessionAffinityConfig:
+      #    clientIP:
+      #      timeoutSeconds: 10800
+
+  # REST API protocol (experimental)
+  rest:
+    enabled: true
+    port: 10099
+    service:
+      type: ClusterIP
+      port: "{{ .Values.server.rest.port }}"
+      nodePort: ~
+      annotations: {}
+      # candidates are ClientIP or None
+      # https://kubernetes.io/docs/reference/kubernetes-api/service-resources/service-v1/
+      sessionAffinity: ~
+      sessionAffinityConfig: {}
+      #  sessionAffinityConfig:
+      #    clientIP:
+      #      timeoutSeconds: 10800
+
+  # MySQL compatible text protocol (experimental)
+  mysql:
+    enabled: false
+    port: 3309
+    service:
+      type: ClusterIP
+      port: "{{ .Values.server.mysql.port }}"
+      nodePort: ~
+      annotations: {}
+      # candidates are ClientIP or None
+      # https://kubernetes.io/docs/reference/kubernetes-api/service-resources/service-v1/
+      sessionAffinity: ~
+      sessionAffinityConfig: {}
+      #  sessionAffinityConfig:
+      #    clientIP:
+      #      timeoutSeconds: 10800
+
+monitoring:
+  # Exposes metrics in Prometheus format
+  prometheus:
+    enabled: true
+    port: 10019
+
+# $KYUUBI_CONF_DIR directory
+kyuubiConfDir: /opt/kyuubi/conf
+# Kyuubi configuration files
+kyuubiConf:
+  # The value (templated string) is used for kyuubi-env.sh file
+  # See example at conf/kyuubi-env.sh.template and https://kyuubi.readthedocs.io/en/master/configuration/settings.html#environments for more details
+  kyuubiEnv: ~
+  #  kyuubiEnv: |
+  #    #!/usr/bin/env bash
+  #    export JAVA_HOME=/usr/jdk64/jdk1.8.0_152
+  #    export SPARK_HOME=/opt/spark
+  #    export FLINK_HOME=/opt/flink
+  #    export HIVE_HOME=/opt/hive
+
+  # The value (templated string) is used for kyuubi-defaults.conf file
+  # See https://kyuubi.readthedocs.io/en/master/configuration/settings.html#kyuubi-configurations for more details
+  kyuubiDefaults: ~
+  #  kyuubiDefaults: |
+  #    kyuubi.authentication=NONE
+  #    kyuubi.frontend.bind.host=10.0.0.1
+  #    kyuubi.engine.type=SPARK_SQL
+  #    kyuubi.engine.share.level=USER
+  #    kyuubi.session.engine.initialize.timeout=PT3M
+  #    kyuubi.ha.addresses=zk1:2181,zk2:2181,zk3:2181
+  #    kyuubi.ha.namespace=kyuubi
+
+  # The value (templated string) is used for log4j2.xml file
+  # See example at conf/log4j2.xml.template https://kyuubi.readthedocs.io/en/master/configuration/settings.html#logging for more details
+  log4j2: ~
+
+# $SPARK_CONF_DIR directory
+sparkConfDir: /opt/spark/conf
+# Spark configuration files
+sparkConf:
+  # The value (templated string) is used for spark-env.sh file
+  # See example at https://github.com/apache/spark/blob/master/conf/spark-env.sh.template and Spark documentation for more details
+  sparkEnv: ~
+  #  sparkEnv: |
+  #    #!/usr/bin/env bash
+  #    export JAVA_HOME=/usr/jdk64/jdk1.8.0_152
+  #    export SPARK_LOG_DIR=/opt/spark/logs
+  #    export SPARK_LOG_MAX_FILES=5
+
+  # The value (templated string) is used for spark-defaults.conf file
+  # See example at https://github.com/apache/spark/blob/master/conf/spark-defaults.conf.template and Spark documentation for more details
+  sparkDefaults: ~
+  #  sparkDefaults: |
+  #    spark.submit.deployMode=cluster
+  #    spark.kubernetes.container.image=apache/spark:3.5.0
+  #    spark.kubernetes.authenticate.driver.serviceAccountName=spark
+  #    spark.kubernetes.file.upload.path=s3a://kyuubi/spark
+  #    # S3 dependencies
+  #    spark.jars.packages=org.apache.hadoop:hadoop-aws:3.3.4,com.amazonaws:aws-java-sdk-bundle:1.12.262
+  #    spark.driver.extraJavaOptions=-Divy.cache.dir=/tmp -Divy.home=/tmp
+  #    # S3A configuration
+  #    spark.hadoop.fs.s3a.impl=org.apache.hadoop.fs.s3a.S3AFileSystem
+  #    spark.hadoop.fs.s3a.endpoint=http://object-storage:80
+  #    spark.hadoop.fs.s3a.access.key=******
+  #    spark.hadoop.fs.s3a.secret.key=********
+  #    spark.hadoop.fs.s3a.path.style.access=true
+  #    spark.hadoop.fs.s3a.fast.upload=true
+
+  # The value (templated string) is used for log4j2.properties file
+  # See example at https://github.com/apache/spark/blob/master/conf/log4j2.properties.template and Spark documentation for more details
+  log4j2: ~
+
+  # The value (templated string) is used for metrics.properties file
+  # See example at https://github.com/apache/spark/blob/master/conf/metrics.properties.template and Spark documentation for more details
+  metrics: ~
+
+# Command to launch Kyuubi server (templated)
+command: ~
+# Arguments to launch Kyuubi server (templated)
+args: ~
+
+# Environment variables (templated)
+env: []
+# Environment variables from ConfigMaps and Secrets (templated)
+envFrom: []
+
+# Additional volumes for Kyuubi pod (templated)
+volumes: []
+# Additional volumeMounts for Kyuubi container (templated)
+volumeMounts: []
+
+# Additional init containers for Kyuubi pod (templated)
+initContainers: []
+# Additional containers for Kyuubi pod (templated)
+containers: []
+
+# Resource requests and limits for Kyuubi pods
+resources: {}
+#  resources:
+#    requests:
+#      cpu: 2
+#      memory: 4Gi
+#    limits:
+#      cpu: 4
+#      memory: 10Gi
+
+# Liveness probe
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 2
+  failureThreshold: 10
+  successThreshold: 1
+
+# Readiness probe
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 2
+  failureThreshold: 10
+  successThreshold: 1
+
+# Constrain Kyuubi pods to nodes with specific node labels
+nodeSelector: {}
+# Allow to schedule Kyuubi pods on nodes with matching taints
+tolerations: []
+# Constrain Kyuubi pods to nodes by complex affinity/anti-affinity rules
+affinity: {}
+
+# Kyuubi pods security context
+securityContext: {}
+
+# Monitoring Kyuubi - Server Metrics
+# PROMETHEUS - PrometheusReporter which exposes metrics in Prometheus format
+metricsReporters: ~
+
+# Prometheus pod monitor
+podMonitor:
+  # If enabled, podMonitor for operator's pod will be created
+  enabled: false
+  # The podMetricsEndpoint contains metrics information such as port, interval, scheme, and possibly other relevant details.
+  # This information is used to configure the endpoint from which Prometheus can scrape and collect metrics for a specific Pod in Kubernetes.
+  podMetricsEndpoint: []
+
+# Prometheus service monitor
+serviceMonitor:
+  # If enabled, ServiceMonitor resources for Prometheus Operator are created
+  enabled: false
+  # The endpoints section in a ServiceMonitor specifies the metrics information for each target endpoint.
+  # This allows you to collect metrics from multiple Services across your Kubernetes cluster in a standardized and automated way.
+  endpoints: []
+  # Additional labels that can be used so ServiceMonitor will be discovered by Prometheus
+  labels: {}
+
+# Rules for the Prometheus Operator
+prometheusRule:
+  # If enabled, a PrometheusRule resource for Prometheus Operator is created
+  enabled: false
+  # Contents of Prometheus rules file
+  groups: []

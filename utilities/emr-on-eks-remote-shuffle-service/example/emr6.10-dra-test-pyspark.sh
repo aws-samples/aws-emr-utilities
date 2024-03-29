@@ -13,7 +13,7 @@ aws emr-containers start-job-run \
   --virtual-cluster-id $VIRTUAL_CLUSTER_ID \
   --name em65-multithreaded-func \
   --execution-role-arn $EMR_ROLE_ARN \
-  --release-label emr-6.5.0-latest \
+  --release-label emr-6.10.0-latest \
   --job-driver '{
   "sparkSubmitJobDriver": {
       "entryPoint": "s3://emr-mobileye-us-west-2/multithreaded_functions.py",

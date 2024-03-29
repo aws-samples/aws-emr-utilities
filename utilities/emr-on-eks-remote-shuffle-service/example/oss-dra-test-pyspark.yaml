@@ -1,0 +1,77 @@
+# // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# // SPDX-License-Identifier: MIT-0
+apiVersion: "sparkoperator.k8s.io/v1beta2"
+kind: SparkApplication
+metadata:
+  name: dra-test
+  namespace: oss
+spec:
+  nodeSelector:
+    app: sparktest
+  type: Python
+  pythonVersion: "3"
+  image: public.ecr.aws/myang-poc/celeborn-rss:spark3.3.2_dra
+  imagePullPolicy: Always
+  sparkVersion: 3.1.2
+  mainApplicationFile: local:///opt/spark/examples/multithreaded_functions.py
+  hadoopConf:
+    # IRSA for S3 connection
+    fs.s3.impl: org.apache.hadoop.fs.s3a.S3AFileSystem
+    fs.s3.aws.credentials.provider: com.amazonaws.auth.WebIdentityTokenCredentialsProvider
+    fs.s3a.fast.upload": "true"
+  sparkConf:
+    "spark.kubernetes.executor.podNamePrefix": "oss-spark-multithreaded-func"
+    "spark.dynamicAllocation.enabled": "true"
+    "spark.dynamicAllocation.shuffleTracking.enabled": "false"
+    "spark.dynamicAllocation.minExecutors": "8"
+    "spark.dynamicAllocation.maxExecutors": "80"
+    "spark.shuffle.service.enabled": "false"
+
+     "spark.network.timeout": "2000s"
+    "spark.executor.heartbeatInterval": "300s" 
+    "spark.kubernetes.node.selector.eks.amazonaws.com/nodegroup": "c59b"
+    # AQE
+    "spark.sql.adaptive.enabled": "true"
+    "spark.sql.adaptive.skewJoin.enabled": "true"
+    "spark.sql.adaptive.localShuffleReader.enabled": "false"
+    "spark.serializer": "org.apache.spark.serializer.KryoSerializer" 
+    # IRSA for S3 connection
+    "spark.kubernetes.executor.podNamePrefix": "oss-clb-dra"
+    "spark.hadoop.fs.s3a.aws.credentials.provider": "com.amazonaws.auth.WebIdentityTokenCredentialsProvider"
+    "spark.hadoop.fs.s3.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem"
+    "spark.hadoop.mapreduce.fileoutputcommitter.algorithm.version": "2" 
+    # Enable RSS
+    "spark.celeborn.shuffle.chunk.size": "4m"
+    "spark.celeborn.push.maxReqsInFlight": "128"
+    "spark.celeborn.push.replicate.enabled": "true"
+    "spark.celeborn.shuffle.batchHandleChangePartition.enabled": "true"
+    "spark.celeborn.shuffle.batchHandleCommitPartition.enabled": "true"
+    "spark.celeborn.client.push.blacklist.enabled": "true"
+    "spark.celeborn.client.fetch.excludeWorkerOnFailure.enabled": "true"
+    "spark.celeborn.client.commitFiles.ignoreExcludedWorker": "true"
+    
+    "spark.shuffle.manager": "org.apache.spark.shuffle.celeborn.RssShuffleManager"
+    "spark.celeborn.master.endpoints": "celeborn-master-0.celeborn-master-svc.celeborn:9097,celeborn-master-1.celeborn-master-svc.celeborn:9097,celeborn-master-2.celeborn-master-svc.celeborn:9097"
+
+  restartPolicy:
+    type: Always
+    onFailureRetries: 3
+    onFailureRetryInterval: 5
+    onSubmissionFailureRetries: 5
+    onSubmissionFailureRetryInterval: 20    
+  driver:
+    env:
+      - name: BUCKET_PARAM
+        valueFrom:
+          configMapKeyRef:
+            name: special-config
+            key: codeBucket   
+    cores: 3
+    memory: "4g"
+    serviceAccount: oss
+  executor:
+    cores: 4
+    memory: "6g"
+    memoryOverhead: "2g"
+    # 7 executors per node  
+    # instances: 47
