@@ -41,12 +41,10 @@ aws emr-containers start-job-run \
           "spark.network.timeout": "2000s",
           "spark.executor.heartbeatInterval": "300s",
           "spark.kubernetes.executor.podNamePrefix": "emr-clb-grafana",
-
-          "spark.shuffle.service.enabled": "false",
-          "spark.sql.adaptive.enabled": "true",
-          "spark.sql.adaptive.skewJoin.enabled": "true",
-          "spark.sql.adaptive.localShuffleReader.enabled":"false",
+          "spark.kubernetes.driver.annotation.name":"emr-eks-clb",
           "spark.serializer": "org.apache.spark.serializer.KryoSerializer",
+          "spark.sql.adaptive.localShuffleReader.enabled":"false",
+          "spark.kubernetes.node.selector.eks.amazonaws.com/nodegroup": "c59a"
 
           "spark.celeborn.shuffle.chunk.size": "4m",
           "spark.celeborn.client.push.maxReqsInFlight": "128",
@@ -56,7 +54,6 @@ aws emr-containers start-job-run \
           "spark.celeborn.client.push.excludeWorkerOnFailure.enabled": "true",
           "spark.celeborn.client.fetch.excludeWorkerOnFailure.enabled": "true",
           "spark.celeborn.client.commitFiles.ignoreExcludedWorker": "true",
-
           "spark.shuffle.manager": "org.apache.spark.shuffle.celeborn.RssShuffleManager",
           "spark.celeborn.master.endpoints": "celeborn-master-0.celeborn-master-svc.celeborn:9097,celeborn-master-1.celeborn-master-svc.celeborn:9097,celeborn-master-2.celeborn-master-svc.celeborn:9097",
           "spark.sql.optimizedUnsafeRowSerializers.enabled":"false",
@@ -73,10 +70,7 @@ aws emr-containers start-job-run \
           "spark.metrics.conf.*.sink.prometheusServlet.class":"org.apache.spark.metrics.sink.PrometheusServlet",
           "spark.metrics.conf.*.sink.prometheusServlet.path":"/metrics/driver/prometheus/",
           "spark.metrics.conf.master.sink.prometheusServlet.path":"/metrics/master/prometheus/",
-          "spark.metrics.conf.applications.sink.prometheusServlet.path":"/metrics/applications/prometheus/",
-
-          "spark.kubernetes.driver.annotation.name":"emr-eks-clb",
-          "spark.kubernetes.node.selector.eks.amazonaws.com/nodegroup": "c59a"
+          "spark.metrics.conf.applications.sink.prometheusServlet.path":"/metrics/applications/prometheus/"
 
       }},
       {
