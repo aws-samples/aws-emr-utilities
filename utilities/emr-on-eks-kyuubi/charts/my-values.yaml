@@ -1,0 +1,126 @@
+# // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# // SPDX-License-Identifier: MIT-0
+# Kyuubi server numbers
+replicaCount: 2
+image:
+  repository: 021732063925.dkr.ecr.us-west-2.amazonaws.com/kyuubi-emr-eks
+  tag: "6.10"
+  pullPolicy: Always
+
+# priorityClass used for Kyuubi server pod
+priorityClass:
+  create: false
+  name: ~
+
+# ServiceAccount used for Kyuubi create/list/delete pod in EMR on EKS namespace "emr"
+# SA was created by eks_provision.sh, update the script if needed
+serviceAccount:
+  create: false
+  name: cross-ns-kyuubi
+
+# Allow Kyuubi create Spark Engine & pods outside in a different namespace "emr"
+engine:
+  namespace: emr
+
+# the rbac role will be created in "emr" namespace  
+rbac:
+  create: true
+  rules:
+    - apiGroups: [""]
+      resources: ["services", "configmaps", "serviceaccounts", "pods"]
+      verbs: ["get", "list", "describe", "create", "edit", "delete", "annotate", "patch", "label", "watch"]
+    - apiGroups: [""]
+      resources: ["persistentvolumeclaims"]
+      verbs:  ["create", "list", "delete"]
+    - apiGroups: ["rbac.authorization.k8s.io"]
+      resources: ["roles", "rolebindings"]
+      verbs: ["get", "list", "describe", "create", "edit", "delete", "annotate", "patch", "label"]  
+
+server:
+  # Thrift Binary protocol (HiveServer2 compatible)
+  thriftBinary:
+    enabled: true
+    port: 10009
+    service:
+      type: ClusterIP
+      port: "{{ .Values.server.thriftBinary.port }}"
+      annotations: {}
+
+  # Thrift HTTP protocol (HiveServer2 compatible)
+  thriftHttp:
+    enabled: false
+    port: 10010
+    service:
+      type: ClusterIP
+      port: "{{ .Values.server.thriftHttp.port }}"
+      annotations: {}
+
+  # REST API protocol (experimental)
+  rest:
+    enabled: true
+    port: 10099
+    service:
+      type: ClusterIP
+      port: "{{ .Values.server.rest.port }}"
+      annotations: {}
+
+  # MySQL compatible text protocol (experimental)
+  mysql:
+    enabled: false
+    port: 3309
+    service:
+      type: ClusterIP
+      port: "{{ .Values.server.mysql.port }}"
+  
+monitoring:
+  # Exposes metrics in Prometheus format
+  prometheus:
+    enabled: false
+kyuubiConfDir: /opt/kyuubi/conf
+kyuubiConf:
+  kyuubiEnv: |
+    #!/usr/bin/env bash
+    export SPARK_HOME=/usr/lib/spark
+    export KYUUBI_WORK_DIR_ROOT=/usr/lib/kyuubi/work
+    export HADOOP_CONF_DIR=/etc/hadoop/conf
+    export JAVA_HOME=/etc/alternatives/jre
+  kyuubiDefaults: ~
+  # kyuubiDefaults: |
+    # Authentication (client users)
+    # kyuubi.authentication                                         LDAP
+    # kyuubi.authentication.ldap.url                                $LDAP_URL
+    # kyuubi.authentication.ldap.base.dn                            $LDAP_BASE_USER_DN
+    # kyuubi.authentication.ldap.guidKey                            $LDAP_USER_ATTR
+
+# $SPARK_CONF_DIR directory
+sparkConfDir: /opt/spark/conf
+sparkConf:
+  sparkDefaults: |
+    spark.submit.deployMode=cluster
+    spark.kubernetes.namespace=emr
+    spark.hadoop.fs.s3.customAWSCredentialsProvider=com.amazonaws.auth.WebIdentityTokenCredentialsProvider
+    spark.kubernetes.authenticate.serviceAccountName=cross-ns-kyuubi
+    spark.kubernetes.authenticate.driver.serviceAccountName=emr-kyuubi
+    spark.kubernetes.container.image=021732063925.dkr.ecr.us-west-2.amazonaws.com/kyuubi-emr-eks:6.10
+    spark.kubernetes.driver.container.image=021732063925.dkr.ecr.us-west-2.amazonaws.com/kyuubi-emr-eks:6.10
+    spark.kubernetes.file.upload.path=file:///tmp
+    spark.master=k8s://https://kubernetes.default.svc:443
+    spark.hadoop.fs.s3.impl=com.amazon.ws.emr.hadoop.fs.EmrFileSystem
+    spark.driver.extraLibraryPath=/usr/lib/hadoop/lib/native:/usr/lib/hadoop-lzo/lib/native:/docker/usr/lib/hadoop/lib/native:/docker/usr/lib/hadoop-lzo/lib/native
+    spark.jars=local:///usr/share/aws/iceberg/lib/iceberg-spark3-runtime.jar,local:///usr/share/aws/delta/lib/delta-core.jar,local:///usr/share/aws/delta/lib/delta-storage.jar
+    spark.hadoop.hive.metastore.client.factory.class=com.amazonaws.glue.catalog.metastore.AWSGlueDataCatalogHiveClientFactory
+    spark.sql.extensions=io.delta.sql.DeltaSparkSessionExtension,org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions
+    spark.sql.catalog.spark_catalog=org.apache.spark.sql.delta.catalog.DeltaCatalog
+# spark.sql.catalog.iceberg=org.apache.iceberg.spark.SparkCatalog
+# spark.sql.catalog.iceberg.catalog-impl=org.apache.iceberg.aws.glue.GlueCatalog
+# spark.sql.catalog.glue_catalog.warehouse=s3://YOUR_BUCKET/iceberg/
+# spark.sql.catalog.iceberg.io-impl=org.apache.iceberg.aws.s3.S3FileIO
+# spark.hadoop.fs.s3a.bucket.iceberg-bucket.committer.magic.enabled=true
+# spark.master=k8s://https://2E5B7716F0F9CD69490FCCCD6DFBC327.gr7.us-west-2.eks.amazonaws.com
+# spark.hadoop.fs.s3a.bucket.YOUR_BUCKET.committer.magic.enabled=true
+# spark.hadoop.fs.AbstractFileSystem.s3.impl=org.apache.hadoop.fs.s3.EMRFSDelegate
+
+livenessProbe:
+  enabled: true
+readinessProbe:
+  enabled: true
