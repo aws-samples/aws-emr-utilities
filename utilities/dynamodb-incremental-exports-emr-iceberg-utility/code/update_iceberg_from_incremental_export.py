@@ -10,6 +10,7 @@
 #
 # Usage: update_iceberg_from_incremental_export.py <dynamodb_export_bucket_with_prefix> <iceberg_bucket_with_schema_file_name> <iceberg_table_name> <iceberg_bucket_with_prefix>
 # Example: spark-submit update_iceberg_from_incremental_export.py "s3://dynamodb-export-bucket/optional-prefix/01234-export-folder/" "s3://iceberg-bucket/prefix/schema.json" "full_table_name" "s3://iceberg-bucket/example-prefix/"
+# Note on schema evolution in Iceberg: if your schema is evolving frequently in DDB, consider updating iceberg table property to 'write.spark.accept-any-schema'='true' in your iceberg Catalog. Refer: https://iceberg.apache.org/docs/latest/spark-writes/#schema-merge
 
 from pyspark.sql import SparkSession
 import sys
