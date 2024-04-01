@@ -15,6 +15,7 @@ from pyspark.sql import SparkSession
 import sys
 import json, boto3, logging
 from botocore.exceptions import ClientError
+from pyspark.sql.utils import AnalysisException
 
 # Function to validate S3 URI
 def validate_s3_argument(s3_arg, arg_name):
@@ -150,6 +151,37 @@ def load_incremental(spark, data_file_path, user_schema, delta_table_name, full_
 
     # Write to Iceberg table 
     df_stg_result.writeTo(f"dev.db.{delta_table_name}").using("iceberg").createOrReplace()
+
+
+    # Use the comprehensive dtype_mapping
+    dtype_mapping = {
+        'S': 'STRING',
+        'N': 'DOUBLE',
+        'B': 'BINARY',
+        'BOOL': 'BOOLEAN',
+        'NULL': 'STRING',
+        'L': 'ARRAY<STRING>',
+        'M': 'MAP<STRING, STRING>',
+        'BS': 'BINARY',
+        'NS': 'ARRAY<DOUBLE>',
+        'SS': 'ARRAY<STRING>',
+        'NUL': 'STRING',
+        'BOOL': 'BOOLEAN',
+    }
+
+    # Get the existing columns in the target table
+    existing_columns = [row.col_name for row in spark.sql(f"DESCRIBE dev.db.{full_table_name}").collect()]
+
+    # Add new columns to the target table if they don't exist
+    for col, dtype in user_schema.items():
+        if col not in existing_columns:
+            try:
+                spark_dtype = dtype_mapping.get(dtype, dtype)
+                spark.sql(f"ALTER TABLE dev.db.{full_table_name} ADD COLUMN {col} {spark_dtype}")
+            except AnalysisException as e:
+                print(f"Error while adding column '{col}' to the table '{full_table_name}': {str(e)}")
+        else:
+            print(f"Column '{col}' already exists in the table '{full_table_name}'. Skipping column addition.")
 
     # Merge logic, we will prepare join_conditions and delete conditions for final merge
     # We are looking up for sort_key existence to dynamically build conditions
