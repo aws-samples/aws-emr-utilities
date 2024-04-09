@@ -13,12 +13,12 @@ priorityClass:
   name: ~
 
 # ServiceAccount used for Kyuubi create/list/delete pod in EMR on EKS namespace "emr"
-# SA was created by eks_provision.sh, update the script if needed
+# SA was created by scirpts/eks_provision.sh, update the script if needed
 serviceAccount:
   create: false
   name: cross-ns-kyuubi
 
-# Allow Kyuubi create Spark Engine & pods outside in a different namespace "emr"
+# Allow Kyuubi create Spark Engine & pods in a different namespace "emr"
 engine:
   namespace: emr
 
