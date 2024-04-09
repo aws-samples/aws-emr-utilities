@@ -10,11 +10,13 @@
 #
 # Usage: update_iceberg_from_incremental_export.py <dynamodb_export_bucket_with_prefix> <iceberg_bucket_with_schema_file_name> <iceberg_table_name> <iceberg_bucket_with_prefix>
 # Example: spark-submit update_iceberg_from_incremental_export.py "s3://dynamodb-export-bucket/optional-prefix/01234-export-folder/" "s3://iceberg-bucket/prefix/schema.json" "full_table_name" "s3://iceberg-bucket/example-prefix/"
+# Note on schema evolution in Iceberg: if your schema is evolving frequently in DDB, consider updating iceberg table property to 'write.spark.accept-any-schema'='true' in your iceberg Catalog. Refer: https://iceberg.apache.org/docs/latest/spark-writes/#schema-merge
 
 from pyspark.sql import SparkSession
 import sys
 import json, boto3, logging
 from botocore.exceptions import ClientError
+from pyspark.sql.utils import AnalysisException
 
 # Function to validate S3 URI
 def validate_s3_argument(s3_arg, arg_name):
@@ -150,6 +152,37 @@ def load_incremental(spark, data_file_path, user_schema, delta_table_name, full_
 
     # Write to Iceberg table 
     df_stg_result.writeTo(f"dev.db.{delta_table_name}").using("iceberg").createOrReplace()
+
+
+    # Use the comprehensive dtype_mapping
+    dtype_mapping = {
+        'S': 'STRING',
+        'N': 'DOUBLE',
+        'B': 'BINARY',
+        'BOOL': 'BOOLEAN',
+        'NULL': 'STRING',
+        'L': 'ARRAY<STRING>',
+        'M': 'MAP<STRING, STRING>',
+        'BS': 'BINARY',
+        'NS': 'ARRAY<DOUBLE>',
+        'SS': 'ARRAY<STRING>',
+        'NUL': 'STRING',
+        'BOOL': 'BOOLEAN',
+    }
+
+    # Get the existing columns in the target table
+    existing_columns = [row.col_name for row in spark.sql(f"DESCRIBE dev.db.{full_table_name}").collect()]
+
+    # Add new columns to the target table if they don't exist
+    for col, dtype in user_schema.items():
+        if col not in existing_columns:
+            try:
+                spark_dtype = dtype_mapping.get(dtype, dtype)
+                spark.sql(f"ALTER TABLE dev.db.{full_table_name} ADD COLUMN {col} {spark_dtype}")
+            except AnalysisException as e:
+                print(f"Error while adding column '{col}' to the table '{full_table_name}': {str(e)}")
+        else:
+            print(f"Column '{col}' already exists in the table '{full_table_name}'. Skipping column addition.")
 
     # Merge logic, we will prepare join_conditions and delete conditions for final merge
     # We are looking up for sort_key existence to dynamically build conditions
