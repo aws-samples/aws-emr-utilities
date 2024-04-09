@@ -299,8 +299,8 @@ kubectl create -n $EMR_NAMESPACE configmap special-config --from-literal=codeBuc
 kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
 
 # Install Spark-Operator for the OSS Spark test
-helm repo add spark-operator https://googlecloudplatform.github.io/spark-on-k8s-operator
-helm install -n $OSS_NAMESPACE spark-operator spark-operator/spark-operator --version 1.1.26 \
+helm repo add spark-operator https://kubeflow.github.io/spark-operator
+helm install -n $OSS_NAMESPACE spark-operator spark-operator/spark-operator --version 1.1.27 \
   --set serviceAccounts.spark.create=false --set metrics.enable=false --set webhook.enable=true --set webhook.port=443 --debug
 
 # Install Cluster Autoscaler that automatically adjusts the number of nodes in EKS
