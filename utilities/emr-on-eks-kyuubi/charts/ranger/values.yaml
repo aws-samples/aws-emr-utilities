@@ -1,0 +1,61 @@
+name:
+  ranger:
+    configMap: hivemr3-ranger-configmap
+    secret: hivemr3-ranger-secret
+  persistentVolume: workdir-ranger-pv
+  persistentVolumeClaim: workdir-ranger-pvc
+
+docker:
+  image: mr3project/ranger:2.4.0
+  user: ranger
+  imagePullPolicy: Always
+  imagePullSecrets: 
+
+ranger:
+  httpPort: 6080
+  httpsPort: 6182
+  solrPort: 6083
+  externalIp: 1.1.1.1
+
+  createSecret: true
+
+  rangerResources:
+    requests:
+      cpu: 1
+      memory: 4Gi
+    limits:
+      cpu: 1
+      memory: 4Gi
+  solrResources:
+    requests:
+      cpu: 1
+      memory: 4Gi
+    limits:
+      cpu: 1
+      memory: 4Gi
+
+workDir:
+  # if false, the user should manually create PersistentVolumeClaim of the same name specified by the 
+  # field name.persistentVolume, and PersistentVolume if necessary
+  create: true
+
+  isNfs: true
+  nfs:
+    server: "1.1.1.1"
+    path: "/work/nfs/ranger"
+  volumeSize: 10Gi
+  volumeClaimSize: 10Gi
+  storageClassName: ""
+  # if isNfs == false, configure a volume like below.
+  # volumeStr should be indented properly with a double space (or multiple double spaces) after '\n'.
+  #   ex. okay  -> volumeStr: "hostPath:\n  path: /work/nfs/mr3-run-work-dir"
+  #   ex. wrong -> volumeStr: "hostPath:\n path: /work/nfs/mr3-run-work-dir"
+  volumeStr: 
+    
+logLevel: INFO
+
+hostAliases:
+- ip: "1.1.1.1"
+  hostnames:
+  - "red0"
+

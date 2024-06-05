@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  namespace: hivemr3
+  name: hivemr3-ranger
+spec:
+  serviceName: ranger
+  replicas: 1
+  selector:
+    matchLabels:
+      hivemr3_app: ranger
+  template:
+    metadata:
+      namespace: hivemr3
+      name: hivemr3-ranger
+      labels:
+        hivemr3_app: ranger
+        mr3-pod-role: master-role
+    spec:
+      restartPolicy: Always
+      hostAliases:
+      {{- range .Values.hostAliases }}
+      - ip: {{ .ip }}
+        hostnames: 
+        {{- range .hostnames }}
+        - {{ . }}
+        {{- end }}
+      {{- end }}
+      {{- if .Values.docker.imagePullSecrets }}
+      imagePullSecrets:
+      - name: {{ .Values.docker.imagePullSecrets }}
+      {{- end }}
+      containers:
+      - image: {{ .Values.docker.image }}
+        command: ["/opt/mr3-run/ranger/start-solr.sh"]
+        imagePullPolicy: {{ .Values.docker.imagePullPolicy }}
+        name: solr
+        resources:
+          requests:
+            cpu: {{ .Values.ranger.solrResources.requests.cpu }}
+            memory: {{ .Values.ranger.solrResources.requests.memory }}
+          limits:
+            cpu: {{ .Values.ranger.solrResources.limits.cpu }}
+            memory: {{ .Values.ranger.solrResources.limits.memory }}
+        ports:
+        - containerPort: 6083
+          protocol: TCP
+        volumeMounts:
+        - name: conf-k8s-volume
+          mountPath: /opt/mr3-run/ranger/conf/
+          readOnly: true
+        - name: key-k8s-volume
+          mountPath: /opt/mr3-run/ranger/key/
+          readOnly: true
+        - name: work-dir-volume
+          mountPath: /opt/mr3-run/ranger/work-dir/
+      - image: {{ .Values.docker.image }}
+        command: ["/opt/mr3-run/ranger/start-ranger.sh"]
+        imagePullPolicy: {{ .Values.docker.imagePullPolicy }}
+        name: ranger
+        resources:
+          requests:
+            cpu: {{ .Values.ranger.rangerResources.requests.cpu }}
+            memory: {{ .Values.ranger.rangerResources.requests.memory }}
+          limits:
+            cpu: {{ .Values.ranger.rangerResources.limits.cpu }}
+            memory: {{ .Values.ranger.rangerResources.limits.memory }}
+        ports:
+        - containerPort: 6080
+          protocol: TCP
+        - containerPort: 6182
+          protocol: TCP
+        volumeMounts:
+        - name: conf-k8s-volume
+          mountPath: /opt/mr3-run/ranger/conf/
+          readOnly: true
+        - name: key-k8s-volume
+          mountPath: /opt/mr3-run/ranger/key/
+          readOnly: true
+        - name: work-local-dir-volume
+          mountPath: /opt/mr3-run/ranger/work-local-dir/
+        - name: work-dir-volume
+          mountPath: /opt/mr3-run/ranger/work-dir/
+      volumes:
+      - name: conf-k8s-volume
+        configMap:
+          name: {{ .Values.name.ranger.configMap }}
+      - name: key-k8s-volume
+        secret:
+          secretName: {{ .Values.name.ranger.secret }}
+      - name: work-local-dir-volume
+        emptyDir: {}
+      - name: work-dir-volume
+        persistentVolumeClaim:
+          claimName: {{ .Values.name.persistentVolumeClaim }}

@@ -1,0 +1,144 @@
+# Default values for openldap.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+# Define deployment strategy - IMPORTANT: use rollingUpdate: null when use Recreate strategy.
+# It prevents from merging with existing map keys which are forbidden.
+strategy: {}
+  # type: RollingUpdate
+  # rollingUpdate:
+  #   maxSurge: 1
+  #   maxUnavailable: 0
+  #
+  # or
+  #
+  # type: Recreate
+  # rollingUpdate: null
+image:
+  # From repository https://github.com/osixia/docker-openldap
+  repository: osixia/openldap
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# Spcifies an existing secret to be used for admin and config user passwords
+existingSecret: ""
+
+# settings for enabling TLS
+tls:
+  enabled: false
+  secret: ""  # The name of a kubernetes.io/tls type secret to use for TLS
+  CA:
+    enabled: false
+    secret: ""  # The name of a generic secret to use for custom CA certificate (ca.crt)
+## Add additional labels to all resources
+extraLabels: {}
+## Add additional annotations to pods
+podAnnotations: {}
+service:
+  type: ClusterIP
+  clusterIP: ""
+
+  ldapPort: 389
+  sslLdapPort: 636  # Only used if tls.enabled is true
+  ## List of IP addresses at which the service is available
+  ## Ref: https://kubernetes.io/docs/user-guide/services/#external-ips
+  externalIPs: []
+  annotations: {}
+  loadBalancerIP: ""
+  loadBalancerSourceRanges: []
+
+# Default configuration for openldap as environment variables. These get injected directly in the container.
+# Use the env variables from https://github.com/osixia/docker-openldap#beginner-guide
+env:
+  LDAP_ORGANISATION: rangerlocal
+  LDAP_DOMAIN: ranger.local
+  LDAP_TLS: "true"
+  LDAP_TLS_ENFORCE: "false"
+  LDAP_ADMIN_USERNAME: admin
+  LDAP_REMOVE_CONFIG_AFTER_SETUP: "true"
+  LDAP_SEED_INTERNAL_LDIF_PATH: /ldifs
+  
+
+# Default Passwords to use, stored as a secret. If unset, passwords are auto-generated.
+# You can override these at install time with
+# helm install openldap --set openldap.adminPassword=<passwd>,openldap.configPassword=<passwd>
+adminPassword: admin
+configPassword: config_pass
+
+# Custom openldap configuration files used to override default settings
+# customLdifFiles:
+  # 01-default-users.ldif: |-
+    # Predefine users here
+# customSchemaFiles:
+  # 01-postfix-book.schema: |-
+    # Paste schema here - an example is found at https://github.com/tomav/docker-mailserver/blob/master/test/docker-openldap/bootstrap/schema/mmc/postfix-book.schema   
+
+## Persist data to a persistent volume
+persistence:
+  enabled: false
+  ## database data Persistent Volume Storage Class
+  ## If defined, storageClassName: <storageClass>
+  ## If set to "-", storageClassName: "", which disables dynamic provisioning
+  ## If undefined (the default) or set to null, no storageClassName spec is
+  ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
+  ##   GKE, AWS & OpenStack)
+  ##
+  # storageClass: "-"
+  accessMode: ReadWriteOnce
+  size: 8Gi
+  # existingClaim: ""
+
+resources: {}
+ # requests:
+ #   cpu: "100m"
+ #   memory: "256Mi"
+ # limits:
+ #   cpu: "500m"
+ #   memory: "512Mi"
+
+initContainers:
+  image:
+    repository: busybox
+    tag: latest
+
+initResources: {}
+ # requests:
+ #   cpu: "100m"
+ #   memory: "128Mi"
+ # limits:
+ #   cpu: "100m"
+ #   memory: "128Mi"
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+## test container details
+test:
+  enabled: true
+  image:
+    repository: ubuntu
+    tag: latest
+
+# Set the container log level
+# Valid log levels: none, error, warning, info (default), debug, trace
+logLevel: info
+
+# openldap has to run as root in order to listen to ports 389 and 636
+podSecurityContext:
+  runAsUser: 0
+  runAsGroup: 0
+  runAsNonRoot: false 
+
+# openldap has to run as root in order to listen to ports 389 and 636, but we can drop capabilities and avoid escalation 
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  runAsNonRoot: false
+  capabilities:
+    drop:
+    - ALL

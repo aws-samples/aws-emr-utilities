@@ -1,0 +1,7 @@
+apiVersion: v1
+name: ranger
+version: 1.0.0
+description: apache ranger for hivemr3
+home: https://datamonad.com
+sources:
+  - https://github.com/apache/ranger

@@ -6,9 +6,7 @@ sources using Apache Spark as query engine.
 
 In this project we're going to run Apache Kyuubi on EKS leveraging a customized EMR on EKS container image. It allows us to takes the advantage of an optimized EMR Spark runtime, while processing our SQL queries.
 
-Besides, the project also provides scripts to install an OpenLDAP server, and
-an Apache Ranger Admin server to demonstrate how to integrate AuthN and AuthZ
-capabilities in Kyuubi.
+Besides, the project also provides scripts to install an OpenLDAP server, and an Apache Ranger Admin server to demonstrate how to integrate AuthN and AuthZ capabilities in Kyuubi.
 
 The fundamental technical architecture of the solution is shown in the following diagram:
 
@@ -44,8 +42,8 @@ To set up the infrastructure environment, run the following scripts in [AWS Clou
 
 ```bash
 # download the project
-git clone https://github.com/melodyyangaws/emr-on-eks-kyuubi.git
-cd emr-on-eks-kyuubi
+git clone https://github.com/aws-samples/aws-emr-utilities.git
+cd aws-emr-utilities/utilities/emr-on-eks-kyuubi
 echo $AWS_REGION
 ````
 Run the script to install required CLI tools: eksctl,helm CLI,kubectl. Skip this step if you have these command tools.
@@ -85,13 +83,13 @@ docker buildx build --platform linux/amd64,linux/arm64 \
 ```
 
 ### Helm install Kyuubi
-1. Edit the chart's values.yaml file. Replace all images URIs by your custom EMR on EKS image
+1. Edit the chart's values.yaml file. Replace all images URIs by the custom EMR on EKS image `$ECR_URL/kyuubi-emr-eks:6.10`
 ```bash
 vi charts/my-values.yaml
 ```
 2. Install Kyuubi
 ```bash
-helm install kyuubi charts/kyuubi -n kyuubi --create-namespace -f charts/my-values.yaml --debug
+helm install kyuubi charts/kyuubi -n kyuubi --create-namespace -f charts/my-kyuubi-values.yaml --debug
 # check the installation progress
 kubectl get all -n kyuubi
 ```
@@ -104,9 +102,9 @@ Expected outcome is:
 Name: kyuubi
 .....
 Subjects:
-  Kind            Name    Namespace
-  ----            ----    ---------
-  ServiceAccount  kyuubi  kyuubi
+  Kind            Name            Namespace
+  ----            ----            ---------
+  ServiceAccount  cross-ns-kyuubi  kyuubi
 ```
 
 ### Validation
@@ -122,11 +120,11 @@ kubectl exec -it pod/kyuubi-0 -n kyuubi -- bash
 --deploy-mode cluster \
 --class org.apache.spark.examples.SparkPi \
 --conf spark.executor.instances=5 \
- local:///usr/lib/spark/examples/jars/spark-examples.jar 100
+ local:///usr/lib/spark/examples/jars/spark-examples.jar 10000
 ```
 
 ```yaml
-~/sourcecode/emr-on-eks-kyuubi (main) >> k get po -n emr -w
+~/sourcecode/emr-on-eks-kyuubi (main) >> kubectl get po -n emr -w
 NAME                                                        READY   STATUS    RESTARTS   AGE
 org-apache-spark-examples-sparkpi-1dc1958e8b4c5001-driver   1/1     Running   0          8s
 spark-pi-0672778e8b4c63ed-exec-1                            1/1     Running   0          3s
@@ -177,31 +175,47 @@ No rows selected (5.32 seconds)
 +-----+
 5 rows selected (1.74 seconds)
 ```
+## Kyuubi Security
+Securing Kyuubi involves enabling authentication(authn), authorization(authz) in this example. 
 
-# TODO: WIP
-### Install OpenLDAP
-Once the EC2 instance has been launched and the bootstrap scripts complete, you can now install OpenLDAP on the instance. We're going to use it to provide a strong authN system while using Kyuubi.
+### Install OpenLDAP (authentication)
+LDAP is commonly used for user authentication against corporate identity servers that are hosted on applications such as Active Directory (AD) and OpenLDAP. In this example, we will use OpenLDAP to test Kyuubi's AuthN capability.
 
-To install the LDAP server connect to the ec2 instance just created and copy
-the script `scripts/ldap_install.sh`. Once done install the service using the following command:
-
+Now let's install the OpenLDAP for authentication, which will be used to provide a strong authN capability while using Kyuubi.
+Install the LDAP server:
 ```bash
-chmod +x ./ldap_install.sh
-./ldap_install.sh "Password123" "kyuubi,analyst" "Password123" "dc=hadoop,dc=local"
+helm install ldap charts/openldap -f charts/openldap/values.yaml -n kyuubi --debug
+# list all the bjects created by the helm chart
+kubectl get all -l "release=ldap" -n kyuubi
+
+# test the connection to the LDAP server
+helm test ldap -n kyuubi
 ```
+This Helm Chart installs a LDAP server and a web app 'phpLDAPadmin' administering the LDAP server. To demonstrate how the seucurity works with Kyuubi, we created 3 groups - kafka_test_user,kafka_prod_user,kafka_prod_admin and 3 users - user1,user2,user3 from the LDAP webUI. To login to the admin site http://localhost:8080/, we need to port-forwarding from the local first ( create an ingress in helm chart if you don't want the port-forwarding ):
+```bash
+kubectl port-forward service/ldap-php-svc 8080:8080 -n kyuubi
+# URL: http://localhost:8080/
+# Login: cn=admin,dc=ranger,dc=local
+# password: admin
+```
+![ldap](./images/ldap_admin.jpeg)
 
-This will install OpenLDAP on the EC2 instance, and will create two users named: kyuubi and analyst.
-For additional explanations on the parameters check the script header.
 
+### Install Ranger Admin Server (authorization)
+When row/column-level fine-grained access control is required, we can stronger the data access with the Kyuubi Spark AuthZ Plugin. The plugin provides the fine-grained ACL management for data & metadata while using Spark SQL.
 
-### Install Ranger Admin
-In the same way, we're going to install the Ranger Admin Server on the EC2 instance.
-Copy the script `scripts/ranger_install.sh` on the instance and the launch the
-commands:
+Apache Ranger enables Kyuubi with data and metadata ACL for Spark SQL Engines, including:
+
+- Column-level fine-grained authorization
+- ow-level fine-grained authorization, a.k.a. Row-level filtering
+- Data masking
+
+Using the same way, we install the Ranger Admin Server via the similar commands:
+Some time after the start, ranger-usersync will begin synchronizing users and groups from the ldap to ranger
 
 ```bash
-chmod +x ./ranger_install.sh
-./ranger_install.sh
+heln install ranger charts/ranger -f charts/ranger/values.yaml -n kyuubi --debug
+
 ```
 
 Once completed you can verify the correct installation of the service, connecting

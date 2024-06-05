@@ -28,17 +28,21 @@ LDAP_USER="admin"
 LDAP_PASSWD="Password123"
 LDAP_HOST="localhost"
 LDAP_DN="dc=hadoop,dc=local"
-RANGER_VERSION="2.2.0"
+RANGER_VERSION="2.4.0"
 
 #===============================================================================
 # Requirements
 #===============================================================================
 wget -O epel.rpm –nv https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-
-yum install -y jq
-yum install -y sssd realmd krb5-workstation samba-common-tools adcli oddjob oddjob-mkhomedir
+yum update -y
+yum install -y jq sssd realmd krb5-workstation samba-common-tools adcli oddjob oddjob-mkhomedir
 yum install -y openldap openldap-clients openldap-servers mariadb java-1.8.0-openjdk
 yum install -y ./epel.rpm && yum -y install xmlstarlet && rm ./epel.rpm
+wget https://dev.mysql.com/get/mysql80-community-release-el7-5.noarch.rpm 
+rpm --import https://repo.mysql.com/RPM-GPG-KEY-mysql-2023
+yum localinstall -y mysql80-community-release-el7-5.noarch.rpm
+yum install -y mysql-community-server && rm -rf *.rpm
+systemctl enable mysqld && systemctl start mysqld
 
 #===============================================================================
 # LDAP configurations
@@ -79,17 +83,25 @@ RANGER_PATH_INSTALL="/usr/lib/ranger"
 RANGER_LOG_DIR="/var/log/ranger"
 
 # mysql
-MYSQL_VERSION="8.0.26"
+MYSQL_VERSION="8.0.37"
 MYSQL_JAR="mysql-connector-java-$MYSQL_VERSION.jar"
 MYSQL_JAR_URL="https://repo1.maven.org/maven2/mysql/mysql-connector-java/$MYSQL_VERSION/mysql-connector-java-$MYSQL_VERSION.jar"
 
 #===============================================================================
 # Ranger build from git
 #===============================================================================
+# install mvn
+MVN_VERSION="3.8.8"
+wget https://mirror.olnevhost.net/pub/apache/maven/maven-3/$MVN_VERSION/binaries/apache-maven-$MVN_VERSION-bin.tar.gz
+tar -xvf apache-maven-$MVN_VERSION-bin.tar.gz && mv apache-maven-$MVN_VERSION /opt/
+export M2_HOME=/opt/apache-maven-$MVN_VERSION
+export PATH=$PATH:$M2_HOME/bin
+mvn --version
+
 # Install requirements
 yum install -y java-1.8.0-openjdk-devel git python3 gcc
-pip3 install requests
-
+pip3 install requests 
+pip3 install urllib3==1.26.15
 # clone latest or specific branch version
 mkdir -p $RANGER_BUILD_PATH && cd $RANGER_BUILD_PATH
 git clone --depth 1 -b "release-ranger-$RANGER_VERSION" https://github.com/apache/ranger.git
@@ -99,6 +111,8 @@ mvn compile package install -Dmaven.test.skip=true
 #===============================================================================
 # Apache Ranger Database
 #===============================================================================
+echo "skip-grant-tables" >> /etc/my.cnf
+systemctl restart mysqld
 mysqladmin -u $RANGER_DB_ADMIN password $RANGER_DB_ADMIN_PASSWORD
 
 mysql -h $RANGER_DB_HOST -u $RANGER_DB_ADMIN -p$RANGER_DB_ADMIN_PASSWORD -e "CREATE DATABASE IF NOT EXISTS $RANGER_DB_SCHEMA;"
@@ -145,6 +159,7 @@ sed -i "s|xa_ldap_userSearchFilter=.*|xa_ldap_userSearchFilter=(sAMAccountName={
 sed -i "s|RANGER_ADMIN_LOG_DIR=.*|RANGER_ADMIN_LOG_DIR=$RANGER_LOG_DIR|g" install.properties
 sudo sed -i "s|audit_solr_urls=.*|audit_solr_urls=http://localhost:8983/solr/ranger_audits|g" install.properties
 
+sudo sed -i "s|\#Check for JAVA_HOME|export JAVA_HOME=/usr/lib/jvm/jre\n|g" setup.sh
 chmod +x setup.sh && ./setup.sh
 
 #===============================================================================
@@ -169,9 +184,8 @@ sed -i "s|SYNC_LDAP_USER_NAME_ATTRIBUTE =.*|SYNC_LDAP_USER_NAME_ATTRIBUTE =uid|g
 sed -i "s|SYNC_GROUP_SEARCH_BASE=.*|SYNC_GROUP_SEARCH_BASE=$LDAP_SEARCH_GROUP_BASE|g" install.properties
 sed -i "s|SYNC_GROUP_OBJECT_CLASS=.*|SYNC_GROUP_OBJECT_CLASS=group|g" install.properties
 sed -i "s|SYNC_INTERVAL =.*|SYNC_INTERVAL =360|g" install.properties
-
+sudo sed -i "s|\#\!/bin/bash|\#\!/bin/bash\nexport JAVA_HOME=/usr/lib/jvm/jre\n|g" setup.sh
 ./setup.sh
-
 xmlstarlet ed -L -u "/configuration/property[name='ranger.usersync.enabled']/value" -v true conf/ranger-ugsync-site.xml
 
 #===============================================================================

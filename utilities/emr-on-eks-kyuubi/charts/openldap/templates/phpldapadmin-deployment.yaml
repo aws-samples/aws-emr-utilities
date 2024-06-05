@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  {{ .Release.Name }}-php
+  labels:
+    app.kubernetes.io/name: {{ template "openldap.name" . }}
+    chart: {{ template "openldap.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+{{- if .Values.extraLabels }}
+{{ toYaml .Values.extraLabels | indent 4 }}
+{{- end }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ template "openldap.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+{{- if .Values.podAnnotations}}
+      annotations:
+{{ toYaml .Values.podAnnotations | indent 8}}
+{{- end }}
+      labels:
+        app.kubernetes.io/name: {{ template "openldap.name" . }}
+        release: {{ .Release.Name }}     
+    spec:
+      containers:
+        - image: osixia/phpldapadmin:latest
+          name: phpldapadmin
+          env:
+            - name: PHPLDAPADMIN_HTTPS
+              value: "false"
+            - name: PHPLDAPADMIN_LDAP_HOSTS
+              value: {{ .Release.Name }}-svc.{{ .Release.Namespace }}.svc.cluster.local
+          ports:
+            - containerPort: 80
+              protocol: TCP
+      restartPolicy: Always

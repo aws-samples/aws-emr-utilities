@@ -1,0 +1,33 @@
+{{- if .Values.test.enabled -}}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ .Release.Name }}-test-{{ randAlphaNum 5 | lower }}"
+  labels:
+    app.kubernetes.io/name: {{ template "openldap.name" . }}
+    chart: {{ template "openldap.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+{{- if .Values.extraLabels }}
+{{ toYaml .Values.extraLabels | indent 4 }}
+{{- end }}
+  annotations:
+    "helm.sh/hook": test-success
+spec:
+  containers:
+    - name: {{ .Release.Name }}-test
+      image: {{ .Values.test.image.repository }}:{{ .Values.test.image.tag }}
+      envFrom:
+        - secretRef:
+            name: {{ .Release.Name }}
+      command: ["sh", "/tests/run.sh"]
+      volumeMounts:
+        - mountPath: /tests
+          name: tests
+          readOnly: true
+  volumes:
+    - name: tests
+      configMap:
+        name: {{ template "openldap.fullname" . }}-tests
+  restartPolicy: Never
+{{- end -}}

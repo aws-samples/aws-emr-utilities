@@ -1,0 +1,18 @@
+{{- if .Values.test.enabled -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "openldap.fullname" . }}-tests
+  labels:
+    app.kubernetes.io/name: {{ template "openldap.name" . }}
+    chart: {{ template "openldap.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+  run.sh: |-
+      #/bin/bash
+      # Ideally, this should be in the docker image, but there is not a generic image we can use
+      # with bats and ldap-utils installed. It is not worth for now to push an image for this.
+      apt-get update && apt-get install -y ldap-utils
+      ldapsearch -x -H ldap://{{ .Release.Name }}-svc.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.ldapPort }} -b dc=ranger,dc=local -D "cn=admin,dc=ranger,dc=local" -w $LDAP_ADMIN_PASSWORD
+{{- end -}}

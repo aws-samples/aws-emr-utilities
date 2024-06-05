@@ -1,0 +1,21 @@
+{{ if .Values.workDir.create -}}
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ .Values.name.persistentVolume }}
+  labels:
+    hivemr3_app: ranger
+spec:
+  capacity:
+    storage: {{ .Values.workDir.volumeSize }}
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Delete
+  {{- if .Values.workDir.isNfs }}
+  nfs:
+    server: {{ .Values.workDir.nfs.server }}
+    path: {{ .Values.workDir.nfs.path }}
+  {{- else }}
+  {{ .Values.workDir.volumeStr | nindent 2 }}
+  {{- end }}
+{{ end }}

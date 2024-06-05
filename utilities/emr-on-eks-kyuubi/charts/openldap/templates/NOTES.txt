@@ -1,0 +1,28 @@
+OpenLDAP has been installed. You can access the server from within the EKS cluster using:
+
+  {{ .Release.Name }}-svc.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.ldapPort }}
+
+
+You can access the LDAP adminPassword and configPassword using:
+
+  kubectl get secret --namespace {{ .Release.Namespace }} {{ .Release.Name }} -o jsonpath="{.data.LDAP_ADMIN_PASSWORD}" | base64 --decode; echo
+  kubectl get secret --namespace {{ .Release.Namespace }} {{ .Release.Name }} -o jsonpath="{.data.LDAP_CONFIG_PASSWORD}" | base64 --decode; echo
+
+
+You can access the LDAP service from within the cluster, or with kubectl port-forward:
+
+-- within EKS cluster:
+ 
+  ldapsearch -x -H ldap://{{ .Release.Name }}-svc.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.ldapPort }} -b dc=ranger,dc=local -D "cn=admin,dc=ranger,dc=local" -w $LDAP_ADMIN_PASSWORD
+
+-- or port-forward from local machine:
+
+  kubectl port-forward <ldap-POD_NAME> -n kyuubi 3389:389
+  ldapsearch -x -H ldap://localhost:3389 -b dc=ranger,dc=local -D "cn=admin,dc=ranger,dc=local" -w admin
+
+
+Test server health using Helm test:
+  helm test {{ .Release.Name }} -n {{ .Release.Namespace }}
+
+
+You can also consider installing the helm chart for phpldapadmin to manage this instance of OpenLDAP, or install Apache Directory Studio, and connect using kubectl port-forward.

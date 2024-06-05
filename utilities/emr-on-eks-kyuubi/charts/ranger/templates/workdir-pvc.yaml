@@ -1,0 +1,17 @@
+{{ if .Values.workDir.create -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  #namespace: hivemr3
+  name: {{ .Values.name.persistentVolumeClaim }}
+spec:
+  resources:
+    requests:
+      storage: {{ .Values.workDir.volumeClaimSize }}
+  accessModes:
+  - ReadWriteMany
+  storageClassName: {{ .Values.workDir.storageClassName | quote }}
+  selector:
+    matchLabels:
+      hivemr3_app: ranger
+{{ end }}

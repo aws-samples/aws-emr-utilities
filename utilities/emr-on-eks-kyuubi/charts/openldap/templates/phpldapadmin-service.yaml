@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Service
+metadata:
+{{- if .Values.service.annotations }}
+  annotations:
+{{ toYaml .Values.service.annotations | indent 4 }}
+{{- end }}
+  name: {{ .Release.Name }}-php-svc
+  labels:
+    app.kubernetes.io/name: {{ template "openldap.name" . }}
+    chart: {{ template "openldap.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+{{- if .Values.extraLabels }}
+{{ toYaml .Values.extraLabels | indent 4 }}
+{{- end }}   
+spec:
+  ports:
+    - name: "8080"
+      port: 8080
+      targetPort: 80
+  selector:
+    app.kubernetes.io/name: {{ template "openldap.name" . }}
+    release: {{ .Release.Name }}

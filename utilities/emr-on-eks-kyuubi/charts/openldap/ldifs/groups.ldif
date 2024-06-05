@@ -1,0 +1,81 @@
+# Create OUs
+dn: ou=People,dc=ranger,dc=local
+objectClass: organizationalUnit
+ou: People
+
+dn: ou=Groups,dc=ranger,dc=local
+objectClass: organizationalUnit
+ou: Groups
+
+# Create Groups
+dn: cn=kafka_prod_user,ou=Groups,dc=ranger,dc=local
+objectClass: posixGroup
+cn:kafka_prod_user
+memberUid: uid=user2,ou=People,dc=ranger,dc=local
+gidNumber: 5000
+
+dn: cn=kafka_test_user,ou=Groups,dc=ranger,dc=local
+objectClass: posixGroup
+cn:kafka_test_user
+memberUid: uid=user1,ou=People,dc=ranger,dc=local
+gidNumber: 5000
+
+dn: cn=kafka_prod_admin,ou=Groups,dc=ranger,dc=local
+objectClass: posixGroup
+cn:kafka_prod_admin
+memberUid: uid=user1,ou=People,dc=ranger,dc=local
+gidNumber: 5000
+
+
+# Create Users
+dn: uid=user1,ou=People,dc=ranger,dc=local
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+objectClass: person
+uid: user1
+sn: user1
+givenName: user
+cn: user1
+displayName: user
+uidNumber: 10000
+gidNumber: 5000
+userPassword: password
+gecos: user1
+loginShell: /bin/bash
+homeDirectory: /home/user1
+
+
+dn: uid=user2,ou=People,dc=ranger,dc=local
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+objectClass: person
+uid: user2
+sn: user2
+givenName: user
+cn: user2
+displayName: user
+uidNumber: 10000
+gidNumber: 5000
+userPassword: password
+gecos: user2
+loginShell: /bin/bash
+homeDirectory: /home/user2
+
+dn: uid=user3,ou=People,dc=ranger,dc=local
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+objectClass: person
+uid: user3
+sn: user3
+givenName: user
+cn: user3
+displayName: user
+uidNumber: 10000
+gidNumber: 5000
+userPassword: password
+gecos: user3
+loginShell: /bin/bash
+homeDirectory: /home/user3
