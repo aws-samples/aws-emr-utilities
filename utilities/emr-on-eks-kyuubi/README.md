@@ -211,12 +211,10 @@ Apache Ranger enables Kyuubi with data and metadata ACL for Spark SQL Engines, i
 - ow-level fine-grained authorization, a.k.a. Row-level filtering
 - Data masking
 
-Using the same way, we install the Ranger Admin Server via the similar commands:
-Some time after the start, ranger-usersync will begin synchronizing users and groups from the ldap to ranger
+Using the same way, we install the Ranger Admin Server via the similar commands. Some time after the server is started, ranger-usersync will begin synchronizing users and groups from the LDAP to Ranger
 
 ```bash
-heln install ranger charts/ranger -f charts/ranger/values.yaml -n kyuubi --debug
-
+helm install ranger charts/ranger -f charts/ranger/values.yaml -n kyuubi --debug
 ```
 
 Once completed you can verify the correct installation of the service, connecting
