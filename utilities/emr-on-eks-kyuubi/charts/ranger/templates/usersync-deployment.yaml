@@ -42,11 +42,10 @@ spec:
             - ./bootstrap.sh
           volumeMounts:
             - name: usersync-ops
-              mountPath: /opt/ranger_usersync/install.properties
-              subPath: install.properties
-              readOnly: false
+              # mountPath: /opt/ranger_usersync/install.properties
+              # subPath: install.properties
               # a fixed path, dependency of the bootstrap script
-              # mountPath: /usersync
+              mountPath: /usersync
           resources:
 {{ toYaml .Values.usersync.resources | indent 12 }}
     {{- with .Values.usersync.nodeSelector }}
