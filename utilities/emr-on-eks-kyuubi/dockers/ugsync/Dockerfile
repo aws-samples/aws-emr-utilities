@@ -17,7 +17,7 @@ RUN tar -zxf /opt/ranger-src/target/ranger-$RANGER_VERSION-usersync.tar.gz -C /o
     ln -s /opt/ranger-$RANGER_VERSION-usersync $USERSYNC_HOME && \
     rm -rf /opt/ranger-src
 
-COPY bootstrap.sh $RANGER_USERSYNC_HOME/
+COPY bootstrap.sh $USERSYNC_HOME/
 
 RUN useradd -m -s /bin/bash ranger && \
     chmod +x $USERSYNC_HOME/bootstrap.sh && \
