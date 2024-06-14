@@ -10,7 +10,7 @@ server:
     # tag: 2.4.0
     repository: melodydocker/ranger-admin
     tag: latest
-    pullPolicy: Always
+    pullPolicy: IfNotPresent
 
   # Network configuration
   service:
@@ -51,7 +51,7 @@ usersync:
   image:
     repository: melodydocker/ranger-usersync
     tag: latest
-    pullPolicy: Always
+    pullPolicy: IfNotPresent
 
   # Network configuration
   service:

@@ -43,6 +43,7 @@ To set up the infrastructure environment, run the following scripts in [AWS Clou
 ```bash
 # download the project
 git clone https://github.com/aws-samples/aws-emr-utilities.git
+
 cd aws-emr-utilities/utilities/emr-on-eks-kyuubi
 echo $AWS_REGION
 ````
@@ -78,8 +79,9 @@ aws ecr create-repository --repository-name $ECR_URL/kyuubi-emr-eks --image-scan
 
 docker buildx build --platform linux/amd64,linux/arm64 \
 -t $ECR_URL/kyuubi-emr-eks:6.10 \
+-f dockers/kyuubi/Dockerfile \
 --build-arg SPARK_BASE_IMAGE=755674844232.dkr.ecr.us-east-1.amazonaws.com/spark/emr-6.10.0 \
---build-arg KYUUBI_VERSION=kyuubi-1.7.3 --push .
+--build-arg KYUUBI_VERSION=1.7.3 --push .
 ```
 
 ### Helm install Kyuubi
@@ -211,46 +213,36 @@ Apache Ranger enables Kyuubi with data and metadata ACL for Spark SQL Engines, i
 - ow-level fine-grained authorization, a.k.a. Row-level filtering
 - Data masking
 
-Using the same way, we install the Ranger Admin Server via the similar commands. Some time after the server is started, ranger-usersync will begin synchronizing users and groups from the LDAP to Ranger
+Using the same way, we install the Ranger Admin Server via the similar commands. 
 
 ```bash
 helm install ranger charts/ranger -f charts/ranger/values.yaml -n kyuubi --debug
 ```
 
-Once completed you can verify the correct installation of the service, connecting
-to the following url (you'll be required to use an SSH tunnel to access the interface):
-`http://EC2_INSTANCE_DOMAIN:6080`.
-
-To login, you can use the default Ranger credentials: `admin:admin`
-
-
-Finally, we can create our k8s deployment objects and launch the pods in
-our cluster. Copy the script `scripts/build_kyuubi_deployment.sh` and launch
-the following commands replacing **S3_WAREHOUSE** with an S3 warehouse path of
-your iceberg datasets. If you're not using Iceberg you can simply specify a bucket
-that you own or remove the iceberg configurations from the `kyuubi-defaults.conf`
-ConfigMap:
-
+After the Ranger server is started, the ranger-usersync will begin synchronizing users and groups from the LDAP to Ranger. To login to the server and validate, connect to the Ranger Server `http://localhost:6080` and use the Ranger credentials: `username: admin  password: Rangeradmin1!`. You'll be required to use an SSH tunnel to access the interface before access the web interface:
 ```bash
-ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
-S3_WAREHOUSE="s3://ripani.dub/warehouse"
-
-chmod +x ./build_kyuubi_deployment.sh
-./build_kyuubi_deployment.sh "http://`hostname -f`:6080" "hivedev" "ldap://`hostname -f`:389" "uid" "ou=People,dc=hadoop,dc=local" "kyuubi" "spark-kyuubi" "$ACCOUNT_ID.dkr.ecr.eu-west-1.amazonaws.com/kyuubi/emr-6.6.0:latest" "$S3_WAREHOUSE"
+# get ranger admin server pod name
+export pod_name=`kubectl get pods -n kyuubi | awk '/admin/ {print $1;exit}'`
+# ssh tunneling
+kubectl port-forward $pod_name -n kyuubi 6080:6080
 ```
+
+![ranger](./images/ranger_admin.png)
+
 
 ## Testing
 
-We have now deployed Kyuubi so it's time for some testing.
+We have now deployed Kyuubi secured by LDAP and Ranger, so it's time for some testings.
 
 ### Create sample datasets
-We're going to create a sample dataset on S3 that we're going to secure using Ranger policies.
-From the EC2 instances launch the following commands to launch a Spark Shell
-using the Kyuubi image previously created:
+We're going to create a sample dataset on S3 that is secured by Ranger policies.From the EC2 instances launch the following commands to launch a Spark Shell using the Kyuubi image previously created:
 
 ```bash
-docker run -ti --rm kyuubi/emr-6.6.0 "/bin/bash"
-spark-shell --master local --deploy-mode client --conf spark.hadoop.hive.metastore.client.factory.class=com.amazonaws.glue.catalog.metastore.AWSGlueDataCatalogHiveClientFactory
+# login to one of kyuubi instance
+docker run -it  ACCOUNT.dkr.ecr.REGION.amazonaws.com/kyuubi-emr-eks:6.10 bash
+
+
+ /usr/lib/spark/bin/spark-shell --master local --deploy-mode client --conf spark.hadoop.hive.metastore.client.factory.class=com.amazonaws.glue.catalog.metastore.AWSGlueDataCatalogHiveClientFactory
 ```
 
 The following snippet creates two tables (customer and store_sales) in an S3 buckets
