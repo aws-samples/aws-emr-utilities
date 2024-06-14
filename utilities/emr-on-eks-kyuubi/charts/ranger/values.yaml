@@ -17,24 +17,24 @@ server:
     type: ClusterIP
     annotations: {}
   
-  # livenessProbe:
+  ## Configure liveness and readiness probes
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/
+  ##
+  #readinessProbe:
+  #  httpGet:
+  #    path: /
+  #    port: http
+  #  initialDelaySeconds: 60
+  #  periodSeconds: 15
+  #  timeoutSeconds: 10
+  #livenessProbe:
   #   httpGet:
   #     path: /
   #     port: http
   #   initialDelaySeconds: 60
-  #   timeoutSeconds: 5
-  #   failureThreshold: 6
-  #   periodSeconds: 10
-  #   successThreshold: 1
-  # readinessProbe:
-  #   httpGet:
-  #     path: /
-  #     port: http
-  #   initialDelaySeconds: 5
-  #   periodSeconds: 10
-  #   timeoutSeconds: 3  
-  #   successThreshold: 1
-  #   failureThreshold: 3
+  #   periodSeconds: 30
+  #   timeoutSeconds: 10
+
   resources: {}
   # requests:
   #   cpu: "100m"
@@ -74,7 +74,7 @@ postgres:
   image:
     repository: postgres
     tag: 16.3
-    pullPolicy: Always
+    pullPolicy: IfNotPresent
 
   resources:
     requests:
@@ -115,6 +115,25 @@ postgres:
     POSTGRES_HOST_AUTH_METHOD: md5
     POSTGRES_INITDB_ARGS: "--auth-host=md5"
 
+  ## PostgreSQL configuration
+  ## Specify runtime configuration parameters as a dict, using camelCase, e.g.
+  ## {"sharedBuffers": "500MB"}
+  ## Alternatively, you can put your postgresql.conf under the postgresql/ directory
+  ## ref: https://www.postgresql.org/docs/current/static/runtime-config.html
+  ##
+  # config:
+  ## PostgreSQL client authentication configuration
+  ## Specify content for pg_hba.conf
+  ## Default: do not create pg_hba.conf
+  ## Alternatively, you can put your pg_hba.conf under the files/ directory
+  # pghba: |-
+  #   local all all trust
+  #   host all all localhost md5
+  #   host all all ranger-postgresdb-0 md5
+  #initdbscripts: |-
+    #!/bin/sh
+    #echo "helloworld"
+
   persistence:
     enabled: false
     accessMode: ReadWriteOnce
@@ -128,7 +147,9 @@ postgres:
     # storageClass: "-"
     existingClaim: null
 
-  podAnnotations: {}  
+  podAnnotations: {}
+  nodeSelector: {}
+  tolerations: [] 
   annotations: {}
   strategy: {}
 

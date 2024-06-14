@@ -22,13 +22,13 @@ RUN tar -zxf /opt/ranger-src/target/ranger-$RANGER_VERSION-admin.tar.gz -C /opt/
     ln -s /opt/ranger-$RANGER_VERSION-admin $RANGER_HOME && \
     rm -rf /opt/ranger-src/target/*
 
-# RUN wget https://jdbc.postgresql.org/download/postgresql-42.7.3.jar -O /usr/share/java/postgresql-connector-java.jar && \
-#     chmod 644 /usr/share/java/postgresql-connector-java.jar && \
-#     chown ranger:ranger /usr/share/java/postgresql-connector-java.jar
+RUN wget https://jdbc.postgresql.org/download/postgresql-42.7.3.jar -O /usr/share/java/postgresql-connector-java.jar && \
+    chmod 644 /usr/share/java/postgresql-connector-java.jar && \
+    chown ranger:ranger /usr/share/java/postgresql-connector-java.jar
 
-RUN wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/8.0.29/mysql-connector-java-8.0.29.jar -O /usr/share/java/mysql-connector-java.jar && \
-    chmod 644 /usr/share/java/mysql-connector-java.jar && \
-    chown $RANGER_USER /usr/share/java/mysql-connector-java.jar
+# RUN wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/8.0.29/mysql-connector-java-8.0.29.jar -O /usr/share/java/mysql-connector-java.jar && \
+#     chmod 644 /usr/share/java/mysql-connector-java.jar && \
+#     chown $RANGER_USER /usr/share/java/mysql-connector-java.jar
     
 RUN mkdir -p $RANGER_HOME/jisql/lib/
 COPY *.jar $RANGER_HOME/jisql/lib/

@@ -12,4 +12,20 @@ metadata:
     chart: {{ template "ranger.chart" . }}
     release: {{ .Release.Name }}
 data:
+{{- if (.Files.Glob "postgresql/*") }}
 {{ (.Files.Glob "postgresql/*").AsConfig | indent 2 }}
+{{- end }}
+{{- if .Values.postgres.config }}
+  postgresql.conf: |
+{{- range $key, $value := default dict .Values.postgres.config }}
+    {{ $key | snakecase }}={{ $value }}
+{{- end }}
+{{- end }}
+{{- if .Values.postgres.pghba }}
+  pg_hba.conf: |
+{{ .Values.postgres.pghba  | indent 4 }}
+{{- end }}
+{{- if .Values.postgres.initdbscripts }}
+  initdbscripts.sh: |
+{{ .Values.postgres.initdbscripts  | indent 4 }}
+{{- end }}

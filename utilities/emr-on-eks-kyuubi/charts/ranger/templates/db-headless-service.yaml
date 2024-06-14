@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Release.Name }}-postgres
+  name: {{ .Release.Name }}-postgres-headless
 {{- if .Values.postgres.service.annotations }}
   annotations:
 {{ toYaml .Values.postgres.service.annotations | indent 4 }}
@@ -14,6 +14,8 @@ metadata:
 {{ toYaml .Values.extraLabels | indent 4 }}
 {{- end }}
 spec:
+  type: ClusterIP
+  clusterIP: None
   ports:
     - name: postgresql
       port: 5432
@@ -22,4 +24,3 @@ spec:
   selector:
     app.kubernetes.io/name: {{ template "ranger.name" . }}
     release: {{ .Release.Name }}
-  type: {{ .Values.postgres.service.type }}

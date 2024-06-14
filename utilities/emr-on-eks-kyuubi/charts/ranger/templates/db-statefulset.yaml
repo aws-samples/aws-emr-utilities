@@ -1,5 +1,5 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name:  {{ .Release.Name }}-postgresdb
 {{- if .Values.postgres.service.annotations }}
@@ -14,6 +14,7 @@ metadata:
 {{ toYaml .Values.extraLabels | indent 4 }}
 {{- end }}   
 spec:
+  serviceName: {{ .Release.Name }}-postgres-headless  
   replicas: {{ .Values.postgres.replicaCount }}
 {{- if .Values.postgres.strategy }}
   strategy:
@@ -35,16 +36,21 @@ spec:
         app.kubernetes.io/name: {{ template "ranger.name" . }}
         release: {{ .Release.Name }} 
     spec:
-      # restartPolicy: Never
       containers:
         - name: postgresdb
           image: "{{ .Values.postgres.image.repository }}:{{ .Values.postgres.image.tag }}"
           imagePullPolicy: {{ .Values.postgres.image.pullPolicy }}
-          args:
-          - -c
-          - hba_file=/pg_hba/pg_hba.conf
+        {{- if and .Values.postgres.pghba .Values.postgres.config}}
+          args: ["-c", "config_file=/pg_conf/postgresql.conf", "-c", "hba_file=/pg_hba/pg_hba.conf"]
+        {{- end }}
+        {{- if and (not .Values.postgres.pghba) .Values.postgres.config}}
+          args: ["-c", "config_file=/pg_conf/postgresql.conf"]
+        {{- end }}
+        {{- if and .Values.postgres.pghba (not .Values.postgres.config)}}
+          args: ["-c", "hba_file=/pg_hba/pg_hba.conf"]
+        {{- end }}
           ports:
-            - name: postgresdb
+            - name: postgresql
               containerPort: 5432
           livenessProbe:
 {{ toYaml .Values.postgres.livenessProbe | indent 12 }}
@@ -59,29 +65,64 @@ spec:
             - configMapRef:
                 name: {{ .Release.Name }}-postgres-env
           volumeMounts:
+          {{- if or (.Files.Glob "postgresql/init*.sql") .Values.postgres.initdbscripts }}
             - name: dbinit
               mountPath: /docker-entrypoint-initdb.d
+          {{- end }}
+          {{- if or (.Files.Glob "postgresql/pg_hba.conf") .Values.postgres.pghba }}
             - name: pg-hba-conf
               mountPath: /pg_hba
+          {{- end }}  
+          {{- if or (.Files.Glob "postgresql/postgresql.conf") .Values.postgres.config }}
+            - name: pg-config
+              mountPath: /pg_conf
+          {{- end }}
             - name: dbdata
               mountPath: /usr/lib/postgresql/data
+      {{- if .Values.postgres.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.postgres.nodeSelector | indent 8 }}
+      {{- end }}
+      {{- if .Values.postgres.tolerations }}
+      tolerations:
+{{ toYaml .Values.postgres.tolerations | indent 8 }}
+      {{- end }}
+      {{- if .Values.postgres.nodeName }}
+      nodeName: {{ .Values.postgres.nodeName | quote }}
+      {{- end }}
+      {{- if .Values.postgres.affinity }}
+      affinity:
+{{ toYaml .Values.postgres.affinity | indent 8 }}
+      {{- end }}              
       volumes:
+       {{- if or (.Files.Glob "postgresql/init*.sql") .Values.postgres.initdbscripts }}
         - name: dbinit
           configMap:
             name: {{ .Release.Name }}-pgconf
             items:
               - key: init.sql
                 path: init.sql 
+        {{- end }}   
+        {{- if or (.Files.Glob "postgresql/pg_hba.conf") .Values.postgres.pghba }}       
         - name: pg-hba-conf
           configMap:
             name: {{ .Release.Name }}-pgconf 
             items:
               - key: pg_hba.conf
-                path: pg_hba.conf    
+                path: pg_hba.conf
+        {{- end }}         
+        {{- if or (.Files.Glob "postgresql/postgresql.conf") .Values.postgres.config }}
+        - name: pg-config
+          configMap:
+            name: {{ .Release.Name }}-pgconf
+            items:
+            - key: postgresql.conf
+              path: postgresql.conf
+        {{- end }}         
         - name: dbdata
         {{- if .Values.postgres.persistence.enabled }}
           persistentVolumeClaim:
             claimName: {{ .Values.postgres.persistence.existingClaim | default (include "ranger.dbPvcName" .) }}
         {{- else }}
           emptyDir: {}
-        {{- end -}}
+        {{- end }}
