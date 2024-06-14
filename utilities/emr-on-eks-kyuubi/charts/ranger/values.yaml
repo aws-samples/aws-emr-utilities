@@ -1,61 +1,175 @@
-name:
-  ranger:
-    configMap: hivemr3-ranger-configmap
-    secret: hivemr3-ranger-secret
-  persistentVolume: workdir-ranger-pv
-  persistentVolumeClaim: workdir-ranger-pvc
+# Default values for ranger.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+extraLabels: {}
 
-docker:
-  image: mr3project/ranger:2.4.0
-  user: ranger
-  imagePullPolicy: Always
-  imagePullSecrets: 
+server:
+  replicaCount: 1
+  image:
+    # repository: armadik/ranger-admin
+    # tag: 2.4.0
+    repository: melodydocker/ranger-admin
+    tag: latest
+    pullPolicy: Always
 
-ranger:
-  httpPort: 6080
-  httpsPort: 6182
-  solrPort: 6083
-  externalIp: 1.1.1.1
+  # Network configuration
+  service:
+    type: ClusterIP
+    annotations: {}
+  
+  # livenessProbe:
+  #   httpGet:
+  #     path: /
+  #     port: http
+  #   initialDelaySeconds: 60
+  #   timeoutSeconds: 5
+  #   failureThreshold: 6
+  #   periodSeconds: 10
+  #   successThreshold: 1
+  # readinessProbe:
+  #   httpGet:
+  #     path: /
+  #     port: http
+  #   initialDelaySeconds: 5
+  #   periodSeconds: 10
+  #   timeoutSeconds: 3  
+  #   successThreshold: 1
+  #   failureThreshold: 3
+  resources: {}
+  # requests:
+  #   cpu: "100m"
+  #   memory: "256Mi"
+  # limits:
+  #   cpu: "500m"
+  #   memory: "512Mi"
+  nodeSelector: {}
+  podAnnotations: {} 
+  annotations: {}
 
-  createSecret: true
+usersync:
+  replicaCount: 1
+  image:
+    repository: melodydocker/ranger-usersync
+    tag: latest
+    pullPolicy: Always
 
-  rangerResources:
+  # Network configuration
+  service:
+    type: ClusterIP
+    annotations: {}
+  
+  podAnnotations: {} 
+  annotations: {}
+  nodeSelector: {}
+  resources: {}
+  # requests:
+  #   cpu: "100m"
+  #   memory: "256Mi"
+  # limits:
+  #   cpu: "500m"
+  #   memory: "512Mi"
+
+postgres:
+  replicaCount: 1
+  image:
+    repository: postgres
+    tag: 16.3
+    pullPolicy: Always
+
+  resources:
     requests:
-      cpu: 1
-      memory: 4Gi
-    limits:
-      cpu: 1
-      memory: 4Gi
-  solrResources:
-    requests:
-      cpu: 1
-      memory: 4Gi
-    limits:
-      cpu: 1
-      memory: 4Gi
+      memory: 256Mi
+      cpu: 100m
 
-workDir:
-  # if false, the user should manually create PersistentVolumeClaim of the same name specified by the 
-  # field name.persistentVolume, and PersistentVolume if necessary
-  create: true
+  service:
+    type: ClusterIP
+    annotations: {}
 
-  isNfs: true
-  nfs:
-    server: "1.1.1.1"
-    path: "/work/nfs/ranger"
-  volumeSize: 10Gi
-  volumeClaimSize: 10Gi
-  storageClassName: ""
-  # if isNfs == false, configure a volume like below.
-  # volumeStr should be indented properly with a double space (or multiple double spaces) after '\n'.
-  #   ex. okay  -> volumeStr: "hostPath:\n  path: /work/nfs/mr3-run-work-dir"
-  #   ex. wrong -> volumeStr: "hostPath:\n path: /work/nfs/mr3-run-work-dir"
-  volumeStr: 
-    
-logLevel: INFO
+  livenessProbe:
+    exec:
+      command:
+      - sh
+      - -c
+      - exec pg_isready --host=$POD_IP
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 3
+  readinessProbe:
+    exec:
+      command:
+      - sh
+      - -c
+      - exec pg_isready --host=$POD_IP
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 1
+    successThreshold: 1
+    failureThreshold: 3  
 
-hostAliases:
-- ip: "1.1.1.1"
-  hostnames:
-  - "red0"
+  env:
+    PGDATA: /usr/lib/postgresql/data
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: postgres
+    POSTGRES_HOST_AUTH_METHOD: md5
+    POSTGRES_INITDB_ARGS: "--auth-host=md5"
 
+  persistence:
+    enabled: false
+    accessMode: ReadWriteOnce
+    size: 10Gi
+    ## database data Persistent Volume Storage Class
+    ## If defined, storageClassName: <storageClass>
+    ## If set to "-", storageClassName: "", which disables dynamic provisioning
+    ## If undefined (the default) or set to null, no storageClassName spec is
+    ##   set, choosing the default provisioner.  (gp2 on AWS)
+    ##
+    # storageClass: "-"
+    existingClaim: null
+
+  podAnnotations: {}  
+  annotations: {}
+  strategy: {}
+
+es:
+  replicaCount: 1
+  image:
+    repository: elasticsearch
+    tag: 7.5.0
+    pullPolicy: IfNotPresent
+  env:
+    ELASTIC_PASSWORD: elasticsearch
+    ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    discovery.type: single-node 
+
+  # Network configuration
+  service:
+    type: ClusterIP
+    annotations: {}
+
+  persistence:
+    enabled: false
+    accessMode: ReadWriteOnce
+    size: 8Gi
+    ## database data Persistent Volume Storage Class
+    ## If defined, storageClassName: <storageClass>
+    ## If set to "-", storageClassName: "", which disables dynamic provisioning
+    ## If undefined (the default) or set to null, no storageClassName spec is
+    ##   set, choosing the default provisioner.  (gp2 on AWS)
+    ##
+    # storageClass: "-"
+    existingClaim: ""
+
+  strategy: {}
+  # type: RollingUpdate
+  # rollingUpdate:
+  #   maxSurge: 1
+  #   maxUnavailable: 0
+  #
+  # or
+  #
+  # type: Recreate
+  # rollingUpdate: null
+  annotations: {}
+  podAnnotations: {}

@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  {{ .Release.Name }}-es
+{{- if .Values.es.annotations }}
+  annotations:
+{{ toYaml .Values.es.annotations | indent 4 }}
+{{- end }}
+  labels:
+    app.kubernetes.io/name: {{ template "ranger.name" . }}
+    chart: {{ template "ranger.chart" . }}
+    release: {{ .Release.Name }}
+{{- if .Values.extraLabels }}
+{{ toYaml .Values.extraLabels | indent 4 }}
+{{- end }} 
+spec:
+  replicas: {{ .Values.es.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ template "ranger.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      annotations:
+        checksum/es-configmap-env: {{ include (print $.Template.BasePath "/es-configmap-env.yaml") . | sha256sum }}
+{{- if .Values.es.podAnnotations -}}
+{{ toYaml .Values.es.podAnnotations | indent 8 }}
+{{- end }}
+      labels:
+        app.kubernetes.io/name: {{ template "ranger.name" . }}
+        release: {{ .Release.Name }}   
+    spec:
+      containers:
+        - name: {{ .Release.Name }}-es
+          image: "{{ .Values.es.image.repository }}:{{ .Values.es.image.tag }}"
+          imagePullPolicy: {{ .Values.es.image.pullPolicy }}
+          ports:
+            - name: es-port
+              containerPort: 9200
+          envFrom:
+            - configMapRef:
+                name: {{ .Release.Name }}-es-env
+          volumeMounts:
+            - name: es-data
+              mountPath: /var/lib/elasticsearch/data
+      volumes:
+        - name: es-data
+        {{- if .Values.es.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.es.persistence.existingClaim | default (include "ranger.esPvcName" .) }}
+        {{- else }}
+          emptyDir: {}
+        {{- end -}}

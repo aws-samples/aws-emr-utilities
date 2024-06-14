@@ -175,7 +175,8 @@ No rows selected (5.32 seconds)
 +-----+
 5 rows selected (1.74 seconds)
 ```
-## Kyuubi Security
+
+## Kyuubi Security (WIP)
 Securing Kyuubi involves enabling authentication(authn), authorization(authz) in this example. 
 
 ### Install OpenLDAP (authentication)

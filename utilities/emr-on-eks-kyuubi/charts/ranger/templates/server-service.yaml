@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-admin
+ {{- if .Values.server.service.annotations }}
+  annotations:
+{{ toYaml .Values.server.service.annotations | indent 4 }}
+{{- end }}
+  labels:
+    app.kubernetes.io/name: {{ template "ranger.name" . }}
+    chart: {{ template "ranger.chart" . }}
+    release: {{ .Release.Name }}
+spec:
+  ports:
+    - name: server
+      port: 6080
+      targetPort: 6080
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: {{ template "ranger.name" . }}
+    release: {{ .Release.Name }}
+  type: {{ .Values.server.service.type }}
+

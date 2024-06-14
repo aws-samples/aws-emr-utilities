@@ -1,0 +1,27 @@
+
+{{- if and .Values.es.persistence.enabled (not .Values.es.persistence.existingClaim) }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Name }}-es-data
+  labels:
+    app.kubernetes.io/name: {{ template "ranger.name" . }}
+    chart: {{ template "ranger.chart" . }}
+    release: {{ .Release.Name }}
+{{- if .Values.extraLabels }}
+{{ toYaml .Values.extraLabels | indent 4 }}
+{{- end }}
+spec:
+  accessModes:
+    - {{ .Values.es.persistence.accessMode | quote }}
+  resources:
+    requests:
+      storage: {{ .Values.es.persistence.size | quote }}
+{{- if .Values.es.persistence.storageClass }}
+{{- if (eq "-" .Values.es.persistence.storageClass) }}
+  storageClassName: ""
+{{- else }}
+  storageClassName: "{{ .Values.es.persistence.storageClass }}"
+{{- end }}
+{{- end }}
+{{- end }}      

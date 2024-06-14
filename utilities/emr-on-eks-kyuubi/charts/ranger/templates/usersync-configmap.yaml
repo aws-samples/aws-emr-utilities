@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-usersync
+  annotations:
+    use-subpath: "true"
+  labels:
+    app.kubernetes.io/name: {{ template "ranger.name" . }}
+    chart: {{ template "ranger.chart" . }}
+    release: {{ .Release.Name }}
+{{- if .Values.extraLabels }}
+{{ toYaml .Values.extraLabels | indent 4 }}
+{{- end }}
+data:
+  {{- (.Files.Glob "ranger-usersync/*").AsConfig | nindent 2 }}

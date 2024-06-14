@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-es-svc
+ {{- if .Values.es.service.annotations }}
+  annotations:
+{{ toYaml .Values.es.service.annotations | indent 4 }}
+{{- end }}
+  labels:
+    app.kubernetes.io/name: {{ template "ranger.name" . }}
+    chart: {{ template "ranger.chart" . }}
+    release: {{ .Release.Name }}
+spec:
+  ports:
+    - name: es
+      port: 9200
+      targetPort: 9200
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: {{ template "ranger.name" . }}
+    release: {{ .Release.Name }}
+  type: {{ .Values.es.service.type }}

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-pgconf
+  annotations:
+    use-subpath: "true"
+{{- if .Values.postgres.annotations }}
+{{ toYaml .Values.postgres.annotations | indent 4 }}
+{{- end }}
+  labels:
+    app.kubernetes.io/name: {{ template "ranger.name" . }}
+    chart: {{ template "ranger.chart" . }}
+    release: {{ .Release.Name }}
+data:
+{{ (.Files.Glob "postgresql/*").AsConfig | indent 2 }}

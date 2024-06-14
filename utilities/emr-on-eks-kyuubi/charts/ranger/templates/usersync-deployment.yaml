@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-usersync
+{{- if .Values.usersync.annotations }}
+  annotations:
+{{ toYaml .Values.usersync.annotations | indent 4 }}
+{{- end }}
+  labels:
+    app.kubernetes.io/name: {{ template "ranger.name" . }}
+    chart: {{ template "ranger.chart" . }}
+    release: {{ .Release.Name }}
+{{- if .Values.extraLabels }}
+{{ toYaml .Values.extraLabels | indent 4 }}
+{{- end }}   
+spec:
+  replicas: {{ .Values.usersync.replicaCount }}
+  {{- if .Values.usersync.strategy }}
+  strategy:
+{{ toYaml .Values.usersync.strategy | indent 4 }}
+{{- end }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ template "ranger.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      annotations:
+        checksum/usersync-configmap: {{ include (print $.Template.BasePath "/usersync-configmap.yaml") . | sha256sum }}
+{{- if .Values.usersync.podAnnotations}}
+{{ toYaml .Values.usersync.podAnnotations | indent 8}}
+{{- end }}
+      labels:
+        app.kubernetes.io/name: {{ template "ranger.name" . }}
+        release: {{ .Release.Name }} 
+    spec:
+      containers:
+        - name: {{ .Release.Name }}-usersync
+          image: "{{ .Values.usersync.image.repository }}:{{ .Values.usersync.image.tag }}"
+          imagePullPolicy: {{ .Values.usersync.image.pullPolicy }}
+          args:
+            - ./bootstrap.sh
+          volumeMounts:
+            - name: usersync-ops
+              mountPath: /opt/ranger_usersync/install.properties
+              subPath: install.properties
+              readOnly: false
+              # a fixed path, dependency of the bootstrap script
+              # mountPath: /usersync
+          resources:
+{{ toYaml .Values.usersync.resources | indent 12 }}
+    {{- with .Values.usersync.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+    {{- end }}    
+      volumes:
+        - name: usersync-ops
+          configMap:
+            name: {{ .Release.Name }}-usersync

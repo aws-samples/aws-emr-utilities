@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  {{ .Release.Name }}-postgresdb
+{{- if .Values.postgres.service.annotations }}
+  annotations:
+{{ toYaml .Values.postgres.service.annotations | indent 4 }}
+{{- end }}
+  labels:
+    app.kubernetes.io/name: {{ template "ranger.name" . }}
+    chart: {{ template "ranger.chart" . }}
+    release: {{ .Release.Name }}
+{{- if .Values.extraLabels }}
+{{ toYaml .Values.extraLabels | indent 4 }}
+{{- end }}   
+spec:
+  replicas: {{ .Values.postgres.replicaCount }}
+{{- if .Values.postgres.strategy }}
+  strategy:
+{{ toYaml .Values.postgres.strategy | indent 4 }}
+{{- end }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ template "ranger.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      annotations:
+        checksum/db-env: {{ include (print $.Template.BasePath "/db-env.yaml") . | sha256sum }}
+        checksum/db-configmap: {{ include (print $.Template.BasePath "/db-configmap.yaml") . | sha256sum }}
+{{- if .Values.postgres.podAnnotations -}}
+{{ toYaml .Values.postgres.podAnnotations | indent 8 }}
+{{- end }}
+      labels:
+        app.kubernetes.io/name: {{ template "ranger.name" . }}
+        release: {{ .Release.Name }} 
+    spec:
+      # restartPolicy: Never
+      containers:
+        - name: postgresdb
+          image: "{{ .Values.postgres.image.repository }}:{{ .Values.postgres.image.tag }}"
+          imagePullPolicy: {{ .Values.postgres.image.pullPolicy }}
+          args:
+          - -c
+          - hba_file=/pg_hba/pg_hba.conf
+          ports:
+            - name: postgresdb
+              containerPort: 5432
+          livenessProbe:
+{{ toYaml .Values.postgres.livenessProbe | indent 12 }}
+          readinessProbe:
+{{ toYaml .Values.postgres.readinessProbe | indent 12 }}    
+          resources:
+{{ toYaml .Values.postgres.resources | indent 12 }}
+          env:
+            - name: POD_IP
+              valueFrom: { fieldRef: { fieldPath: status.podIP } }
+          envFrom:
+            - configMapRef:
+                name: {{ .Release.Name }}-postgres-env
+          volumeMounts:
+            - name: dbinit
+              mountPath: /docker-entrypoint-initdb.d
+            - name: pg-hba-conf
+              mountPath: /pg_hba
+            - name: dbdata
+              mountPath: /usr/lib/postgresql/data
+      volumes:
+        - name: dbinit
+          configMap:
+            name: {{ .Release.Name }}-pgconf
+            items:
+              - key: init.sql
+                path: init.sql 
+        - name: pg-hba-conf
+          configMap:
+            name: {{ .Release.Name }}-pgconf 
+            items:
+              - key: pg_hba.conf
+                path: pg_hba.conf    
+        - name: dbdata
+        {{- if .Values.postgres.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.postgres.persistence.existingClaim | default (include "ranger.dbPvcName" .) }}
+        {{- else }}
+          emptyDir: {}
+        {{- end -}}
