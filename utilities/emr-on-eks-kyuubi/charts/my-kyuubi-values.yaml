@@ -4,7 +4,7 @@
 replicaCount: 2
 image:
   repository: melodydocker/kyuubi-emr-eks
-  tag: 6.10
+  tag: "6.10"
   pullPolicy: IfNotPresent
 
 # priorityClass used for Kyuubi server pod

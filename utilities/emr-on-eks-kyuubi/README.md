@@ -95,6 +95,11 @@ helm install kyuubi charts/kyuubi -n kyuubi --create-namespace -f charts/my-kyuu
 # check the installation progress
 kubectl get all -n kyuubi
 ```
+Uninstall the chart if needed:
+```bash
+helm uninstall kyuubi -n kyuubi
+```
+
 3. To enable Kyuubi create Spark pods across a different namespace "emr", ensure the "kyuubi" SA bind a role in "emr". 
 ```bash
 kubectl describe rolebinding kyuubi -n emr
@@ -176,6 +181,9 @@ No rows selected (5.32 seconds)
 | 1   |
 +-----+
 5 rows selected (1.74 seconds)
+
+
+0: jdbc:hive2://kyuubi-0.kyuubi-headless.kyuu> !quit
 ```
 
 ## Kyuubi Security (WIP)
