@@ -9,7 +9,7 @@
 #===============================================================================
 #?#
 #?# usage: ./ldap_install.sh <ADMIN_PASSWD> <USER_LIST> <USER_PASSWD> <BASE_DIRECTORY>
-#?#        ./ldap_install.sh "Password123" "kyuubi,analyst" "Password123" "dc=hadoop,dc=local"
+#?#        ./ldap_install.sh "admin" "kyuubi,analyst" "config_pass" "dc=hadoop,dc=local"
 #?#
 #?#   ADMIN_PASSWD            Admin Password for the admin user (admin)
 #?#   USER_LIST               List of users(comma separated) to be created in the ldap
@@ -43,17 +43,9 @@ USER_LIST="$2"
 USER_PASSWD="$3"
 BASE_DIRECTORY="$4"
 
-#===============================================================================
-# Requirements
-#===============================================================================
-yum -y install openldap compat-openldap openldap-clients openldap-servers openldap-servers-sql openldap-devel
-
-systemctl enable slapd
-systemctl start slapd
-
-#===============================================================================
-# LDAP Setup
-#===============================================================================
+===============================================================================
+LDAP Setup
+===============================================================================
 mkdir -p $DIR/ldap_temp && cd $DIR/ldap_temp
 
 ADMIN_HASH=`slappasswd -h {SSHA} -s $ADMIN_PASSWD`
@@ -82,14 +74,14 @@ replace: olcAccess
 olcAccess: {0}to * by dn.base="gidNumber=0+uidNumber=0,cn=peercred,cn=external, cn=auth" read by dn.base="cn=admin,$BASE_DIRECTORY" read by * none
 EOF
 
-cp /usr/share/openldap-servers/DB_CONFIG.example /var/lib/ldap/DB_CONFIG
-chown ldap:ldap /var/lib/ldap/*
+# cp /usr/share/openldap-servers/DB_CONFIG.example /var/lib/ldap/DB_CONFIG
+# chown ldap:ldap /var/lib/ldap/*
 
 ldapmodify -Y EXTERNAL  -H ldapi:/// -f db.ldif
 ldapmodify -Y EXTERNAL  -H ldapi:/// -f monitor.ldif
-ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/openldap/schema/cosine.ldif
-ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/openldap/schema/nis.ldif
-ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/openldap/schema/inetorgperson.ldif
+ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/ldap/schema/cosine.ldif
+ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/ldap/schema/nis.ldif
+ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/ldap/schema/inetorgperson.ldif
 
 cat <<EOF > base.ldif
 dn: $BASE_DIRECTORY

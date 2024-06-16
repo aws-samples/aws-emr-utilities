@@ -3,7 +3,7 @@ ARG SPARK_BASE_IMAGE=755674844232.dkr.ecr.us-east-1.amazonaws.com/spark/emr-6.10
 FROM eclipse-temurin:8-jdk-focal AS kyuubi_compiled
 USER root
 
-ARG KYUUBI_VERSION=1.7.3
+ARG KYUUBI_VERSION=1.8.0
 
 ENV kyuubi_uid=10009
 ENV KYUUBI_HOME /opt/kyuubi
@@ -24,9 +24,9 @@ RUN set -ex && \
 # Download Kyuubi dist and authZ plugin
 ADD https://dlcdn.apache.org/kyuubi/kyuubi-${KYUUBI_VERSION}/apache-kyuubi-${KYUUBI_VERSION}-bin.tgz .
 RUN tar -xvzf apache-kyuubi-${KYUUBI_VERSION}-bin.tgz && \
-    mv apache-kyuubi-${KYUUBI_VERSION}-bin/* ${KYUUBI_HOME}
-ADD https://repo1.maven.org/maven2/org/apache/kyuubi/kyuubi-spark-authz_2.12/${KYUUBI_VERSION}/kyuubi-spark-authz_2.12-${KYUUBI_VERSION}.jar ${KYUUBI_HOME}/externals/engines/spark
-
+    mv apache-kyuubi-${KYUUBI_VERSION}-bin/* ${KYUUBI_HOME} && \
+    ln -s ${KYUUBI_HOME}/externals/engines/spark/kyuubi-spark-sql-engine_2.12-${KYUUBI_VERSION}.jar ${KYUUBI_HOME}/externals/engines/spark/kyuubi-spark-sql-engine.jar
+ADD https://repo1.maven.org/maven2/org/apache/kyuubi/kyuubi-spark-authz_2.12/${KYUUBI_VERSION}/kyuubi-spark-authz_2.12-${KYUUBI_VERSION}.jar ${KYUUBI_HOME}/externals/engines/spark/kyuubi-spark-authz.jar 
 
 FROM ${SPARK_BASE_IMAGE}
 USER root

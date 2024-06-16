@@ -38,3 +38,6 @@ data:
   metrics.properties: |
     {{- tpl . $ | nindent 4 }}
   {{- end }}
+{{- if (.Files.Glob "security/*") }}
+{{ (.Files.Glob "security/*").AsConfig | indent 2 }}
+{{- end }} 

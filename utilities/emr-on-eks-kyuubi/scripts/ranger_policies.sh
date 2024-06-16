@@ -3,13 +3,13 @@
 #===============================================================================
 # Configurations
 #===============================================================================
-RANGER_URL="http://localhost:6080"
-RANGER_CREDENTIALS="admin:admin"
+RANGER_URL="http://ranger-admin.kyuubi.svc.cluster.local:6080"
+RANGER_CREDENTIALS="admin:Rangeradmin1!"
 
 EKS_NS="kyuubi"
-KYUUBI_URL=`kubectl -n $EKS_NS get service/kyuubi-balancer -o json | jq -r .status.loadBalancer.ingress[].hostname`
-LDAP_SERVICE_USER="kyuubi"
-LDAP_SERVICE_PASSWD="Password123"
+KYUUBI_URL="http://kyuubi-rest.kyuubi.svc.cluster.local:10099"
+LDAP_SERVICE_USER="admin"
+LDAP_SERVICE_PASSWD="admin"
 
 HIVE_SERVICE_NAME="hivedev"
 

@@ -6,8 +6,6 @@ extraLabels: {}
 server:
   replicaCount: 1
   image:
-    # repository: armadik/ranger-admin
-    # tag: 2.4.0
     repository: melodydocker/ranger-admin
     tag: latest
     pullPolicy: IfNotPresent

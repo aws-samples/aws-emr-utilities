@@ -1,0 +1,24 @@
+apiVersion: v1
+Kind: Pod
+metadata:
+  labels:
+    template-label-key: executor-template
+spec:
+  containers:
+    - name: spark-kubernetes-executor
+      volumeMounts:
+        - name: kyuubi-security-conf
+          mountPath: /etc/spark/conf/ranger-spark-audit.xml
+          subPath: ranger-spark-audit.xml
+        - name: kyuubi-security-conf
+          mountPath: /etc/spark/conf/ranger-spark-security.xml
+          subPath: ranger-spark-security.xml
+  volumes:
+    - name: kyuubi-security-conf
+      configMap:
+        name: kyuubi-spark
+        items:
+          - key: ranger-spark-audit.xml
+            path: ranger-spark-audit.xml
+          - key: ranger-spark-security.xml
+            path: ranger-spark-security.xml

@@ -122,7 +122,7 @@ kubectl exec -it pod/kyuubi-0 -n kyuubi -- bash
 
 1. submit a Spark job from Kybuui server to EMR on EKS namespace
 ```bash
-/usr/lib/spark/bin/spark-submit \
+spark-submit \
 --master k8s://https://kubernetes.default.svc:443 \
 --deploy-mode cluster \
 --class org.apache.spark.examples.SparkPi \
@@ -145,16 +145,14 @@ spark-pi-0672778e8b4c63ed-exec-5                            1/1     Running   0 
 ```bash
 ./bin/beeline -u 'jdbc:hive2://kyuubi-0.kyuubi-headless.kyuubi.svc.cluster.local:10009?spark.app.name=testdelta' -n hadoop
 ```
+3. let's create a sample database and table in Delta format, which are mapping to an S3 bucket that you have access to. In the Glue console, you should be able to see the related metadata generated in AWS Glue Data Catalog under the database `kyuubi_delta` with a S3 location.
+
+ ![gdc](./images/glue_db.jpeg)
 
 ```yaml
-0: jdbc:hive2://kyuubi-0.kyuubi-headless.kyuu> show databases;
-+---------------------+
-|      namespace      |
-+---------------------+
-| default             |
-+---------------------+
+0: jdbc:hive2://kyuubi-0.kyuubi-headless.kyuu> CREATE DATABASE IF NOT EXISTS kyuubi_delta LOCATION 's3://YOUR_S3_BUCKET/delta';
 ......
-0: jdbc:hive2://kyuubi-0.kyuubi-headless.kyuu> USE default;
+0: jdbc:hive2://kyuubi-0.kyuubi-headless.kyuu> USE kyuubi_delta;
 ......
 0: jdbc:hive2://kyuubi-0.kyuubi-headless.kyuu> CREATE TABLE table_with_col USING DELTA AS SELECT col1 as id FROM VALUES 0,1,2,3,4;
 ......
@@ -164,13 +162,13 @@ spark-pi-0672778e8b4c63ed-exec-5                            1/1     Running   0 
 +---------+
 No rows selected (5.32 seconds)
 0: jdbc:hive2://kyuubi-0.kyuubi-headless.kyuu> show tables;
-+------------+-------------------------+--------------+
-| namespace  |        tableName        | isTemporary  |
-+------------+-------------------------+--------------+
-| default    | table_with_col          | false        |
-+------------+-------------------------+--------------+
-2 rows selected (0.311 seconds)
-0: jdbc:hive2://kyuubi-0.kyuubi-headless.kyuu> select * from table_with_col;
++---------------+-----------------+--------------+
+|   namespace   |    tableName    | isTemporary  |
++---------------+-----------------+--------------+
+| kyuubi_delta  | table_with_col  | false        |
++---------------+-----------------+--------------+
+1 row selected (0.325 seconds)
+0: jdbc:hive2://kyuubi-0.kyuubi-headless.kyuu> SELECT * FROM kyuubi_delta.table_with_col;
 +-----+
 | id  |
 +-----+
@@ -243,27 +241,29 @@ kubectl port-forward $pod_name -n kyuubi 6080:6080
 We have now deployed Kyuubi secured by LDAP and Ranger, so it's time for some testings.
 
 ### Create sample datasets
-We're going to create a sample dataset on S3 that is secured by Ranger policies.From the EC2 instances launch the following commands to launch a Spark Shell using the Kyuubi image previously created:
-
+We're going to create a sample dataset on S3 that is secured by Ranger policies. Your kyuubi pods should be able to access to the S3 via EKS's IRSA feature. To validate the permission, find your IAM role name from this command first:
 ```bash
-# login to one of kyuubi instance
-docker run -it  ACCOUNT.dkr.ecr.REGION.amazonaws.com/kyuubi-emr-eks:6.10 bash
+kubectl describe sa cross-ns-kyuubi -n kyuubi
+```
+Once confirmed that you have the required access in the IAM role, let's create some sample data against the s3 bucket. 
+```bash
+# login to one of kyuubi instances in EKS, 
+kubectl exec -it pod/kyuubi-0 -n kyuubi -- bash
 
+# after login to the kyuubi, spin up the spark shell
+spark-shell --master local --deploy-mode client --conf spark.hadoop.hive.metastore.client.factory.class=com.amazonaws.glue.catalog.metastore.AWSGlueDataCatalogHiveClientFactory
 
- /usr/lib/spark/bin/spark-shell --master local --deploy-mode client --conf spark.hadoop.hive.metastore.client.factory.class=com.amazonaws.glue.catalog.metastore.AWSGlueDataCatalogHiveClientFactory
 ```
 
-The following snippet creates two tables (customer and store_sales) in an S3 buckets
-and creates the related table metadata in the Glue Data catalog under the database
-`aws_kyuubi`. Please replace the s3_location with a bucket that you own and paste
-the following commands:
+The following code snippet creates two sample tables - customer and store_sales, mapping to the S3 bucket that you have access to. In the Glue console, you should be able to see the related table metadata are generated in AWS Glue Data Catalog under the database `aws_kyuubi`. 
 
+Replace the "s3_location" to you own, then run the following commands:
 ```scala
-val s3_location = "s3://ripani.dub/dwh/"
-spark.sql(s"CREATE DATABASE IF NOT EXISTS aws_kyuubi LOCATION '$s3_location'")
+val s3_location = "s3://YOUR_S3_BUCKET/secure-datalake/"
+spark.sql(s"CREATE DATABASE IF NOT EXISTS secure-datalake LOCATION '$s3_location'")
 
 val customer = Seq(
-  (1, "Lorenzo", "Ripani", "lorenzo@example.com", 1000),
+  (1, "Lorenzo", "Dr", "lorenzodr@example.com", 1000),
   (2, "Jeff", "Bezos", "jeff@example.com", 400000000),
   (3, "Tom", "Brady", "tom@example.com", 10000000)
 ).toDF("id", "first_name","last_name","mail","balance")
@@ -276,14 +276,37 @@ val store_sales = Seq(
 ).toDF("id", "c_id","price")
 
 // Common Parquet table
-customer.write.format("parquet").mode("overwrite").saveAsTable("aws_kyuubi.customer")
-store_sales.write.format("parquet").mode("overwrite").saveAsTable("aws_kyuubi.store_sales")
+customer.write.format("parquet").mode("overwrite").saveAsTable("secure-datalake.customer")
+store_sales.write.format("parquet").mode("overwrite").saveAsTable("secure-datalake.store_sales")
 
 // check data
-spark.sql("SELECT * FROM aws_kyuubi.customer").show
-spark.sql("SELECT * FROM aws_kyuubi.store_sales").show
+spark.sql("SELECT * FROM secure-datalake.customer").show
+spark.sql("SELECT * FROM secure-datalake.store_sales").show
 ```
+The outputs are :
+```
+scala> spark.sql("SELECT * FROM aws_kyuubi.customer").show
+2024-06-16 17:54:49,423 main ERROR Filters contains invalid attributes "onMatch", "onMismatch"
+17:54:49.429 INFO org.apache.hadoop.hive.conf.HiveConf: Found configuration file jar:file:/usr/lib/hudi/hudi-utilities-bundle.jar!/hive-site.xml
+17:54:50.270 INFO com.amazonaws.glue.catalog.metastore.AWSGlueClientFactory: Using region from ec2 metadata : us-west-2
++---+----------+---------+---------------------+---------+                        
+| id|first_name|last_name|               mail  |  balance|
++---+----------+---------+---------------------+---------+
+|  1|   Lorenzo|       Dr|lorenzodr@example.com|     1000|
+|  2|      Jeff|    Bezos|     jeff@example.com|400000000|
+|  3|       Tom|    Brady|      tom@example.com| 10000000|
++---+----------+---------+---------------------+---------+
 
+scala> spark.sql("SELECT * FROM aws_kyuubi.store_sales").show
++---+----+-----+
+| id|c_id|price|
++---+----+-----+
+|  1|   1|   10|
+|  1|   2| 1230|
+|  1|   2| 5090|
+|  1|   3|  498|
++---+----+-----+
+```
 ### Ranger Policies
 Finally we're going to create the Ranger policies to test the access to our tables.
 To create the policies, copy the script `scripts/ranger_policies.sh` and launch the
@@ -294,7 +317,7 @@ chmod +x ./ranger_policies.sh
 ./ranger_policies.sh
 ```
 
-The policies so created gives access to our analyst user to the `customer` table
+The policies created gives access to our analyst user to the `customer` table
 only, and they apply a data mask on the column `mail`.
 
 ### Testing

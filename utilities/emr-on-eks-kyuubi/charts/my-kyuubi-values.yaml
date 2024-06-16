@@ -4,8 +4,9 @@
 replicaCount: 2
 image:
   repository: melodydocker/kyuubi-emr-eks
-  tag: "6.10"
-  pullPolicy: IfNotPresent
+  # tag: "6.10"
+  tag: emr6.10_kyuubi1.8
+  pullPolicy: Always
 
 # priorityClass used for Kyuubi server pod
 priorityClass:
@@ -18,7 +19,7 @@ serviceAccount:
   create: false
   name: cross-ns-kyuubi
 
-# Allow Kyuubi create Spark Engine & pods in a different namespace "emr"
+# Allow Kyuubi create Spark Engine & pods in a different namespace "emr" - a self-defined EMR on EKS namepsace
 engine:
   namespace: emr
 
@@ -35,92 +36,116 @@ rbac:
     - apiGroups: ["rbac.authorization.k8s.io"]
       resources: ["roles", "rolebindings"]
       verbs: ["get", "list", "describe", "create", "edit", "delete", "annotate", "patch", "label"]  
-
-server:
-  # Thrift Binary protocol (HiveServer2 compatible)
-  thriftBinary:
-    enabled: true
-    port: 10009
-    service:
-      type: ClusterIP
-      port: "{{ .Values.server.thriftBinary.port }}"
-      annotations: {}
-
-  # Thrift HTTP protocol (HiveServer2 compatible)
-  thriftHttp:
-    enabled: false
-    port: 10010
-    service:
-      type: ClusterIP
-      port: "{{ .Values.server.thriftHttp.port }}"
-      annotations: {}
-
-  # REST API protocol (experimental)
-  rest:
-    enabled: true
-    port: 10099
-    service:
-      type: ClusterIP
-      port: "{{ .Values.server.rest.port }}"
-      annotations: {}
-
-  # MySQL compatible text protocol (experimental)
-  mysql:
-    enabled: false
-    port: 3309
-    service:
-      type: ClusterIP
-      port: "{{ .Values.server.mysql.port }}"
   
 monitoring:
-  # Exposes metrics in Prometheus format
   prometheus:
     enabled: false
-kyuubiConfDir: /opt/kyuubi/conf
+
+kyuubiConfDir: /usr/lib/kyuubi/conf
 kyuubiConf:
   kyuubiEnv: |
     #!/usr/bin/env bash
     export SPARK_HOME=/usr/lib/spark
+    export SPARK_CONF_DIR=/etc/spark/conf
     export KYUUBI_WORK_DIR_ROOT=/usr/lib/kyuubi/work
     export HADOOP_CONF_DIR=/etc/hadoop/conf
     export JAVA_HOME=/etc/alternatives/jre
-  kyuubiDefaults: ~
-  # kyuubiDefaults: |
+  # kyuubiDefaults: ~
+  kyuubiDefaults: |
+    kyuubi.engine.type=SPARK_SQL
+    kyuubi.engine.share.level=USER
+    kyuubi.session.engine.initialize.timeout=PT3M
+    kyuubi.session.engine.idle.timeout=PT5M
+
     # Authentication (client users)
-    # kyuubi.authentication                                         LDAP
-    # kyuubi.authentication.ldap.url                                $LDAP_URL
-    # kyuubi.authentication.ldap.base.dn                            $LDAP_BASE_USER_DN
-    # kyuubi.authentication.ldap.guidKey                            $LDAP_USER_ATTR
+    kyuubi.authentication=LDAP
+    kyuubi.authentication.ldap.url=ldap://ldap-svc.kyuubi.svc.cluster.local:389
+    kyuubi.authentication.ldap.baseDN=dc=ranger,dc=local
+    kyuubi.authentication.ldap.guidKey=cn
+    kyuubi.authentication.ldap.domain=ranger.local
+    kyuubi.authentication.ldap.binddn=uid=kyuubi,ou=People,dc=ranger,dc=local
+    kyuubi.authentication.ldap.bindpw=admin
 
 # $SPARK_CONF_DIR directory
-sparkConfDir: /opt/spark/conf
+sparkConfDir: /etc/spark/conf
 sparkConf:
+  sparkEnv: |
+    #!/usr/bin/env bash
+    export JAVA_HOME=/etc/alternatives/jre
+    export SPARK_LOG_DIR=/opt/spark/logs
+    export SPARK_LOG_MAX_FILES=5
   sparkDefaults: |
+    # Spark overrides
+    ## cluster mode requires to specify a DFS file system (S3, HDFS, ..)
+    ## we pass all the required jars using the spark.jars conf
     spark.submit.deployMode=cluster
+
+    # Spark Dynamic Allocation
+    spark.dynamicAllocation.enable=true
+    spark.dynamicAllocation.initialExecutors=1
+    spark.dynamicAllocation.maxExecutors=10
+    spark.dynamicAllocation.executorAllocationRatio=0.5
+    spark.dynamicAllocation.executorIdleTimeout=60s
+    spark.dynamicAllocation.cachedExecutorIdleTimeout=30min
+    # shuffle tracking is required in k8s unless using RSS
+    spark.dynamicAllocation.shuffleTracking.enabled=true
+    spark.dynamicAllocation.shuffleTracking.timeout=30min
+    spark.dynamicAllocation.schedulerBacklogTimeout=1s
+    spark.dynamicAllocation.sustainedSchedulerBacklogTimeout=1s
+    spark.cleaner.periodicGC.interval=5min
+
+    # EKS settings
     spark.kubernetes.namespace=emr
-    spark.hadoop.fs.s3.customAWSCredentialsProvider=com.amazonaws.auth.WebIdentityTokenCredentialsProvider
     spark.kubernetes.authenticate.serviceAccountName=cross-ns-kyuubi
     spark.kubernetes.authenticate.driver.serviceAccountName=emr-kyuubi
-    spark.kubernetes.container.image=021732063925.dkr.ecr.us-west-2.amazonaws.com/kyuubi-emr-eks:6.10
-    spark.kubernetes.driver.container.image=021732063925.dkr.ecr.us-west-2.amazonaws.com/kyuubi-emr-eks:6.10
+    # spark.kubernetes.container.image=melodydocker/kyuubi-emr-eks:emr6.10_kyuubi1.8
+    spark.kubernetes.driver.container.image=melodydocker/kyuubi-emr-eks:emr6.10_kyuubi1.8
+    # spark.kubernetes.executor.container.image=melodydocker/kyuubi-emr-eks:emr6.10_kyuubi1.8
+    # spark.kubernetes.driver.pod.name=spark-kyuubi-driver
+    # spark.kubernetes.driver.podTemplateContainerName=spark-kubernetes-driver
+    # spark.kubernetes.executor.podTemplateContainerName=spark-kubernetes-executor
     spark.kubernetes.file.upload.path=file:///tmp
     spark.master=k8s://https://kubernetes.default.svc:443
+    
+    # S3 settings
     spark.hadoop.fs.s3.impl=com.amazon.ws.emr.hadoop.fs.EmrFileSystem
+    spark.hadoop.fs.s3.customAWSCredentialsProvider=com.amazonaws.auth.WebIdentityTokenCredentialsProvider
     spark.driver.extraLibraryPath=/usr/lib/hadoop/lib/native:/usr/lib/hadoop-lzo/lib/native:/docker/usr/lib/hadoop/lib/native:/docker/usr/lib/hadoop-lzo/lib/native
-    spark.jars=local:///usr/share/aws/iceberg/lib/iceberg-spark3-runtime.jar,local:///usr/share/aws/delta/lib/delta-core.jar,local:///usr/share/aws/delta/lib/delta-storage.jar
+    spark.hadoop.fs.AbstractFileSystem.s3.impl=org.apache.hadoop.fs.s3.EMRFSDelegate
+    spark.hadoop.fs.s3.getObject.initialSocketTimeoutMilliseconds=2000
+    spark.hadoop.mapreduce.fileoutputcommitter.algorithm.version.emr_internal_use_only.EmrFileSystem=2
+    spark.hadoop.mapreduce.fileoutputcommitter.cleanup-failures.ignored.emr_internal_use_only.EmrFileSystem=true
+    
+    # Hive Data Catalog (Glue or External)
     spark.hadoop.hive.metastore.client.factory.class=com.amazonaws.glue.catalog.metastore.AWSGlueDataCatalogHiveClientFactory
-    spark.sql.extensions=io.delta.sql.DeltaSparkSessionExtension,org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions
+    
+    # Hudi, Delta, Iceberg configs
+    spark.sql.extensions=io.delta.sql.DeltaSparkSessionExtension,org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions,org.apache.kyuubi.plugin.spark.authz.ranger.RangerSparkExtension
     spark.sql.catalog.spark_catalog=org.apache.spark.sql.delta.catalog.DeltaCatalog
+    spark.jars=local:///usr/lib/hudi/hudi-spark-bundle.jar,local:///usr/share/aws/iceberg/lib/iceberg-spark3-runtime.jar,local:///usr/share/aws/delta/lib/delta-core.jar,local:///usr/share/aws/delta/lib/delta-storage.jar
+    
 # spark.sql.catalog.iceberg=org.apache.iceberg.spark.SparkCatalog
 # spark.sql.catalog.iceberg.catalog-impl=org.apache.iceberg.aws.glue.GlueCatalog
-# spark.sql.catalog.glue_catalog.warehouse=s3://YOUR_BUCKET/iceberg/
+# spark.sql.catalog.iceberg.warehouse=s3://YOUR_BUCKET/iceberg/
 # spark.sql.catalog.iceberg.io-impl=org.apache.iceberg.aws.s3.S3FileIO
 # spark.hadoop.fs.s3a.bucket.iceberg-bucket.committer.magic.enabled=true
-# spark.master=k8s://https://2E5B7716F0F9CD69490FCCCD6DFBC327.gr7.us-west-2.eks.amazonaws.com
 # spark.hadoop.fs.s3a.bucket.YOUR_BUCKET.committer.magic.enabled=true
-# spark.hadoop.fs.AbstractFileSystem.s3.impl=org.apache.hadoop.fs.s3.EMRFSDelegate
-
-livenessProbe:
-  enabled: true
-readinessProbe:
-  enabled: true
+  log4j2: |
+    rootLogger.level=debug
+    rootLogger.appenderRef.stdout.ref=STDOUT
+    # Console Appender
+    appender.console.type=Console
+    appender.console.name=STDOUT
+    appender.console.target=SYSTEM_OUT
+    appender.console.layout.type=PatternLayout
+    appender.console.layout.pattern=%d{HH:mm:ss.SSS} %p %c: %m%n
+    appender.console.filter.1.type=Filters
+    appender.console.filter.1.a.type=ThresholdFilter
+    appender.console.filter.1.a.level=info
+    # Set the default kyuubi-ctl log level to WARN. When running the kyuubi-ctl, the
+    # log level for this class is used to overwrite the root logger's log level.
+    logger.ctl.name=org.apache.kyuubi.ctl.ServiceControlCli
+    logger.ctl.level=error
+    # Kyuubi BeeLine
+    logger.beeline.name = org.apache.hive.beeline.KyuubiBeeLine
+    logger.beeline.level = error
