@@ -26,7 +26,6 @@ data:
 {{- if (.Files.Glob "security/*") }}
 {{ (.Files.Glob "security/*").AsConfig | indent 2 }}
 {{- end }} 
-{{- end }} 
 
 ---
 
@@ -63,6 +62,6 @@ data:
   {{- with .Values.kyuubiConf.log4j2 }}
   log4j2.xml: |
     {{- tpl . $ | nindent 4 }}
-  {{- end }}
-
+{{- end }}
+{{- end }}
 

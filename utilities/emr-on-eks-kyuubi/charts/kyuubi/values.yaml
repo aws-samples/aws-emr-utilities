@@ -65,6 +65,11 @@ priorityClass:
   # half of system-cluster-critical by default
   value: 1000000000
 
+
+# Allow Kyuubi create Spark driver & executor pods in a different namespace
+engine: {}
+#   namespace: emr
+
 # Role-based access control
 rbac:
   # Specifies whether RBAC resources should be created

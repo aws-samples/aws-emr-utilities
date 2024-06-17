@@ -166,7 +166,7 @@ aws emr-containers create-virtual-cluster --name $EMRCLUSTER_NAME \
         "info": { "eksInfo": { "namespace": "'$EMR_NAMESPACE'" } }
     }'
 
-# Create a service account in emr namespace
+# Create a kyuubi service account in emr namespace
 export KYUUBI_SA=emr-kyuubi
 eksctl create iamserviceaccount \
  --name $KYUUBI_SA \

@@ -98,6 +98,8 @@ kubectl get all -n kyuubi
 Uninstall the chart if needed:
 ```bash
 helm uninstall kyuubi -n kyuubi
+kubectl delete sa,cm,svc -n kyuubi
+# don't forget to delete cm,role and rolebinding in EMR on EKS's namespace created by the Kyuubi chart
 ```
 
 3. To enable Kyuubi create Spark pods across a different namespace "emr", ensure the "kyuubi" SA bind a role in "emr". 
@@ -150,7 +152,7 @@ spark-pi-0672778e8b4c63ed-exec-5                            1/1     Running   0 
  ![gdc](./images/glue_db.jpeg)
 
 ```yaml
-0: jdbc:hive2://kyuubi-0.kyuubi-headless.kyuu> CREATE DATABASE IF NOT EXISTS kyuubi_delta LOCATION 's3://YOUR_S3_BUCKET/delta';
+0: jdbc:hive2://kyuubi-0.kyuubi-headless.kyuu> CREATE DATABASE IF NOT EXISTS kyuubi_delta LOCATION 's3://YOUR_S3_BUCKET/kyuubi-delta';
 ......
 0: jdbc:hive2://kyuubi-0.kyuubi-headless.kyuu> USE kyuubi_delta;
 ......
@@ -200,14 +202,23 @@ kubectl get all -l "release=ldap" -n kyuubi
 # test the connection to the LDAP server
 helm test ldap -n kyuubi
 ```
-This Helm Chart installs a LDAP server and a web app 'phpLDAPadmin' administering the LDAP server. To demonstrate how the seucurity works with Kyuubi, we created 3 groups - kafka_test_user,kafka_prod_user,kafka_prod_admin and 3 users - user1,user2,user3 from the LDAP webUI. To login to the admin site http://localhost:8080/, we need to port-forwarding from the local first ( create an ingress in helm chart if you don't want the port-forwarding ):
+This Helm Chart installs a LDAP server and a web app 'phpLDAPadmin' administering the LDAP server. To login to the admin UI http://localhost:8080/, we need to port-forward first ( create an ingress in helm chart if you don't want to create the SSH tunnel manually ):
 ```bash
 kubectl port-forward service/ldap-php-svc 8080:8080 -n kyuubi
 # URL: http://localhost:8080/
 # Login: cn=admin,dc=ranger,dc=local
 # password: admin
 ```
+To demonstrate that ranger can sync up with LDAP, we pre-created 3 groups - kafka_test_user,kafka_prod_user,kafka_prod_admin and 3 users - user1,user2,user3 at LDAP launch time.
+
 ![ldap](./images/ldap_admin.jpeg)
+
+### Setup a new LDAP domain for Kyuubi
+Login to a LDAP server pod, then run the setup
+```bash
+export ldap_pod_name=`kubectl get pods -n kyuubi | awk '/ldap-/ {print $1;exit}'`
+kubectl exec -it $ldap_pod_name -n kyuubi -- bash
+./ldap_setup.sh
 
 
 ### Install Ranger Admin Server (authorization)
@@ -228,9 +239,9 @@ helm install ranger charts/ranger -f charts/ranger/values.yaml -n kyuubi --debug
 After the Ranger server is started, the ranger-usersync will begin synchronizing users and groups from the LDAP to Ranger. To login to the server and validate, connect to the Ranger Server `http://localhost:6080` and use the Ranger credentials: `username: admin  password: Rangeradmin1!`. You'll be required to use an SSH tunnel to access the interface before access the web interface:
 ```bash
 # get ranger admin server pod name
-export pod_name=`kubectl get pods -n kyuubi | awk '/admin/ {print $1;exit}'`
+export ranger_pod_name=`kubectl get pods -n kyuubi | awk '/admin/ {print $1;exit}'`
 # ssh tunneling
-kubectl port-forward $pod_name -n kyuubi 6080:6080
+kubectl port-forward $ranger_pod_name -n kyuubi 6080:6080
 ```
 
 ![ranger](./images/ranger_admin.png)
@@ -245,22 +256,22 @@ We're going to create a sample dataset on S3 that is secured by Ranger policies.
 ```bash
 kubectl describe sa cross-ns-kyuubi -n kyuubi
 ```
-Once confirmed that you have the required access in the IAM role, let's create some sample data against the s3 bucket. 
+Once confirmed that you have the required access in the IAM role, let's create some sample data against the s3 bucket.
 ```bash
 # login to one of kyuubi instances in EKS, 
 kubectl exec -it pod/kyuubi-0 -n kyuubi -- bash
 
 # after login to the kyuubi, spin up the spark shell
-spark-shell --master local --deploy-mode client --conf spark.hadoop.hive.metastore.client.factory.class=com.amazonaws.glue.catalog.metastore.AWSGlueDataCatalogHiveClientFactory
+spark-shell --master local --deploy-mode client
 
 ```
 
-The following code snippet creates two sample tables - customer and store_sales, mapping to the S3 bucket that you have access to. In the Glue console, you should be able to see the related table metadata are generated in AWS Glue Data Catalog under the database `aws_kyuubi`. 
+The following code snippet creates two sample tables - customer and store_sales, mapping to the S3 bucket that you have access to. Your Kyuubi has been pre-configured via the [charts/kyuubi/my-kyuubi-valeus.yaml](./charts/kyuubi/my-kyuubi-valeus.yaml) to use AWS Glue Data Catalog as its metastore. In the Glue console, you should be able to see the related table metadata is generated under the new database `secure_datalake`. 
 
 Replace the "s3_location" to you own, then run the following commands:
 ```scala
 val s3_location = "s3://YOUR_S3_BUCKET/secure-datalake/"
-spark.sql(s"CREATE DATABASE IF NOT EXISTS secure-datalake LOCATION '$s3_location'")
+spark.sql(s"CREATE DATABASE IF NOT EXISTS secure_datalake LOCATION '$s3_location'")
 
 val customer = Seq(
   (1, "Lorenzo", "Dr", "lorenzodr@example.com", 1000),
@@ -276,28 +287,27 @@ val store_sales = Seq(
 ).toDF("id", "c_id","price")
 
 // Common Parquet table
-customer.write.format("parquet").mode("overwrite").saveAsTable("secure-datalake.customer")
-store_sales.write.format("parquet").mode("overwrite").saveAsTable("secure-datalake.store_sales")
+customer.write.format("parquet").mode("overwrite").saveAsTable("secure_datalake.customer")
+store_sales.write.format("parquet").mode("overwrite").saveAsTable("secure_datalake.store_sales")
 
 // check data
-spark.sql("SELECT * FROM secure-datalake.customer").show
-spark.sql("SELECT * FROM secure-datalake.store_sales").show
+spark.sql("SELECT * FROM secure_datalake.customer").show
+spark.sql("SELECT * FROM secure_datalake.store_sales").show
 ```
 The outputs are :
 ```
 scala> spark.sql("SELECT * FROM aws_kyuubi.customer").show
-2024-06-16 17:54:49,423 main ERROR Filters contains invalid attributes "onMatch", "onMismatch"
-17:54:49.429 INFO org.apache.hadoop.hive.conf.HiveConf: Found configuration file jar:file:/usr/lib/hudi/hudi-utilities-bundle.jar!/hive-site.xml
-17:54:50.270 INFO com.amazonaws.glue.catalog.metastore.AWSGlueClientFactory: Using region from ec2 metadata : us-west-2
-+---+----------+---------+---------------------+---------+                        
-| id|first_name|last_name|               mail  |  balance|
-+---+----------+---------+---------------------+---------+
-|  1|   Lorenzo|       Dr|lorenzodr@example.com|     1000|
-|  2|      Jeff|    Bezos|     jeff@example.com|400000000|
-|  3|       Tom|    Brady|      tom@example.com| 10000000|
-+---+----------+---------+---------------------+---------+
+18:56:59.213 INFO com.amazon.ws.emr.hadoop.fs.s3n.S3NativeFileSystem: Opening 's3://emr-on-eks-rss-ACCOUNT-REGION/secure-datalake/customer/part-00000-8b2b0695-589f-4d3e-9004-8824aaca23ba-c000.snappy.parquet' for reading
++---+----------+---------+--------------------+---------+                       
+| id|first_name|last_name|                mail|  balance|
++---+----------+---------+--------------------+---------+
+|  1|   Lorenzo|       Dr|lorenzodr@example...|     1000|
+|  2|      Jeff|    Bezos|    jeff@example.com|400000000|
+|  3|       Tom|    Brady|     tom@example.com| 10000000|
++---+----------+---------+--------------------+---------+
 
 scala> spark.sql("SELECT * FROM aws_kyuubi.store_sales").show
+18:57:00.287 INFO com.amazon.ws.emr.hadoop.fs.s3n.S3NativeFileSystem: Opening 's3://emr-on-eks-rss-ACCOUNT-REGION/secure-datalake/store_sales/part-00000-9cf3e70f-a3ca-487e-a0a7-15fe5d53fc7e-c000.snappy.parquet' for reading
 +---+----+-----+
 | id|c_id|price|
 +---+----+-----+
