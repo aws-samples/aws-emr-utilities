@@ -14,24 +14,6 @@ server:
   service:
     type: ClusterIP
     annotations: {}
-  
-  ## Configure liveness and readiness probes
-  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/
-  ##
-  #readinessProbe:
-  #  httpGet:
-  #    path: /
-  #    port: http
-  #  initialDelaySeconds: 60
-  #  periodSeconds: 15
-  #  timeoutSeconds: 10
-  #livenessProbe:
-  #   httpGet:
-  #     path: /
-  #     port: http
-  #   initialDelaySeconds: 60
-  #   periodSeconds: 30
-  #   timeoutSeconds: 10
 
   resources: {}
   # requests:

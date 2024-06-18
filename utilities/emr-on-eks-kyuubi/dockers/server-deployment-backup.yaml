@@ -47,10 +47,6 @@ spec:
           ports:
             - name: server
               containerPort: 6080
-#           livenessProbe:
-# {{ toYaml .Values.server.livenessProbe | indent 12 }}
-#           readinessProbe:
-# {{ toYaml .Values.server.readinessProbe | indent 12 }}
           resources:
 {{ toYaml .Values.server.resources | indent 12 }}
     {{- with .Values.server.nodeSelector }}

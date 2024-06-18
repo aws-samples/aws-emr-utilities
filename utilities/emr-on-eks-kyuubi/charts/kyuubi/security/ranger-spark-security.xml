@@ -1,23 +1,15 @@
   <configuration>
         <property>
             <name>ranger.plugin.spark.policy.rest.url</name>
-            <value>http://ranger-admin.kyuubi.svc.cluster.local:6080</value>
+            <value>http://ranger-0.ranger-headless:6080</value>
         </property>
         <property>
             <name>ranger.plugin.spark.service.name</name>
             <value>hivedev</value>
         </property>
         <property>
-            <name>ranger.plugin.spark.policy.cache.dir</name>
-            <value>ranger/policycache</value>
-        </property>
-        <property>
-            <name>ranger.plugin.spark.policy.pollIntervalMs</name>
-            <value>5000</value>
-        </property>
-        <property>
             <name>ranger.plugin.spark.policy.source.impl</name>
-            <value>org.apache.ranger.admin.client.RangerAdminRESTClient2</value>
+            <value>org.apache.ranger.admin.client.RangerAdminRESTClient</value>
         </property>
         <property>
             <name>ranger.plugin.spark.policy.rest.url.username</name>
@@ -25,7 +17,7 @@
         </property> 
         <property>
             <name>ranger.plugin.spark.policy.rest.url.password</name>
-            <value>Rangerusersync1!</value>
+            <value>Rangeradmin1!</value>
         </property>
         <property>
             <name>ranger.plugin.spark.policy.pollIntervalMs</name>

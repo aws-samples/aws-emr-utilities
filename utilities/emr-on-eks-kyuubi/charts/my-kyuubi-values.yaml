@@ -4,9 +4,8 @@
 replicaCount: 2
 image:
   repository: melodydocker/kyuubi-emr-eks
-  # tag: "6.10"
-  tag: emr6.10_kyuubi1.8
-  pullPolicy: Always
+  tag: emr6.15_kyuubi1.8
+  pullPolicy: IfNotPresent
 
 # priorityClass used for Kyuubi server pod
 priorityClass:
@@ -42,31 +41,30 @@ monitoring:
     enabled: false
 
 kyuubiConfDir: /usr/lib/kyuubi/conf
-kyuubiConf: {}
+# kyuubiConf: {}
+kyuubiConf:
+  kyuubiEnv: |
+    #!/usr/bin/env bash
+    export SPARK_HOME=/usr/lib/spark
+    export SPARK_CONF_DIR=/etc/spark/conf
+    export KYUUBI_WORK_DIR_ROOT=/usr/lib/kyuubi/work
+    export KYUUBI_HOME=/usr/lib/kyuubi
+    export HADOOP_CONF_DIR=/etc/hadoop/conf
+    export JAVA_HOME=/etc/alternatives/jre
+  kyuubiDefaults: |
+    kyuubi.engine.type=SPARK_SQL
+    kyuubi.engine.share.level=USER
+    kyuubi.session.engine.initialize.timeout=PT3M
+    kyuubi.session.engine.idle.timeout=PT5M
 
-# kyuubiConf:
-#   kyuubiEnv: |
-#     #!/usr/bin/env bash
-#     export SPARK_HOME=/usr/lib/spark
-#     export SPARK_CONF_DIR=/etc/spark/conf
-#     export KYUUBI_WORK_DIR_ROOT=/usr/lib/kyuubi/work
-#     export KYUUBI_HOME=/usr/lib/kyuubi
-#     export HADOOP_CONF_DIR=/etc/hadoop/conf
-#     export JAVA_HOME=/etc/alternatives/jre
-#   kyuubiDefaults: |
-#     kyuubi.engine.type=SPARK_SQL
-#     kyuubi.engine.share.level=USER
-#     kyuubi.session.engine.initialize.timeout=PT3M
-#     kyuubi.session.engine.idle.timeout=PT5M
-
-#     # Authentication (client users)
-#     kyuubi.authentication=LDAP
-#     kyuubi.authentication.ldap.url=ldap://ldap-svc.kyuubi.svc.cluster.local:389
-#     kyuubi.authentication.ldap.baseDN=dc=ranger,dc=local
-#     kyuubi.authentication.ldap.guidKey=cn
-#     kyuubi.authentication.ldap.domain=ranger.local
-#     kyuubi.authentication.ldap.binddn=uid=kyuubi,ou=People,dc=ranger,dc=local
-#     kyuubi.authentication.ldap.bindpw=admin
+    # Authentication (client users)
+    kyuubi.authentication=LDAP
+    kyuubi.authentication.ldap.url=ldap://ldap-svc.kyuubi.svc.cluster.local:389
+    kyuubi.authentication.ldap.baseDN=dc=hadoop,dc=local
+    kyuubi.authentication.ldap.guidKey=cn
+    kyuubi.authentication.ldap.domain=hadoop.local
+    kyuubi.authentication.ldap.binddn=uid=user1,ou=People,dc=hadoop,dc=local
+    kyuubi.authentication.ldap.bindpw=admin
 
 # $SPARK_CONF_DIR directory
 sparkConfDir: /etc/spark/conf
@@ -88,14 +86,11 @@ sparkConf:
     spark.dynamicAllocation.enable=true
     spark.dynamicAllocation.initialExecutors=1
     spark.dynamicAllocation.maxExecutors=10
-    spark.dynamicAllocation.executorAllocationRatio=0.5
-    spark.dynamicAllocation.executorIdleTimeout=60s
+    spark.dynamicAllocation.executorIdleTimeout=2min
     spark.dynamicAllocation.cachedExecutorIdleTimeout=30min
     # shuffle tracking is required in k8s unless using RSS
     spark.dynamicAllocation.shuffleTracking.enabled=true
     spark.dynamicAllocation.shuffleTracking.timeout=30min
-    spark.dynamicAllocation.schedulerBacklogTimeout=1s
-    spark.dynamicAllocation.sustainedSchedulerBacklogTimeout=1s
     spark.cleaner.periodicGC.interval=5min
 
     # EKS settings
@@ -125,7 +120,7 @@ sparkConf:
     spark.sql.extensions=io.delta.sql.DeltaSparkSessionExtension,org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions
     # ,org.apache.kyuubi.plugin.spark.authz.ranger.RangerSparkExtension
     spark.sql.catalog.spark_catalog=org.apache.spark.sql.delta.catalog.DeltaCatalog
-    spark.jars=local:///usr/lib/hudi/hudi-spark-bundle.jar,local:///usr/share/aws/iceberg/lib/iceberg-spark3-runtime.jar,local:///usr/share/aws/delta/lib/delta-core.jar,local:///usr/share/aws/delta/lib/delta-storage.jar
+    spark.jars=local:///usr/lib/hudi/hudi-spark-bundle.jar,local:///usr/share/aws/iceberg/lib/iceberg-spark3-runtime.jar,local:///usr/share/aws/delta/lib/delta-core.jar,local:///usr/share/aws/delta/lib/delta-storage.jar,local:///usr/lib/kyuubi/externals/engines/spark/kyuubi-spark-sql.jar,local:///usr/lib/kyuubi/externals/engines/spark/kyuubi-spark-authz.jar
     
 # spark.sql.catalog.iceberg=org.apache.iceberg.spark.SparkCatalog
 # spark.sql.catalog.iceberg.catalog-impl=org.apache.iceberg.aws.glue.GlueCatalog

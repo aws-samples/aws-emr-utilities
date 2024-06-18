@@ -1,7 +1,6 @@
 #!/bin/bash
 #===============================================================================
-#!# ldap-install.sh - Install a ldap server on an Amazon Linux 2 instance.
-#!# The script also craetes two users named (kyuubi and analyst)
+#!# ldap-install.sh - The script craetes two users named (kyuubi and analyst)
 #!#
 #!#  version         1.0
 #!#  author          ripani
@@ -79,9 +78,9 @@ EOF
 
 ldapmodify -Y EXTERNAL  -H ldapi:/// -f db.ldif
 ldapmodify -Y EXTERNAL  -H ldapi:/// -f monitor.ldif
-ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/ldap/schema/cosine.ldif
-ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/ldap/schema/nis.ldif
-ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/ldap/schema/inetorgperson.ldif
+# ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/ldap/schema/cosine.ldif
+# ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/ldap/schema/nis.ldif
+# ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/ldap/schema/inetorgperson.ldif
 
 cat <<EOF > base.ldif
 dn: $BASE_DIRECTORY
@@ -98,16 +97,17 @@ dn: ou=People,$BASE_DIRECTORY
 objectClass: organizationalUnit
 ou: People
 
-dn: ou=Group,$BASE_DIRECTORY
+dn: ou=Groups,$BASE_DIRECTORY
 objectClass: organizationalUnit
 ou: Group
 EOF
 
 ldapadd -x -w $ADMIN_PASSWD -D "cn=admin,$BASE_DIRECTORY" -f base.ldif
 
+
 # Create groups
 cat <<EOF > groups.ldif
-dn: cn=analysts,ou=Group,$BASE_DIRECTORY
+dn: cn=analysts,ou=Groups,$BASE_DIRECTORY
 cn: analysts
 gidNumber: 1999
 objectclass: top
@@ -133,6 +133,7 @@ objectClass: top
 objectClass: inetOrgPerson
 objectClass: posixAccount
 objectClass: shadowAccount
+objectClass: person
 EOF
 
   ldapadd -x -w $ADMIN_PASSWD -D "cn=admin,$BASE_DIRECTORY" -f "./$user.ldif"

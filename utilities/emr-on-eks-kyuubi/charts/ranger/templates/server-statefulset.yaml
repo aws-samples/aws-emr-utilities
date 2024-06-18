@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}
+{{- if .Values.server.annotations }}
+  annotations:
+{{ toYaml .Values.server.annotations | indent 4 }}
+{{- end }}
+  labels:
+    app.kubernetes.io/name: {{ template "ranger.name" . }}
+    chart: {{ template "ranger.chart" . }}
+    release: {{ .Release.Name }}
+{{- if .Values.extraLabels }}
+{{ toYaml .Values.extraLabels | indent 4 }}
+{{- end }}   
+spec:
+  serviceName: {{ .Release.Name }}-headless 
+  replicas: {{ .Values.server.replicaCount }}
+{{- if .Values.server.strategy }}
+  strategy:
+{{ toYaml .Values.server.strategy | indent 4 }}
+{{- end }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ template "ranger.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      annotations:
+        checksum/server-configmap: {{ include (print $.Template.BasePath "/server-configmap.yaml") . | sha256sum }}
+{{- if .Values.server.podAnnotations}}
+{{ toYaml .Values.server.podAnnotations | indent 8}}
+{{- end }}
+      labels:
+        app.kubernetes.io/name: {{ template "ranger.name" . }}
+        release: {{ .Release.Name }} 
+    spec:
+      containers:
+        - name: {{ .Release.Name }}-admin
+          image: "{{ .Values.server.image.repository }}:{{ .Values.server.image.tag }}"
+          imagePullPolicy: {{ .Values.server.image.pullPolicy }}
+          args:
+            - ./bootstrap.sh
+          volumeMounts:
+            - name: admin-ops
+              mountPath: /opt/ranger-admin/install.properties
+              subPath: install.properties
+          ports:
+            - name: server
+              containerPort: 6080
+          resources:
+{{ toYaml .Values.server.resources | indent 12 }}
+{{- if .Values.server.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+      volumes:
+        - name: admin-ops
+          configMap:
+            name: {{ .Release.Name }}-admin-install

@@ -14,5 +14,5 @@ data:
       # Ideally, this should be in the docker image, but there is not a generic image we can use
       # with bats and ldap-utils installed. It is not worth for now to push an image for this.
       apt-get update && apt-get install -y ldap-utils
-      ldapsearch -x -H ldap://{{ .Release.Name }}-svc.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.ldapPort }} -b dc=ranger,dc=local -D "cn=admin,dc=ranger,dc=local" -w $LDAP_ADMIN_PASSWORD
+      ldapsearch -x -H ldap://{{ .Release.Name }}-svc.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.ldapPort }} -b dc=hadoop,dc=local -D "cn=admin,dc=hadoop,dc=local" -w $LDAP_ADMIN_PASSWORD
 {{- end -}}

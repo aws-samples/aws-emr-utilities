@@ -1,34 +1,34 @@
 # Create OUs
-dn: ou=People,dc=ranger,dc=local
+dn: ou=People,dc=hadoop,dc=local
 objectClass: organizationalUnit
 ou: People
 
-dn: ou=Groups,dc=ranger,dc=local
+dn: ou=Groups,dc=hadoop,dc=local
 objectClass: organizationalUnit
 ou: Groups
 
 # Create Groups
-dn: cn=kafka_prod_user,ou=Groups,dc=ranger,dc=local
+dn: cn=kafka_prod_user,ou=Groups,dc=hadoop,dc=local
 objectClass: posixGroup
 cn:kafka_prod_user
-memberUid: uid=user2,ou=People,dc=ranger,dc=local
+memberUid: uid=user2,ou=People,dc=hadoop,dc=local
 gidNumber: 5000
 
-dn: cn=kafka_test_user,ou=Groups,dc=ranger,dc=local
+dn: cn=kafka_test_user,ou=Groups,dc=hadoop,dc=local
 objectClass: posixGroup
 cn:kafka_test_user
-memberUid: uid=user1,ou=People,dc=ranger,dc=local
+memberUid: uid=user1,ou=People,dc=hadoop,dc=local
 gidNumber: 5000
 
-dn: cn=kafka_prod_admin,ou=Groups,dc=ranger,dc=local
+dn: cn=kafka_prod_admin,ou=Groups,dc=hadoop,dc=local
 objectClass: posixGroup
 cn:kafka_prod_admin
-memberUid: uid=user1,ou=People,dc=ranger,dc=local
+memberUid: uid=user1,ou=People,dc=hadoop,dc=local
 gidNumber: 5000
 
 
 # Create Users
-dn: uid=user1,ou=People,dc=ranger,dc=local
+dn: uid=user1,ou=People,dc=hadoop,dc=local
 objectClass: inetOrgPerson
 objectClass: posixAccount
 objectClass: shadowAccount
@@ -46,7 +46,7 @@ loginShell: /bin/bash
 homeDirectory: /home/user1
 
 
-dn: uid=user2,ou=People,dc=ranger,dc=local
+dn: uid=user2,ou=People,dc=hadoop,dc=local
 objectClass: inetOrgPerson
 objectClass: posixAccount
 objectClass: shadowAccount
@@ -63,7 +63,7 @@ gecos: user2
 loginShell: /bin/bash
 homeDirectory: /home/user2
 
-dn: uid=user3,ou=People,dc=ranger,dc=local
+dn: uid=user3,ou=People,dc=hadoop,dc=local
 objectClass: inetOrgPerson
 objectClass: posixAccount
 objectClass: shadowAccount

@@ -38,7 +38,8 @@ spec:
         - name: {{ .Release.Name }}-usersync
           image: "{{ .Values.usersync.image.repository }}:{{ .Values.usersync.image.tag }}"
           imagePullPolicy: {{ .Values.usersync.image.pullPolicy }}
-          args: ["-c", "cp /usersync/install.properties /opt/ranger_usersync/install.properties", "-c", "./bootstrap.sh"]
+          args: 
+            - ./bootstrap.sh
           volumeMounts:
             - name: usersync-ops
               # a fixed path, dependency of the bootstrap script

@@ -1,10 +1,13 @@
 #!/bin/bash
 set -xe
 
-# cp /usersync/install.properties /opt/ranger_usersync/install.properties
+cp /usersync/install.properties /opt/ranger_usersync/install.properties
+chmod +x /opt/ranger_usersync/install.properties
+chown -R ranger /opt/ranger_usersync/
+
 ./setup.sh
 # wait for ranger-admin start up first
-sleep 120
+sleep 60
 
 RANGER_USERSYNC_CONF=$USERSYNC_HOME/conf
 

@@ -1,6 +1,6 @@
 FROM maven:3.6.3-jdk-8 as base
 
-ARG RANGER_VERSION=2.4
+ARG RANGER_VERSION=2.4.0
 ENV RANGER_VERSION=${RANGER_VERSION}
 
 RUN apt-get update && \
@@ -11,7 +11,7 @@ ENV MAVEN_OPTS "-Xmx4096m -XX:MaxMetaspaceSize=512m"
 
 # Or you can use the binary from the official site: https://ranger.apache.org/download.html (currently no pre-built available)
 RUN cd /opt \
-    && git clone --depth 1 --branch ranger-$RANGER_VERSION https://github.com/apache/ranger.git \
+    && git clone --depth 1 -b release-ranger-$RANGER_VERSION https://github.com/apache/ranger.git \
     && cd ranger \
     && mvn -DskipTests clean compile package install --errors --show-version -am  --no-transfer-progress \
     && rm -rf ~/.m2 \

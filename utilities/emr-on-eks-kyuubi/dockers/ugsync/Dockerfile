@@ -1,4 +1,4 @@
-FROM melodydocker/ranger-builds:2.4.0 as base
+FROM armadik/ranger-builds:2.4.0 as base
 
 FROM ubuntu:22.04
 USER root

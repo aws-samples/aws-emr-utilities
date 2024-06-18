@@ -25,7 +25,7 @@ source ~/.bashrc
 #===============================================================================
 LDAP_PROT="LDAP"
 LDAP_USER="admin"
-LDAP_PASSWD="Password123"
+LDAP_PASSWD="admin"
 LDAP_HOST="localhost"
 LDAP_DN="dc=hadoop,dc=local"
 RANGER_VERSION="2.4.0"

@@ -13,12 +13,12 @@ You can access the LDAP service from within the cluster, or with kubectl port-fo
 
 -- within EKS cluster:
  
-  ldapsearch -x -H ldap://{{ .Release.Name }}-svc.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.ldapPort }} -b dc=ranger,dc=local -D "cn=admin,dc=ranger,dc=local" -w $LDAP_ADMIN_PASSWORD
+  ldapsearch -x -H ldap://{{ .Release.Name }}-svc.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.ldapPort }} -b dc=hadoop,dc=local -D "cn=admin,dc=hadoop,dc=local" -w $LDAP_ADMIN_PASSWORD
 
 -- or port-forward from local machine:
 
   kubectl port-forward <ldap-POD_NAME> -n kyuubi 3389:389
-  ldapsearch -x -H ldap://localhost:3389 -b dc=ranger,dc=local -D "cn=admin,dc=ranger,dc=local" -w admin
+  ldapsearch -x -H ldap://localhost:3389 -b dc=hadoop,dc=local -D "cn=admin,dc=hadoop,dc=local" -w admin
 
 
 Test server health using Helm test:

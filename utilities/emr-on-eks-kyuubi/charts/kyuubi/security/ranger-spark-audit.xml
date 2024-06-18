@@ -16,7 +16,7 @@
 
     <property>
         <name>xasecure.audit.destination.db.jdbc.url</name>
-        <value>jdbc:postgresql://ranger-postgresdb-0.ranger-postgres-headless.kyuubi.svc.cluster.local:5432/ranger</value>
+        <value>jdbc:postgresql://ranger-postgresdb-0.ranger-postgres-headless:5432/ranger</value>
     </property>
 
     <property>

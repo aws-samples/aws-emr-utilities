@@ -3,14 +3,13 @@
 #===============================================================================
 # Configurations
 #===============================================================================
-RANGER_URL="http://ranger-admin.kyuubi.svc.cluster.local:6080"
+RANGER_URL="http://ranger-0.ranger-headless.kyuubi.svc.cluster.local:6080"
 RANGER_CREDENTIALS="admin:Rangeradmin1!"
 
 EKS_NS="kyuubi"
 KYUUBI_URL="http://kyuubi-rest.kyuubi.svc.cluster.local:10099"
 LDAP_SERVICE_USER="admin"
 LDAP_SERVICE_PASSWD="admin"
-
 HIVE_SERVICE_NAME="hivedev"
 
 #===============================================================================
@@ -29,7 +28,7 @@ curl -u $RANGER_CREDENTIALS -X POST  \
   "configs": {
     "commonNameForCertificate": "*",
     "jdbc.driverClassName": "org.apache.hive.jdbc.HiveDriver",
-    "jdbc.url": "jdbc:hive2://$KYUUBI_URL:10009/",
+    "jdbc.url": "jdbc:hive2://$KYUUBI_URL:10099/",
     "username": "$LDAP_SERVICE_USER",
     "password": "$LDAP_SERVICE_PASSWD",
     "ranger.plugin.audit.filters": "[{'accessResult':'DENIED','isAudited':true},{'actions':['METADATA OPERATION'],'isAudited':false},{'users':['hive','hue'],'actions':['SHOW_ROLES'],'isAudited':false}]"
