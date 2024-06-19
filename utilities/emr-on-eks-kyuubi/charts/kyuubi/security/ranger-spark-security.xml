@@ -12,14 +12,6 @@
             <value>org.apache.ranger.admin.client.RangerAdminRESTClient</value>
         </property>
         <property>
-            <name>ranger.plugin.spark.policy.rest.url.username</name>
-            <value>admin</value>
-        </property> 
-        <property>
-            <name>ranger.plugin.spark.policy.rest.url.password</name>
-            <value>Rangeradmin1!</value>
-        </property>
-        <property>
             <name>ranger.plugin.spark.policy.pollIntervalMs</name>
             <value>30000</value>
         </property> 

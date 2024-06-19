@@ -1,14 +1,12 @@
 <configuration>
     <property>
         <name>xasecure.audit.is.enabled</name>
-        <value>false</value>
+        <value>true</value>
     </property>
-
     <property>
         <name>xasecure.audit.destination.db</name>
         <value>false</value>
     </property>
-
     <property>
         <name>xasecure.audit.destination.db.jdbc.driver</name>
         <value>org.postgresql.Driver</value>

@@ -109,7 +109,7 @@ iam:
       labels: {aws-usage: "app"}
     attachPolicyARNs:
     - arn:aws:iam::${ACCOUNTID}:policy/$ROLE_NAME-policy
-    roleName: $EKSCLUSTER_NAME-$AWS_REGION-kyuubi-role
+    roleName: $EKSCLUSTER_NAME-$AWS_REGION-kyuubi-role  
 managedNodeGroups: 
   - name: $EKSCLUSTER_NAME-spot
     spot: true

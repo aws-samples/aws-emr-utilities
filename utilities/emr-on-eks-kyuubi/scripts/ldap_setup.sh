@@ -99,7 +99,7 @@ ou: People
 
 dn: ou=Groups,$BASE_DIRECTORY
 objectClass: organizationalUnit
-ou: Group
+ou: Groups
 EOF
 
 ldapadd -x -w $ADMIN_PASSWD -D "cn=admin,$BASE_DIRECTORY" -f base.ldif

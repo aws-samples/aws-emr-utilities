@@ -13,7 +13,7 @@ priorityClass:
   name: ~
 
 # ServiceAccount used for Kyuubi create/list/delete pod in EMR on EKS namespace "emr"
-# SA was created by scirpts/eks_provision.sh, update the script if needed
+# this SA was created by scirpts/eks_provision.sh, update the script if needed
 serviceAccount:
   create: false
   name: cross-ns-kyuubi
@@ -59,11 +59,10 @@ kyuubiConf:
 
     # Authentication (client users)
     kyuubi.authentication=LDAP
-    kyuubi.authentication.ldap.url=ldap://ldap-svc.kyuubi.svc.cluster.local:389
+    kyuubi.authentication.ldap.url=ldap://ldap-svc:389
     kyuubi.authentication.ldap.baseDN=dc=hadoop,dc=local
-    kyuubi.authentication.ldap.guidKey=cn
     kyuubi.authentication.ldap.domain=hadoop.local
-    kyuubi.authentication.ldap.binddn=uid=user1,ou=People,dc=hadoop,dc=local
+    kyuubi.authentication.ldap.binddn=cn=admin,dc=hadoop,dc=local
     kyuubi.authentication.ldap.bindpw=admin
 
 # $SPARK_CONF_DIR directory

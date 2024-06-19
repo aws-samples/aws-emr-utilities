@@ -47,15 +47,15 @@ curl -u $RANGER_CREDENTIALS -X POST  \
 -d @<(cat <<EOF
 {
   "service": "$HIVE_SERVICE_NAME",
-  "name": "aws_kyuubi - customer only",
+  "name": "secure_datalake - customer only",
   "policyType": 0,
   "policyPriority": 0,
-  "description": "aws_kyuubi - customer only",
+  "description": "secure_datalake - customer only",
   "isAuditEnabled": true,
   "resources": {
     "database": {
       "values": [
-        "aws_kyuubi"
+        "secure_datalake"
       ],
       "isExcludes": false,
       "isRecursive": false
@@ -127,7 +127,7 @@ curl -u $RANGER_CREDENTIALS -X POST  \
   "resources": {
     "database": {
       "values": [
-        "aws_kyuubi"
+        "secure_datalake"
       ],
       "isExcludes": false,
       "isRecursive": false

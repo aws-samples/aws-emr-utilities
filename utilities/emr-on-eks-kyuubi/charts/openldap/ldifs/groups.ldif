@@ -40,7 +40,7 @@ cn: user1
 displayName: user
 uidNumber: 10000
 gidNumber: 5000
-userPassword: password
+userPassword: Password123!
 gecos: user1
 loginShell: /bin/bash
 homeDirectory: /home/user1
@@ -58,7 +58,7 @@ cn: user2
 displayName: user
 uidNumber: 10000
 gidNumber: 5000
-userPassword: password
+userPassword: Password123!
 gecos: user2
 loginShell: /bin/bash
 homeDirectory: /home/user2
@@ -75,7 +75,7 @@ cn: user3
 displayName: user
 uidNumber: 10000
 gidNumber: 5000
-userPassword: password
+userPassword: Password123!
 gecos: user3
 loginShell: /bin/bash
 homeDirectory: /home/user3
