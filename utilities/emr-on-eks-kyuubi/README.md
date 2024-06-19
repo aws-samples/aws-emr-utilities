@@ -300,12 +300,13 @@ Login to a ldap pod and run the following setup script. It creates 2 new users u
 # Login to the pod
 export ldap_pod_name=`kubectl get pods -n kyuubi | awk '/ldap-/ {print $1;exit}'`
 kubectl exec -it $ldap_pod_name -n kyuubi -- bash
-
+```
+```bash
 # install the curl tool first
 apt update
 apt install -y curl
 # create new user and group
-curl https://raw.githubusercontent.com/aws-samples/aws-emr-utilities/main/utilities/emr-on-eks-kyuubi/scripts/ldap_setup.sh | bash  -s -- "admin" "kyuubi,analyst" "config_pass" "dc=hadoop,dc=local"
+curl https://raw.githubusercontent.com/aws-samples/aws-emr-utilities/main/utilities/emr-on-eks-kyuubi/scripts/ldap_setup.sh | bash  -s -- "admin" "kyuubi,analyst" "Password123!" "dc=hadoop,dc=local"
 ```
 Port forwarding your LDAP PHP service 'ldap-php-svc' again and refresh the Admin Web UI:
 ![kyuubildap](./images/ldap_analyst_group.jpeg)
@@ -456,10 +457,14 @@ kubectl port-forward ranger-0 -n kyuubi 6080:6080
 
 ### Query the secured datalake
 
-To test everything is properly setup, submit the following commands via the user "analyst" login, you will see a different output based on its permission setup in Ranger:
+To test everything is fully secured, submit the following commands via the user "analyst" login, you will see a different output based on its permission setup in Ranger:
 
 ```bash
-./bin/beeline -u 'jdbc:hive2://kyuubi-thrift-binary:10009?spark.app.name=testranger;spark.kyuubi.kubernetes.namespace=emr' -n analyst -p Password123
+# login to one of kyuubi instances in EKS
+kubectl exec -it pod/kyuubi-0 -n kyuubi -- bash
+# use beeline to test the fine-grained access
+./bin/beeline -u 'jdbc:hive2://kyuubi-thrift-binary:10009?spark.app.name=tesfgac' -n analyst -p Password123!
+# ;spark.sql.extensions=org.apache.kyuubi.plugin.spark.authz.ranger.RangerSparkExtension
 ```
 
 Once opened the SQL editor type

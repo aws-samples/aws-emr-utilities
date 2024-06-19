@@ -8,7 +8,7 @@
 #===============================================================================
 #?#
 #?# usage: ./ldap_install.sh <ADMIN_PASSWD> <USER_LIST> <USER_PASSWD> <BASE_DIRECTORY>
-#?#        ./ldap_install.sh "admin" "kyuubi,analyst" "config_pass" "dc=hadoop,dc=local"
+#?#        ./ldap_install.sh "admin" "kyuubi,analyst" "Password123!" "dc=hadoop,dc=local"
 #?#
 #?#   ADMIN_PASSWD            Admin Password for the admin user (admin)
 #?#   USER_LIST               List of users(comma separated) to be created in the ldap

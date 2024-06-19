@@ -5,7 +5,7 @@ replicaCount: 2
 image:
   repository: melodydocker/kyuubi-emr-eks
   tag: emr6.15_kyuubi1.8
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
 
 # priorityClass used for Kyuubi server pod
 priorityClass:
@@ -116,10 +116,9 @@ sparkConf:
     spark.hadoop.hive.metastore.client.factory.class=com.amazonaws.glue.catalog.metastore.AWSGlueDataCatalogHiveClientFactory
     
     # Hudi, Delta, Iceberg configs
-    spark.sql.extensions=io.delta.sql.DeltaSparkSessionExtension,org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions
-    # ,org.apache.kyuubi.plugin.spark.authz.ranger.RangerSparkExtension
+    spark.sql.extensions=org.apache.kyuubi.plugin.spark.authz.ranger.RangerSparkExtension,io.delta.sql.DeltaSparkSessionExtension,org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions
     spark.sql.catalog.spark_catalog=org.apache.spark.sql.delta.catalog.DeltaCatalog
-    spark.jars=local:///usr/lib/hudi/hudi-spark-bundle.jar,local:///usr/share/aws/iceberg/lib/iceberg-spark3-runtime.jar,local:///usr/share/aws/delta/lib/delta-core.jar,local:///usr/share/aws/delta/lib/delta-storage.jar,local:///usr/lib/kyuubi/externals/engines/spark/kyuubi-spark-sql.jar,local:///usr/lib/kyuubi/externals/engines/spark/kyuubi-spark-authz.jar
+    spark.jars=local:///usr/lib/hudi/hudi-spark-bundle.jar,local:///usr/share/aws/iceberg/lib/iceberg-spark3-runtime.jar,local:///usr/share/aws/delta/lib/delta-core.jar,local:///usr/share/aws/delta/lib/delta-storage.jar
     
 # spark.sql.catalog.iceberg=org.apache.iceberg.spark.SparkCatalog
 # spark.sql.catalog.iceberg.catalog-impl=org.apache.iceberg.aws.glue.GlueCatalog

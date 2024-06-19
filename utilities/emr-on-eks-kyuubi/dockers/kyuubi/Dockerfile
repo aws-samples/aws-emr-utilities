@@ -27,6 +27,8 @@ ADD https://dlcdn.apache.org/kyuubi/kyuubi-${KYUUBI_VERSION}/apache-kyuubi-${KYU
 RUN tar -xvzf apache-kyuubi-${KYUUBI_VERSION}-bin.tgz && \
     mv apache-kyuubi-${KYUUBI_VERSION}-bin/* ${KYUUBI_HOME}
 ADD https://repo1.maven.org/maven2/org/apache/kyuubi/kyuubi-spark-authz_2.12/${KYUUBI_VERSION}/kyuubi-spark-authz_2.12-${KYUUBI_VERSION}.jar ${KYUUBI_HOME}/externals/engines/spark 
+RUN chown root -R ${KYUUBI_HOME}/externals/engines/spark/
+
 
 FROM ${SPARK_BASE_IMAGE}
 USER root
@@ -42,13 +44,10 @@ COPY --from=kyuubi_compiled /opt/kyuubi/externals/engines/spark ${KYUUBI_HOME}/j
 ADD https://repo1.maven.org/maven2/mysql/mysql-connector-java/8.0.26/mysql-connector-java-8.0.26.jar ${SPARK_HOME}/jars
 
 WORKDIR ${KYUUBI_HOME}
-RUN ln -s ${KYUUBI_HOME}/externals/engines/spark/kyuubi-spark-sql-engine_*.jar ${KYUUBI_HOME}/externals/engines/spark/kyuubi-spark-sql.jar && \
-    ln -s ${KYUUBI_HOME}/externals/engines/spark/kyuubi-spark-authz_*.jar ${KYUUBI_HOME}/externals/engines/spark/kyuubi-spark-authz.jar && \
-    chown hadoop:hadoop -R ${KYUUBI_HOME}/ && \
+RUN chown hadoop:hadoop -R ${KYUUBI_HOME}/ && \
     chmod ug+rw -R ${KYUUBI_HOME} && \
     chmod a+rwx -R ${KYUUBI_HOME}/work && \
     chmod +rwx -R ${SPARK_HOME}/jars
 
 CMD [ "./bin/kyuubi", "run" ]
 USER hadoop:hadoop
-

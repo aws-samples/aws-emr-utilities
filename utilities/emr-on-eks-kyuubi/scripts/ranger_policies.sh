@@ -7,7 +7,7 @@ RANGER_URL="http://ranger-0.ranger-headless.kyuubi.svc.cluster.local:6080"
 RANGER_CREDENTIALS="admin:Rangeradmin1!"
 
 EKS_NS="kyuubi"
-KYUUBI_URL="http://kyuubi-rest.kyuubi.svc.cluster.local:10099"
+KYUUBI_URL="kyuubi-rest.kyuubi.svc.cluster.local"
 LDAP_SERVICE_USER="admin"
 LDAP_SERVICE_PASSWD="admin"
 HIVE_SERVICE_NAME="hivedev"
