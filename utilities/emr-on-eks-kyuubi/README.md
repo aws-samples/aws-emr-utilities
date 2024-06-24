@@ -77,6 +77,7 @@ aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --
 # create a new repository in your ECR, **ONE-OFF task**
 aws ecr create-repository --repository-name $ECR_URL/kyuubi-emr-eks --image-scanning-configuration scanOnPush=true
 
+# image build and push. It takes approx. 40mins
 docker buildx build --platform linux/amd64,linux/arm64 \
 -t $ECR_URL/kyuubi-emr-eks:emr6.15_kyuubi1.8 \
 -f dockers/kyuubi/Dockerfile \
@@ -119,7 +120,7 @@ kubectl delete sa,cm,svc -n kyuubi
 # don't forget to delete cm,role and rolebinding in EMR on EKS's namespace created by the Kyuubi chart
 ```
 
-3. To enable Kyuubi create Spark pods in a different namespace "emr" (EMR on EKS namespace in this example), ensure the "cross-ns-kyuubi" Service Account bind a role in "emr". 
+3. To enable Kyuubi create Spark pods in a different namespace "emr" (EMR on EKS namespace in this example), ensure the "cross-ns-kyuubi" Service Account bind a role in the "emr" namespace. 
 ```bash
 kubectl describe rolebinding kyuubi-emr -n emr
 ```
@@ -472,7 +473,7 @@ kubectl port-forward ranger-0 -n kyuubi 6080:6080
 # password: Rangeradmin1!
 ```
 ![rangerpolicy](./images/ranger_policy.jpeg)
-![rangermask](./images/ranger_data_mask.jpeg)
+
 
 ### Validate the fine-grained access against the secured datalake
 
