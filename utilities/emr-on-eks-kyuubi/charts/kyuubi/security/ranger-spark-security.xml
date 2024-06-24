@@ -1,7 +1,7 @@
   <configuration>
         <property>
             <name>ranger.plugin.spark.policy.rest.url</name>
-            <value>http://ranger-0.ranger-headless:6080</value>
+            <value>http://ranger-0.ranger-headless.kyuubi.svc.cluster.local:6080</value>
         </property>
         <property>
             <name>ranger.plugin.spark.service.name</name>
@@ -17,6 +17,6 @@
         </property> 
         <property>
             <name>ranger.plugin.spark.policy.cache.dir</name>
-            <value>/etc/ranger/cluster_spark/policycache</value>
+            <value>ranger/policycache</value>
         </property>   
     </configuration>

@@ -5,7 +5,7 @@ replicaCount: 2
 image:
   repository: melodydocker/kyuubi-emr-eks
   tag: emr6.15_kyuubi1.8
-  pullPolicy: Always
+  # pullPolicy: Always
 
 # priorityClass used for Kyuubi server pod
 priorityClass:
@@ -45,11 +45,7 @@ kyuubiConfDir: /usr/lib/kyuubi/conf
 kyuubiConf:
   kyuubiEnv: |
     #!/usr/bin/env bash
-    export SPARK_HOME=/usr/lib/spark
-    export SPARK_CONF_DIR=/etc/spark/conf
     export KYUUBI_WORK_DIR_ROOT=/usr/lib/kyuubi/work
-    export KYUUBI_HOME=/usr/lib/kyuubi
-    export HADOOP_CONF_DIR=/etc/hadoop/conf
     export JAVA_HOME=/etc/alternatives/jre
   kyuubiDefaults: |
     kyuubi.engine.type=SPARK_SQL
@@ -57,13 +53,13 @@ kyuubiConf:
     kyuubi.session.engine.initialize.timeout=PT3M
     kyuubi.session.engine.idle.timeout=PT5M
 
-    # Authentication (client users)
-    kyuubi.authentication=LDAP
-    kyuubi.authentication.ldap.url=ldap://ldap-svc:389
-    kyuubi.authentication.ldap.baseDN=dc=hadoop,dc=local
-    kyuubi.authentication.ldap.domain=hadoop.local
-    kyuubi.authentication.ldap.binddn=cn=admin,dc=hadoop,dc=local
-    kyuubi.authentication.ldap.bindpw=admin
+    # # Authentication (client users)
+    # kyuubi.authentication=LDAP
+    # kyuubi.authentication.ldap.url=ldap://ldap-svc:389
+    # kyuubi.authentication.ldap.baseDN=dc=hadoop,dc=local
+    # kyuubi.authentication.ldap.domain=hadoop.local
+    # kyuubi.authentication.ldap.binddn=cn=admin,dc=hadoop,dc=local
+    # kyuubi.authentication.ldap.bindpw=admin
 
 # $SPARK_CONF_DIR directory
 sparkConfDir: /etc/spark/conf
@@ -72,8 +68,10 @@ sparkConf:
     #!/usr/bin/env bash
     export HADOOP_CONF_DIR=/etc/hadoop/conf
     export SPARK_HOME=/usr/lib/spark
+    export SPARK_CONF_DIR=/etc/spark/conf
     export SPARK_LOG_DIR=/opt/spark/logs
     export JAVA_HOME=/etc/alternatives/jre
+    export KYUUBI_WORK_DIR_ROOT=/usr/lib/kyuubi/work
     export SPARK_LOG_MAX_FILES=5
   sparkDefaults: |
     # Spark overrides
@@ -94,13 +92,17 @@ sparkConf:
 
     # EKS settings
     spark.kubernetes.namespace=emr
+    # Kyuubi's service account that has permisison to access the EMR's namespace
     spark.kubernetes.authenticate.serviceAccountName=cross-ns-kyuubi
+    # SA in EMR namespace
     spark.kubernetes.authenticate.driver.serviceAccountName=emr-kyuubi
-    spark.kubernetes.container.image=melodydocker/kyuubi-emr-eks:emr6.10_kyuubi1.8
+    spark.kubernetes.container.image=melodydocker/kyuubi-emr-eks:emr6.15_kyuubi1.8
     spark.kubernetes.executor.podNamePrefix=kyuubi
-    # spark.kubernetes.driver.podTemplateContainerName=spark-kubernetes-driver
-    # spark.kubernetes.executor.podTemplateContainerName=spark-kubernetes-executor
-    spark.kubernetes.file.upload.path=file:///tmp
+    spark.kubernetes.driver.podTemplateContainerName=spark-kubernetes-driver
+    spark.kubernetes.executor.podTemplateContainerName=spark-kubernetes-executor
+    spark.kubernetes.driver.podTemplateFile=/etc/spark/conf/driver-template.yaml
+    spark.kubernetes.executor.podTemplateFile=/etc/spark/conf/executor-template.yaml
+    spark.kubernetes.file.upload.path=s3://emr-on-eks-rss-021732063925-us-west-2
     spark.master=k8s://https://kubernetes.default.svc:443
     
     # S3 settings
@@ -116,10 +118,10 @@ sparkConf:
     spark.hadoop.hive.metastore.client.factory.class=com.amazonaws.glue.catalog.metastore.AWSGlueDataCatalogHiveClientFactory
     
     # Hudi, Delta, Iceberg configs
-    spark.sql.extensions=org.apache.kyuubi.plugin.spark.authz.ranger.RangerSparkExtension,io.delta.sql.DeltaSparkSessionExtension,org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions
+    spark.sql.extensions=io.delta.sql.DeltaSparkSessionExtension,org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions
+    # org.apache.kyuubi.plugin.spark.authz.ranger.RangerSparkExtension
     spark.sql.catalog.spark_catalog=org.apache.spark.sql.delta.catalog.DeltaCatalog
     spark.jars=local:///usr/lib/hudi/hudi-spark-bundle.jar,local:///usr/share/aws/iceberg/lib/iceberg-spark3-runtime.jar,local:///usr/share/aws/delta/lib/delta-core.jar,local:///usr/share/aws/delta/lib/delta-storage.jar
-    
 # spark.sql.catalog.iceberg=org.apache.iceberg.spark.SparkCatalog
 # spark.sql.catalog.iceberg.catalog-impl=org.apache.iceberg.aws.glue.GlueCatalog
 # spark.sql.catalog.iceberg.warehouse=s3://YOUR_BUCKET/iceberg/

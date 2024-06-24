@@ -81,14 +81,31 @@ docker buildx build --platform linux/amd64,linux/arm64 \
 -t $ECR_URL/kyuubi-emr-eks:emr6.15_kyuubi1.8 \
 -f dockers/kyuubi/Dockerfile \
 --build-arg SPARK_BASE_IMAGE=755674844232.dkr.ecr.us-east-1.amazonaws.com/spark/emr-6.15.0 \
---build-arg KYUUBI_VERSION=1.8.0 --push .
+--build-arg KYUUBI_VERSION=1.8.0 \
+--build-arg SPARK_VERSION=3.4.1 \
+--build-arg RANGER_VERSION=2.4.0 \
+--push .
 ```
 
 ### Helm install Kyuubi
-1. Edit the chart's values.yaml file. Replace all images URIs by your images from private container repository, such as `$ECR_URL/kyuubi-emr-eks:6.15_kyuubi1.8`
+1. Edit the chart's [my-kyuubi-values.yaml](./charts/my-kyuubi-values.yaml) file. The following settings in the file need to consider to change:
+- Replace Kyuubi's public container image repository and tag values by yours from a private container repository, for example `$ECR_URL/kyuubi-emr-eks:6.15_kyuubi1.8`. 
+- Also update the image URL in Spark's default setting `spark.kubernetes.container.image`.
+- Change the `spark.kubernetes.file.upload.path` value and map to an accessable S3 bucket defined by your IRSA linked to your Kyuub's SA.
+
 ```bash
 vi charts/my-kyuubi-values.yaml
 ```
+In this file, few more Spark default configs need to pay attention to. Change them based on your EKS environment setup.
+```bash
+# a namespace to run Spark or EMR on EKS workload
+spark.kubernetes.namespace=emr
+# Kyuubi's service account that has permisison to access the EMR's namespace
+spark.kubernetes.authenticate.serviceAccountName=cross-ns-kyuubi
+# SA in EMR's namespace
+spark.kubernetes.authenticate.driver.serviceAccountName=emr-kyuubi
+```    
+
 2. Install Kyuubi
 ```bash
 helm install kyuubi charts/kyuubi -n kyuubi --create-namespace -f charts/my-kyuubi-values.yaml --debug
@@ -155,7 +172,7 @@ kubectl describe sa cross-ns-kyuubi -n kyuubi
 Once confirmed that you have the required access to S3, let's login to the Kyuubi pod again and create a sample delta table mapping to the s3 bucket. Before the authentication is enabled, we can login with any random username.
 
 ```bash
-./bin/beeline -u 'jdbc:hive2://kyuubi-thrift-binary:10009?spark.app.name=testdelta' -n any_user_name
+./bin/beeline -u 'jdbc:hive2://kyuubi-thrift-binary:10009?spark.app.name=testdelta' -n any_name
 ```
 3. The sample database and table are in Delta format, which should map to an S3 bucket that you have access to. In the Glue console, you should be able to see the related metadata generated in AWS Glue Data Catalog under the database `kyuubi_delta` with a S3 location.
 
@@ -295,7 +312,7 @@ statefulset.apps/ranger-postgresdb   1/1     14m
 It's time to configure the LDAP and Ranger for Kyuubi.
 
 1. Add new users & groups in LDAP
-Login to a ldap pod and run the following setup script. It creates 2 new users under a new group in the "hadooop.local" domain. The usage looks like this: ./ldap_install.sh <ADMIN_PASSWD> <USER_LIST> <USER_PASSWD> <BASE_DIRECTORY> .
+Login to a ldap pod and run the following setup script. It creates 2 new users `kyuubi` and `analyst` under a new group in the "hadooop.local" domain. The usage looks like this: ./ldap_install.sh <ADMIN_PASSWD> <USER_LIST> <USER_PASSWD> <BASE_DIRECTORY> .
 ```bash
 # Login to the pod
 export ldap_pod_name=`kubectl get pods -n kyuubi | awk '/ldap-/ {print $1;exit}'`
@@ -319,7 +336,7 @@ kubectl port-forward ranger-0 -n kyuubi 6080:6080
 # login: admin
 # password: Rangeradmin1!
 ```
-By default, it sync-up every 10 mins. Without a wait, let's directly delete the usersync pod that forces to resync the incremental changes from the LDAP server.
+By default, it sync-up every hour. Without a wait, let's directly delete the usersync pod that forces to resync the incremental changes from the LDAP server.
 ```bash
 # delete the current pod
 export usersync_pod_name=`kubectl get pods -n kyuubi | awk '/usersync/ {print $1;exit}'`
@@ -333,28 +350,30 @@ kubectl logs $usersync_pod_name2 -n kyuubi -f
 
 3. Redeploy Kyuubi chart with security enabled
 
-Enabling LDAP - Edit the Kyuubi's value file [./charts/my-kyuubi-values.yaml](./charts/my-kyuubi-values.yaml). Uncomment the lines for LDAP setup in the kyuubiDefaults settings (line#60-67) and modify them accordingly.
+Enabling LDAP - Edit the Kyuubi's value file [./charts/my-kyuubi-values.yaml](./charts/my-kyuubi-values.yaml). Uncomment the lines for LDAP setup in the kyuubiDefaults settings (line#56-62) and modify them accordingly.
 
 Enabling Ranger - Edit the config files in [./charts/kyuubi/security](./charts/kyuubi/security). Make sure all the settings are correct.
 
 Redeploy the chart with security configs:
 ```bash
 helm upgrade --install kyuubi charts/kyuubi -n kyuubi -f charts/my-kyuubi-values.yaml --debug
+# watch kyuubi's pods rolling update
+kubectl get po -n kyuubi -w
 ```
 You can repeat the above command whenever the configurations from those files are adjusted. Before proceed to the next step, make sure your Kyuubi pods are replaced by new ones after the upgrade judging by the "AGE" column from your kubectl output.
 
 ## Testing
 
 ### Validate the Authentication (LDAP) in Kyuubi
-Once LDAP in Kyuubi is enabled, you won't be able to run the Beenline tool by any user name as before. Instead you only can access it via the LDAP users - for example, the 'kyuubi' or 'analyst' user that was created earlier. Let's take the 'user1' user as an example:
+Once LDAP in Kyuubi is enabled, you won't be able to run the Beenline tool by any user name as before. Instead you only can access it via the LDAP users - for example, the 'kyuubi' or 'analyst' user that was created earlier. Let's take the 'user1' user as an example. Refer to these Kafka user's setup in the [groups.ldif](./charts/openldap/ldifs/groups.ldif) config file:
 ```bash
-# ssh to a kyuubi pod
-kubectl exec -it pod/kyuubi-0 -n kyuubi -- bash
+# ssh to any one of kyuubi pods that has been restarted
+kubectl exec -it pod/kyuubi-1 -n kyuubi -- bash
 # run the beeline with a random username with an error returned
 ./bin/beeline -u 'jdbc:hive2://kyuubi-thrift-binary:10009?spark.app.name=testldap' -n blah -p Password123
 # Error: Could not open client transport with JDBC Uri: jdbc:hive2://kyuubi-thrift-binary:10009?spark.app.name=testldap: Peer indicated failure: Error validating the login (state=08S01,code=0)
 ```
-Try again with the correct username and password:
+Try again with the correct login credential:
 ```bash
 ./bin/beeline -u 'jdbc:hive2://kyuubi-thrift-binary:10009?spark.app.name=testldap' -n user1 -p Password123!
 ```
@@ -455,23 +474,23 @@ kubectl port-forward ranger-0 -n kyuubi 6080:6080
 ![rangerpolicy](./images/ranger_policy.jpeg)
 ![rangermask](./images/ranger_data_mask.jpeg)
 
-### Query the secured datalake
+### Validate the fine-grained access against the secured datalake
 
-To test everything is fully secured, submit the following commands via the user "analyst" login, you will see a different output based on its permission setup in Ranger:
+To test everything is fully secured, connect to beeline via two user logins "analyst" & "kyuubi". You will see different outcome based on their permission setup in Ranger. To be able to compare the security feature, we add the Spark config `spark.sql.extensions=org.apache.kyuubi.plugin.spark.authz.ranger.RangerSparkExtension` to the beeline's conneciton string. In the real-world practice, to reinforce the security control, it is recommended to set it as a Spark default in the helm chart value file ["my-kyuubi-values.yaml"](./charts/my-kyuubi-values.yaml) before install the Kyuubi chart. 
 
 ```bash
 # login to one of kyuubi instances in EKS
 kubectl exec -it pod/kyuubi-0 -n kyuubi -- bash
-# use beeline to test the fine-grained access
+# without setting up the authZ plugin, the fine-grained access policy won't apply to the session.
+# both tables should appear if run the "SHOW TABLES IN secure_datalake;" command
 ./bin/beeline -u 'jdbc:hive2://kyuubi-thrift-binary:10009?spark.app.name=tesfgac' -n analyst -p Password123!
-# ;spark.sql.extensions=org.apache.kyuubi.plugin.spark.authz.ranger.RangerSparkExtension
+
+# test the fine-grained access control with the authZ plugin
+./bin/beeline -u 'jdbc:hive2://kyuubi-thrift-binary:10009?spark.app.name=tesfgac;spark.sql.extensions=org.apache.kyuubi.plugin.spark.authz.ranger.RangerSparkExtension' -n analyst -p Password123!
 ```
-
-Once opened the SQL editor type
-
 ```sql
 -- this will display only one tables as we granted read permissions only for the
--- customer table. Ranger filters metadata accordingly to permissions
+-- customer table. Ranger filters metadata accordingly.
 SHOW TABLES IN secure_datalake;
 
 -- This will print the customer data with an hash in the mail column (data mask)
@@ -480,6 +499,20 @@ SELECT * FROM secure_datalake.customer;
 -- This query should fail as we do not have permissions to access the table
 -- Permission denied: user [analyst] does not have [select] privilege on ...
 SELECT * FROM secure_datalake.store_sales;
+```
+
+```bash
+# no table returns, as we didn't grant read permissions to the kyuubi user.
+./bin/beeline -u 'jdbc:hive2://kyuubi-thrift-binary:10009?spark.app.name=tesfgac;spark.sql.extensions=org.apache.kyuubi.plugin.spark.authz.ranger.RangerSparkExtension' -n kyuubi -p Password123!
+```
+```bash
+0: jdbc:hive2://kyuubi-thrift-binary:10009> SHOW TABLES IN secure_datalake;
++------------+------------+--------------+
+| namespace  | tableName  | isTemporary  |
++------------+------------+--------------+
++------------+------------+--------------+
+No rows selected (0.973 seconds)
+0: jdbc:hive2://kyuubi-thrift-binary:10009>
 ```
 
 ## Clean Up

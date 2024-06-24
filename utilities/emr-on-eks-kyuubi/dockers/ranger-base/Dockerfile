@@ -9,7 +9,6 @@ RUN apt-get update && \
 
 ENV MAVEN_OPTS "-Xmx4096m -XX:MaxMetaspaceSize=512m"
 
-# Or you can use the binary from the official site: https://ranger.apache.org/download.html (currently no pre-built available)
 RUN cd /opt \
     && git clone --depth 1 -b release-ranger-$RANGER_VERSION https://github.com/apache/ranger.git \
     && cd ranger \
