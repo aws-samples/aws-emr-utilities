@@ -77,6 +77,17 @@ aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --
 # create a new repository in your ECR, **ONE-OFF task**
 aws ecr create-repository --repository-name $ECR_URL/kyuubi-emr-eks --image-scanning-configuration scanOnPush=true
 
+# create a builder for multi-platform build
+docker buildx create --name kyuubi-builder --driver docker-container --bootstrap
+
+# make sure the docker daemon file(/etc/docker/daemon.json) has the following settings
+
+#{
+#	"features": {
+#		"containerd-snapshotter": true
+#	}
+#}
+
 # image build and push. It takes approx. 40mins
 docker buildx build --platform linux/amd64,linux/arm64 \
 -t $ECR_URL/kyuubi-emr-eks:emr6.15_kyuubi1.8 \
@@ -85,6 +96,7 @@ docker buildx build --platform linux/amd64,linux/arm64 \
 --build-arg KYUUBI_VERSION=1.8.0 \
 --build-arg SPARK_VERSION=3.4.1 \
 --build-arg RANGER_VERSION=2.4.0 \
+--builder kyuubi-builder \
 --push .
 ```
 
