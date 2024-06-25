@@ -80,7 +80,7 @@ aws ecr create-repository --repository-name $ECR_URL/kyuubi-emr-eks --image-scan
 # create a builder for multi-platform build
 docker buildx create --name kyuubi-builder --driver docker-container --bootstrap
 
-# make sure the docker daemon file(/etc/docker/daemon.json) has the following settings
+# make sure the docker daemon file(/etc/docker/daemon.json) has the following settings, if modify the file, restart the docker daemon
 
 #{
 #	"features": {
