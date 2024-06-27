@@ -75,7 +75,7 @@ aws ecr get-login-password --region us-east-1 | docker login --username AWS --pa
 aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_URL
 
 # create a new repository in your ECR, **ONE-OFF task**
-aws ecr create-repository --repository-name $ECR_URL/kyuubi-emr-eks --image-scanning-configuration scanOnPush=true
+aws ecr create-repository --repository-name kyuubi-emr-eks --image-scanning-configuration scanOnPush=true
 
 # image build and push. It takes approx. 40mins
 docker buildx build --platform linux/amd64,linux/arm64 \
@@ -173,7 +173,7 @@ kubectl describe sa cross-ns-kyuubi -n kyuubi
 Once confirmed that you have the required access to S3, let's login to the Kyuubi pod again and create a sample delta table mapping to the s3 bucket. Before the authentication is enabled, we can login with any random username.
 
 ```bash
-./bin/beeline -u 'jdbc:hive2://kyuubi-thrift-binary:10009?spark.app.name=testdelta' -n any_name
+./bin/beeline -u 'jdbc:hive2://kyuubi-thrift-binary:10009?spark.app.name=testdelta' -n hadoop
 ```
 3. The sample database and table are in Delta format, which should map to an S3 bucket that you have access to. In the Glue console, you should be able to see the related metadata generated in AWS Glue Data Catalog under the database `kyuubi_delta` with a S3 location.
 
