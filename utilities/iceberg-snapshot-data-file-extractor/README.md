@@ -1,6 +1,6 @@
 # Iceberg_Snapshot_Data_File_Extractor
 
-This is a python script that helps extract data files from Iceberg snapshots.
+This is a pyspark script which is designed to extract and analyze data file paths from a specified Iceberg table and snapshot ID. It retrieves essential metadata, including the manifest list and individual data file paths, and outputs this information to a text file.
 
 ### Why Iceberg_Snapshot_Data_File_Extractor?
 
