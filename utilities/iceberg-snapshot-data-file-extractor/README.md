@@ -9,7 +9,7 @@ This is a pyspark script which is designed to extract and analyze data file path
 
 ### How to use
 
-1. **Download the Script:** `iceberg_snapshot_data_file_extractor.py`
+1. **Download the Script:** `iceberg_snapshot_data_file_extractor_v2.py`
 
 2. **Run the script using the command**:
    ```bash
