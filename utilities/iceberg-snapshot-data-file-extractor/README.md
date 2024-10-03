@@ -16,7 +16,7 @@ This is a pyspark script which is designed to extract and analyze data file path
    spark-submit --conf spark.sql.extensions=org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions \
    --conf spark.sql.catalog.iceberg=org.apache.iceberg.spark.SparkCatalog \
    --conf spark.sql.catalog.iceberg.catalog-impl=org.apache.iceberg.aws.glue.GlueCatalog \
-   iceberg_snapshot_file_extractor.py <table_name> <snapshot_id>
+   iceberg_snapshot_file_extractor_v2.py <table_name> <snapshot_id>
 
 ##### Example:
 
@@ -24,7 +24,7 @@ This is a pyspark script which is designed to extract and analyze data file path
 spark-submit --conf spark.sql.extensions=org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions \
 --conf spark.sql.catalog.iceberg=org.apache.iceberg.spark.SparkCatalog \
 --conf spark.sql.catalog.iceberg.catalog-impl=org.apache.iceberg.aws.glue.GlueCatalog \
-iceberg_snapshot_file_extractor.py iceberg.default.iceberg_mor_table 501388696554197986
+iceberg_snapshot_file_extractor_v2.py iceberg.default.iceberg_mor_table 501388696554197986
 ```
 This will generate the output file in the current directory, named as `<table_name>_<snapshot_id>_datafiles.txt`.
 
@@ -45,6 +45,7 @@ s3://bucket/path/data_file1.parquet
 s3://bucket/path/data_file2.parquet
 
 Total number of data files in snapshot <snapshot_id>: <number>
+Total size of all data files: <number> MB
 ```
 
 ##### Example:
