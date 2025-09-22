@@ -4,6 +4,7 @@
 
 This package contains a script that will secure YARN, Tez, Spark and Hadoop UIs uxing nginx and the encryption artifacts upload to Amazon S3 when enabling EMR In Transit Encryption: <https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-data-encryption-options.html#emr-encryption-intransit>
 
+
 ## Installation
 
 1. Ensure the cluster is configured with in-transit encryption enabled as part of EMR Security configs. The script uses the artifacts provided in the s3 bucket. 
