@@ -95,7 +95,9 @@ class SparkAnalysisOutput(BaseModel):
     code_diff: str | None = None
 
 
-def _should_get_code_recommendations(analysis_result: dict, platform_type: PlatformType) -> bool:
+def _should_get_code_recommendations(
+    analysis_result: dict, platform_type: PlatformType
+) -> bool:
     """
     Check if the analysis result indicates we should get code recommendations.
 
@@ -165,7 +167,9 @@ class MCPSerializationFixHook(HookProvider):
         self._fix_dict_parameters(tool_input, dict_params, tool_name)
 
         if tool_input != original_input:
-            logger.info(f"Fixed parameters for {tool_name}: {original_input} -> {tool_input}")
+            logger.info(
+                f"Fixed parameters for {tool_name}: {original_input} -> {tool_input}"
+            )
 
     def _fix_dict_parameters(
         self, params: Dict[str, Any], dict_param_names: List[str], tool_name: str
@@ -304,8 +308,12 @@ class SparkTroubleshootingAgent:
         )
 
         # Add callbacks
-        self.agent.hooks.add_callback(BeforeToolCallEvent, before_tool_invocation_callback)
-        self.agent.hooks.add_callback(AfterToolCallEvent, after_tool_invocation_callback)
+        self.agent.hooks.add_callback(
+            BeforeToolCallEvent, before_tool_invocation_callback
+        )
+        self.agent.hooks.add_callback(
+            AfterToolCallEvent, after_tool_invocation_callback
+        )
 
         self.logger.info("Agent initialized with callbacks")
 
@@ -347,7 +355,9 @@ class SparkTroubleshootingAgent:
 
         tool_response = analysis_result.get("tool_response", {})
         root_cause = tool_response.get("root_cause", "Unable to determine root cause")
-        recommendation = tool_response.get("recommendation", "No recommendation available")
+        recommendation = tool_response.get(
+            "recommendation", "No recommendation available"
+        )
 
         # Check if we need code recommendations
         code_diff = None
@@ -371,7 +381,9 @@ class SparkTroubleshootingAgent:
                     code_diff = code_result.get("code_diff")
 
         # Build generic issue summary
-        issue_summary = f"Spark job failure on {platform_type.replace('_', ' ').upper()}"
+        issue_summary = (
+            f"Spark job failure on {platform_type.replace('_', ' ').upper()}"
+        )
         if "application_id" in platform_params:
             issue_summary += f" (Application: {platform_params['application_id']})"
         elif "job_name" in platform_params:
@@ -429,7 +441,9 @@ class SparkTroubleshootingAgent:
             self.logger.error(f"Error running agent: {str(e)}", exc_info=True)
             raise
 
-    def get_tool_calls(self, tool_name: Optional[str] = None) -> Dict[str, List[Dict[str, Any]]]:
+    def get_tool_calls(
+        self, tool_name: Optional[str] = None
+    ) -> Dict[str, List[Dict[str, Any]]]:
         """
         Get recorded tool calls.
 
@@ -534,11 +548,15 @@ def spark_failure_callback(agent: bool = True):
         operator_name = type(task_instance).__name__
 
         if operator_name not in SPARK_OPERATORS:
-            logger.warning(f"spark_failure_callback called on non-Spark operator: {operator_name}")
+            logger.warning(
+                f"spark_failure_callback called on non-Spark operator: {operator_name}"
+            )
             return
 
         platform_type = SPARK_OPERATORS[operator_name]
-        logger.info(f"Triggering analysis for failed {platform_type} task: {task_instance.task_id}")
+        logger.info(
+            f"Triggering analysis for failed {platform_type} task: {task_instance.task_id}"
+        )
 
         conf: dict = {"platform_type": platform_type, "use_agent": agent}
 
@@ -563,7 +581,9 @@ def spark_failure_callback(agent: bool = True):
                 region_name=region,
             )
 
-            conf["step_id"] = _get_latest_failed_emr_step(task_instance.job_flow_id, session)
+            conf["step_id"] = _get_latest_failed_emr_step(
+                task_instance.job_flow_id, session
+            )
 
         dag_id = context["dag"].dag_id
         task_id = task_instance.task_id
@@ -663,7 +683,9 @@ with DAG(
 
         if use_agent:
             logger.info(f"Running agent with query: {query}")
-            response = troubleshooter(query, structured_output_model=SparkAnalysisOutput)
+            response = troubleshooter(
+                query, structured_output_model=SparkAnalysisOutput
+            )
             tool_responses = troubleshooter.get_tool_responses()
             logger.info(tool_responses)
             if not tool_responses:
@@ -679,12 +701,18 @@ with DAG(
                 }
             analysis: SparkAnalysisOutput = response.structured_output
         else:
-            logger.info(f"Running direct tool calls with platform_params: {platform_params}")
-            analysis = troubleshooter(platform_type=platform_type, platform_params=platform_params)
+            logger.info(
+                f"Running direct tool calls with platform_params: {platform_params}"
+            )
+            analysis = troubleshooter(
+                platform_type=platform_type, platform_params=platform_params
+            )
 
         slack_message = _format_slack_message(platform_type, analysis)
 
-        notifier = SlackWebhookNotifier(slack_webhook_conn_id=slack_conn_id, text=slack_message)
+        notifier = SlackWebhookNotifier(
+            slack_webhook_conn_id=slack_conn_id, text=slack_message
+        )
         notifier.notify(airflow_context or {})
 
         logger.info("Analysis complete, Slack notification sent")
