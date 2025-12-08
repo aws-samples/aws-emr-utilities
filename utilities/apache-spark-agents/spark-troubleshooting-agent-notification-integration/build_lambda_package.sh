@@ -26,8 +26,6 @@ mkdir -p ${BUILD_DIR}
 echo "📦 Installing Python dependencies..."
 pip install -r requirements.txt --platform manylinux2014_x86_64 -t ${BUILD_DIR} --implementation cp --python-version 3.13 --only-binary=:all:
 
-# pip install -r requirements.txt -t ${BUILD_DIR} --platform manylinux2014_x86_64 --only-binary=:all:
-
 # Copy Lambda function code
 echo "📋 Copying Lambda function code..."
 cp lambda_function.py ${BUILD_DIR}/
@@ -44,20 +42,6 @@ PACKAGE_SIZE=$(du -h ${ZIP_FILE} | cut -f1)
 echo "✅ Lambda package built successfully!"
 echo "📦 Package: ${ZIP_FILE}"
 echo "📏 Size: ${PACKAGE_SIZE}"
-echo ""
-echo "🚀 Next steps:"
-echo "1. Upload ${ZIP_FILE} to your Lambda function"
-echo "2. Set the handler to: lambda_function.lambda_handler"
-echo "3. Set the following environment variables in Lambda:"
-echo "   - SNS_TOPIC_ARN: Your SNS topic ARN"
-echo "   - STAGE: beta"
-echo "   - AWS_REGION: us-east-2"
-echo "4. Configure the Lambda execution role with permissions for:"
-echo "   - SNS publish permissions"
-echo "   - CloudWatch Logs permissions"
-echo "5. Set timeout to 300 seconds (5 minutes)"
-echo "6. Set memory to 512 MB or higher"
-echo "7. Test with the example EventBridge event"
 echo ""
 
 # Clean up build directory (optional)
