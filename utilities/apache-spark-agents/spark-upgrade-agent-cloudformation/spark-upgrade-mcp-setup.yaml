@@ -1,0 +1,513 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'AWS Data Processing MCP Setup - Creates IAM role, S3 bucket, and necessary permissions for Spark upgrade assistance'
+
+Parameters:
+  SparkUpgradeIAMRoleName:
+    Type: String
+    Default: ''
+    Description: 'Name of the IAM role to create for Spark upgrades. Leave empty to auto-generate with stack name for uniqueness'
+    AllowedPattern: '^[a-zA-Z0-9+=,.@_-]*$'
+    ConstraintDescription: Must be a valid IAM role name or empty
+  
+  StagingBucketPath:
+    Type: String
+    Default: ''
+    Description: 'S3 path for staging artifacts (e.g., s3://my-bucket/spark-upgrade or my-bucket/spark-upgrade). Leave empty to auto-generate a new bucket'
+    AllowedPattern: '^(s3://)?[a-z0-9.-]+(\/[a-zA-Z0-9\-_\/]*)?$|^$'
+    ConstraintDescription: Must be a valid S3 path (bucket name with optional prefix) or empty
+  
+  EnableEMREC2:
+    Type: String
+    Default: 'true'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: 'Enable EMR-EC2 upgrade permissions'
+  
+  EnableEMRServerless:
+    Type: String
+    Default: 'true'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: 'Enable EMR-Serverless upgrade permissions'
+  
+  UseS3Encryption:
+    Type: String
+    Default: 'false'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: 'Enable KMS encryption for S3 staging bucket. Set to true to use KMS encryption instead of default S3 encryption'
+  
+  S3KmsKeyArn:
+    Type: String
+    Default: ''
+    Description: '(Optional) ARN of existing KMS key for S3 staging bucket encryption. Only used if UseS3Encryption is true and you have an existing bucket with a KMS key'
+    AllowedPattern: '^(arn:aws:kms:[a-z0-9-]+:[0-9]{12}:key/[a-f0-9-]+)?$'
+    ConstraintDescription: Must be a valid KMS key ARN or empty
+  
+  CloudWatchKmsKeyArn:
+    Type: String
+    Default: ''
+    Description: '(Optional) ARN of the KMS key used to encrypt EMR-Serverless CloudWatch Logs. Required only if your EMR-Serverless application logs are encrypted with a customer-managed KMS key. Leave empty if using default encryption or AWS-managed keys'
+    AllowedPattern: '^(arn:aws:kms:[a-z0-9-]+:[0-9]{12}:key/[a-f0-9-]+)?$'
+    ConstraintDescription: Must be a valid KMS key ARN or empty
+  
+  EMRServerlessS3LogPath:
+    Type: String
+    Default: ''
+    Description: '(Optional) S3 path where EMR-Serverless application logs are stored (e.g., s3://my-bucket/emr-serverless-logs or my-bucket/emr-serverless-logs). Only used when EnableEMRServerless is true'
+    AllowedPattern: '^(s3://)?[a-z0-9.-]+(\/[a-zA-Z0-9\-_\/]*)?$|^$'
+    ConstraintDescription: Must be a valid S3 path or empty
+  
+  ExecutionRoleToGrantS3Access:
+    Type: String
+    Default: ''
+    Description: 'IAM Role Name or ARN of your EMR-EC2/EMR-Serverless job execution role that needs S3 staging bucket access. Required when creating a new staging bucket. Supports roles with paths (e.g., arn:aws:iam::123456789012:role/path/RoleName). Leave empty only if using an existing bucket'
+    AllowedPattern: '^(arn:aws:iam::[0-9]{12}:role/[a-zA-Z0-9+=,.@_/-]+|[a-zA-Z0-9+=,.@_-]+)?$'
+    ConstraintDescription: Must be a valid IAM role name or ARN (with optional path), or empty
+
+Conditions:
+  CreateBucket: !Equals [!Ref StagingBucketPath, '']
+  HasS3Prefix: !Not [!Equals [!Select [0, !Split ['s3://', !Ref StagingBucketPath]], !Ref StagingBucketPath]]
+  GenerateRoleName: !Equals [!Ref SparkUpgradeIAMRoleName, '']
+  UseS3KmsEncryption: !Equals [!Ref UseS3Encryption, 'true']
+  HasProvidedS3KmsKey: !Not [!Equals [!Ref S3KmsKeyArn, '']]
+  CreateS3KmsKey: !And
+    - !Condition UseS3KmsEncryption
+    - !Not [!Condition HasProvidedS3KmsKey]
+  UseProvidedS3KmsKey: !And
+    - !Condition UseS3KmsEncryption
+    - !Condition HasProvidedS3KmsKey
+  UseProvidedCloudWatchKmsKey: !Not [!Equals [!Ref CloudWatchKmsKeyArn, '']]
+  HasEMRServerlessS3LogPath: !Not [!Equals [!Ref EMRServerlessS3LogPath, '']]
+  HasS3LogPrefix: !Not [!Equals [!Select [0, !Split ['s3://', !Ref EMRServerlessS3LogPath]], !Ref EMRServerlessS3LogPath]]
+  GrantEMRServerlessS3LogAccess: !And
+    - !Condition EnableEMRServerless
+    - !Condition HasEMRServerlessS3LogPath
+  EnableEMR: !Equals [!Ref EnableEMREC2, 'true']
+  EnableEMRServerless: !Equals [!Ref EnableEMRServerless, 'true']
+  HasExistingRoleForS3Access: !Not [!Equals [!Ref ExecutionRoleToGrantS3Access, '']]
+  GrantS3AccessToExistingRole: !And
+    - !Condition CreateBucket
+    - !Condition HasExistingRoleForS3Access
+  IsExecutionRoleArn: !Equals [!Select [0, !Split [':', !Ref ExecutionRoleToGrantS3Access]], 'arn']
+
+Resources:
+  # S3 Bucket for staging upgrade artifacts
+  StagingBucket:
+    Type: AWS::S3::Bucket
+    Condition: CreateBucket
+    Properties:
+      BucketName: !Sub 
+        - 'spark-upgrade-${ShortId}'
+        - ShortId: !Select [0, !Split ['-', !Select [2, !Split ['/', !Ref 'AWS::StackId']]]]
+      BucketEncryption: !If
+        - UseS3KmsEncryption
+        - ServerSideEncryptionConfiguration:
+            - ServerSideEncryptionByDefault:
+                SSEAlgorithm: aws:kms
+                KMSMasterKeyID: !If
+                  - CreateS3KmsKey
+                  - !GetAtt EncryptionKey.Arn
+                  - !Ref S3KmsKeyArn
+              BucketKeyEnabled: true
+        - ServerSideEncryptionConfiguration:
+            - ServerSideEncryptionByDefault:
+                SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldVersions
+            Status: Enabled
+            NoncurrentVersionExpirationInDays: 30
+      Tags:
+        - Key: Purpose
+          Value: SparkMCPUpgrades
+        - Key: ManagedBy
+          Value: CloudFormation
+        - Key: ManagedByStack
+          Value: !Ref AWS::StackName
+
+  # KMS Key for S3 encryption (only created if not provided)
+  EncryptionKey:
+    Type: AWS::KMS::Key
+    Condition: CreateS3KmsKey
+    Properties:
+      Description: KMS key for S3 staging bucket encryption
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+          - Sid: Allow Spark Upgrade Role to use the key
+            Effect: Allow
+            Principal:
+              AWS: !GetAtt SparkUpgradeRole.Arn
+            Action:
+              - 'kms:GenerateDataKey'
+              - 'kms:Encrypt'
+              - 'kms:Decrypt'
+              - 'kms:DescribeKey'
+            Resource: '*'
+      Tags:
+        - Key: Purpose
+          Value: SparkMCPUpgrades
+        - Key: ManagedBy
+          Value: CloudFormation
+        - Key: ManagedByStack
+          Value: !Ref AWS::StackName
+
+  EncryptionKeyAlias:
+    Type: AWS::KMS::Alias
+    Condition: CreateS3KmsKey
+    Properties:
+      AliasName: !Sub 'alias/spark-upgrade-${AWS::StackName}'
+      TargetKeyId: !Ref EncryptionKey
+
+  # IAM Role for Spark upgrades
+  SparkUpgradeRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !If
+        - GenerateRoleName
+        - !Sub 'spark-upgrade-role-${AWS::StackName}'
+        - !Ref SparkUpgradeIAMRoleName
+      Description: Role for AWS Data Processing MCP Spark upgrade operations
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowSameAccountAssumeRole
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: sts:AssumeRole
+      Tags:
+        - Key: Purpose
+          Value: SparkMCPUpgrades
+        - Key: ManagedBy
+          Value: CloudFormation
+        - Key: ManagedByStack
+          Value: !Ref AWS::StackName
+
+  # Base policy for MCP and common services
+  SparkUpgradeBasePolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: SparkUpgradeBase
+      Roles:
+        - !Ref SparkUpgradeRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowUseDataProcessingMcpServer
+            Effect: Allow
+            Action:
+              - 'sagemaker-unified-studio-mcp:InvokeMcp'
+              - 'sagemaker-unified-studio-mcp:CallReadOnlyTool'
+              - 'sagemaker-unified-studio-mcp:CallPrivilegedTool'
+            Resource: '*'
+          
+          - Sid: S3StageArtifacts
+            Effect: Allow
+            Action:
+              - 's3:GetBucket*'
+              - 's3:GetObject*'
+              - 's3:List*'
+              - 's3:PutObject*'
+            Resource:
+              - !If
+                - CreateBucket
+                - !GetAtt StagingBucket.Arn
+                - !Sub 
+                  - 'arn:aws:s3:::${BucketName}'
+                  - BucketName: !Select [0, !Split ['/', !If [HasS3Prefix, !Select [1, !Split ['s3://', !Ref StagingBucketPath]], !Ref StagingBucketPath]]]
+              - !If
+                - CreateBucket
+                - !Sub '${StagingBucket.Arn}/*'
+                - !Sub 
+                  - 'arn:aws:s3:::${S3Path}/*'
+                  - S3Path: !If [HasS3Prefix, !Select [1, !Split ['s3://', !Ref StagingBucketPath]], !Ref StagingBucketPath]
+  
+  # EMR-specific policy (conditional)
+  EMRPolicy:
+    Type: AWS::IAM::Policy
+    Condition: EnableEMR
+    Properties:
+      PolicyName: SparkUpgradeEMR
+      Roles:
+        - !Ref SparkUpgradeRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: EMRTroubleshootUpgrade
+            Effect: Allow
+            Action:
+              - 'elasticmapreduce:DescribeCluster'
+              - 'elasticmapreduce:DescribeStep'
+              - 'elasticmapreduce:ListSteps'
+              - 'elasticmapreduce:ListClusters'
+              - 'elasticmapreduce:DescribeJobFlows'
+              - 'elasticmapreduce:AddJobFlowSteps'
+              - 'elasticmapreduce:CreatePersistentAppUI'
+              - 'elasticmapreduce:DescribePersistentAppUI'
+              - 'elasticmapreduce:GetPersistentAppUIPresignedURL'
+            Resource: '*'
+          
+          - Sid: S3LogsAccess
+            Effect: Allow
+            Action:
+              - 's3:GetObject'
+              - 's3:ListBucket'
+            Resource:
+              - 'arn:aws:s3:::aws-logs-*'
+              - 'arn:aws:s3:::aws-logs-*/*'
+          
+          - Sid: CloudWatchLogsDebugging
+            Effect: Allow
+            Action:
+              - 'logs:GetLogEvents'
+              - 'logs:DescribeLogStreams'
+            Resource: !Sub 'arn:aws:logs:*:${AWS::AccountId}:log-group:*'
+  
+  # EMR Serverless-specific policy (conditional)
+  EMRServerlessPolicy:
+    Type: AWS::IAM::Policy
+    Condition: EnableEMRServerless
+    Properties:
+      PolicyName: SparkUpgradeEMRServerless
+      Roles:
+        - !Ref SparkUpgradeRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: EMRServerlessTroubleshootUpgrade
+            Effect: Allow
+            Action:
+              - 'emr-serverless:StartJobRun'
+              - 'emr-serverless:GetJobRun'
+              - 'emr-serverless:GetApplication'
+              - 'emr-serverless:ListApplications'
+              - 'emr-serverless:ListJobRuns'
+              - 'emr-serverless:ListJobRunAttempts'
+              - 'emr-serverless:GetDashboardForJobRun'
+              - 'emr-serverless:ListTagsForResource'
+            Resource: '*'
+          
+          - Sid: EMRServerlessPassRole
+            Effect: Allow
+            Action: 'iam:PassRole'
+            Resource: '*'
+            Condition:
+              StringLike:
+                'iam:PassedToService': 'emr-serverless.amazonaws.com'
+          
+          - Sid: CloudWatchLogsDebugging
+            Effect: Allow
+            Action:
+              - 'logs:GetLogEvents'
+              - 'logs:DescribeLogStreams'
+            Resource: !Sub 'arn:aws:logs:*:${AWS::AccountId}:log-group:*'
+          
+          - !If
+            - GrantEMRServerlessS3LogAccess
+            - Sid: EMRServerlessS3LogsAccess
+              Effect: Allow
+              Action:
+                - 's3:GetObject*'
+                - 's3:GetBucket*'
+                - 's3:List*'
+              Resource:
+                - !Sub 
+                  - 'arn:aws:s3:::${BucketName}'
+                  - BucketName: !Select [0, !Split ['/', !If [HasS3LogPrefix, !Select [1, !Split ['s3://', !Ref EMRServerlessS3LogPath]], !Ref EMRServerlessS3LogPath]]]
+                - !Sub 
+                  - 'arn:aws:s3:::${S3Path}/*'
+                  - S3Path: !If [HasS3LogPrefix, !Select [1, !Split ['s3://', !Ref EMRServerlessS3LogPath]], !Ref EMRServerlessS3LogPath]
+            - !Ref AWS::NoValue
+  
+  # KMS policy for S3 staging bucket (only if KMS encryption is enabled)
+  SparkUpgradeS3KmsPolicy:
+    Type: AWS::IAM::Policy
+    Condition: UseS3KmsEncryption
+    Properties:
+      PolicyName: SparkUpgradeS3Kms
+      Roles:
+        - !Ref SparkUpgradeRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: S3KMSEncryption
+            Effect: Allow
+            Action:
+              - 'kms:GenerateDataKey'
+              - 'kms:Encrypt'
+              - 'kms:Decrypt'
+              - 'kms:DescribeKey'
+            Resource: !If
+              - CreateS3KmsKey
+              - !GetAtt EncryptionKey.Arn
+              - !Ref S3KmsKeyArn
+  
+  # KMS policy for CloudWatch Logs (EMR Serverless only, if key provided)
+  SparkUpgradeCloudWatchKmsPolicy:
+    Type: AWS::IAM::Policy
+    Condition: UseProvidedCloudWatchKmsKey
+    Properties:
+      PolicyName: SparkUpgradeCloudWatchKms
+      Roles:
+        - !Ref SparkUpgradeRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: CloudWatchKMSEncryption
+            Effect: Allow
+            Action:
+              - 'kms:Decrypt'
+              - 'kms:DescribeKey'
+            Resource: !Ref CloudWatchKmsKeyArn
+  
+  # Inline policy for existing role to access S3 staging bucket
+  ExistingRoleS3AccessPolicy:
+    Type: AWS::IAM::Policy
+    Condition: GrantS3AccessToExistingRole
+    Properties:
+      PolicyName: !Sub 'SparkUpgradeS3Access-${AWS::StackName}'
+      Roles:
+        - !If
+          - IsExecutionRoleArn
+          - !Select [1, !Split ['/', !Ref ExecutionRoleToGrantS3Access]]
+          - !Ref ExecutionRoleToGrantS3Access
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: S3StageArtifactsAccess
+            Effect: Allow
+            Action:
+              - 's3:GetBucket*'
+              - 's3:GetObject*'
+              - 's3:List*'
+              - 's3:PutObject*'
+            Resource:
+              - !Sub 
+                - 'arn:aws:s3:::${BucketName}'
+                - BucketName: !Ref StagingBucket
+              - !Sub '${StagingBucket.Arn}/*'
+
+Outputs:
+  ExportCommand:
+    Description: Copy and run this command to set environment variables
+    Value: !Sub 
+      - 'export SMUS_MCP_REGION=${AWS::Region} && export IAM_ROLE=${SparkUpgradeRole.Arn} && export STAGING_BUCKET_PATH=${BucketPath}'
+      - BucketPath: !If
+          - CreateBucket
+          - !Ref StagingBucket
+          - !Ref StagingBucketPath
+  
+  RoleArn:
+    Description: ARN of the IAM role for Spark upgrades
+    Value: !GetAtt SparkUpgradeRole.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-RoleArn'
+  
+  RoleName:
+    Description: Name of the IAM role
+    Value: !Ref SparkUpgradeRole
+    Export:
+      Name: !Sub '${AWS::StackName}-RoleName'
+  
+  StagingBucketPath:
+    Description: S3 path for staging artifacts
+    Value: !If
+      - CreateBucket
+      - !Ref StagingBucket
+      - !Ref StagingBucketPath
+    Export:
+      Name: !Sub '${AWS::StackName}-StagingBucketPath'
+  
+  StagingBucketName:
+    Description: Name of the S3 staging bucket
+    Value: !If
+      - CreateBucket
+      - !Ref StagingBucket
+      - !Select [0, !Split ['/', !If [HasS3Prefix, !Select [1, !Split ['s3://', !Ref StagingBucketPath]], !Ref StagingBucketPath]]]
+    Export:
+      Name: !Sub '${AWS::StackName}-StagingBucket'
+  
+  StagingBucketArn:
+    Description: ARN of the S3 staging bucket
+    Value: !If
+      - CreateBucket
+      - !GetAtt StagingBucket.Arn
+      - !Sub 
+        - 'arn:aws:s3:::${BucketName}'
+        - BucketName: !Select [0, !Split ['/', !If [HasS3Prefix, !Select [1, !Split ['s3://', !Ref StagingBucketPath]], !Ref StagingBucketPath]]]
+    Export:
+      Name: !Sub '${AWS::StackName}-StagingBucketArn'
+  
+  S3EncryptionType:
+    Description: Type of encryption used for S3 staging bucket
+    Value: !If
+      - UseS3KmsEncryption
+      - 'KMS'
+      - 'AES256 (Default S3 Encryption)'
+  
+  S3KmsKeyId:
+    Description: KMS Key ID for S3 staging bucket encryption (if KMS is enabled)
+    Value: !If
+      - UseS3KmsEncryption
+      - !If
+        - CreateS3KmsKey
+        - !Ref EncryptionKey
+        - !Select [1, !Split ['/', !Select [5, !Split [':', !Ref S3KmsKeyArn]]]]
+      - 'N/A - KMS encryption not enabled'
+    Export:
+      Name: !Sub '${AWS::StackName}-S3KmsKeyId'
+  
+  S3KmsKeyArn:
+    Description: KMS Key ARN for S3 staging bucket encryption (if KMS is enabled)
+    Value: !If
+      - UseS3KmsEncryption
+      - !If
+        - CreateS3KmsKey
+        - !GetAtt EncryptionKey.Arn
+        - !Ref S3KmsKeyArn
+      - 'N/A - KMS encryption not enabled'
+    Export:
+      Name: !Sub '${AWS::StackName}-S3KmsKeyArn'
+  
+  CloudWatchKmsKeyArn:
+    Description: KMS Key ARN for CloudWatch Logs encryption (if provided)
+    Value: !If
+      - UseProvidedCloudWatchKmsKey
+      - !Ref CloudWatchKmsKeyArn
+      - 'Not provided - using default encryption'
+    Export:
+      Name: !Sub '${AWS::StackName}-CloudWatchKmsKeyArn'
+  
+  EMRServerlessS3LogPath:
+    Description: S3 path for EMR-Serverless logs (if provided and EnableEMRServerless is true)
+    Value: !If
+      - GrantEMRServerlessS3LogAccess
+      - !Ref EMRServerlessS3LogPath
+      - 'Not provided or EMR-Serverless not enabled'
+    Export:
+      Name: !Sub '${AWS::StackName}-EMRServerlessS3LogPath'
+  
+  ExecutionRoleGrantedAccess:
+    Description: Execution IAM role that was granted S3 staging bucket access
+    Value: !If
+      - GrantS3AccessToExistingRole
+      - !Ref ExecutionRoleToGrantS3Access
+      - 'No execution role specified'

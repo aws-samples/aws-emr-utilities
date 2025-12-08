@@ -1,0 +1,298 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'AWS Data Processing MCP Setup - Creates IAM role and necessary permissions for Spark troubleshooting on Glue, EMR-EC2, and EMR Serverless'
+
+Parameters:
+  TroubleshootingRoleName:
+    Type: String
+    Default: ''
+    Description: 'Name of the IAM role to create for Spark troubleshooting operations. Leave empty to auto-generate with stack name for uniqueness'
+    AllowedPattern: '^[a-zA-Z0-9+=,.@_-]*$'
+    ConstraintDescription: Must be a valid IAM role name or empty
+  
+  EnableEMREC2:
+    Type: String
+    Default: 'true'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: 'Enable EMR-EC2 troubleshooting permissions'
+  
+  EnableEMRServerless:
+    Type: String
+    Default: 'true'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: 'Enable EMR-Serverless troubleshooting permissions'
+  
+  EnableGlue:
+    Type: String
+    Default: 'true'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: 'Enable Glue troubleshooting permissions'
+  
+  CloudWatchKmsKeyArn:
+    Type: String
+    Default: ''
+    Description: '(Optional) ARN of existing KMS key for CloudWatch Logs encryption. Leave empty to use default encryption'
+    AllowedPattern: '^(arn:aws:kms:[a-z0-9-]+:[0-9]{12}:key/[a-f0-9-]+)?$'
+    ConstraintDescription: Must be a valid KMS key ARN or empty
+  
+  EMRServerlessS3LogPath:
+    Type: String
+    Default: ''
+    Description: '(Optional) S3 path where EMR-Serverless application logs are stored (e.g., s3://my-bucket/emr-serverless-logs or my-bucket/emr-serverless-logs). Only used when EnableEMRServerless is true'
+    AllowedPattern: '^(s3://)?[a-z0-9.-]+(\/[a-zA-Z0-9\-_\/]*)?$|^$'
+    ConstraintDescription: Must be a valid S3 path or empty
+
+Conditions:
+  GenerateRoleName: !Equals [!Ref TroubleshootingRoleName, '']
+  UseProvidedCloudWatchKmsKey: !Not [!Equals [!Ref CloudWatchKmsKeyArn, '']]
+  HasEMRServerlessS3LogPath: !Not [!Equals [!Ref EMRServerlessS3LogPath, '']]
+  HasS3LogPrefix: !Not [!Equals [!Select [0, !Split ['s3://', !Ref EMRServerlessS3LogPath]], !Ref EMRServerlessS3LogPath]]
+  GrantEMRServerlessS3LogAccess: !And
+    - !Condition EnableEMRServerless
+    - !Condition HasEMRServerlessS3LogPath
+  EnableEMR: !Equals [!Ref EnableEMREC2, 'true']
+  EnableEMRServerless: !Equals [!Ref EnableEMRServerless, 'true']
+  EnableGlue: !Equals [!Ref EnableGlue, 'true']
+
+Resources:
+  # IAM Role for Spark troubleshooting
+  SparkTroubleshootingRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !If
+        - GenerateRoleName
+        - !Sub 'spark-troubleshooting-role-${AWS::StackName}'
+        - !Ref TroubleshootingRoleName
+      Description: Role for AWS Data Processing MCP Spark troubleshooting operations
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowSameAccountAssumeRole
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: sts:AssumeRole
+      Tags:
+        - Key: Purpose
+          Value: SparkMCPTroubleshooting
+        - Key: ManagedBy
+          Value: CloudFormation
+        - Key: ManagedByStack
+          Value: !Ref AWS::StackName
+
+  # Base policy for MCP
+  SparkTroubleshootingBasePolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: SparkTroubleshootingBase
+      Roles:
+        - !Ref SparkTroubleshootingRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowUseSagemakeUnifiedStudioMcpServer
+            Effect: Allow
+            Action:
+              - 'sagemaker-unified-studio-mcp:InvokeMcp'
+              - 'sagemaker-unified-studio-mcp:CallReadOnlyTool'
+              - 'sagemaker-unified-studio-mcp:CallPrivilegedTool'
+            Resource: '*'
+  
+  # EMR-specific policy (conditional)
+  EMRPolicy:
+    Type: AWS::IAM::Policy
+    Condition: EnableEMR
+    Properties:
+      PolicyName: SparkTroubleshootingEMR
+      Roles:
+        - !Ref SparkTroubleshootingRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: EMREC2ReadAccess
+            Effect: Allow
+            Action:
+              - 'elasticmapreduce:DescribeCluster'
+              - 'elasticmapreduce:DescribeStep'
+              - 'elasticmapreduce:ListSteps'
+              - 'elasticmapreduce:ListClusters'
+              - 'elasticmapreduce:DescribeJobFlows'
+            Resource: '*'
+          
+          - Sid: EMRS3LogAccess
+            Effect: Allow
+            Action:
+              - 's3:GetObject'
+              - 's3:ListBucket'
+            Resource: '*'
+          
+          - Sid: EMRPersistentApp
+            Effect: Allow
+            Action:
+              - 'elasticmapreduce:CreatePersistentAppUI'
+              - 'elasticmapreduce:DescribePersistentAppUI'
+              - 'elasticmapreduce:GetPersistentAppUIPresignedURL'
+            Resource: '*'
+  
+  # EMR Serverless-specific policy (conditional)
+  EMRServerlessPolicy:
+    Type: AWS::IAM::Policy
+    Condition: EnableEMRServerless
+    Properties:
+      PolicyName: SparkTroubleshootingEMRServerless
+      Roles:
+        - !Ref SparkTroubleshootingRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: EMRServerlessReadAccess
+            Effect: Allow
+            Action:
+              - 'emr-serverless:GetJobRun'
+              - 'emr-serverless:GetApplication'
+              - 'emr-serverless:ListApplications'
+              - 'emr-serverless:ListJobRuns'
+              - 'emr-serverless:ListJobRunAttempts'
+              - 'emr-serverless:GetDashboardForJobRun'
+              - 'emr-serverless:ListTagsForResource'
+            Resource: '*'
+          
+          - Sid: EMRServerlessCloudWatchLogsAccess
+            Effect: Allow
+            Action:
+              - 'logs:GetLogEvents'
+              - 'logs:FilterLogEvents'
+            Resource: !Sub 'arn:aws:logs:*:${AWS::AccountId}:log-group:/aws/emr-serverless/*'
+          
+          - !If
+            - GrantEMRServerlessS3LogAccess
+            - Sid: EMRServerlessS3LogsAccess
+              Effect: Allow
+              Action:
+                - 's3:GetObject*'
+                - 's3:GetBucket*'
+                - 's3:List*'
+              Resource:
+                - !Sub 
+                  - 'arn:aws:s3:::${BucketName}'
+                  - BucketName: !Select [0, !Split ['/', !If [HasS3LogPrefix, !Select [1, !Split ['s3://', !Ref EMRServerlessS3LogPath]], !Ref EMRServerlessS3LogPath]]]
+                - !Sub 
+                  - 'arn:aws:s3:::${S3Path}/*'
+                  - S3Path: !If [HasS3LogPrefix, !Select [1, !Split ['s3://', !Ref EMRServerlessS3LogPath]], !Ref EMRServerlessS3LogPath]
+            - !Ref AWS::NoValue
+  
+  # Glue-specific policy (conditional)
+  GluePolicy:
+    Type: AWS::IAM::Policy
+    Condition: EnableGlue
+    Properties:
+      PolicyName: SparkTroubleshootingGlue
+      Roles:
+        - !Ref SparkTroubleshootingRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: GlueReadAccess
+            Effect: Allow
+            Action:
+              - 'glue:GetJob'
+              - 'glue:GetJobRun'
+              - 'glue:GetJobRuns'
+              - 'glue:GetJobs'
+              - 'glue:BatchGetJobs'
+            Resource: '*'
+          
+          - Sid: GlueCloudWatchLogsAccess
+            Effect: Allow
+            Action:
+              - 'logs:GetLogEvents'
+              - 'logs:FilterLogEvents'
+            Resource: !Sub 'arn:aws:logs:*:${AWS::AccountId}:log-group:/aws-glue/*'
+          
+          - Sid: GlueSparkWebUI
+            Effect: Allow
+            Action:
+              - 'glue:RequestLogParsing'
+              - 'glue:GetLogParsingStatus'
+              - 'glue:GetEnvironment'
+              - 'glue:GetStage'
+              - 'glue:GetStages'
+              - 'glue:GetStageFiles'
+              - 'glue:BatchGetStageFiles'
+              - 'glue:GetStageAttempt'
+              - 'glue:GetStageAttemptTaskList'
+              - 'glue:GetStageAttemptTaskSummary'
+              - 'glue:GetExecutors'
+              - 'glue:GetExecutorsThreads'
+              - 'glue:GetStorage'
+              - 'glue:GetStorageUnit'
+              - 'glue:GetQueries'
+              - 'glue:GetQuery'
+              - 'glue:GetDashboardUrl'
+            Resource: '*'
+          
+          - Sid: GluePassRoleAccess
+            Effect: Allow
+            Action: 'iam:PassRole'
+            Resource: '*'
+            Condition:
+              StringLike:
+                'iam:PassedToService': 'glue.amazonaws.com'
+  
+  # KMS policy for CloudWatch Logs (if key provided)
+  SparkTroubleshootingCloudWatchKmsPolicy:
+    Type: AWS::IAM::Policy
+    Condition: UseProvidedCloudWatchKmsKey
+    Properties:
+      PolicyName: SparkTroubleshootingCloudWatchKms
+      Roles:
+        - !Ref SparkTroubleshootingRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: CloudWatchKMSEncryption
+            Effect: Allow
+            Action:
+              - 'kms:Decrypt'
+              - 'kms:DescribeKey'
+            Resource: !Ref CloudWatchKmsKeyArn
+
+Outputs:
+  ExportCommand:
+    Description: Copy and run this command to set environment variables
+    Value: !Sub 'export SMUS_MCP_REGION=${AWS::Region} && export IAM_ROLE=${SparkTroubleshootingRole.Arn}'
+  
+  RoleArn:
+    Description: ARN of the IAM role for Spark troubleshooting
+    Value: !GetAtt SparkTroubleshootingRole.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-RoleArn'
+  
+  RoleName:
+    Description: Name of the IAM role
+    Value: !Ref SparkTroubleshootingRole
+    Export:
+      Name: !Sub '${AWS::StackName}-RoleName'
+  
+  CloudWatchKmsKeyArn:
+    Description: KMS Key ARN for CloudWatch Logs encryption (if provided)
+    Value: !If
+      - UseProvidedCloudWatchKmsKey
+      - !Ref CloudWatchKmsKeyArn
+      - 'Not provided - using default encryption'
+    Export:
+      Name: !Sub '${AWS::StackName}-CloudWatchKmsKeyArn'
+  
+  EMRServerlessS3LogPath:
+    Description: S3 path for EMR-Serverless logs (if provided and EnableEMRServerless is true)
+    Value: !If
+      - GrantEMRServerlessS3LogAccess
+      - !Ref EMRServerlessS3LogPath
+      - 'Not provided or EMR-Serverless not enabled'
+    Export:
+      Name: !Sub '${AWS::StackName}-EMRServerlessS3LogPath'
