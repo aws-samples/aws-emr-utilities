@@ -1,0 +1,5 @@
+# Merge these requirements into your Airflow dependencies configuration
+airflow-providers-amazon
+airflow-providers-slack
+strands-agents
+mcp-proxy-for-aws
