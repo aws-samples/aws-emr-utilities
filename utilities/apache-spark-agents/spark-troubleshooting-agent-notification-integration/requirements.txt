@@ -1,0 +1,4 @@
+# AWS Lambda requirements for Spark Workload Analysis
+strands-agents
+strands-agents-tools
+mcp-proxy-for-aws

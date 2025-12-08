@@ -1,0 +1,363 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Spark Analysis Lambda with EventBridge and SNS notifications'
+
+Parameters:
+  LambdaS3Bucket:
+    Type: String
+    Description: S3 bucket containing the Lambda deployment package
+  
+  LambdaS3Key:
+    Type: String
+    Default: lambda-packages/spark-analysis-lambda.zip
+    Description: S3 key for the Lambda deployment package
+  
+  SNSTopicName:
+    Type: String
+    Default: spark-analysis-notifications
+    Description: Name for the SNS topic
+  
+  LambdaFunctionName:
+    Type: String
+    Default: spark-workload-analysis
+    Description: Name for the Lambda function
+  
+  EventBridgeRuleName:
+    Type: String
+    Default: emr-ec2-step-status-changes-to-failed
+    Description: Name for the EMR EC2 EventBridge rule
+  
+  EnableEMREC2Rule:
+    Type: String
+    Default: 'true'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: Enable EventBridge rule for EMR EC2 step failures
+  
+  EnableEMRServerlessRule:
+    Type: String
+    Default: 'false'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: Enable EventBridge rule for EMR Serverless job failures
+  
+  EMRServerlessRuleName:
+    Type: String
+    Default: emr-serverless-job-status-changes-to-failed
+    Description: Name for the EMR Serverless EventBridge rule
+  
+  EnableGlueRule:
+    Type: String
+    Default: 'false'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: Enable EventBridge rule for Glue job failures
+  
+  GlueRuleName:
+    Type: String
+    Default: glue-job-status-changes-to-failed
+    Description: Name for the Glue EventBridge rule
+  
+  NotificationEmail:
+    Type: String
+    Description: Email address to receive notifications
+  
+  SlackWebhookUrl:
+    Type: String
+    Description: Slack webhook URL for notifications (optional)
+    Default: ''
+
+Conditions:
+  HasSlackWebhook: !Not [!Equals [!Ref SlackWebhookUrl, '']]
+  CreateEMREC2Rule: !Equals [!Ref EnableEMREC2Rule, 'true']
+  CreateEMRServerlessRule: !Equals [!Ref EnableEMRServerlessRule, 'true']
+  CreateGlueRule: !Equals [!Ref EnableGlueRule, 'true']
+
+Resources:
+  SNSTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Ref SNSTopicName
+
+  SNSEmailSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: email
+      TopicArn: !Ref SNSTopic
+      Endpoint: !Ref NotificationEmail
+
+  SNSSlackSubscription:
+    Type: AWS::SNS::Subscription
+    Condition: HasSlackWebhook
+    Properties:
+      Protocol: https
+      TopicArn: !Ref SNSTopic
+      Endpoint: !Ref SlackWebhookUrl
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: spark-analysis-lambda-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: SMUSMCPPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: UsingSMUSMCP
+                Effect: Allow
+                Action:
+                  - sagemaker-unified-studio-mcp:InvokeMcp
+                  - sagemaker-unified-studio-mcp:CallReadOnlyTool
+                  - sagemaker-unified-studio-mcp:CallPrivilegedTool
+                Resource: '*'
+        - PolicyName: SNSPublishPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: sns:Publish
+                Resource: !Ref SNSTopic
+        - !If
+          - CreateEMREC2Rule
+          - PolicyName: TroubleshootingEMREC2Policy
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Sid: EMREC2ReadAccess
+                  Effect: Allow
+                  Action:
+                    - elasticmapreduce:DescribeCluster
+                    - elasticmapreduce:DescribeStep
+                    - elasticmapreduce:ListSteps
+                    - elasticmapreduce:ListClusters
+                    - elasticmapreduce:DescribeJobFlows
+                  Resource: '*'
+                - Sid: EMRS3LogAccess
+                  Effect: Allow
+                  Action:
+                    - s3:GetObject
+                    - s3:ListBucket
+                  Resource: '*'
+                - Sid: EMRPersistentApp
+                  Effect: Allow
+                  Action:
+                    - elasticmapreduce:CreatePersistentAppUI
+                    - elasticmapreduce:DescribePersistentAppUI
+                    - elasticmapreduce:GetPersistentAppUIPresignedURL
+                  Resource: '*'
+          - !Ref AWS::NoValue
+        - !If
+          - CreateEMRServerlessRule
+          - PolicyName: TroubleshootingEMRServerlessPolicy
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Sid: EMRServerlessReadAccess
+                  Effect: Allow
+                  Action:
+                    - emr-serverless:GetJobRun
+                    - emr-serverless:GetApplication
+                    - emr-serverless:ListApplications
+                    - emr-serverless:ListJobRuns
+                    - emr-serverless:ListJobRunAttempts
+                    - emr-serverless:GetDashboardForJobRun
+                    - emr-serverless:ListTagsForResource
+                  Resource: '*'
+                - Sid: EMRServerlessCloudWatchLogsAccess
+                  Effect: Allow
+                  Action:
+                    - logs:GetLogEvents
+                    - logs:FilterLogEvents
+                  Resource: !Sub 'arn:aws:logs:*:${AWS::AccountId}:log-group:/aws/emr-serverless/*'
+                - Sid: EMRServerlessS3LogsAccess
+                  Effect: Allow
+                  Action:
+                    - s3:GetObject
+                    - s3:ListBucket
+                  Resource: '*'
+          - !Ref AWS::NoValue
+        - !If
+          - CreateGlueRule
+          - PolicyName: TroubleshootingGluePolicy
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Sid: GlueReadAccess
+                  Effect: Allow
+                  Action:
+                    - glue:GetJob
+                    - glue:GetJobRun
+                    - glue:GetJobRuns
+                    - glue:GetJobs
+                    - glue:BatchGetJobs
+                  Resource: !Sub 'arn:aws:glue:*:${AWS::AccountId}:job/*'
+                - Sid: GlueCloudWatchLogsAccess
+                  Effect: Allow
+                  Action:
+                    - logs:GetLogEvents
+                    - logs:FilterLogEvents
+                  Resource: !Sub 'arn:aws:logs:*:${AWS::AccountId}:log-group:/aws/glue/*'
+                - Sid: GlueSparkWebUI
+                  Effect: Allow
+                  Action:
+                    - glue:RequestLogParsing
+                    - glue:GetLogParsingStatus
+                    - glue:GetEnvironment
+                    - glue:GetStage
+                    - glue:GetStages
+                    - glue:GetStageFiles
+                    - glue:BatchGetStageFiles
+                    - glue:GetStageAttempt
+                    - glue:GetStageAttemptTaskList
+                    - glue:GetStageAttemptTaskSummary
+                    - glue:GetExecutors
+                    - glue:GetExecutorsThreads
+                    - glue:GetStorage
+                    - glue:GetStorageUnit
+                    - glue:GetQueries
+                    - glue:GetQuery
+                    - glue:GetDashboardUrl
+                  Resource: !Sub 'arn:aws:glue:*:${AWS::AccountId}:job/*'
+                - Sid: GluePassRoleAccess
+                  Effect: Allow
+                  Action: iam:PassRole
+                  Resource: '*'
+                  Condition:
+                    StringLike:
+                      iam:PassedToService: glue.amazonaws.com
+          - !Ref AWS::NoValue
+
+  LambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Ref LambdaFunctionName
+      Runtime: python3.13
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Handler: lambda_function.lambda_handler
+      Code:
+        S3Bucket: !Ref LambdaS3Bucket
+        S3Key: !Ref LambdaS3Key
+      Timeout: 300
+      MemorySize: 512
+      Environment:
+        Variables:
+          SNS_TOPIC_ARN: !Ref SNSTopic
+
+  EventBridgeInvokeRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: eventbridge-lambda-invoke-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: TrustEventBridgeService
+            Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref AWS::AccountId
+      Policies:
+        - PolicyName: LambdaInvokePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: !GetAtt LambdaFunction.Arn
+
+  EventBridgeRule:
+    Type: AWS::Events::Rule
+    Condition: CreateEMREC2Rule
+    Properties:
+      Name: !Ref EventBridgeRuleName
+      Description: EMR Step Status Changes to FAILED
+      State: ENABLED
+      EventPattern:
+        source:
+          - aws.emr
+        detail-type:
+          - EMR Step Status Change
+        detail:
+          state:
+            - FAILED
+      Targets:
+        - Id: '1'
+          Arn: !GetAtt LambdaFunction.Arn
+          RoleArn: !GetAtt EventBridgeInvokeRole.Arn
+
+  EMRServerlessEventBridgeRule:
+    Type: AWS::Events::Rule
+    Condition: CreateEMRServerlessRule
+    Properties:
+      Name: !Ref EMRServerlessRuleName
+      Description: EMR Serverless Job Run State Changes to Failed
+      State: ENABLED
+      EventPattern:
+        source:
+          - aws.emr-serverless
+        detail-type:
+          - EMR Serverless Job Run State Change
+        detail:
+          state:
+            - FAILED
+      Targets:
+        - Id: '1'
+          Arn: !GetAtt LambdaFunction.Arn
+          RoleArn: !GetAtt EventBridgeInvokeRole.Arn
+
+  GlueEventBridgeRule:
+    Type: AWS::Events::Rule
+    Condition: CreateGlueRule
+    Properties:
+      Name: !Ref GlueRuleName
+      Description: Glue Job Run State Changes to Failed
+      State: ENABLED
+      EventPattern:
+        source:
+          - aws.glue
+        detail-type:
+          - Glue Job State Change
+        detail:
+          state:
+            - FAILED
+      Targets:
+        - Id: '1'
+          Arn: !GetAtt LambdaFunction.Arn
+          RoleArn: !GetAtt EventBridgeInvokeRole.Arn
+
+Outputs:
+  SNSTopicArn:
+    Description: ARN of the SNS topic
+    Value: !Ref SNSTopic
+  
+  LambdaFunctionArn:
+    Description: ARN of the Lambda function
+    Value: !GetAtt LambdaFunction.Arn
+  
+  EMREC2EventBridgeRuleArn:
+    Condition: CreateEMREC2Rule
+    Description: ARN of the EMR EC2 EventBridge rule
+    Value: !GetAtt EventBridgeRule.Arn
+  
+  EMRServerlessEventBridgeRuleArn:
+    Condition: CreateEMRServerlessRule
+    Description: ARN of the EMR Serverless EventBridge rule
+    Value: !GetAtt EMRServerlessEventBridgeRule.Arn
+  
+  GlueEventBridgeRuleArn:
+    Condition: CreateGlueRule
+    Description: ARN of the Glue EventBridge rule
+    Value: !GetAtt GlueEventBridgeRule.Arn
