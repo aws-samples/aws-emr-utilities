@@ -49,11 +49,15 @@ from airflow.sdk import task
 from airflow.sdk.execution_time.comms import TriggerDagRun
 from airflow.sdk.execution_time.task_runner import SUPERVISOR_COMMS
 from botocore.config import Config
-from botocore.credentials import ReadOnlyCredentials
 from mcp_proxy_for_aws.client import aws_iam_streamablehttp_client
 from pydantic import BaseModel
 from strands import Agent
-from strands.hooks import AfterToolCallEvent, BeforeToolCallEvent, HookProvider, HookRegistry
+from strands.hooks import (
+    AfterToolCallEvent,
+    BeforeToolCallEvent,
+    HookProvider,
+    HookRegistry,
+)
 from strands.models import BedrockModel
 from strands.tools.mcp import MCPClient
 
@@ -75,8 +79,23 @@ CODE_RECOMMENDATION_CATEGORIES = {
     "S3_ERROR",
 }
 
+PlatformType = Literal["emr_serverless", "glue", "emr_ec2"]
 
-def _should_get_code_recommendations(analysis_result: dict) -> bool:
+SPARK_OPERATORS: dict[str, PlatformType] = {
+    "EmrServerlessStartJobOperator": "emr_serverless",
+    "GlueJobOperator": "glue",
+    "EmrAddStepsOperator": "emr_ec2",
+}
+
+
+class SparkAnalysisOutput(BaseModel):
+    issue_summary: str | None = None
+    root_cause: str
+    recommendation: str
+    code_diff: str | None = None
+
+
+def _should_get_code_recommendations(analysis_result: dict, platform_type: PlatformType) -> bool:
     """
     Check if the analysis result indicates we should get code recommendations.
 
@@ -89,7 +108,10 @@ def _should_get_code_recommendations(analysis_result: dict) -> bool:
     try:
         tool_response = analysis_result.get("tool_response", {})
         analysis_category = tool_response.get("analysis_category", "")
-        should_recommend = analysis_category in CODE_RECOMMENDATION_CATEGORIES
+        should_recommend = (
+            analysis_category in CODE_RECOMMENDATION_CATEGORIES
+            and platform_type != "emr_serverless"
+        )
         logger.info(
             f"Analysis category: {analysis_category}, Should get code recommendations: {should_recommend}"
         )
@@ -288,7 +310,7 @@ class SparkTroubleshootingAgent:
         self.logger.info("Agent initialized with callbacks")
 
     def _run_direct_tool_calls(
-        self, platform_type: str, platform_params: dict
+        self, platform_type: PlatformType, platform_params: dict
     ) -> "SparkAnalysisOutput":
         """
         Run MCP tools directly without using the agent.
@@ -312,7 +334,10 @@ class SparkTroubleshootingAgent:
 
         with self.mcp_clients[0] as client:
             response = client.call_tool_sync(
-                str(uuid.uuid4()), "analyze_spark_workload", tool_params, timedelta(seconds=180)
+                str(uuid.uuid4()),
+                "analyze_spark_workload",
+                tool_params,
+                timedelta(seconds=180),
             )
             if response["status"] != "success":
                 raise Exception("analyze_spark_workload failed: " + str(response))
@@ -326,7 +351,7 @@ class SparkTroubleshootingAgent:
 
         # Check if we need code recommendations
         code_diff = None
-        if _should_get_code_recommendations(analysis_result):
+        if _should_get_code_recommendations(analysis_result, platform_type):
             self.logger.info("Getting code recommendations...")
             with self.mcp_clients[1] as client:
                 code_params = {
@@ -435,22 +460,6 @@ class SparkTroubleshootingAgent:
         return dict(self._tool_responses)
 
 
-PlatformType = Literal["emr_serverless", "glue", "emr_ec2"]
-
-SPARK_OPERATORS: dict[str, PlatformType] = {
-    "EmrServerlessStartJobOperator": "emr_serverless",
-    "GlueJobOperator": "glue",
-    "EmrAddStepsOperator": "emr_ec2",
-}
-
-
-class SparkAnalysisOutput(BaseModel):
-    issue_summary: str | None = None
-    root_cause: str
-    recommendation: str
-    code_diff: str | None = None
-
-
 def _get_mcp_client_factory(server_name: str, credentials, region: str):
     """Create an MCP client factory for the given server."""
     return lambda: aws_iam_streamablehttp_client(
@@ -542,6 +551,20 @@ def spark_failure_callback(agent: bool = True):
         elif platform_type == "emr_ec2":
             conf["cluster_id"] = task_instance.job_flow_id
 
+            aws_hook = AwsBaseHook(aws_conn_id="aws_default")
+            credentials = aws_hook.get_credentials()
+            region = aws_hook.region_name or "us-east-1"
+
+            # Create a boto3 session
+            session = boto3.Session(
+                aws_access_key_id=credentials.access_key,
+                aws_secret_access_key=credentials.secret_key,
+                aws_session_token=credentials.token,
+                region_name=region,
+            )
+
+            conf["step_id"] = _get_latest_failed_emr_step(task_instance.job_flow_id, session)
+
         dag_id = context["dag"].dag_id
         task_id = task_instance.task_id
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -580,7 +603,7 @@ with DAG(
         job_id = conf.get("job_id")
         job_name = conf.get("job_name")
         cluster_id = conf.get("cluster_id")
-        step_id = None
+        step_id = conf.get("step_id")
         airflow_context = context
         use_agent = conf.get("use_agent", True)
         aws_conn_id = "aws_default"
@@ -615,7 +638,6 @@ with DAG(
         elif platform_type == "emr_ec2":
             if not cluster_id:
                 raise ValueError("cluster_id is required for emr_ec2 platform")
-            step_id = _get_latest_failed_emr_step(cluster_id, session)
             if not step_id:
                 raise ValueError(f"No failed step found for EMR cluster {cluster_id}")
             query = f"Help me debug my EMR step with cluster id {cluster_id} and step id {step_id}"
