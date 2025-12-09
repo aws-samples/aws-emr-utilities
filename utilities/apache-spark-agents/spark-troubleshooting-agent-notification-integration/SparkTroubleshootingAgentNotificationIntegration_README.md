@@ -2,11 +2,12 @@
 
 ## Context
 
-Many customers are now using EventBridge to listen to EMR Step/EMR Serverless Job/Glue Job status update; and when the status is changed to FAILED, it sends a notification to AWS SNS topic, which has targets in customer’s monitoring and notification system, for example, email notification or Slack notification.
+Many customers use EventBridge to listen to EMR Step/EMR Serverless Job/Glue Job status update; and when the status is changed to FAILED, it sends a notification to AWS SNS topic, which has targets in customer’s monitoring and notification system, for example, email notification or Slack notification.
 
 Existing workflow:
 
 ![EventBridge Notification Existing Flow](../Images/spark-eventbridge-notificstion-existing-flow.png)
+
 The content of the notification in this flow only has basic information of the EMR Step id, cluster id/EMR Serverless App id, job id/Glue jobrun id. Customers need additional efforts, for example, query the logs on AWS Console or using AWS CLI, to understand what went wrong.
 
 In this blog, we introduce a solution which integrates the capabilities of[Apache Spark Troubleshooting Agent](https://docs.aws.amazon.com/emr/latest/ReleaseGuide/spark-troubleshoot.html)into the monitoring and notification workflow, that can help to automate the troubleshooting process, enrich the notification content with detailed root cause analysis and code fix recommendations.
@@ -14,7 +15,9 @@ In this blog, we introduce a solution which integrates the capabilities of[Apach
 
 ## Solution Overview
 
-![EventBridge Notification New Flow](../Images/spark-eventbridge-notificstion-new-flow.png)The integration with Apache Spark Troubleshooting Agent will be via a Lambda function which interacts with the Apache Spark Troubleshooting Agent using Strands MCP Client. This Lambda function is triggered by Eventbridge when EMR-EC2 step fails, EMR Serverless job fails, or Glue Jobrun fails, it uses the Apache Spark Troubleshooting Agent to analyze the failures, find the root cause and generate code fix recommendations. Then, it constructs a comprehensive analysis summary, sends the summary to SNS, and SNS delivers the content to the configured destination, such as Email and Slack.
+![EventBridge Notification New Flow](../Images/spark-eventbridge-notificstion-new-flow.png)
+
+The integration with Apache Spark Troubleshooting Agent will be via a Lambda function which interacts with the Apache Spark Troubleshooting Agent using Strands MCP Client. This Lambda function is triggered by Eventbridge when EMR-EC2 step fails, EMR Serverless job fails, or Glue Jobrun fails, it uses the Apache Spark Troubleshooting Agent to analyze the failures, find the root cause and generate code fix recommendations. Then, it constructs a comprehensive analysis summary, sends the summary to SNS, and SNS delivers the content to the configured destination, such as Email and Slack.
 
 
 ## Prerequisites
@@ -22,10 +25,13 @@ In this blog, we introduce a solution which integrates the capabilities of[Apach
 * [Install Python 3.10+](https://www.python.org/downloads/release/python-3100/)
 * Install AWS CLI
 * AWS credentials configured (via [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html), environment variables, or IAM roles)
+* (Optional) Slack channel workflow webhood setup.
 
 ## Steps - Configuring via AWS CloudFormation Stack
 
 You can find the `spark-analysis-stack.yaml` CloudFormation template in the same directory of the Github repository. You can either do deploy it with the [CloudFormation CLI](https://docs.aws.amazon.com/cli/latest/reference/cloudformation/) or using the CloudFormation console. 
+
+If you configure email subscription as the target of the SNS topic, you will receive an email from  `AWS Notifications <no-reply@sns.amazonaws.com>` regarding how to confirm the subscription; if you configure Slack channel webhook as the target of the SNS topic, please check this doc https://docs.aws.amazon.com/prometheus/latest/userguide/AMP-alertmanager-SNS-otherdestinations.html#AMP-alertmanager-SNS-otherdestinations-Slack which links to an instruction video: https://www.youtube.com/watch?v=CszzQcPAqNM regarding the webhook setup, and subcription confirmation.
 
 ## Steps - Configuring via CLI
 
@@ -51,7 +57,7 @@ Click the "Confirm subscription".
 
 ### Step 2. Build the Lambda Deployment Package (Optional)
 
-In case you’d like to make additional custom changes to the provided [Lambda function](https://code.amazon.com/packages/WetangPythonWebApps/blobs/2c40323f0945bdc9dd362a4ffbdb24c9b163864d/--/lambda_function.py#L177,L178,L230,L231), you can build it by running the [build_lambda_package.sh](https://code.amazon.com/packages/WetangPythonWebApps/blobs/heads/eventbridge_lambda_email/--/build_lambda_package.sh) script. This script creates a ZIP file with all dependencies needed for the Lambda deployment; Otherwise, you can use the provided deployment package ZIP File in the GitHub repository directly.
+In case you’d like to make additional custom changes to the provided [Lambda function](./lambda_function.py), you can build it by running the [build_lambda_package.sh](./build_lambda_package.sh) script. This script creates a ZIP file with all dependencies needed for the Lambda deployment; Otherwise, you can use the provided [deployment package ZIP File](./spark-analysis-lambda.zip) in the GitHub repository directly.
 
 
 ### Step 3. Upload the Lambda Deployment Package to your S3 bucket
@@ -113,14 +119,14 @@ Create a file named `smus-mcp-policy.json`:
     "Version": "2012-10-17",
     "Statement": [
         {
-        "Sid": "UsingSMUSMCP",
-        "Effect": "Allow",
-        "Action": [
-            "sagemaker-unified-studio-mcp:InvokeMcp",
-            "sagemaker-unified-studio-mcp:CallReadOnlyTool",
-            "sagemaker-unified-studio-mcp:CallPrivilegedTool"
-        ],
-        "Resource": "*"
+            "Sid": "UsingSMUSMCP",
+            "Effect": "Allow",
+            "Action": [
+                "sagemaker-unified-studio-mcp:InvokeMcp",
+                "sagemaker-unified-studio-mcp:CallReadOnlyTool",
+                "sagemaker-unified-studio-mcp:CallPrivilegedTool"
+            ],
+            "Resource": "*"
         }
     ]
 }
@@ -148,7 +154,7 @@ Create a file named `sns-publish-policy.json`: (replace REGION and YOUR_ACCOUNT)
             "Action": [
                 "sns:Publish"
             ],
-            "Resource": "arn:aws:sns:REGION:YOUR_ACCOUNT:spark-analysis-notifications"
+            "Resource": "arn:aws:sns:*:*:spark-analysis-notifications"
         }
     ]
 }

@@ -111,7 +111,7 @@ def lambda_handler(event, context):
         platform_info = determine_platform_type(event)
         
         if not platform_info:
-            error_msg = "Unsupported event type. Expected EMR, EMR Serverless, or Glue event."
+            error_msg = "Unsupported compute type. Expected EMR, EMR Serverless, or Glue event."
             print(f"ERROR: {error_msg}")
             return {
                 'statusCode': 400,
@@ -140,11 +140,11 @@ def lambda_handler(event, context):
         # Check if we need to get code recommendations based on error category
         # Note: Code recommendations are not supported for EMR Serverless
         code_recommendation_result = None
-        if platform_type != 'EMR_SERVERLESS' and should_get_code_recommendations(analysis_result):
-            print("🔧 Error category requires code recommendations, calling spark_code_recommendation tool...")
+        if should_get_code_recommendations(analysis_result, platform_type):
+            print("🔧 Error category and platform type requires code recommendations, calling spark_code_recommendation tool...")
             code_recommendation_result = get_spark_code_recommendations(platform_type, platform_params)
-        elif platform_type == 'EMR_SERVERLESS':
-            print("ℹ️ Code recommendations are not supported for EMR Serverless, skipping...")
+        else:
+            print("ℹ️ Code recommendations are not supported, skipping...")
         
         # Format the message for SNS
         sns_message = format_sns_message(platform_type, resource_id, analysis_result, code_recommendation_result)
@@ -190,7 +190,7 @@ def lambda_handler(event, context):
         }
 
 
-def should_get_code_recommendations(analysis_result: dict) -> bool:
+def should_get_code_recommendations(analysis_result: dict, platform_type: str) -> bool:
     """
     Check if the analysis result indicates we should get code recommendations.
     
@@ -200,31 +200,14 @@ def should_get_code_recommendations(analysis_result: dict) -> bool:
     Returns:
         True if code recommendations should be fetched
     """
-    # Categories that require code recommendations
-    CODE_RECOMMENDATION_CATEGORIES = {
-        "SYNTAX_ERROR",
-        "IMPORT_ERROR", 
-        "SQL_ERROR",
-        "ASSERTION_ERROR",
-        "DATA_FORMAT_ERROR",
-        "QUERY_ERROR",
-        "INDEX_ERROR",
-        "PARSE_ERROR",
-        "PERMISSION_ERROR",
-        "COMPILATION_ERROR",
-        "CONNECTION_ERROR",
-        "S3_ERROR"
-    }
-    
     try:
-        tool_response = analysis_result.get('tool_response', {})
-        analysis_category = tool_response.get('analysis_category', '')
-        
-        should_recommend = analysis_category in CODE_RECOMMENDATION_CATEGORIES
-        print(f"Analysis category: {analysis_category}, Should get code recommendations: {should_recommend}")
-        
+        analysis_next_action = analysis_result.get("next_action", {})
+        should_recommend = (
+            "spark_code_recommendation" in analysis_next_action
+            and platform_type != "emr_serverless"
+        )
+        print(f"Should get code recommendations: {should_recommend}")
         return should_recommend
-        
     except Exception as e:
         print(f"Error checking if code recommendations needed: {e}")
         return False
@@ -244,7 +227,7 @@ def get_spark_code_recommendations(platform_type: str, platform_params: dict) ->
     try:
         # Initialize MCP client provider
         client_provider = MCPClientProvider(
-            region=os.environ.get('AWS_REGION', 'us-east-2')
+            region=os.environ.get('AWS_REGION')
         )
         
         # Get MCP client
@@ -294,7 +277,7 @@ def analyze_spark_workload(platform_type: str, platform_params: dict) -> dict:
     try:
         # Initialize MCP client provider
         client_provider = MCPClientProvider(
-            region=os.environ.get('AWS_REGION', 'us-east-2')
+            region=os.environ.get('AWS_REGION')
         )
         
         # Get MCP client
