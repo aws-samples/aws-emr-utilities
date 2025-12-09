@@ -17,12 +17,12 @@ In this blog, we introduce a solution which integrates the capabilities of[Apach
 
 ![EventBridge Notification New Flow](../Images/spark-eventbridge-notification-new-flow.png)
 
-The integration with Apache Spark Troubleshooting Agent will be via a Lambda function which interacts with the Apache Spark Troubleshooting Agent using Strands MCP Client. This Lambda function is triggered by Eventbridge when EMR-EC2 step fails, EMR Serverless job fails, or Glue Jobrun fails, it uses the Apache Spark Troubleshooting Agent to analyze the failures, find the root cause and generate code fix recommendations. Then, it constructs a comprehensive analysis summary, sends the summary to SNS, and SNS delivers the content to the configured destination, such as Email and Slack.
+The integration with Apache Spark Troubleshooting Agent will be via a Lambda function, which interacts with the MCP tools being hosted on SageMaker Unified Studio MCP server using Strands MCP Client. This Lambda function is triggered by Eventbridge when EMR-EC2 step fails, EMR Serverless job fails, or Glue Jobrun fails, it uses the Apache Spark Troubleshooting Agent to analyze the failures, find the root cause and generate code fix recommendations. Then, it constructs a comprehensive analysis summary, sends the summary to SNS, and SNS delivers the content to the configured destination, such as Email and Slack.
 
 
 ## Prerequisites
 
-* [Install Python 3.10+](https://www.python.org/downloads/release/python-3100/)
+* [Install Python 3.13+](https://www.python.org/downloads/release/python-3130/)
 * Install AWS CLI
 * AWS credentials configured (via [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html), environment variables, or IAM roles)
 * (Optional) Slack channel workflow webhood setup.
@@ -55,9 +55,9 @@ After running the subscribe command, you will receive an email from `AWS Notific
 
 Click the "Confirm subscription".
 
-### Step 2. Build the Lambda Deployment Package (Optional)
+### Step 2. Build the Lambda Deployment Package
 
-In case you’d like to make additional custom changes to the provided [Lambda function](./lambda_function.py), you can build it by running the [build_lambda_package.sh](./build_lambda_package.sh) script. This script creates a ZIP file with all dependencies needed for the Lambda deployment; Otherwise, you can use the provided [deployment package ZIP File](./spark-analysis-lambda.zip) in the GitHub repository directly.
+The [Lambda function](./lambda_function.py) code is being provided in this GitHub repository, you can build it by running the [build_lambda_package.sh](./build_lambda_package.sh) script. This script creates a ZIP file with all dependencies needed for the Lambda deployment package.
 
 
 ### Step 3. Upload the Lambda Deployment Package to your S3 bucket

@@ -425,14 +425,7 @@ def format_code_recommendations(code_recommendation_result: dict) -> str:
             formatted_text = format_markdown_for_text(code_diff)
             return formatted_text
         else:
-            # If no code_diff, try to extract other fields as fallback
-            recommendation_id = code_recommendation_result.get('recommendation_id', 'N/A')
-            recommendation_status = code_recommendation_result.get('recommendation_status', 'N/A')
-            
-            if recommendation_id != 'N/A' or recommendation_status != 'N/A':
-                return f"• Recommendation ID: {recommendation_id}\n• Status: {recommendation_status}"
-            else:
-                return ""
+            return ""
         
     except Exception as e:
         print(f"Error formatting code recommendations: {e}")
