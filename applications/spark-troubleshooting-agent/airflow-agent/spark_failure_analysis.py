@@ -63,22 +63,6 @@ from strands.tools.mcp import MCPClient
 
 logger = logging.getLogger(__name__)
 
-# Categories that require code recommendations
-CODE_RECOMMENDATION_CATEGORIES = {
-    "SYNTAX_ERROR",
-    "IMPORT_ERROR",
-    "SQL_ERROR",
-    "ASSERTION_ERROR",
-    "DATA_FORMAT_ERROR",
-    "QUERY_ERROR",
-    "INDEX_ERROR",
-    "PARSE_ERROR",
-    "PERMISSION_ERROR",
-    "COMPILATION_ERROR",
-    "CONNECTION_ERROR",
-    "S3_ERROR",
-}
-
 PlatformType = Literal["emr_serverless", "glue", "emr_ec2"]
 
 SPARK_OPERATORS: dict[str, PlatformType] = {
@@ -108,15 +92,12 @@ def _should_get_code_recommendations(
         True if code recommendations should be fetched
     """
     try:
-        tool_response = analysis_result.get("tool_response", {})
-        analysis_category = tool_response.get("analysis_category", "")
+        analysis_next_action = analysis_result.get("next_action", {})
         should_recommend = (
-            analysis_category in CODE_RECOMMENDATION_CATEGORIES
+            "spark_code_recommendation" in analysis_next_action
             and platform_type != "emr_serverless"
         )
-        logger.info(
-            f"Analysis category: {analysis_category}, Should get code recommendations: {should_recommend}"
-        )
+        logger.info(f"Should get code recommendations: {should_recommend}")
         return should_recommend
     except Exception as e:
         logger.error(f"Error checking if code recommendations needed: {e}")
