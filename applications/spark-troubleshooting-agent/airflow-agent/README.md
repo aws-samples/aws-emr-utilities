@@ -6,6 +6,8 @@
 2. Admin access to your Airflow cluster (to configure connections and permissions)
 3. An AWS IAM Role with the following policy (minimum required):
 
+> **Note:** Amazon SageMaker Unified Studio MCP server is in preview and is subject to change.
+
 ```
 {
     "Version": "2012-10-17",
