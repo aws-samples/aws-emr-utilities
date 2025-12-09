@@ -35,6 +35,7 @@ Requirements:
 
 import json
 import logging
+import os
 import time
 import uuid
 from collections import defaultdict
@@ -63,6 +64,15 @@ from strands.tools.mcp import MCPClient
 
 logger = logging.getLogger(__name__)
 
+# Configurable via environment variables
+BEDROCK_MODEL_ID = os.environ.get(
+    "BEDROCK_MODEL_ID", "us.anthropic.claude-3-7-sonnet-20250219-v1:0"
+)
+MCP_ENDPOINT_TEMPLATE = os.environ.get(
+    "MCP_ENDPOINT_TEMPLATE",
+    "https://sagemaker-unified-studio-mcp.{region}.api.aws/{server_name}/mcp",
+)
+
 PlatformType = Literal["emr_serverless", "glue", "emr_ec2"]
 
 SPARK_OPERATORS: dict[str, PlatformType] = {
@@ -79,9 +89,7 @@ class SparkAnalysisOutput(BaseModel):
     code_diff: str | None = None
 
 
-def _should_get_code_recommendations(
-    analysis_result: dict, platform_type: PlatformType
-) -> bool:
+def _should_get_code_recommendations(analysis_result: dict) -> bool:
     """
     Check if the analysis result indicates we should get code recommendations.
 
@@ -93,10 +101,7 @@ def _should_get_code_recommendations(
     """
     try:
         analysis_next_action = analysis_result.get("next_action", {})
-        should_recommend = (
-            "spark_code_recommendation" in analysis_next_action
-            and platform_type != "emr_serverless"
-        )
+        should_recommend = "spark_code_recommendation" in analysis_next_action
         logger.info(f"Should get code recommendations: {should_recommend}")
         return should_recommend
     except Exception as e:
@@ -190,11 +195,7 @@ class MCPSerializationFixHook(HookProvider):
 
 SYSTEM_PROMPT = """You are a Spark troubleshooting agent. Your purpose is to help debug and diagnose issues in Apache Spark workloads.
 
-You have access to two tools:
-- analyze_spark_workload: Analyzes Spark job failures and provides diagnostic information
-- spark_code_recommendation: Provides code recommendations to fix identified issues
-
-If analyze_spark_workload recommends calling spark_code_recommendation and the platform is not EMR-S, you MUST call it.
+If analyze_spark_workload recommends calling spark_code_recommendation, you MUST call it.
 
 Your response will be sent as a Slack message. Populate the structured output fields:
 - issue_summary: Brief description of what went wrong
@@ -246,9 +247,9 @@ class SparkTroubleshootingAgent:
             retries={"max_attempts": 10, "mode": "adaptive"},
         )
 
-        # Initialize Bedrock model with Claude Sonnet 3.7
+        # Initialize Bedrock model
         bedrock_model = BedrockModel(
-            model_id="us.anthropic.claude-3-7-sonnet-20250219-v1:0",
+            model_id=BEDROCK_MODEL_ID,
             boto_client_config=bedrock_cfg,
             boto_session=session,
             temperature=0,
@@ -342,7 +343,7 @@ class SparkTroubleshootingAgent:
 
         # Check if we need code recommendations
         code_diff = None
-        if _should_get_code_recommendations(analysis_result, platform_type):
+        if _should_get_code_recommendations(analysis_result):
             self.logger.info("Getting code recommendations...")
             with self.mcp_clients[1] as client:
                 code_params = {
@@ -457,8 +458,9 @@ class SparkTroubleshootingAgent:
 
 def _get_mcp_client_factory(server_name: str, credentials, region: str):
     """Create an MCP client factory for the given server."""
+    endpoint = MCP_ENDPOINT_TEMPLATE.format(region=region, server_name=server_name)
     return lambda: aws_iam_streamablehttp_client(
-        endpoint=f"https://sagemaker-unified-studio-mcp.{region}.api.aws/{server_name}/mcp",
+        endpoint=endpoint,
         aws_region=region,
         aws_service="sagemaker-unified-studio-mcp",
         credentials=credentials,
