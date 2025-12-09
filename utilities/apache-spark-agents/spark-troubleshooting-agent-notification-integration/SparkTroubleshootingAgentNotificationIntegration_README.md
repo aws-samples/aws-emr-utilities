@@ -6,7 +6,7 @@ Many customers use EventBridge to listen to EMR Step/EMR Serverless Job/Glue Job
 
 Existing workflow:
 
-![EventBridge Notification Existing Flow](../Images/spark-eventbridge-notificstion-existing-flow.png)
+![EventBridge Notification Existing Flow](../Images/spark-eventbridge-notification-existing-flow.png)
 
 The content of the notification in this flow only has basic information of the EMR Step id, cluster id/EMR Serverless App id, job id/Glue jobrun id. Customers need additional efforts, for example, query the logs on AWS Console or using AWS CLI, to understand what went wrong.
 
@@ -15,7 +15,7 @@ In this blog, we introduce a solution which integrates the capabilities of[Apach
 
 ## Solution Overview
 
-![EventBridge Notification New Flow](../Images/spark-eventbridge-notificstion-new-flow.png)
+![EventBridge Notification New Flow](../Images/spark-eventbridge-notification-new-flow.png)
 
 The integration with Apache Spark Troubleshooting Agent will be via a Lambda function which interacts with the Apache Spark Troubleshooting Agent using Strands MCP Client. This Lambda function is triggered by Eventbridge when EMR-EC2 step fails, EMR Serverless job fails, or Glue Jobrun fails, it uses the Apache Spark Troubleshooting Agent to analyze the failures, find the root cause and generate code fix recommendations. Then, it constructs a comprehensive analysis summary, sends the summary to SNS, and SNS delivers the content to the configured destination, such as Email and Slack.
 
@@ -51,7 +51,7 @@ aws sns subscribe \
 
 After running the subscribe command, you will receive an email from `AWS Notifications <no-reply@sns.amazonaws.com>` with the following content:
 
-![EventBridge Subscription Confirmation Email](../Images/spark-eventbridge-notificstion-subscription-confirmation-email.png)
+![EventBridge Subscription Confirmation Email](../Images/spark-eventbridge-notification-subscription-confirmation-email.png)
 
 Click the "Confirm subscription".
 
@@ -353,8 +353,8 @@ spark.stop()
 
 Ran it with EMR-EC2, and the step failed. With the new notification workflow, we received the email
 
-![Example Email](../Images/spark-eventbridge-notificstion-example-email.png)
+![Example Email](../Images/spark-eventbridge-notification-example-email.png)
 
 And the Slack Message:
 
-![Example Slack Message](../Images/spark-eventbridge-notificstion-example-slack-message.png)
+![Example Slack Message](../Images/spark-eventbridge-notification-example-slack-message.png)
