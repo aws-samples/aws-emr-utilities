@@ -28,29 +28,8 @@ from plotly.subplots import make_subplots
 # EMR LIFECYCLE MODULE
 # ============================================================================
 
-# Static lookup table for EMR versions <= 7.2.0
-STATIC_LIFECYCLE_DATA = {
-    'emr-7.2.0': {'eos': '2026-07-25', 'eol': '2027-07-25'},
-    'emr-7.1.0': {'eos': '2026-05-01', 'eol': '2027-05-01'},
-    'emr-7.0.0': {'eos': '2026-05-01', 'eol': '2027-05-01'},
-    'emr-6.15.0': {'eos': '2026-05-01', 'eol': '2027-05-01'},
-    'emr-6.14.0': {'eos': '2026-05-01', 'eol': '2027-05-01'},
-    'emr-6.13.0': {'eos': '2026-05-01', 'eol': '2027-05-01'},
-    'emr-6.12.0': {'eos': '2026-05-01', 'eol': '2027-05-01'},
-    'emr-6.11.0': {'eos': '2026-05-01', 'eol': '2027-05-01'},
-    'emr-6.10.0': {'eos': '2026-05-01', 'eol': '2027-05-01'},
-    'emr-6.9.0': {'eos': '2026-05-01', 'eol': '2027-05-01'},
-    'emr-6.8.0': {'eos': '2026-05-01', 'eol': '2027-05-01'},
-    'emr-6.7.0': {'eos': '2026-05-01', 'eol': '2027-05-01'},
-    'emr-6.6.0': {'eos': '2026-05-01', 'eol': '2027-05-01'},
-    'emr-6.5.0': {'eos': '2026-05-01', 'eol': '2027-05-01'},
-    'emr-6.4.0': {'eos': '2026-05-01', 'eol': '2027-05-01'},
-    'emr-6.3.0': {'eos': '2026-05-01', 'eol': '2027-05-01'},
-    'emr-6.2.0': {'eos': '2026-05-01', 'eol': '2027-05-01'},
-    'emr-6.1.0': {'eos': '2026-05-01', 'eol': '2027-05-01'},
-    'emr-6.0.0': {'eos': '2026-05-01', 'eol': '2027-05-01'},
-    'emr-5.36.0': {'eos': '2026-05-01', 'eol': '2027-05-01'},
-}
+# Cache for scraped lifecycle data to avoid repeated requests
+_LIFECYCLE_CACHE = {}
 
 
 def parse_emr_version(emr_version: str) -> tuple:
@@ -84,8 +63,105 @@ def parse_date(date_str: str) -> Optional[str]:
     return None
 
 
-def scrape_lifecycle_from_docs(emr_version: str) -> Optional[Dict[str, str]]:
-    """Scrape EOS and EOL dates from AWS EMR documentation."""
+def _parse_eos_date(eos_text: str) -> Optional[str]:
+    """Parse EOS date, handling 'Bridge support until' format."""
+    if "bridge support until" in eos_text.lower():
+        date_match = re.search(r'([A-Za-z]+ \d{1,2}, \d{4})', eos_text)
+        return parse_date(date_match.group(1)) if date_match else None
+    return parse_date(eos_text)
+
+
+def _add_version_range(lifecycle_data: Dict, eos_date: str, eol_date: str, major: int, minor_start: int, minor_end: int):
+    """Add a range of EMR versions to lifecycle data."""
+    for minor in range(minor_start, minor_end + 1):
+        lifecycle_data[f'emr-{major}.{minor}.0'] = {'eos': eos_date, 'eol': eol_date}
+
+
+def scrape_lifecycle_data_from_main_table() -> Dict[str, Dict[str, str]]:
+    """Scrape all EMR lifecycle data from the main support table."""
+    global _LIFECYCLE_CACHE
+    
+    if _LIFECYCLE_CACHE:
+        return _LIFECYCLE_CACHE
+    
+    url = "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-standard-support.html"
+    try:
+        print("→ Scraping EMR lifecycle data from AWS documentation...")
+        response = requests.get(url, timeout=15)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.content, 'html.parser')
+        
+        # Find the EMR lifecycle table
+        table = soup.find('table')
+        if not table:
+            raise Exception("No table found")
+            
+        headers = table.find_all('th')
+        header_texts = [h.get_text().strip().lower() for h in headers]
+        
+        # Verify this is the correct table
+        required_headers = ['release version', 'end of support start date', 'end of life start date']
+        if not all(any(req in h for h in header_texts) for req in required_headers):
+            raise Exception("Table doesn't match expected structure")
+        
+        # Find column indices
+        release_col = next(i for i, h in enumerate(header_texts) if 'release version' in h)
+        eos_col = next(i for i, h in enumerate(header_texts) if 'end of support start date' in h)
+        eol_col = next(i for i, h in enumerate(header_texts) if 'end of life start date' in h)
+        
+        lifecycle_data = {}
+        rows = table.find_all('tr')[1:]  # Skip header
+        
+        for row in rows:
+            cells = row.find_all('td')
+            if len(cells) <= max(release_col, eos_col, eol_col):
+                continue
+            
+            release_text = cells[release_col].get_text().strip()
+            eos_text = cells[eos_col].get_text().strip()
+            eol_text = cells[eol_col].get_text().strip()
+            
+            # Parse dates
+            eos_date = _parse_eos_date(eos_text)
+            eol_date = parse_date(eol_text)
+            
+            if not eos_date or not eol_date:
+                continue
+            
+            # Handle different row formats
+            if re.match(r'^\d+\.\d+\.\d+$', release_text):
+                # Single version: "7.2.0"
+                lifecycle_data[f"emr-{release_text}"] = {'eos': eos_date, 'eol': eol_date}
+                
+            elif '5.36.x and 6.6.x – 6.15.x' in release_text:
+                # Specific range row
+                lifecycle_data['emr-5.36.0'] = {'eos': eos_date, 'eol': eol_date}
+                _add_version_range(lifecycle_data, eos_date, eol_date, 6, 6, 15)
+                
+            elif 'series:' in release_text:
+                # Legacy versions row - parse each series
+                if '6.x series: 6.5.0 and lower' in release_text:
+                    _add_version_range(lifecycle_data, eos_date, eol_date, 6, 0, 5)
+                if '5.x series: 5.35.0 and lower' in release_text:
+                    _add_version_range(lifecycle_data, eos_date, eol_date, 5, 0, 35)
+                if '4.x, 3.x, and 2.x series' in release_text:
+                    for major in [2, 3, 4]:
+                        lifecycle_data[f'emr-{major}.0.0'] = {'eos': eos_date, 'eol': eol_date}
+        
+        if lifecycle_data:
+            _LIFECYCLE_CACHE = lifecycle_data
+            print(f"✓ Successfully scraped lifecycle data for {len(lifecycle_data)} EMR versions")
+            return lifecycle_data
+        
+        raise Exception("No lifecycle data extracted")
+        
+    except Exception as e:
+        print(f"⚠ Warning: Could not scrape lifecycle data from main table: {e}")
+        return {}
+
+
+def scrape_lifecycle_from_individual_release_docs(emr_version: str) -> Optional[Dict[str, str]]:
+    """Scrape EOS and EOL dates from individual EMR version documentation."""
     url = get_doc_url(emr_version)
     try:
         response = requests.get(url, timeout=10)
@@ -137,9 +213,9 @@ def scrape_lifecycle_from_docs(emr_version: str) -> Optional[Dict[str, str]]:
                             if eos_date and eol_date:
                                 return {'eos': eos_date, 'eol': eol_date}
         
-        raise Exception("No support phase table found in the public release doc!")
+        raise Exception("No support phase table found in the individual release doc")
     except Exception as e:
-        raise Exception(f"Error: Could not scrape lifecycle dates for {emr_version}: {e}")
+        raise Exception(f"Could not scrape lifecycle dates for {emr_version}: {e}")
 
 
 
@@ -148,22 +224,13 @@ def get_emr_lifecycle_dates(emr_version: str) -> Dict[str, str]:
     if not emr_version.startswith('emr-'):
         emr_version = f'emr-{emr_version}'
     
-    if emr_version in STATIC_LIFECYCLE_DATA:
-        return STATIC_LIFECYCLE_DATA[emr_version]
+    # Scrape main table first - currently the main table only covers emr version <= 7.2.0
+    all_lifecycle_data = scrape_lifecycle_data_from_main_table()
+    if emr_version in all_lifecycle_data:
+        return all_lifecycle_data[emr_version]
     
-    try:
-        major, minor, patch = parse_emr_version(emr_version)
-        if major < 7 or (major == 7 and minor <= 2):
-            if major == 7 and minor == 2:
-                return {'eos': '2026-07-25', 'eol': '2027-07-25'}
-            else:
-                return {'eos': '2026-05-01', 'eol': '2027-05-01'}
-        
-        if major >= 7 and minor >= 3:
-            scraped_data = scrape_lifecycle_from_docs(emr_version)
-            return scraped_data
-    except Exception as e:
-        raise Exception(f"Error processing version {emr_version}: {e}")
+    # For newer version > 7.2.0, we have to scrape the individual version release doc.
+    return scrape_lifecycle_from_individual_release_docs(emr_version)
     
 
 def calculate_days_to_lifecycle(emr_version: str) -> Dict:
