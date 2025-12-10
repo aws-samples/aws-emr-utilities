@@ -108,8 +108,6 @@ python emr_migration_tool.py --help
 
 ## Understanding the Dashboard
 
-![EMR Assessment Dashboard Example](../Images/emr_assessment_dashboard_example.png)
-
 ### Color Coding
 
 **EMR Version Colors:**
@@ -125,35 +123,40 @@ python emr_migration_tool.py --help
 ### Graph Descriptions
 
 #### 1. Migration Priority Matrix (Scatter Plot)
+![Migration Priority Matrix](../Images/emr_assessment_dashboard_priority_matrix.png)
 - **X-axis**: Step count (total number of executions)
 - **Y-axis**: EMR version (e.g., 5.36.0, 6.15.0, 7.1.0)
-- **Bubble size**: Proportional to step count (larger = more usage)
+- **Bubble size**: Proportional to step count
 - **Color**: Spark version (different colors for each Spark version)
-- **Purpose**: Identify high-usage applications running on older EMR versions that need priority migration
+- **Purpose**: Identify high-usage applications running on older EMR versions that need priority migration. Larger bubbles indicate more frequently used applications. Combined with the Y-axis (EMR version), you can quickly identify which applications have the highest priority for upgrade.
 
-#### 2. Applications by EMR Version (Bar Chart)
-- **X-axis**: EMR version (e.g., emr-5.36.0, emr-6.15.0)
-- **Y-axis**: Total step count across all applications
+#### 2. Applications by EMR Version (Horizontal Bar Chart)
+![Applications by EMR Version](../Images/emr_assessment_dashboard_steps_by_emr_version.png)
+- **X-axis**: Total step count across all applications
+- **Y-axis**: EMR version (e.g., emr-5.36.0, emr-6.15.0)
 - **Color**: EMR version family (Red=5.x, Orange=6.x, Green=7.x)
-- **Purpose**: Shows which EMR versions have the most overall activity
+- **Purpose**: Shows EMR version distribution and usage intensity. Provides a clear view of how many steps are running on legacy EMR versions, helping prioritize which versions need migration first.
 
-#### 3. Top 10 Applications (Horizontal Bar Chart)
+#### 3. Top 10 Applications by Usage (Horizontal Bar Chart)
+![Top Applications by EMR Version](../Images/emr_assessment_dashboard_app_by_emr_version.png)
 - **X-axis**: Step count (number of executions)
-- **Y-axis**: Application names (script filenames)
+- **Y-axis**: Application names with EMR version (script filenames)
 - **Color**: EMR version used by each application
-- **Purpose**: Identifies your most frequently used applications and their EMR versions
+- **Purpose**: Identifies your most frequently used applications and their current EMR versions. Focus migration efforts on these high-impact applications first.
 
 #### 4. Days to End of Support (Horizontal Bar Chart)
+![Days to End of Support](../Images/emr_assessment_dashboard_EOS.png)
 - **X-axis**: Days remaining until End of Support
 - **Y-axis**: Top 15 applications (sorted by urgency, fewest days first)
 - **Color**: Urgency level (Red=urgent, Orange=moderate, Green=low priority)
-- **Purpose**: Shows which applications need immediate attention for EOS compliance
+- **Purpose**: Shows which applications need immediate attention for EOS compliance. Once a version reaches End of Support, you will no longer be able to get technical support or create support tickets for clusters running that version.
 
 #### 5. Days to End of Life (Horizontal Bar Chart)
+![Days to End of Life](../Images/emr_assessment_dashboard_EOL.png)
 - **X-axis**: Days remaining until End of Life
 - **Y-axis**: Top 15 applications (sorted by urgency, fewest days first)
 - **Color**: Urgency level (Red=urgent, Orange=moderate, Green=low priority)
-- **Purpose**: Shows which applications need immediate attention for EOL compliance
+- **Purpose**: Shows which applications need immediate attention for EOL compliance. Once a version reaches End of Life, you can continue running existing clusters, but the version may be removed from the EMR service API and SDK, preventing new cluster creation.
 
 ## Output Files
 
