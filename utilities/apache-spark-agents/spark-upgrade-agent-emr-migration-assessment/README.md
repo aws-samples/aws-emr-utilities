@@ -108,8 +108,6 @@ python emr_migration_tool.py --help
 
 ## Understanding the Dashboard
 
-![EMR Assessment Dashboard Example](../Images/emr_assessment_dashboard_example.png)
-
 ### Color Coding
 
 **EMR Version Colors:**
