@@ -358,3 +358,10 @@ Ran it with EMR-EC2, and the step failed. With the new notification workflow, we
 And the Slack Message:
 
 ![Example Slack Message](../Images/spark-eventbridge-notification-example-slack-message.png)
+
+## Cost Estimation
+
+You can get this advanced notification flow with automated Spark Application troubleshooting at a minimal cost. Suppose in the us-east-1 region, there're 3000 Spark application (from EMR EC2, EMR Serverless, or Glue) failures in total, the monthly cost would be less than $0.1. Most of the cost comes from the Lambda function execution and its logs. The EventBridge rule is free for [AWS Events](https://aws.amazon.com/eventbridge/pricing/).
+
+![Cost Estimation Screenshot](../Images/spark-eventbridge-notification-cost-estimation.png)
+
