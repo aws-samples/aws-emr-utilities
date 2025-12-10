@@ -199,8 +199,9 @@ def assess_emr_upgrades(region='us-east-1', profile=None):
     
     print(f"Found {len(clusters)} clusters in {region}")
     
-    for cluster in clusters:
+    for i, cluster in enumerate(clusters, 1):
         cluster_id = cluster['Id']
+        print(f"Reading cluster information... Complete {i}/{len(clusters)}")
         try:
             cluster_detail = emr.describe_cluster(ClusterId=cluster_id)['Cluster']
             emr_version = cluster_detail['ReleaseLabel']
@@ -348,17 +349,15 @@ def create_dashboard(apps, output_file='emr_migration_dashboard.html'):
     df_grouped['EMR Color'] = df_grouped['EMR Version'].apply(get_emr_color)
     
     fig = make_subplots(
-        rows=6, cols=1,
+        rows=5, cols=1,
         subplot_titles=[
             'Migration Priority Matrix (Usage vs EMR Version)',
             'Applications by EMR Version (Sorted by Usage)',
             'Top 10 Applications by Usage & EMR Version',
-            'EMR Version Lifecycle Summary',
             'Top 15 Apps: Days to End of Support',
             'Top 15 Apps: Days to End of Life'
         ],
         specs=[[{"type": "scatter"}],
-               [{"type": "bar"}],
                [{"type": "bar"}],
                [{"type": "bar"}],
                [{"type": "bar"}],
@@ -434,30 +433,7 @@ def create_dashboard(apps, output_file='emr_migration_dashboard.html'):
         row=3, col=1
     )
     
-    # Graph 4: EMR Version Lifecycle Summary
-    lifecycle_summary = df_grouped.groupby(['EMR Version', 'EOS Date', 'EOL Date']).agg({
-        'App Name': 'count',
-        'Step Count': 'sum'
-    }).reset_index()
-    lifecycle_summary.columns = ['EMR Version', 'EOS Date', 'EOL Date', 'App Count', 'Total Steps']
-    lifecycle_summary = lifecycle_summary.sort_values('EMR Version', key=lambda x: x.map(sort_version_key))
-    
-    fig.add_trace(
-        go.Bar(
-            x=lifecycle_summary['EMR Version'],
-            y=lifecycle_summary['App Count'],
-            name='App Count',
-            marker_color='lightblue',
-            text=lifecycle_summary['App Count'],
-            textposition='auto',
-            hovertemplate='<b>%{x}</b><br>Applications: %{y}<br>EOS: %{customdata[0]}<br>EOL: %{customdata[1]}<extra></extra>',
-            customdata=lifecycle_summary[['EOS Date', 'EOL Date']].values
-        ),
-        row=4, col=1
-    )
-
-    
-    # Graph 5: Days to End of Support
+    # Graph 4: Days to End of Support
     top_apps_lifecycle = df_grouped.nlargest(15, 'Step Count').copy()
     top_apps_lifecycle = top_apps_lifecycle.sort_values('Days to EOS', ascending=True)
     top_apps_lifecycle['Display Name'] = top_apps_lifecycle['App Name'] + ' (' + top_apps_lifecycle['EMR Version'] + ')'
@@ -472,16 +448,16 @@ def create_dashboard(apps, output_file='emr_migration_dashboard.html'):
             marker_color=eos_colors,
             text=[f"{days}d" for days in top_apps_lifecycle['Days to EOS']],
             textposition='inside',
-            textfont=dict(color='white', size=10),
+            textfont=dict(color='white', size=30),
             name='Days to EOS',
             showlegend=False,
             hovertemplate='<b>%{customdata[0]}</b><br>Days to EOS: %{x}<br>EOS Date: %{customdata[1]}<br>EMR: %{customdata[2]}<br>Steps: %{customdata[3]}<extra></extra>',
             customdata=top_apps_lifecycle[['App Name', 'EOS Date', 'EMR Version', 'Step Count']].values
         ),
-        row=5, col=1
+        row=4, col=1
     )
     
-    # Graph 6: Days to End of Life
+    # Graph 5: Days to End of Life
     top_apps_lifecycle_eol = top_apps_lifecycle.sort_values('Days to EOL', ascending=True)
     eol_colors = ['#d62728' if days < 365 else '#ff7f0e' if days < 730 else '#2ca02c' 
                   for days in top_apps_lifecycle_eol['Days to EOL']]
@@ -494,22 +470,26 @@ def create_dashboard(apps, output_file='emr_migration_dashboard.html'):
             marker_color=eol_colors,
             text=[f"{days}d" for days in top_apps_lifecycle_eol['Days to EOL']],
             textposition='inside',
-            textfont=dict(color='white', size=10),
+            textfont=dict(color='white', size=30),
             name='Days to EOL',
             showlegend=False,
             hovertemplate='<b>%{customdata[0]}</b><br>Days to EOL: %{x}<br>EOL Date: %{customdata[1]}<br>EMR: %{customdata[2]}<br>Steps: %{customdata[3]}<extra></extra>',
             customdata=top_apps_lifecycle_eol[['App Name', 'EOL Date', 'EMR Version', 'Step Count']].values
         ),
-        row=6, col=1
+        row=5, col=1
     )
     
     fig.update_layout(
         title_text="EMR Migration Dashboard - Priority Analysis",
         title_x=0.5,
-        height=2400,
+        height=4800,
+        width=2400,
         showlegend=True,
-        font=dict(size=11)
+        font=dict(size=30)
     )
+    
+    # Update subplot title sizes
+    fig.update_annotations(font_size=24)
     
     fig.update_xaxes(title_text="Step Count (Usage Frequency)", row=1, col=1)
     fig.update_yaxes(title_text="EMR Version (Numeric)", row=1, col=1)
@@ -517,13 +497,10 @@ def create_dashboard(apps, output_file='emr_migration_dashboard.html'):
     fig.update_yaxes(title_text="EMR Version", row=2, col=1)
     fig.update_xaxes(title_text="Step Count", row=3, col=1)
     fig.update_yaxes(title_text="Application", row=3, col=1)
-    fig.update_xaxes(title_text="EMR Version", row=4, col=1)
-    fig.update_yaxes(title_text="Number of Applications", row=4, col=1)
+    fig.update_xaxes(title_text="Days Remaining", row=4, col=1)
+    fig.update_yaxes(title_text="Application (sorted by urgency)", row=4, col=1)
     fig.update_xaxes(title_text="Days Remaining", row=5, col=1)
     fig.update_yaxes(title_text="Application (sorted by urgency)", row=5, col=1)
-    fig.update_xaxes(title_text="Days Remaining", row=6, col=1)
-    fig.update_yaxes(title_text="Application (sorted by urgency)", row=6, col=1)
-    fig.update_xaxes(tickangle=45, row=4, col=1)
     
     fig.write_html(str(output_file))
     print(f"\n✓ Dashboard created: {output_file}")

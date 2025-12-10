@@ -20,6 +20,7 @@ aws configure
 
 4. **Run the tool**
 ```bash
+# Run assessment on all EMR clusters in us-east-1 with default credentials
 python emr_migration_assessment_tool.py --region us-east-1
 ```
 
@@ -56,13 +57,12 @@ All dependencies are listed in `requirements.txt`:
 - Calculates days remaining until End of Support (EOS) and End of Life (EOL)
 
 ### Interactive Dashboard
-6 comprehensive visualizations:
+5 comprehensive visualizations:
 1. **Migration Priority Matrix** - Usage vs EMR version scatter plot
 2. **Applications by EMR Version** - Total usage per version
 3. **Top 10 Applications** - Highest usage applications
-4. **EMR Version Lifecycle Summary** - Application count with lifecycle dates
-5. **Days to End of Support** - Top 15 apps sorted by urgency
-6. **Days to End of Life** - Top 15 apps sorted by urgency
+4. **Days to End of Support** - Top 15 apps sorted by urgency
+5. **Days to End of Life** - Top 15 apps sorted by urgency
 
 ### Data Grouping
 - Aggregates applications by **entrypoint script filename + EMR version**
@@ -108,6 +108,8 @@ python emr_migration_tool.py --help
 
 ## Understanding the Dashboard
 
+![EMR Assessment Dashboard Example](../Images/emr_assessment_dashboard_example.png)
+
 ### Color Coding
 
 **EMR Version Colors:**
@@ -122,32 +124,36 @@ python emr_migration_tool.py --help
 
 ### Graph Descriptions
 
-#### 1. Migration Priority Matrix
-- **X-axis**: Step count (usage frequency)
-- **Y-axis**: EMR version (numeric)
-- **Bubble size**: Proportional to usage
-- **Color**: Spark version compatibility
-- **Use**: Identify high-usage applications on old EMR versions
+#### 1. Migration Priority Matrix (Scatter Plot)
+- **X-axis**: Step count (total number of executions)
+- **Y-axis**: EMR version (e.g., 5.36.0, 6.15.0, 7.1.0)
+- **Bubble size**: Proportional to step count (larger = more usage)
+- **Color**: Spark version (different colors for each Spark version)
+- **Purpose**: Identify high-usage applications running on older EMR versions that need priority migration
 
-#### 2. Applications by EMR Version
-- Shows total steps per EMR version
-- Color-coded by version age
-- Helps identify which versions have the most activity
+#### 2. Applications by EMR Version (Bar Chart)
+- **X-axis**: EMR version (e.g., emr-5.36.0, emr-6.15.0)
+- **Y-axis**: Total step count across all applications
+- **Color**: EMR version family (Red=5.x, Orange=6.x, Green=7.x)
+- **Purpose**: Shows which EMR versions have the most overall activity
 
-#### 3. Top 10 Applications
-- Most frequently used applications
-- Shows EMR version for each
-- Hover for Spark version details
+#### 3. Top 10 Applications (Horizontal Bar Chart)
+- **X-axis**: Step count (number of executions)
+- **Y-axis**: Application names (script filenames)
+- **Color**: EMR version used by each application
+- **Purpose**: Identifies your most frequently used applications and their EMR versions
 
-#### 4. EMR Version Lifecycle Summary
-- Application count per EMR version
-- Hover shows EOS and EOL dates
-- Quick overview of version distribution
+#### 4. Days to End of Support (Horizontal Bar Chart)
+- **X-axis**: Days remaining until End of Support
+- **Y-axis**: Top 15 applications (sorted by urgency, fewest days first)
+- **Color**: Urgency level (Red=urgent, Orange=moderate, Green=low priority)
+- **Purpose**: Shows which applications need immediate attention for EOS compliance
 
-#### 5 & 6. Days to EOS/EOL
-- Top 15 applications by usage
-- Sorted by urgency (fewest days first)
-- Shows exact days remaining and dates
+#### 5. Days to End of Life (Horizontal Bar Chart)
+- **X-axis**: Days remaining until End of Life
+- **Y-axis**: Top 15 applications (sorted by urgency, fewest days first)
+- **Color**: Urgency level (Red=urgent, Orange=moderate, Green=low priority)
+- **Purpose**: Shows which applications need immediate attention for EOL compliance
 
 ## Output Files
 
@@ -163,7 +169,7 @@ JSON file containing:
 
 ### emr_migration_dashboard.html (or custom name)
 Interactive HTML dashboard with:
-- All 6 visualization graphs
+- All 5 visualization graphs
 - Hover tooltips with detailed information
 - Responsive layout
 - No external dependencies (fully self-contained)
