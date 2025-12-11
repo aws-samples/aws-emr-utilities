@@ -1,0 +1,11 @@
+order_id,customer_id,amount,order_date,region,category,subcategory,items_raw,status_history
+ORD-001,CUST-100,150.00,2024-01-15,US,Electronics,Computers,laptop|mouse|keyboard|,"CREATED,VALIDATED,SHIPPED"
+ORD-002,CUST-100,75.50,2024-01-20,US,Electronics,Mobile,phone|charger|,"CREATED,SHIPPED"
+ORD-003,CUST-200,200.00,2024-01-18,EU,Electronics,Tablets,tablet|case|stand|,"CREATED,VALIDATED,PACKED,SHIPPED"
+ORD-004,CUST-200,50.00,2024-01-22,EU,Electronics,Accessories,cable|adapter|,"CREATED,SHIPPED"
+ORD-005,CUST-300,300.00,2024-01-25,APAC,Electronics,Monitors,monitor|stand|,"CREATED,VALIDATED,SHIPPED"
+ORD-006,CUST-400,120.00,2024-02-01,US,Books,Fiction,novel|bookmark|,"CREATED,SHIPPED"
+ORD-007,CUST-400,80.00,2024-02-05,US,Books,Technical,manual|guide|,"CREATED,SHIPPED"
+ORD-008,CUST-500,250.00,2024-02-10,EU,Clothing,Shirts,shirt|tie|,"CREATED,VALIDATED,SHIPPED"
+ORD-009,CUST-500,180.00,2024-02-15,EU,Clothing,Pants,jeans|belt|,"CREATED,SHIPPED"
+ORD-010,CUST-600,90.00,2024-02-20,APAC,Home,Kitchen,pot|pan|,"CREATED,VALIDATED,SHIPPED"
