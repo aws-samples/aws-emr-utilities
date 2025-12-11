@@ -202,10 +202,7 @@ def should_get_code_recommendations(analysis_result: dict, platform_type: str) -
     """
     try:
         analysis_next_action = analysis_result.get("next_action", {})
-        should_recommend = (
-            "spark_code_recommendation" in analysis_next_action
-            and platform_type != "emr_serverless"
-        )
+        should_recommend = "spark_code_recommendation" in analysis_next_action
         print(f"Should get code recommendations: {should_recommend}")
         return should_recommend
     except Exception as e:
