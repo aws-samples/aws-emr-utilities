@@ -35,7 +35,7 @@ Before deploying the CloudFormation Stack, you will need to build the Lambda Dep
 
 #### Build the Lambda Deployment Package
 
-The [Lambda function](./lambda_function.py) code is being provided in this GitHub repository, you can build it by running the [build_lambda_package.sh](./build_lambda_package.sh) script. This script creates a ZIP file with all dependencies needed for the Lambda deployment package.
+The [Lambda function](../spark-troubleshooting-agent-notification-integration/event-bridge-integration/lambda-function.py) code is being provided in this GitHub repository, you can build it by running the [build_lambda_package.sh](../spark-troubleshooting-agent-notification-integration/event-bridge-integration/build_lambda_package.sh) script. This script creates a ZIP file with all dependencies needed for the Lambda deployment package.
 
 
 #### Upload the Lambda Deployment Package to your S3 bucket
@@ -52,7 +52,7 @@ If you configure email subscription as the target of the SNS topic, you will rec
 
 ## Steps - Configuring via CLI
 
-Alternatively, you can follow the steps of AWS CLIs to set up each component separately. The CLI instruction would be helpful, if you already have some components of the notification flow, such as eventbridge rule, SNS topic, in your AWS account. See [CLI Instructions](./NotificationFlowCliInstructions.md)
+Alternatively, you can follow the steps of AWS CLIs to set up each component separately. The CLI instruction would be helpful, if you already have some components of the notification flow, such as eventbridge rule, SNS topic, in your AWS account. See [CLI Instructions](./spark-troubleshooting-agent-eventbridge-integration-cli.md)
 
 
 ## Test with an Example
