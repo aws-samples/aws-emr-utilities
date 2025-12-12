@@ -38,7 +38,7 @@
 
 1. Create a Slackbot and add it to your desired channel by following the instructions listed here: [https://docs.slack.dev/messaging/sending-messages-using-incoming-webhooks/](https://docs.slack.dev/app-management/quickstart-app-settings). Be sure to save the webhook URL created after the Slackbot joins your channel.
 
-![Slack Incoming Webhooks Setup](images/slack-bot-webhook-auth.jpg)
+![Slack Incoming Webhooks Setup](./Images/slack-bot-webhook-auth.jpg)
 
 2. Create a SlackWebhookConnection in your Airflow cluster with your webhook URL. You can do this by navigating to the connections tab in your Airflow UI and creating a new connection from there.
 3. Upload the solution file: `spark_failure_analysis.py`  to your Airflow cluster inside the `dags` folder.

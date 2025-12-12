@@ -16,7 +16,7 @@ aws sns subscribe \
 
 After running the subscribe command, you will receive an email from `AWS Notifications <no-reply@sns.amazonaws.com>` with the following content:
 
-![EventBridge Subscription Confirmation Email](../Images/spark-eventbridge-notification-subscription-confirmation-email.png)
+![EventBridge Subscription Confirmation Email](./Images/spark-eventbridge-notification-subscription-confirmation-email.png)
 
 Click the "Confirm subscription".
 
