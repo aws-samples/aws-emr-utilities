@@ -16,13 +16,13 @@ aws sns subscribe \
 
 After running the subscribe command, you will receive an email from `AWS Notifications <no-reply@sns.amazonaws.com>` with the following content:
 
-![EventBridge Subscription Confirmation Email](../Images/spark-eventbridge-notification-subscription-confirmation-email.png)
+![EventBridge Subscription Confirmation Email](./Images/spark-eventbridge-notification-subscription-confirmation-email.png)
 
 Click the "Confirm subscription".
 
 ### Step 2. Build the Lambda Deployment Package
 
-The [Lambda function](./lambda_function.py) code is being provided in this GitHub repository, you can build it by running the [build_lambda_package.sh](./build_lambda_package.sh) script. This script creates a ZIP file with all dependencies needed for the Lambda deployment package.
+The [Lambda function](../spark-troubleshooting-agent-notification-integration/event-bridge-integration/lambda-function.py) code is being provided in this GitHub repository, you can build it by running the [build_lambda_package.sh](../spark-troubleshooting-agent-notification-integration/event-bridge-integration/build_lambda_package.sh) script. This script creates a ZIP file with all dependencies needed for the Lambda deployment package.
 
 
 ### Step 3. Upload the Lambda Deployment Package to your S3 bucket

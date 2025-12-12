@@ -6,7 +6,7 @@ Many customers use EventBridge to listen to EMR Step/EMR Serverless Job/Glue Job
 
 Existing workflow:
 
-![EventBridge Notification Existing Flow](../Images/spark-eventbridge-notification-existing-flow.png)
+![EventBridge Notification Existing Flow](./Images/spark-eventbridge-notification-existing-flow.png)
 
 The content of the notification in this flow only has basic information of the EMR Step id, cluster id/EMR Serverless App id, job id/Glue jobrun id. Customers need additional efforts, for example, query the logs on AWS Console or using AWS CLI, to understand what went wrong.
 
@@ -15,7 +15,7 @@ In this blog, we introduce a solution which integrates the capabilities of[Apach
 
 ## Solution Overview
 
-![EventBridge Notification New Flow](../Images/spark-eventbridge-notification-new-flow.png)
+![EventBridge Notification New Flow](./Images/spark-eventbridge-notification-new-flow.png)
 
 The integration with Apache Spark Troubleshooting Agent will be via a Lambda function, which interacts with the MCP tools being hosted on SageMaker Unified Studio MCP server using Strands MCP Client. This Lambda function is triggered by Eventbridge when EMR-EC2 step fails, EMR Serverless job fails, or Glue Jobrun fails, it uses the Apache Spark Troubleshooting Agent to analyze the failures, find the root cause and generate code fix recommendations. Then, it constructs a comprehensive analysis summary, sends the summary to SNS, and SNS delivers the content to the configured destination, such as Email and Slack.
 
@@ -35,7 +35,7 @@ Before deploying the CloudFormation Stack, you will need to build the Lambda Dep
 
 #### Build the Lambda Deployment Package
 
-The [Lambda function](./lambda_function.py) code is being provided in this GitHub repository, you can build it by running the [build_lambda_package.sh](./build_lambda_package.sh) script. This script creates a ZIP file with all dependencies needed for the Lambda deployment package.
+The [Lambda function](../spark-troubleshooting-agent-notification-integration/event-bridge-integration/lambda-function.py) code is being provided in this GitHub repository, you can build it by running the [build_lambda_package.sh](../spark-troubleshooting-agent-notification-integration/event-bridge-integration/build_lambda_package.sh) script. This script creates a ZIP file with all dependencies needed for the Lambda deployment package.
 
 
 #### Upload the Lambda Deployment Package to your S3 bucket
@@ -52,7 +52,7 @@ If you configure email subscription as the target of the SNS topic, you will rec
 
 ## Steps - Configuring via CLI
 
-Alternatively, you can follow the steps of AWS CLIs to set up each component separately. The CLI instruction would be helpful, if you already have some components of the notification flow, such as eventbridge rule, SNS topic, in your AWS account. See [CLI Instructions](./NotificationFlowCliInstructions.md)
+Alternatively, you can follow the steps of AWS CLIs to set up each component separately. The CLI instruction would be helpful, if you already have some components of the notification flow, such as eventbridge rule, SNS topic, in your AWS account. See [CLI Instructions](./spark-troubleshooting-agent-eventbridge-integration-cli.md)
 
 
 ## Test with an Example
@@ -84,15 +84,15 @@ spark.stop()
 
 Ran it with EMR-EC2, and the step failed. With the new notification workflow, we received the email
 
-![Example Email](../Images/spark-eventbridge-notification-example-email.png)
+![Example Email](./Images/spark-eventbridge-notification-example-email.png)
 
 And the Slack Message:
 
-![Example Slack Message](../Images/spark-eventbridge-notification-example-slack-message.png)
+![Example Slack Message](./Images/spark-eventbridge-notification-example-slack-message.png)
 
 ## Cost Estimation
 
 You can get these insights with automated Spark Application troubleshooting at a minimal cost. Suppose in the us-east-1 region, there're 3000 Spark application (from EMR EC2, EMR Serverless, or Glue) failures in total, the monthly cost would be less than $0.1. Most of the cost comes from the Lambda function execution and its logs. The EventBridge rule is free for [AWS Events](https://aws.amazon.com/eventbridge/pricing/).
 
-![Cost Estimation Screenshot](../Images/spark-eventbridge-notification-cost-estimation.png)
+![Cost Estimation Screenshot](./Images/spark-eventbridge-notification-cost-estimation.png)
 

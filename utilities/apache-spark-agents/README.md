@@ -30,14 +30,21 @@ The Apache Spark Troubleshooting Agent provides AI-powered troubleshooting capab
 - Best practices recommendations
 - Performance improvement guidance
 
-📖 **[View Spark Troubleshooting & Code recommendation Setup Guide](spark-troubleshooting-agent-cloudformation/SparkTroubleshooting_README.md)**
+📖 **[View Spark Troubleshooting & Code Recommendation Setup Guide](docs/setup/spark-troubleshooting-agent-cloudformation-setup.md)**
 
 ## Quick Start
 
 Each Apache Spark Agent has its own setup guide with detailed instructions:
 
-1. **[Apache Spark Upgrade Agent Setup](spark-upgrade-agent-cloudformation/SparkUpgrade_README.md)** - To upgrade Spark applications
-2. **[Apache Spark Troubleshooting Agent Setup](spark-troubleshooting-agent-cloudformation/SparkTroubleshooting_README.md)** - To troubleshoot Spark jobs and get code recommendations
+### 1. Apache Spark Upgrade Agent
+- **[CloudFormation Setup Guide](spark-upgrade-agent-cloudformation/SparkUpgrade_README.md)** - Deploy IAM roles and configure the MCP server
+
+### 2. Apache Spark Troubleshooting Agent
+- **[CloudFormation Setup Guide](docs/setup/spark-troubleshooting-agent-cloudformation-setup.md)** - Deploy IAM roles and configure the MCP server
+- **[Airflow Integration](docs/spark-troubleshooting-agent-airflow-integration.md)** - Integrate troubleshooting with Airflow workflows
+- **EventBridge Integration** - Automate troubleshooting notifications for failed Spark jobs:
+  - [CloudFormation Setup](docs/spark-troubleshooting-agent-eventbridge-integration-cloudformation.md)
+  - [CLI Setup](docs/spark-troubleshooting-agent-eventbridge-integration-cli.md)
 
 ## Prerequisites
 
@@ -56,12 +63,3 @@ Each Apache Spark Agent follows a similar architecture:
 1. **CloudFormation Stack** - Deploys IAM roles and necessary AWS resources
 2. **AWS CLI Profile** - Configures credentials for assuming the IAM role
 3. **Agent Configuration** - Connects your IDE/CLI to the agent endpoint via MCP
-
-## CloudFormation Templates
-
-CloudFormation templates for deploying the necessary infrastructure are located in:
-
-- `spark-upgrade-agent-cloudformation/spark-upgrade-mcp-setup.yaml`
-- `spark-troubleshooting-agent-cloudformation/spark-troubleshooting-mcp-setup.yaml`
-
-Each template creates the required IAM roles and permissions for the respective Apache Spark Agent.

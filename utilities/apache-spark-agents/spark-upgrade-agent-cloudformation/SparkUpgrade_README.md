@@ -275,7 +275,7 @@ To use the MCP Server with Cline, click on the **MCP Servers** icon on the top r
 
 Your MCP Server will appear in the Cline MCP Server list where you can see a Green/Yellow/Red status indicator next to the server name indicating the server status.
 
-![Cline MCP Setup](../Images/cline_mcp_setup.png)
+![Cline MCP Setup](../docs/Images/cline_mcp_setup.png)
 
 **Claude Desktop**
 
