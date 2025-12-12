@@ -13,7 +13,7 @@ Assists with upgrading Apache Spark applications across different Spark versions
 - Build environment validation and updates
 - Automated testing and validation
 
-📖 **[View Spark Upgrade Setup Guide](docs/setup/spark-upgrade-agent-cloudformation-setup.md)**
+📖 **[View Spark Upgrade Setup Guide](spark-upgrade-agent-cloudformation/SparkUpgrade_README.md)**
 
 ### 2. Apache Spark Troubleshooting Agent for Amazon EMR
 The Apache Spark Troubleshooting Agent provides AI-powered troubleshooting capabilities for Apache Spark applications running on AWS Glue, EMR-EC2, and EMR-Serverless. It also includes code recommendation capabilities for Spark application optimization.
@@ -37,7 +37,7 @@ The Apache Spark Troubleshooting Agent provides AI-powered troubleshooting capab
 Each Apache Spark Agent has its own setup guide with detailed instructions:
 
 ### 1. Apache Spark Upgrade Agent
-- **[CloudFormation Setup Guide](docs/setup/spark-upgrade-agent-cloudformation-setup.md)** - Deploy IAM roles and configure the MCP server
+- **[CloudFormation Setup Guide](spark-upgrade-agent-cloudformation/SparkUpgrade_README.md)** - Deploy IAM roles and configure the MCP server
 
 ### 2. Apache Spark Troubleshooting Agent
 - **[CloudFormation Setup Guide](docs/setup/spark-troubleshooting-agent-cloudformation-setup.md)** - Deploy IAM roles and configure the MCP server
