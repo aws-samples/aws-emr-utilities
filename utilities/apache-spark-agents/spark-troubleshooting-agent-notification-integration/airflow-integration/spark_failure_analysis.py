@@ -25,8 +25,8 @@ When a Spark operator fails, the callback triggers a separate analysis DAG that:
 When agent=False, the analysis calls MCP tools directly without using the AI agent.
 
 Requirements:
-    - airflow-providers-amazon
-    - airflow-providers-slack
+    - apache-airflow-providers-amazon
+    - apache-airflow-providers-slack
     - strands-agents (only when agent=True)
     - mcp-proxy-for-aws
     - AWS connection configured in Airflow (default: "aws_default")
