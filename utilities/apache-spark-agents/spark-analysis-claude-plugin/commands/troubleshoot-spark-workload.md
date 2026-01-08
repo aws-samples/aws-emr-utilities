@@ -1,7 +1,7 @@
 ---
-name: analyze-spark-workload
-description: Analyze a Spark workload for troubleshooting or optimization
-argument-hint: "<execution-id> <execution-type-id> [--platform <type>] [--profile <name>] [--region <region>]"
+name: troubleshoot-spark-workload
+description: Troubleshoot a Spark workload
+argument-hint: "<execution-id> <execution-type-id> --profile <name> --region <region> [--platform <type>]"
 allowed-tools:
   - Bash
   - AskUserQuestion
@@ -57,7 +57,7 @@ If `--platform` is not specified, determine it automatically:
 Use the Glob tool to find the analysis script:
 
 ```
-Pattern: **/spark-troubleshooting-claude-plugin/scripts/analyze_spark_workload.py
+Pattern: **/spark-troubleshooting-claude-plugin/scripts/troubleshoot_spark_workload.py
 ```
 
 The script is located in the `scripts/` directory of the `spark-troubleshooting-claude-plugin` folder within the workspace.
@@ -76,7 +76,7 @@ uv run <full-script-path> \
 ```
 
 **IMPORTANT**:
-- Use the FULL ABSOLUTE PATH to the script (e.g., `/Volumes/workplace/.../scripts/analyze_spark_workload.py`)
+- Use the FULL ABSOLUTE PATH to the script (e.g., `/Volumes/workplace/.../scripts/troubleshoot_spark_workload.py`)
 - Do NOT use `$CLAUDE_PLUGIN_ROOT` - this environment variable is not reliably set
 - Always include `--profile` and `--region` with the values gathered from the user
 
@@ -100,7 +100,7 @@ If the script returns an error:
 ## Examples
 
 ```
-/spark-troubleshooting:analyze-spark-workload jr_abc123 my-glue-job --profile prod-account --region us-west-2
-/spark-troubleshooting:analyze-spark-workload s-1234567890ABC j-CLUSTERID123 --platform emr_ec2 --profile prod-account --region us-west-2
-/spark-troubleshooting:analyze-spark-workload jr_def456 my-job --profile prod-account --region us-west-2
+/spark-analysis:troubleshoot-spark-workload jr_abc123 my-glue-job --profile prod-account --region us-west-2
+/spark-analysis:troubleshoot-spark-workload s-1234567890ABC j-CLUSTERID123 --platform emr_ec2 --profile prod-account --region us-west-2
+/spark-analysis:troubleshoot-spark-workload jr_def456 my-job --profile prod-account --region us-west-2
 ```

@@ -14,7 +14,7 @@ by calling MCP tools directly without using an LLM agent. The raw tool
 outputs are returned for Claude Code to parse and present.
 
 Usage:
-    uv run analyze_spark_workload.py --execution-id <id> --execution-type-id <type_id> \\
+    uv run troubleshoot_spark_workload.py --execution-id <id> --execution-type-id <type_id> \\
         --platform-type <glue|emr_serverless|emr_ec2> --profile <aws_profile> --region <aws_region>
 """
 

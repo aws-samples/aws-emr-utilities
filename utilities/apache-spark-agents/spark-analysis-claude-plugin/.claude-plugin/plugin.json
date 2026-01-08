@@ -1,0 +1,9 @@
+{
+  "name": "spark-analysis",
+  "version": "0.1.2",
+  "description": "AWS Spark Analysis plugin for Claude Code - troubleshoot Spark workloads on AWS Glue, EMR, and EMR Serverless",
+  "author": {
+    "name": "AWS SageMaker Unified Studio"
+  },
+  "keywords": ["spark", "aws", "glue", "emr", "troubleshooting"]
+}

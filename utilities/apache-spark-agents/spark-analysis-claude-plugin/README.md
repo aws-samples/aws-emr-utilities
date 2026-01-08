@@ -1,4 +1,4 @@
-# Spark Troubleshooting Plugin for Claude Code
+# Spark Analysis Plugin for Claude Code
 
 Analyze and troubleshoot Apache Spark workloads running on AWS Glue, EMR, and EMR Serverless.
 
@@ -26,10 +26,10 @@ Claude Code Agent
   Bash Tool (uv run)
        │
        ▼
-  analyze_spark_workload.py
+  troubleshoot_spark_workload.py
        │
        ▼
-  Direct MCP Tool Calls (no LLM)
+  Direct MCP Tool Calls
        │
        ▼
   Raw JSON Output → Claude Code parses & presents
@@ -45,39 +45,14 @@ Claude Code Agent
 Install this plugin in Claude Code:
 
 ```bash
-claude plugins add spark-troubleshooting
+claude plugin marketplace add aws-samples/aws-emr-utilities
+claude plugin install spark-analysis@aws-emr-utilities
 ```
 
 Or test locally:
 
 ```bash
-claude --plugin-dir /path/to/spark-troubleshooting-claude-plugin
-```
-
-## Configuration
-
-### AWS Region
-
-By default, the plugin connects to the `us-east-1` region. To use a different region:
-
-```bash
-# Via environment variable
-export AWS_REGION=us-west-2
-
-# Or via command argument
-/spark-troubleshooting:analyze-spark-workload jr_abc123 my-job --region us-west-2
-```
-
-### AWS Profile
-
-Specify AWS profile per-workload for multi-account scenarios:
-
-```bash
-# Via command argument
-/spark-troubleshooting:analyze-spark-workload jr_abc123 my-job --profile prod-account
-
-# Or via environment variable (default for all analyses)
-export AWS_PROFILE=my-profile
+claude --plugin-dir /path/to/spark-analysis-claude-plugin
 ```
 
 ## Usage
@@ -85,7 +60,7 @@ export AWS_PROFILE=my-profile
 ### Command: Analyze Spark Workload
 
 ```
-/spark-troubleshooting:analyze-spark-workload <execution-id> <execution-type-id> [options]
+/spark-analysis:troubleshoot-spark-workload <execution-id> <execution-type-id> [options]
 ```
 
 **Arguments:**
@@ -107,13 +82,13 @@ export AWS_PROFILE=my-profile
 
 ```bash
 # Analyze a Glue job run
-/spark-troubleshooting:analyze-spark-workload jr_abc123 my-glue-job
+/spark-analysis:troubleshoot-spark-workload jr_abc123 my-glue-job
 
 # Analyze an EMR step
-/spark-troubleshooting:analyze-spark-workload s-1234567890ABC j-CLUSTERID123
+/spark-analysis:troubleshoot-spark-workload s-1234567890ABC j-CLUSTERID123
 
 # Analyze with specific profile and region
-/spark-troubleshooting:analyze-spark-workload jr_def456 my-job --profile prod-account --region us-west-2
+/spark-analysis:troubleshoot-spark-workload jr_def456 my-job --profile prod-account --region us-west-2
 ```
 
 ### Batch Analysis from Spreadsheets
@@ -124,8 +99,8 @@ For a spreadsheet with columns: `execution_id`, `job_name`, `profile`, `region`:
 
 ```bash
 # Run multiple analyses (Claude Code handles parallelization)
-/spark-troubleshooting:analyze-spark-workload jr_abc123 job-1 --profile account-a --region us-east-1
-/spark-troubleshooting:analyze-spark-workload jr_def456 job-2 --profile account-b --region us-west-2
+/spark-analysis:troubleshoot-spark-workload jr_abc123 job-1 --profile account-a --region us-east-1
+/spark-analysis:troubleshoot-spark-workload jr_def456 job-2 --profile account-b --region us-west-2
 ```
 
 ## Multi-Account Workflow
@@ -153,9 +128,9 @@ This architecture ensures:
 
 ```bash
 # Analyze jobs from different accounts
-/spark-troubleshooting:analyze-spark-workload jr_abc123 etl-job-1 --profile prod-account --region us-east-1
-/spark-troubleshooting:analyze-spark-workload jr_def456 etl-job-2 --profile dev-account --region us-east-1
-/spark-troubleshooting:analyze-spark-workload jr_ghi789 etl-job-3 --profile staging-account --region us-east-1
+/spark-analysis:troubleshoot-spark-workload jr_abc123 etl-job-1 --profile prod-account --region us-east-1
+/spark-analysis:troubleshoot-spark-workload jr_def456 etl-job-2 --profile dev-account --region us-east-1
+/spark-analysis:troubleshoot-spark-workload jr_ghi789 etl-job-3 --profile staging-account --region us-east-1
 ```
 
 ## Troubleshooting
@@ -187,13 +162,13 @@ If the analysis script fails, check:
 ## Files
 
 ```
-spark-troubleshooting-claude-plugin/
+spark-analysis-claude-plugin/
 ├── .claude-plugin/
 │   └── plugin.json              # Plugin manifest
 ├── commands/
-│   └── analyze-spark-workload.md    # Slash command
+│   └── troubleshoot-spark-workload.md    # Slash command
 ├── scripts/
-│   └── analyze_spark_workload.py    # Analysis script (direct MCP calls)
+│   └── troubleshoot_spark_workload.py    # Analysis script (direct MCP calls)
 ├── .gitignore
 └── README.md
 ```
