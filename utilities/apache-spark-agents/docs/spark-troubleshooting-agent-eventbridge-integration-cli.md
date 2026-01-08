@@ -274,6 +274,46 @@ aws events put-targets \
     --targets "Id"="1","Arn"="arn:aws:lambda:REGION:YOUR_ACCOUNT:function:spark-workload-analysis","RoleArn"="arn:aws:iam::YOUR_ACCOUNT:role/eventbridge-lambda-invoke-role"
 ```
 
+#### 6.3 Grant EventBridge Permission to Invoke Lambda
+
+EventBridge requires a resource-based policy on the Lambda function to invoke it. Add the appropriate permission based on which rule(s) you created:
+
+For EMR-EC2:
+
+```
+aws lambda add-permission \
+    --function-name spark-workload-analysis \
+    --statement-id AllowEventBridgeInvokeEMREC2 \
+    --action lambda:InvokeFunction \
+    --principal events.amazonaws.com \
+    --source-arn arn:aws:events:REGION:YOUR_ACCOUNT:rule/emr-ec2-step-status-changes-to-failed \
+    --region REGION
+```
+
+For EMR Serverless:
+
+```
+aws lambda add-permission \
+    --function-name spark-workload-analysis \
+    --statement-id AllowEventBridgeInvokeEMRServerless \
+    --action lambda:InvokeFunction \
+    --principal events.amazonaws.com \
+    --source-arn arn:aws:events:REGION:YOUR_ACCOUNT:rule/emr-serverless-job-status-changes-to-failed \
+    --region REGION
+```
+
+For Glue Jobrun:
+
+```
+aws lambda add-permission \
+    --function-name spark-workload-analysis \
+    --statement-id AllowEventBridgeInvokeGlue \
+    --action lambda:InvokeFunction \
+    --principal events.amazonaws.com \
+    --source-arn arn:aws:events:REGION:YOUR_ACCOUNT:rule/glue-job-status-changes-to-failed \
+    --region REGION
+```
+
 ### Step 7. (Optional) Set up Slack as target of SNS Topic
 
 For setting up Slack channel and generating the webhook for notification workflow, please check this doc: https://docs.aws.amazon.com/prometheus/latest/userguide/AMP-alertmanager-SNS-otherdestinations.html#AMP-alertmanager-SNS-otherdestinations-Slack which links to an instruction video: https://www.youtube.com/watch?v=CszzQcPAqNM

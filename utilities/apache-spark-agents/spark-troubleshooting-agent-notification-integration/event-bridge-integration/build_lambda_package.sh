@@ -3,8 +3,6 @@
 # Build Lambda deployment package for Spark Workload Analysis
 # This script creates a ZIP file with all dependencies for Lambda deployment
 
-set -e
-
 echo "🚀 Building Lambda deployment package..."
 
 # Configuration
