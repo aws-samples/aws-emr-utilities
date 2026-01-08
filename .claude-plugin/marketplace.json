@@ -1,0 +1,17 @@
+{
+  "name": "aws-emr-utilities",
+  "owner": {
+    "name": "Amazon Web Services"
+  },
+  "plugins": [
+    {
+      "name": "spark-analysis",
+      "source": "./utilities/apache-spark-agents/spark-analysis-claude-plugin",
+      "description": "AWS Spark Analysis plugin for Claude Code - troubleshoot Spark workloads on AWS Glue, EMR, and EMR Serverless",
+      "version": "0.1.2",
+      "author": {
+        "name": "AWS SageMaker Unified Studio"
+      }
+    }
+  ]
+}
