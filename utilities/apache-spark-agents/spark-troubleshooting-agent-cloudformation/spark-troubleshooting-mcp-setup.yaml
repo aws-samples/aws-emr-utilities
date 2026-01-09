@@ -235,14 +235,6 @@ Resources:
               - 'glue:GetQuery'
               - 'glue:GetDashboardUrl'
             Resource: '*'
-          
-          - Sid: GluePassRoleAccess
-            Effect: Allow
-            Action: 'iam:PassRole'
-            Resource: '*'
-            Condition:
-              StringLike:
-                'iam:PassedToService': 'glue.amazonaws.com'
   
   # KMS policy for CloudWatch Logs (if key provided)
   SparkTroubleshootingCloudWatchKmsPolicy:
