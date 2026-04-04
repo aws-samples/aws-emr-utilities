@@ -290,6 +290,12 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             'total_task_execution_hours': util_data.get('total_task_execution_hours', 0),
             'max_stage_shuffle_write_gb': data.get('shuffle_data_summary', {}).get('max_stage_shuffle_write_gb', 0),
             'shuffle_fetch_wait_percent': io_data.get('shuffle_fetch_wait_percent', 0),
+            'running_sql_executions': data.get('sql_metrics', {}).get('running_executions', 0),
+            'has_fatal_job_failure': any(
+                'stage failure' in (j.get('failure_reason') or '').lower()
+                for j in data.get('job_details', {}).get('jobs', [])
+                if j.get('status') == 'FAILED'
+            ),
         }
         flattened.append(flat)
     
@@ -493,6 +499,22 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             },
         })
         
+        # Warn if job did not complete (running SQL executions = app terminated mid-query)
+        # or if any Spark jobs had fatal stage failures (max retries exceeded)
+        running_sql = int(row.get('running_sql_executions', 0))
+        fatal_failure = bool(row.get('has_fatal_job_failure', False))
+        if running_sql > 0 or fatal_failure:
+            if running_sql > 0:
+                warning = ("This application had SQL executions still running when it terminated. "
+                           "Recommendations may be inaccurate due to incomplete workload data. "
+                           "For reliable recommendations, use the event log from a completed run.")
+            else:
+                warning = ("This application had fatal Spark job failures (max stage retries exceeded). "
+                           "Recommendations may be inaccurate due to incomplete workload data. "
+                           "For reliable recommendations, use the event log from a completed run.")
+            cost_rec["warnings"] = [warning]
+            perf_rec["warnings"] = [warning]
+
         cost_recs.append(cost_rec)
         perf_recs.append(perf_rec)
 
@@ -575,8 +597,11 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             })
             worker_cfg, worker_type = saved_cfg, saved_type
             # For IO-bound jobs, the IO config IS the cost-efficient config
+            saved_warnings = cost_recs[-1].get("warnings")
             cost_recs[-1] = dict(io_rec)
             cost_recs[-1]["optimization_mode"] = "cost"
+            if saved_warnings:
+                cost_recs[-1]["warnings"] = saved_warnings
             # Perf mode: keep large workers if they already have enough disks.
             # Otherwise, find the smallest worker type that meets the disk target
             # while preserving total core count — smaller workers are cheaper.
@@ -780,3 +805,6 @@ if __name__ == "__main__":
         diff_pct = (diff_exec / cost['worker']['max_executors'] * 100) if cost['worker']['max_executors'] > 0 else 0
         print(f"{'':<40} | {'Difference':<11} | {diff_exec:>+8} | {diff_pct:>+9.1f}%")
         print("-"*80)
+        if cost.get("warnings"):
+            print(f"  ⚠️  WARNING: {cost['warnings'][0]}")
+            print("-"*80)

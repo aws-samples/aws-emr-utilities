@@ -344,6 +344,12 @@ ORDER BY total_memory_spilled_gb DESC;
 | `--table` | Iceberg table: `catalog.database.table` | *required* |
 | `--warehouse` | S3 warehouse location | — |
 
+## Important Considerations
+
+- **Use completed run event logs.** If a Spark application fails mid-execution, the event log will contain only partial workload data — shuffle volumes, task counts, and memory utilization will be underreported. Recommendations generated from failed runs may significantly undersize the configuration. The advisor automatically detects incomplete applications (SQL executions still running at termination) and adds a warning to the output, but for reliable sizing always use the event log from a successful completed run.
+
+- **Recommendations are sized for the observed data volume.** The advisor sizes executors, shuffle partitions, and disk based on the input and shuffle volumes in the event log. If the actual data volume changes significantly between runs (e.g., a daily job processes 10x more data on month-end), the recommendation may undersize the configuration. Regenerate recommendations whenever the expected data volume changes materially.
+
 ## Prerequisites
 
 - Python 3.7+
