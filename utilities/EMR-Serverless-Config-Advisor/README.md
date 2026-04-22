@@ -358,3 +358,6 @@ Previous extraction scripts are in the `legacy/` folder. Both `spark_extractor.p
 ## License
 
 MIT-0 License. See the LICENSE file.
+
+## Contributing
+
