@@ -1,0 +1,5 @@
+[deployment-client]
+clientName = {{HOST}}
+
+[target-broker:deploymentServer]
+targetUri = {{DEPLOYMENT_URI}}:8089

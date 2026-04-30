@@ -1,0 +1,10 @@
+[default]
+host = {{HOST}}
+
+[monitor:///var/log/spark/user/stderr]
+index = {{INDEX}}
+sourcetype = {{APP_NAME}}-spark-stderr
+
+[monitor:///var/log/spark/user/stdout]
+index = {{INDEX}}
+sourcetype = {{APP_NAME}}-spark-stdout
