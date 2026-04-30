@@ -1,4 +1,5 @@
-FROM public.ecr.aws/emr-serverless/spark/emr-7.1.0:latest
+ARG EMR_RELEASE=emr-7.1.0
+FROM public.ecr.aws/emr-serverless/spark/${EMR_RELEASE}:latest
 
 USER root
 
