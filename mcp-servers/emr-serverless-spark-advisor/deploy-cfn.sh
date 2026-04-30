@@ -41,24 +41,19 @@ if ! aws s3api head-bucket --bucket "$ARTIFACT_BUCKET" --region "$REGION" 2>/dev
   fi
 fi
 
-# 2. Build Lambda layer
+# 2. Build Lambda layer (platform-targeted for Lambda x86_64 Linux)
 echo "Building Lambda layer..."
 LAYER_DIR=$(mktemp -d)
-pip3 install --target "$LAYER_DIR/python" -q mcp mangum
 pip3 install --target "$LAYER_DIR/python" -q \
-  --platform manylinux2014_x86_64 --only-binary=:all: --upgrade \
-  pydantic-core rpds-py cffi cryptography
-pip3 install --target "$LAYER_DIR/python" -q --upgrade pydantic
-pip3 install --target "$LAYER_DIR/python" -q \
-  --platform manylinux2014_x86_64 --only-binary=:all: --upgrade \
-  pydantic-core rpds-py cffi cryptography
+  --platform manylinux_2_17_x86_64 --only-binary=:all: --python-version 3.12 \
+  mcp mangum pydantic pandas
 find "$LAYER_DIR/python" -name "*darwin*" -delete 2>/dev/null || true
 (cd "$LAYER_DIR" && zip -r -q /tmp/mcp-layer.zip python/)
 rm -rf "$LAYER_DIR"
 
 # 3. Build Lambda function zip
 echo "Building Lambda function..."
-(cd "$SCRIPT_DIR" && zip -j -q /tmp/mcp-function.zip lambda_handler.py spark_advisor_mcp.py)
+(cd "$SCRIPT_DIR" && zip -j -q /tmp/mcp-function.zip lambda_handler.py spark_advisor_mcp.py emr_recommender.py)
 
 # 4. Build zstandard archive for Python 3.9 (EMR 7.x)
 echo "Building zstandard archive..."

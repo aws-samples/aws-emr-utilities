@@ -24,7 +24,7 @@ Resources:
     Type: AWS::S3::Bucket
     DeletionPolicy: Retain
     Properties:
-      BucketName: !Sub spark-advisor-${AWS::AccountId}-${AWS::Region}
+      BucketName: !Sub ${AWS::StackName}-${AWS::AccountId}-${AWS::Region}
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
@@ -158,14 +158,13 @@ Resources:
       CompatibleRuntimes:
         - python3.12
         - python3.13
-        - python3.14
 
   # ── Lambda Function ───────────────────────────────────────────────
   MCPFunction:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: !Sub spark-advisor-mcp-${AWS::StackName}
-      Runtime: python3.14
+      Runtime: python3.12
       Handler: lambda_handler.handler
       Code:
         S3Bucket: !Ref ArtifactBucket
