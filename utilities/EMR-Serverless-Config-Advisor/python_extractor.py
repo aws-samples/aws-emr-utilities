@@ -462,9 +462,9 @@ def extract_task_summary(events):
 
             if reason == "Success":
                 task_stats["completed_tasks"] += 1
-            elif "Failed" in reason or "Exception" in reason:
+            elif "Failed" in reason or "Exception" in reason or "Failure" in reason:
                 task_stats["failed_tasks"] += 1
-            elif "Killed" in reason:
+            elif "Killed" in reason or "killed" in reason:
                 task_stats["killed_tasks"] += 1
 
     if task_stats["total_tasks"] > 0:
