@@ -231,7 +231,7 @@ def _get_timeout_configs(input_gb: float, duration_hours: float) -> Dict[str, st
     }
 
 
-def _get_s3_retry_configs(input_gb: float) -> Dict[str, str]:
+def _get_s3_retry_configs(input_gb: float, output_gb: float = 0) -> Dict[str, str]:
     if input_gb < 100:
         retries = "5"
     elif input_gb < 1000:
@@ -239,10 +239,21 @@ def _get_s3_retry_configs(input_gb: float) -> Dict[str, str]:
     else:
         retries = "15"
     
-    return {
+    s3_io_gb = input_gb + output_gb
+    if s3_io_gb > 1000:
+        attempts_maximum = "15"
+    elif s3_io_gb > 100:
+        attempts_maximum = "10"
+    else:
+        attempts_maximum = None  # use Hadoop default (5)
+    
+    configs = {
         "spark.hadoop.fs.s3a.retry.limit": retries,
         "spark.hadoop.fs.s3a.connection.ssl.enabled": "true",
     }
+    if attempts_maximum:
+        configs["spark.hadoop.fs.s3a.attempts.maximum"] = attempts_maximum
+    return configs
 
 
 def _get_iceberg_configs() -> Dict[str, str]:
@@ -333,6 +344,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             'job_id': app_info.get('job_id'),
             'total_run_duration_hours': data.get('total_run_duration_hours', app_info.get('total_run_duration_hours')),
             'io_total_input_gb': io_data.get('total_input_gb'),
+            'io_total_output_gb': io_data.get('total_output_gb', 0),
             'io_total_shuffle_read_gb': io_data.get('total_shuffle_read_gb'),
             'io_total_shuffle_write_gb': io_data.get('total_shuffle_write_gb'),
             'avg_memory_utilization_percent': util_data.get('avg_memory_utilization_percent'),
@@ -341,6 +353,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             'total_memory_spilled_gb': spill_data.get('total_memory_spilled_gb'),
             'total_disk_spilled_gb': spill_data.get('total_disk_spilled_gb'),
             'max_stage_tasks': max((s.get('num_tasks', 0) for s in data.get('stage_summary', {}).get('stages', [])), default=0),
+            'total_tasks': data.get('task_summary', {}).get('total_tasks', 0),
             'max_peak_memory_gb': util_data.get('max_peak_memory_gb', 0),
             'orig_executor_cores': int(data.get('spark_config', {}).get('spark.executor.cores', 0) or 0),
             'orig_total_executors': int(util_data.get('total_executors', 0) or 0),
@@ -375,6 +388,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         job_id = row.get('job_id')
         duration = float(row.get('total_run_duration_hours', 0) or 0)
         i_in_gb = float(row.get('io_total_input_gb', 0) or 0)
+        i_out_gb = float(row.get('io_total_output_gb', 0) or 0)
         s_in_gb = float(row.get('io_total_shuffle_read_gb', 0) or 0)
         s_out_gb = float(row.get('io_total_shuffle_write_gb', 0) or 0)
         
@@ -489,8 +503,20 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             else:
                 return 4, 14
 
+        def _driver_disk_sizing(total_tasks):
+            """Scale driver disk based on total task count to prevent event log disk pressure."""
+            if total_tasks > 500000:
+                return "100G"
+            elif total_tasks > 100000:
+                return "50G"
+            else:
+                return None
+
+        total_tasks = int(row.get('total_tasks', 0) or 0)
+
         def build_spark_cfg(max_exec, min_exec, sp, executor_disk, vcpu_override=None, mem_override=None):
             d_cores, d_mem = _driver_sizing(sp, max_exec, s_in_gb + s_out_gb)
+            driver_disk = _driver_disk_sizing(total_tasks)
             vcpu = vcpu_override or worker_cfg["vcpu"]
             mem = mem_override or worker_cfg["memory"]
             cfg = {
@@ -508,8 +534,10 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                 "spark.dynamicAllocation.minExecutors": str(min_exec),
                 "spark.dynamicAllocation.initialExecutors": str(min_exec),
             }
+            if driver_disk:
+                cfg["spark.emr-serverless.driver.disk"] = driver_disk
             cfg.update(_get_timeout_configs(i_in_gb, duration))
-            cfg.update(_get_s3_retry_configs(i_in_gb))
+            cfg.update(_get_s3_retry_configs(i_in_gb, i_out_gb))
             cfg.update(_get_iceberg_configs())
             if sh_ratio > 30:
                 cfg.update({"spark.shuffle.compress": "true", "spark.shuffle.spill.compress": "true"})
