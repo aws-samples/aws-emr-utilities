@@ -28,6 +28,25 @@ import zstandard as zstd
 
 # ── Phase A: Python decompress ──────────────────────────────────────
 
+def _sanitize_dotted_keys(line):
+    """Convert dict fields with dotted/slashed keys to array-of-pairs for PySpark compatibility."""
+    try:
+        obj = json.loads(line)
+    except (json.JSONDecodeError, ValueError):
+        return line
+    changed = False
+    for key, val in list(obj.items()):
+        if isinstance(val, dict) and any("." in k or "/" in k for k in val):
+            obj[key] = [[k, v] for k, v in val.items()]
+            changed = True
+        elif isinstance(val, dict):
+            for k2, v2 in list(val.items()):
+                if isinstance(v2, dict) and any("." in k or "/" in k for k in v2):
+                    val[k2] = [[k, v] for k, v in v2.items()]
+                    changed = True
+    return json.dumps(obj, separators=(",", ":")) if changed else line
+
+
 def _decompress_one_file(args):
     """Download and decompress a single S3 file. Returns (app_name, lines_text)."""
     bucket, key, app_name = args
@@ -66,19 +85,26 @@ def phase_a_decompress(input_path, local_base, limit, workers=50):
 
     s3 = boto3.client("s3", region_name="us-east-1")
 
-    # List application directories
+    # List application directories (v2 format: eventlog_v2_*, v1 format: application_*)
     resp = s3.list_objects_v2(Bucket=bucket, Prefix=prefix, Delimiter="/")
     app_prefixes = []
+    v1_files = []  # single-file v1 event logs
     for cp in resp.get("CommonPrefixes", []):
         p = cp["Prefix"]
         name = p.rstrip("/").rsplit("/", 1)[-1]
-        if name.startswith("eventlog_v2_"):
+        if name.startswith("eventlog_v2_") or name.startswith("application_"):
             app_prefixes.append((p, name))
 
+    # Check for v1 single-file event logs (not directories)
+    for obj in resp.get("Contents", []):
+        name = obj["Key"].rsplit("/", 1)[-1]
+        if name.startswith("application_") and obj.get("Size", 0) > 0:
+            v1_files.append((obj["Key"], name))
+
     # If no subdirectories found, check if the prefix itself is an app directory
-    if not app_prefixes:
+    if not app_prefixes and not v1_files:
         dir_name = prefix.rstrip("/").rsplit("/", 1)[-1]
-        if dir_name.startswith("eventlog_v2_"):
+        if dir_name.startswith("eventlog_v2_") or dir_name.startswith("application_"):
             app_prefixes.append((prefix, dir_name))
 
     app_prefixes = app_prefixes[:limit]
@@ -90,8 +116,14 @@ def phase_a_decompress(input_path, local_base, limit, workers=50):
         for page in paginator.paginate(Bucket=bucket, Prefix=app_prefix):
             for obj in page.get("Contents", []):
                 k = obj["Key"]
-                if "/events_" in k:
+                # v2 format: events_N files; v1 format: any file in the directory
+                fname = k.rsplit("/", 1)[-1]
+                if "/events_" in k or fname.startswith("application_") or not fname.startswith("."):
                     all_tasks.append((bucket, k, app_name))
+
+    # Add v1 single-file event logs
+    for key, name in v1_files[:max(0, limit - len(app_prefixes))]:
+        all_tasks.append((bucket, key, name))
 
     print(f"Phase A: Decompressing {len(app_prefixes)} apps, {len(all_tasks)} files with {workers} threads")
     os.makedirs(local_base, exist_ok=True)
@@ -100,6 +132,9 @@ def phase_a_decompress(input_path, local_base, limit, workers=50):
     app_buffers = {}
     app_counts = {}
     for _, app_name in app_prefixes:
+        app_buffers[app_name] = []
+        app_counts[app_name] = 0
+    for _, app_name in v1_files[:max(0, limit - len(app_prefixes))]:
         app_buffers[app_name] = []
         app_counts[app_name] = 0
 
@@ -113,6 +148,7 @@ def phase_a_decompress(input_path, local_base, limit, workers=50):
                 for line in text.splitlines():
                     line = line.strip()
                     if line:
+                        line = _sanitize_dotted_keys(line)
                         app_buffers[app_name].append(line)
                         app_counts[app_name] += 1
             completed += 1
@@ -272,6 +308,9 @@ def phase_b_spark_extract(app_names, local_base, output_path, limit, s3_staging_
                 F.col("`Task Metrics`.`Disk Bytes Spilled`").alias("disk_spill"),
                 F.col("`Task Info`.`Executor ID`").alias("exec_id"),
                 F.col("`Task Executor Metrics`.JVMHeapMemory").alias("jvm_heap"),
+                F.col("`Task Metrics`.`JVM GC Time`").alias("gc_time"),
+                F.col("`Task Metrics`.`Shuffle Read Metrics`.`Fetch Wait Time`").alias("fetch_wait_time"),
+                F.col("`Task Info`.`Failed`").alias("task_failed"),
             )
 
             agg_result = io_agg.agg(
@@ -290,13 +329,49 @@ def phase_b_spark_extract(app_names, local_base, output_path, limit, s3_staging_
                 F.sum(F.when(F.col("shuffle_write") > 0, 1).otherwise(0)).alias("tasks_with_shuffle_write"),
                 F.sum(F.when(F.col("mem_spill") > 0, 1).otherwise(0)).alias("tasks_with_mem_spill"),
                 F.sum(F.when(F.col("disk_spill") > 0, 1).otherwise(0)).alias("tasks_with_disk_spill"),
+                F.coalesce(F.sum("gc_time"), F.lit(0)).alias("total_gc_time"),
+                F.coalesce(F.sum("fetch_wait_time"), F.lit(0)).alias("total_fetch_wait_time"),
+                F.sum(F.when(F.col("task_failed") == True, 1).otherwise(0)).alias("failed_tasks"),
             ).first()
 
             task_count = agg_result["task_count"]
+            failed_tasks = int(agg_result["failed_tasks"] or 0)
             total_input = agg_result["total_input"]
             total_output = agg_result["total_output"]
             total_shuffle_read = agg_result["total_shuffle_remote"] + agg_result["total_shuffle_local"]
             total_shuffle_write = agg_result["total_shuffle_write"]
+            total_run_time_ms = float(agg_result["total_run_time"] or 0)
+            total_gc_time_ms = float(agg_result["total_gc_time"] or 0)
+            total_fetch_wait_ms = float(agg_result["total_fetch_wait_time"] or 0)
+            gc_pct = round(total_gc_time_ms / total_run_time_ms * 100, 2) if total_run_time_ms > 0 else 0
+            fetch_wait_pct = round(total_fetch_wait_ms / total_run_time_ms * 100, 2) if total_run_time_ms > 0 else 0
+
+            # ── Job details ──────────────────────────────────────
+            job_starts = df.filter(F.col("Event") == "SparkListenerJobStart")
+            job_ends = df.filter(F.col("Event") == "SparkListenerJobEnd")
+            job_start_rows = job_starts.select(
+                F.col("`Job ID`").alias("job_id"),
+                F.col("`Submission Time`").alias("submit_time"),
+            ).collect()
+            job_end_rows = job_ends.select(
+                F.col("`Job ID`").alias("job_id"),
+                F.col("`Completion Time`").alias("end_time"),
+                F.col("`Job Result`.Result").alias("result"),
+            ).collect()
+            job_end_map = {r["job_id"]: r for r in job_end_rows}
+            job_details = []
+            for r in job_start_rows:
+                jid = r["job_id"]
+                end_r = job_end_map.get(jid)
+                status = "RUNNING"
+                failure_reason = None
+                if end_r:
+                    status = "SUCCESS" if end_r["result"] == "JobSucceeded" else "FAILED"
+                job_details.append({
+                    "job_id": int(jid),
+                    "status": status,
+                    "failure_reason": failure_reason,
+                })
 
             # ── Executor summary ─────────────────────────────────
             exec_agg = (
@@ -509,7 +584,8 @@ def phase_b_spark_extract(app_names, local_base, output_path, limit, s3_staging_
                     "total_run_duration_minutes": duration_minutes,
                     "total_run_duration_hours": duration_hours,
                 },
-                "task_summary": {"total_tasks": task_count},
+                "task_summary": {"total_tasks": task_count, "failed_tasks": failed_tasks, "killed_tasks": 0},
+                "job_details": {"jobs": job_details},
                 "stage_summary": {"stages": stage_details, "total_stages": len(stage_details)},
                 "executor_summary": {
                     "total_executors": total_executors,
@@ -535,6 +611,8 @@ def phase_b_spark_extract(app_names, local_base, output_path, limit, s3_staging_
                         "tasks_with_output": int(agg_result["tasks_with_output"] or 0),
                         "tasks_with_shuffle_read": int(agg_result["tasks_with_shuffle_read"] or 0),
                         "tasks_with_shuffle_write": int(agg_result["tasks_with_shuffle_write"] or 0),
+                        "shuffle_fetch_wait_percent": fetch_wait_pct,
+                        "gc_time_percent": gc_pct,
                     }
                 },
                 "spill_summary": {
@@ -549,6 +627,7 @@ def phase_b_spark_extract(app_names, local_base, output_path, limit, s3_staging_
                 "total_cost_factor": cost_factor,
                 "executor_timeline": executor_timeline,
                 "sql_executions": sql_executions,
+                "spark_config": spark_config,
             }
 
             config_output = {
