@@ -117,6 +117,35 @@ Set env vars for both driver and executors:
 --conf spark.executorEnv.SPLUNK_FORWARD_SERVER=splunk.example.com:9997
 ```
 
+## Migrating from EMR on EC2 bootstrap action
+
+If you currently use a bootstrap action to install the Splunk forwarder on EMR on EC2, the migration is straightforward. The same information you pass as bootstrap arguments maps to environment variables:
+
+**EMR on EC2 (bootstrap action):**
+```bash
+splunkforwarder_installer.sh my-app prod default false true
+# Constructs: splunk-deployment-{pod}.monitoring.{context}.internal.example.com:8089
+```
+
+**EMR Serverless (environment variables):**
+```bash
+--conf spark.extraListeners=com.emr.splunk.SplunkForwarderListener \
+--conf spark.emr-serverless.driverEnv.SPLUNK_FORWARD_SERVER=splunk-deployment-default.monitoring.prod.internal.example.com:9997 \
+--conf spark.emr-serverless.driverEnv.SPLUNK_DEPLOYMENT_URI=splunk-deployment-default.monitoring.prod.internal.example.com \
+--conf spark.emr-serverless.driverEnv.SPLUNK_APP_NAME=my-app \
+--conf spark.executorEnv.SPLUNK_FORWARD_SERVER=splunk-deployment-default.monitoring.prod.internal.example.com:9997 \
+--conf spark.executorEnv.SPLUNK_DEPLOYMENT_URI=splunk-deployment-default.monitoring.prod.internal.example.com \
+--conf spark.executorEnv.SPLUNK_APP_NAME=my-app
+```
+
+| Bootstrap argument | Environment variable | Example |
+|---|---|---|
+| `app_name` | `SPLUNK_APP_NAME` | `my-app` |
+| `security_context` + `indexing_pod` | `SPLUNK_FORWARD_SERVER` | `splunk-deployment-default.monitoring.prod.internal.example.com:9997` |
+| `security_context` + `indexing_pod` | `SPLUNK_DEPLOYMENT_URI` | `splunk-deployment-default.monitoring.prod.internal.example.com` |
+
+> **Note:** The VPC and security group on your EMR Serverless application must allow outbound connectivity to your Splunk deployment server (port 8089) and receiver (port 9997), just as your EMR on EC2 cluster nodes could reach them.
+
 ## What gets forwarded
 
 | Log path | Sourcetype |
