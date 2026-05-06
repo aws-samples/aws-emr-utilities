@@ -36,9 +36,9 @@ object OrderProcessor {
 
   def calculateDeliveryDates(ordersDF: DataFrame): DataFrame = {
     import org.apache.spark.sql.functions._
-    ordersDF
+    val deliveryDF = ordersDF
       .withColumn("delivery_date",
-        col("order_date") + expr("INTERVAL 2 DAYS") + expr("INTERVAL 8 HOURS")
+        to_date(col("order_date")) + expr("INTERVAL 2 DAYS") + expr("INTERVAL 8 HOURS")
       )
       .withColumn("delivery_date_string",
         date_format(col("delivery_date"), "yyyy-MM-dd")
@@ -51,7 +51,7 @@ object OrderProcessor {
   def generateSalesReport(ordersDF: DataFrame): DataFrame = {
     import org.apache.spark.sql.functions._
 
-    ordersDF
+    val reportDF = ordersDF
       .cube("customer_id", "order_date")
       .agg(
         sum("amount").as("total_sales"),

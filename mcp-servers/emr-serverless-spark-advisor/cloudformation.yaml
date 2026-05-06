@@ -1,0 +1,221 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  EMR Serverless Spark Config Advisor MCP Server.
+  Deploys a Lambda-backed MCP server that analyzes Spark event logs
+  via EMR Serverless and provides optimization recommendations.
+
+Parameters:
+  ArtifactBucket:
+    Type: String
+    Description: S3 bucket containing deployment artifacts (created by deploy-cfn.sh)
+  ArtifactPrefix:
+    Type: String
+    Default: spark-advisor-artifacts
+    Description: S3 prefix for deployment artifacts
+  EMRReleaseLabel:
+    Type: String
+    Default: emr-7.7.0
+    AllowedValues: [emr-7.5.0, emr-7.6.0, emr-7.7.0]
+    Description: EMR Serverless release version
+
+Resources:
+  # ── S3 Bucket for advisor output ──────────────────────────────────
+  AdvisorBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    Properties:
+      BucketName: !Sub ${AWS::StackName}-${AWS::AccountId}-${AWS::Region}
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+  # ── IAM Role: EMR Serverless execution ────────────────────────────
+  EMRServerlessRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub spark-advisor-emr-role-${AWS::StackName}
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: emr-serverless.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: S3Access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:ListBucket
+                  - s3:PutObject
+                Resource:
+                  - !Sub arn:aws:s3:::${AdvisorBucket}
+                  - !Sub arn:aws:s3:::${AdvisorBucket}/*
+                  - !Sub arn:aws:s3:::${ArtifactBucket}
+                  - !Sub arn:aws:s3:::${ArtifactBucket}/*
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:ListBucket
+                Resource: '*'
+                Condition:
+                  StringEquals:
+                    s3:ResourceAccount: !Ref AWS::AccountId
+        - PolicyName: CloudWatchLogs
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: '*'
+
+  # ── IAM Role: Lambda execution ────────────────────────────────────
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub spark-advisor-lambda-role-${AWS::StackName}
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: S3Access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:ListBucket
+                  - s3:DeleteObject
+                Resource:
+                  - !Sub arn:aws:s3:::${AdvisorBucket}
+                  - !Sub arn:aws:s3:::${AdvisorBucket}/*
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:ListBucket
+                Resource: '*'
+                Condition:
+                  StringEquals:
+                    s3:ResourceAccount: !Ref AWS::AccountId
+        - PolicyName: EMRServerless
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - emr-serverless:StartJobRun
+                  - emr-serverless:GetJobRun
+                  - emr-serverless:ListJobRuns
+                  - emr-serverless:CancelJobRun
+                  - emr-serverless:GetApplication
+                Resource:
+                  - !Sub arn:aws:emr-serverless:${AWS::Region}:${AWS::AccountId}:/applications/${EMRServerlessApp}
+                  - !Sub arn:aws:emr-serverless:${AWS::Region}:${AWS::AccountId}:/applications/${EMRServerlessApp}/*
+        - PolicyName: PassRole
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: iam:PassRole
+                Resource: !GetAtt EMRServerlessRole.Arn
+
+  # ── EMR Serverless Application ────────────────────────────────────
+  EMRServerlessApp:
+    Type: AWS::EMRServerless::Application
+    Properties:
+      Name: !Sub spark-advisor-${AWS::StackName}
+      ReleaseLabel: !Ref EMRReleaseLabel
+      Type: SPARK
+      AutoStartConfiguration:
+        Enabled: true
+      AutoStopConfiguration:
+        Enabled: true
+        IdleTimeoutMinutes: 15
+
+  # ── Lambda Layer ──────────────────────────────────────────────────
+  MCPLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: !Sub mcp-server-deps-${AWS::StackName}
+      Content:
+        S3Bucket: !Ref ArtifactBucket
+        S3Key: !Sub ${ArtifactPrefix}/mcp-layer.zip
+      CompatibleRuntimes:
+        - python3.12
+        - python3.13
+
+  # ── Lambda Function ───────────────────────────────────────────────
+  MCPFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub spark-advisor-mcp-${AWS::StackName}
+      Runtime: python3.12
+      Handler: lambda_handler.handler
+      Code:
+        S3Bucket: !Ref ArtifactBucket
+        S3Key: !Sub ${ArtifactPrefix}/mcp-function.zip
+      Role: !GetAtt LambdaRole.Arn
+      Layers:
+        - !Ref MCPLayer
+      Timeout: 900
+      MemorySize: 512
+      Environment:
+        Variables:
+          EMR_SERVERLESS_APP_ID: !Ref EMRServerlessApp
+          EMR_EXECUTION_ROLE: !GetAtt EMRServerlessRole.Arn
+          SCRIPT_S3_PATH: !Sub s3://${ArtifactBucket}/${ArtifactPrefix}/spark_extractor.py
+          ARCHIVES_S3_PATH: !Sub s3://${ArtifactBucket}/${ArtifactPrefix}/zstandard.zip
+          OUTPUT_S3_PATH: !Sub s3://${AdvisorBucket}/advisor-output
+
+  # ── Lambda Function URL ───────────────────────────────────────────
+  MCPFunctionUrl:
+    Type: AWS::Lambda::Url
+    Properties:
+      AuthType: AWS_IAM
+      TargetFunctionArn: !GetAtt MCPFunction.Arn
+
+Outputs:
+  FunctionUrl:
+    Description: MCP server endpoint (streamable-http)
+    Value: !Sub ${MCPFunctionUrl.FunctionUrl}mcp/
+  MCPConfigStdio:
+    Description: Kiro CLI MCP config (stdio mode — paste into ~/.kiro/settings/mcp.json)
+    Value: !Sub |
+      {
+        "spark-config-advisor": {
+          "command": "python3",
+          "args": ["spark_advisor_mcp.py"],
+          "env": {
+            "MCP_TRANSPORT": "stdio",
+            "EMR_SERVERLESS_APP_ID": "${EMRServerlessApp}",
+            "EMR_EXECUTION_ROLE": "${EMRServerlessRole.Arn}",
+            "SCRIPT_S3_PATH": "s3://${ArtifactBucket}/${ArtifactPrefix}/spark_extractor.py",
+            "ARCHIVES_S3_PATH": "s3://${ArtifactBucket}/${ArtifactPrefix}/zstandard.zip",
+            "OUTPUT_S3_PATH": "s3://${AdvisorBucket}/advisor-output"
+          }
+        }
+      }
+  AdvisorBucketName:
+    Description: S3 bucket for advisor output
+    Value: !Ref AdvisorBucket
+  EMRServerlessAppId:
+    Description: EMR Serverless application ID
+    Value: !Ref EMRServerlessApp
+  EMRExecutionRoleArn:
+    Description: EMR Serverless execution role ARN
+    Value: !GetAtt EMRServerlessRole.Arn

@@ -1,0 +1,11 @@
+application_id,application_name,input_gb,shuffle_ratio,worker_type,vcpu,memory_gb,max_executors,shuffle_partitions,auto_tuned,total_vcpu
+app_20260301_143022_001,data-processing-batch,20873.32,46.18,Large,16,108,191,4938,True,3056
+app_20260301_150134_002,data-processing-batch,20812.97,44.34,Large,16,108,172,4742,True,2752
+app_20260301_163245_003,data-processing-batch,20639.99,45.39,Large,16,108,203,4850,True,3248
+app_20260301_171156_004,data-processing-batch,20374.26,16.38,Large,16,108,225,1904,True,3600
+app_20260301_184507_005,data-processing-batch,19958.53,18.08,Large,16,108,186,2156,True,2976
+app_20260301_192318_006,data-processing-batch,19853.88,18.15,Large,16,108,202,2146,True,3232
+app_20260301_205629_007,data-processing-batch,7057.4,12.88,Large,16,108,59,468,True,944
+app_20260302_081234_008,etl-incremental-job,12.14,16601.48,Large,16,108,22,1008,True,352
+app_20260302_094521_009,analytics-aggregation-job,0.16,3199625.0,Large,16,108,64,2560,True,1024
+app_20260302_103847_010,etl-incremental-job,0.02,10081900.0,Large,16,108,22,1008,True,352

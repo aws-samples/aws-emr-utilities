@@ -1,0 +1,20 @@
+[project]
+name = "orioniq-spark-deployment-option-recommender"
+version = "0.1.0"
+description = "AI-powered EMR deployment advisor — analyzes real workloads, clusters, and costs to recommend optimal deployment options"
+requires-python = ">=3.13"
+dependencies = [
+    "anthropic>=0.40.0",
+    "beautifulsoup4>=4.13.0",
+    "boto3>=1.35.0",
+    "faiss-cpu>=1.12.0",
+    "mcp>=1.0.0",
+    "ollama>=0.5.2",
+    "pypdf2>=3.0.1",
+    "pyyaml>=6.0.2",
+    "requests>=2.31.0",
+    "sarif-om>=1.0.4",
+    "sentence-transformers>=5.1.0",
+    "strands-agents>=1.6.0",
+    "strands-agents-tools>=0.2.5",
+]

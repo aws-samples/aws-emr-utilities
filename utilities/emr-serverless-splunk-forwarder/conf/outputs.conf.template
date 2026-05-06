@@ -1,0 +1,5 @@
+[tcpout]
+defaultGroup = splunk-receivers
+
+[tcpout:splunk-receivers]
+server = {{FORWARD_SERVER}}

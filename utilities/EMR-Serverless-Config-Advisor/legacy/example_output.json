@@ -1,0 +1,106 @@
+[
+  {
+    "application_id": "app_20260301_143022_001",
+    "application_name": "data-processing-batch",
+    "metrics": {
+      "input_gb": 20873.32,
+      "input_gib": 19439.8,
+      "shuffle_read_gb": 4936.59,
+      "shuffle_write_gb": 4703.27,
+      "shuffle_total_gb": 9639.86,
+      "shuffle_ratio_percent": 46.18,
+      "duration_hours": 0.76,
+      "avg_memory_utilization_percent": 80.74,
+      "avg_cpu_utilization_percent": 21.63,
+      "idle_core_percentage": 50.0,
+      "total_memory_spilled_gb": 1328.5
+    },
+    "worker": {
+      "type": "Large",
+      "vcpu": 16,
+      "memory_gb": 108,
+      "max_executors": 191,
+      "min_executors": 95,
+      "total_vcpu_capacity": 3056,
+      "total_memory_capacity": 20628
+    },
+    "spark_configs": {
+      "spark.driver.cores": "8",
+      "spark.driver.memory": "54G",
+      "spark.executor.cores": "16",
+      "spark.executor.memory": "108g",
+      "spark.dynamicAllocation.enabled": "true",
+      "spark.sql.adaptive.enabled": "true",
+      "spark.sql.files.maxPartitionBytes": "512m",
+      "spark.emr-serverless.executor.disk": "500G",
+      "spark.emr-serverless.executor.disk.type": "shuffle_optimized",
+      "spark.network.timeout": "3600s",
+      "spark.shuffle.io.connectionTimeout": "1800s",
+      "spark.hadoop.fs.s3a.retry.limit": "15",
+      "spark.hadoop.fs.s3a.connection.ssl.enabled": "true",
+      "spark.sql.shuffle.partitions": "4938",
+      "spark.shuffle.compress": "true",
+      "spark.shuffle.spill.compress": "true",
+      "spark.dynamicAllocation.maxExecutors": "191",
+      "spark.dynamicAllocation.minExecutors": "95",
+      "spark.dynamicAllocation.initialExecutors": "95"
+    },
+    "shuffle_tuned": {
+      "partitions": 4938,
+      "target_partition_size_mib": 1024,
+      "auto_tuned": true
+    }
+  },
+  {
+    "application_id": "app_20260302_081234_008",
+    "application_name": "etl-incremental-job",
+    "metrics": {
+      "input_gb": 12.14,
+      "input_gib": 11.3,
+      "shuffle_read_gb": 1008.45,
+      "shuffle_write_gb": 1007.12,
+      "shuffle_total_gb": 2015.57,
+      "shuffle_ratio_percent": 16601.48,
+      "duration_hours": 0.18,
+      "avg_memory_utilization_percent": 45.2,
+      "avg_cpu_utilization_percent": 18.5,
+      "idle_core_percentage": 35.0,
+      "total_memory_spilled_gb": 0.0
+    },
+    "worker": {
+      "type": "Large",
+      "vcpu": 16,
+      "memory_gb": 108,
+      "max_executors": 22,
+      "min_executors": 11,
+      "total_vcpu_capacity": 352,
+      "total_memory_capacity": 2376
+    },
+    "spark_configs": {
+      "spark.driver.cores": "8",
+      "spark.driver.memory": "54G",
+      "spark.executor.cores": "16",
+      "spark.executor.memory": "108g",
+      "spark.dynamicAllocation.enabled": "true",
+      "spark.sql.adaptive.enabled": "true",
+      "spark.sql.files.maxPartitionBytes": "512m",
+      "spark.emr-serverless.executor.disk": "500G",
+      "spark.emr-serverless.executor.disk.type": "shuffle_optimized",
+      "spark.network.timeout": "3600s",
+      "spark.shuffle.io.connectionTimeout": "1800s",
+      "spark.hadoop.fs.s3a.retry.limit": "15",
+      "spark.hadoop.fs.s3a.connection.ssl.enabled": "true",
+      "spark.sql.shuffle.partitions": "1008",
+      "spark.shuffle.compress": "true",
+      "spark.shuffle.spill.compress": "true",
+      "spark.dynamicAllocation.maxExecutors": "22",
+      "spark.dynamicAllocation.minExecutors": "11",
+      "spark.dynamicAllocation.initialExecutors": "11"
+    },
+    "shuffle_tuned": {
+      "partitions": 1008,
+      "target_partition_size_mib": 1024,
+      "auto_tuned": true
+    }
+  }
+]
