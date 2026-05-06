@@ -1,0 +1,102 @@
+scoring:
+  base_scores:
+    emr_ec2: 50
+    emr_eks: 50
+    emr_serverless: 50
+
+  job_type_scoring:
+    batch:
+      emr_ec2: 20
+      emr_eks: 20
+      emr_serverless: 25
+    interactive:
+      emr_ec2: 15
+      emr_eks: 20
+      emr_serverless: 25
+    streaming:
+      emr_ec2: 20
+      emr_eks: 25
+      emr_serverless: 5
+
+  workload_size_scoring:
+    batch:
+      small:
+        emr_serverless: 25
+      medium:
+        emr_serverless: 25
+      large:
+        emr_serverless: 15
+
+  frequency_scoring:
+    low:
+      emr_ec2: 10
+      emr_eks: 15
+      emr_serverless: 30
+    medium:
+      emr_ec2: 15
+      emr_eks: 20
+      emr_serverless: 15
+    high:
+      emr_ec2: 25
+      emr_eks: 25
+      emr_serverless: 15
+
+  predictability_scoring:
+    high: # >0.7
+      emr_ec2: 20
+      emr_eks: 15
+      emr_serverless: 0
+    low: # <0.3
+      emr_ec2: 0
+      emr_eks: 10
+      emr_serverless: 20
+    medium: # 0.3-0.7
+      emr_ec2: 10
+      emr_eks: 15
+      emr_serverless: 10
+
+  feature_scoring:
+    spot_mentioned:
+      emr_ec2: 10
+      emr_eks: 25  # Superior spot management
+      emr_serverless: -20  # No spot support
+    
+    kubernetes_mentioned:  # When K8s is mentioned in workload description
+      has_experience:
+        emr_eks: 25
+      no_experience:
+        emr_eks: -20  # Warning penalty
+    
+    kubernetes_experience:  # Overall team K8s expertise penalty
+      no_experience:
+        emr_eks: -50  # Critical penalty
+
+  critical_overrides:
+    spot_with_k8s_experience:
+      ensure_eks_above_ec2: 15  # Minimum boost to ensure EKS > EC2
+
+  data_driven_adjustments:
+    high_idle_time: # >40%
+      emr_serverless: 20
+    
+    high_spot_suitability: # >0.6
+      emr_ec2: 10
+      emr_eks: 15
+
+  confidence_levels:
+    emr_ec2: 0.8
+    emr_eks_with_experience: 0.7
+    emr_eks_no_experience: 0.3
+    emr_serverless: 0.8
+
+  knowledge_validation_boost:
+    blogs_found: 0.05
+    pdfs_found: 0.10
+    max_confidence: 0.98
+
+  thresholds:
+    high_predictability: 0.7
+    low_predictability: 0.3
+    high_idle_time: 40.0
+    high_spot_suitability: 0.6
+    high_failure_rate: 0.05
