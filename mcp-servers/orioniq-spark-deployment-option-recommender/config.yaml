@@ -1,0 +1,149 @@
+# EMR Advisor Configuration File
+# This file contains all configurable parameters for the EMR Advisor application
+
+# AWS Configuration
+aws:
+  region: "us-east-1"
+  emr_cluster_arn: ""
+  emr_cluster_id: ""
+
+# Spark History Server MCP Configuration
+spark_history_mcp:
+  path: ""
+  startup_timeout: 120
+
+# LLM Model Configuration
+llm:
+  model_id: "anthropic.claude-3-5-sonnet-20241022-v2:0"
+  region: "us-west-2"
+  temperature: 0.1
+  max_tokens: 4000
+
+# File Paths
+paths:
+  output_directory: "output"
+  templates: "templates"
+
+# Application Settings
+app:
+  # Retry configuration
+  max_retries: 3
+  initial_retry_delay: 10
+
+  # Logging
+  log_level: "INFO"
+  mcp_log_level: "INFO"
+
+  # Default values for testing
+  default_application_id: ""
+
+  # File naming
+  timestamp_format: "%Y%m%d_%H%M%S"
+  findings_filename_pattern: "analysis_findings_{timestamp}.md"
+  report_filename_pattern: "EMR_Analysis_Report_{timestamp}.md"
+
+# MCP Server Configuration
+mcp_servers:
+  uv_command: "uv"
+  uvx_command: "uvx"
+
+  # Package versions
+  aws_dataprocessing_package: "awslabs.aws-dataprocessing-mcp-server@latest"
+  aws_pricing_package: "awslabs.aws-pricing-mcp-server@latest"
+
+  # Server settings
+  allow_write: true
+  bypass_tool_consent: true
+
+# Default Spark Configuration
+spark_defaults:
+  executors: 10
+  executor_cores: 4
+  executor_memory_gb: 16
+  instance_type: "m5.xlarge"
+  job_runtime_hours: 2.0
+  cluster_runtime_hours: 2.0
+  bootstrapping_minutes: 5.0
+  # Additional values for event log parsing
+  driver_cores: 5
+  driver_memory: "6g"
+
+# Text Processing Configuration
+text_processing:
+  chunk_size_large: 2000
+  chunk_size_medium: 1500
+  chunk_size_min: 100
+  context_window: 200
+  max_matches_per_source: 3
+
+# Semantic Search Configuration
+semantic_search:
+  model_name: "all-MiniLM-L6-v2"
+  similarity_threshold: 0.1
+  top_k_results: 5
+  top_k_results_small: 3
+
+# HTTP Configuration
+http:
+  timeout: 10
+  user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+
+# Job Classification Thresholds
+job_classification:
+  batch_job_threshold: 86400 # 24 hours in seconds
+  interactive_job_threshold: 3600 # 1 hour in seconds
+  interval_variance_threshold: 0.1 # 10%
+  high_frequency_threshold: 10 # jobs per day
+  medium_frequency_threshold: 3 # jobs per day
+
+# Instance Type Classifications
+instance_types:
+  cpu_intensive: ["c5", "c4", "c3"]
+  memory_intensive: ["r5", "r4", "r3", "x1"]
+  io_intensive: ["i3", "i2", "d2"]
+  classification_threshold: 0.6 # 60%
+
+# Performance Thresholds
+performance:
+  failure_rate_threshold: 0.05 # 5%
+  peak_hour_multiplier: 1.5
+  success_rate_multiplier: 1.2
+  predictability_cv_divisor: 2
+
+# Temporary Directory
+temp_directory: "/tmp"
+
+# Knowledge Sources Configuration
+knowledge_sources:
+  blogs:
+    - blog_summary: "Spark on YARN vs Spark to Kubernetes. When to use what"
+      url: "https://medium.com/@ahmed.missaoui.pro_79577/spark-on-yarn-vs-park-on-kubernetes-4d2e34d42518"
+    - blog_summary: "Useful features on Kubernetes(EMR-EKS) which are not in YARN(EMR-EC2)"
+      url: "https://aws.amazon.com/blogs/big-data/run-fault-tolerant-and-cost-optimized-spark-clusters-using-amazon-emr-on-eks-and-amazon-ec2-spot-instances"
+    - blog_summary: "Best practices for running Spark on EKS"
+      url: "https://aws.amazon.com/blogs/containers/best-practices-for-running-spark-on-amazon-eks"
+    - blog_summary: "Wix migrated over 5,000 daily Spark workloads from AWS EMR to EMR on EKS, cutting shared-cluster costs by 60%"
+      url: "https://www.wix.engineering/post/how-wix-slashed-spark-costs-by-60-and-migrated-5-000-daily-workflows-from-emr-to-emr-on-ekss"
+
+  pdfs:
+    - path: "curated_pdfs/Amazon BigData Deployment Models.pdf"
+      summary: "Detailed comparison between different EMR deployment options - EMR-EC2, EMR-Serverless and Glue"
+
+# EMR Serverless Pricing Configuration
+emr_serverless_pricing:
+  vcpu_per_hour: 0.052624 # US East 1 pricing
+  gb_per_hour: 0.0057785 # US East 1 pricing
+
+# Event Log Processing Configuration
+event_log_processing:
+  progress_interval: 10000 # Report progress every N lines
+
+# Workload Analysis Configuration
+workload_analysis:
+  spill_ratio_threshold: 0.1 # 10% spill ratio threshold
+  gc_ratio_threshold: 0.1 # 10% GC time threshold
+  failure_rate_threshold: 0.05 # 5% failure rate threshold
+  skew_factor_threshold: 3 # 3x duration difference for skew detection
+  shuffle_io_multiplier: 2 # Shuffle bytes vs I/O bytes multiplier
+  confidence_threshold: 0.3 # Minimum confidence for workload classification
+
