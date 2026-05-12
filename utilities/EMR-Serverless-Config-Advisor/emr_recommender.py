@@ -195,6 +195,42 @@ def _compute_exec_limits(input_gb: float, vcpu: int, partitions: int = 0,
             equiv = max(2, int(orig_total_cores * util_factor / vcpu))
         max_exec = max(max_exec, equiv)
 
+
+    # --- Concurrent stage pressure (burst parallelism) ---
+    # When many stages run simultaneously with barrier synchronization,
+    # the job needs enough cores to drain each batch quickly.
+    if stages and len(stages) > 10:
+        # Detect barrier pattern: single-task stages with high wall time but low task time
+        barriers = [s for s in stages if s.get("num_tasks", 0) == 1
+                    and s.get("duration_sec", 0) > 30
+                    and s.get("total_task_time_sec", 0) < 5]
+        if len(barriers) >= 2:
+            # Find the heaviest batch between barriers
+            barrier_ids = sorted(s["stage_id"] for s in barriers)
+            max_batch_task_time = 0
+            for i in range(len(barrier_ids)):
+                lo = barrier_ids[i-1] + 1 if i > 0 else 0
+                hi = barrier_ids[i]
+                batch = [s for s in stages if lo <= s.get("stage_id", 0) < hi]
+                batch_task_time = sum(s.get("total_task_time_sec", 0) for s in batch)
+                max_batch_task_time = max(max_batch_task_time, batch_task_time)
+            # Target: drain heaviest batch in 90s (cost) or 45s (perf)
+            target_batch_sec = 90 if mode == "cost" else 45
+            if max_batch_task_time > 0:
+                batch_cores = int(max_batch_task_time / target_batch_sec)
+                batch_exec = max(2, batch_cores // vcpu)
+                max_exec = max(max_exec, batch_exec)
+
+    # --- Starvation detection ---
+    # When CPU is saturated (>85%) and idle cores are minimal (<15%),
+    # the observed run was compute-starved. The duration is degraded,
+    # so we must scale beyond what work-based sizing suggests.
+    if cpu_pct > 85 and idle_pct < 15 and total_task_exec_hours > 0 and duration_hours > 0:
+        # The job is clearly bottlenecked on cores. Scale up.
+        starvation_factor = 2.0 if mode == "cost" else 4.0
+        starved_exec = max(2, int((total_task_exec_hours / duration_hours) * starvation_factor / vcpu))
+        max_exec = max(max_exec, starved_exec)
+
     min_exec = max(1, max_exec // 2)
 
     return max_exec, min_exec
@@ -202,6 +238,9 @@ def _compute_exec_limits(input_gb: float, vcpu: int, partitions: int = 0,
 
 def _calculate_executor_disk(shuffle_write_gb: float, disk_spill_gb: float,
                              memory_spill_gb: float, max_executors: int) -> str:
+    # If no disk spill and negligible shuffle, use default 20G (no attached disk needed)
+    if disk_spill_gb == 0 and memory_spill_gb == 0 and shuffle_write_gb < 1.0:
+        return ""
     total_shuffle_per_exec = shuffle_write_gb / max(max_executors, 1)
     total_spill_per_exec = (disk_spill_gb + memory_spill_gb) / max(max_executors, 1)
     estimated_gb = (total_shuffle_per_exec + total_spill_per_exec) * 1.5
@@ -363,6 +402,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             '_stages_raw': data.get('stage_summary', {}).get('stages', []),
             '_sql_executions_raw': data.get('sql_executions', []),
             '_executor_summary_raw': data.get('executor_summary', {}),
+            '_spark_config_raw': data.get('spark_config', {}),
         }
         flattened.append(flat)
     
@@ -433,8 +473,16 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             mem_per_core = worker_cfg["memory"] / worker_cfg["vcpu"]
             max_gb_per_part = mem_per_core * 3
             data_floor = max(2, int((s_in_gb + s_out_gb) / max_gb_per_part)) if max_gb_per_part > 0 else 200
-            # Apply: at least the data floor, at most the IO ceiling
-            partitions = max(data_floor, min(partitions, io_ceiling))
+            # Spill override: if spill is significant relative to shuffle/input,
+            # partitions are undersized — don't cap them down
+            total_data_gb = max(s_in_gb + s_out_gb, 1)
+            spill_ratio = spill_gb / total_data_gb
+            if spill_ratio > 0.5:  # spill > 50% of data volume
+                spill_floor = partitions  # preserve the auto-tuned value
+                partitions = max(data_floor, spill_floor)
+            else:
+                # Apply: at least the data floor, at most the IO ceiling
+                partitions = max(data_floor, min(partitions, io_ceiling))
             if partitions % 2 != 0:
                 partitions += 1
             return partitions
@@ -450,13 +498,13 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         max_exec_cost_init, min_exec_cost = _compute_exec_limits(
             i_in_gb, worker_cfg["vcpu"], 0, mem_pct, cpu_pct, idle_pct, spill_gb, mode="cost",
             orig_executors=orig_executors, orig_cores=orig_cores,
-            total_task_exec_hours=total_task_exec_hours, duration_hours=duration,
+            total_task_exec_hours=total_task_exec_hours, duration_hours=duration, stages=stages_raw,
         )
         sp_cost, target_mib_cost = auto_tune_custom(shuffle_bytes, max_exec_cost_init)
         max_exec_cost, min_exec_cost = _compute_exec_limits(
             i_in_gb, worker_cfg["vcpu"], sp_cost, mem_pct, cpu_pct, idle_pct, spill_gb, mode="cost",
             orig_executors=orig_executors, orig_cores=orig_cores,
-            total_task_exec_hours=total_task_exec_hours, duration_hours=duration,
+            total_task_exec_hours=total_task_exec_hours, duration_hours=duration, stages=stages_raw,
         )
         sp_cost = cap_partitions(sp_cost, max_exec_cost)
         executor_disk_cost = _calculate_executor_disk(s_out_gb, disk_spill_gb, spill_gb, max_exec_cost)
@@ -465,13 +513,13 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         max_exec_perf_init, min_exec_perf = _compute_exec_limits(
             i_in_gb, worker_cfg["vcpu"], 0, mem_pct, cpu_pct, idle_pct, spill_gb, mode="performance",
             orig_executors=orig_executors, orig_cores=orig_cores,
-            total_task_exec_hours=total_task_exec_hours, duration_hours=duration,
+            total_task_exec_hours=total_task_exec_hours, duration_hours=duration, stages=stages_raw,
         )
         sp_perf, target_mib_perf = auto_tune_custom(shuffle_bytes, max_exec_perf_init)
         max_exec_perf, min_exec_perf = _compute_exec_limits(
             i_in_gb, worker_cfg["vcpu"], sp_perf, mem_pct, cpu_pct, idle_pct, spill_gb, mode="performance",
             orig_executors=orig_executors, orig_cores=orig_cores,
-            total_task_exec_hours=total_task_exec_hours, duration_hours=duration,
+            total_task_exec_hours=total_task_exec_hours, duration_hours=duration, stages=stages_raw,
         )
         sp_perf = cap_partitions(sp_perf, max_exec_perf)
         executor_disk_perf = _calculate_executor_disk(s_out_gb, disk_spill_gb, spill_gb, max_exec_perf)
@@ -513,6 +561,47 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                 return None
 
         total_tasks = int(row.get('total_tasks', 0) or 0)
+        _spark_config_raw = row.get('_spark_config_raw', {})
+
+        def _driver_max_result_size(shuffle_gb, partitions, input_gb, driver_mem_gb):
+            """Scale driver maxResultSize as 25% of driver memory.
+            Only set when data volume suggests default 1G may be insufficient."""
+            total_data = shuffle_gb + input_gb
+            if total_data > 1000 or partitions > 200:
+                return f"{max(2, driver_mem_gb // 4)}g"
+            else:
+                return None  # default 1g is fine
+
+        def _should_disable_broadcast(stages, spark_config, total_shuffle_write_gb, driver_mem_gb):
+            """Detect if broadcast joins should be disabled.
+            Only triggers when a stage failed with maxResultSize, shows the
+            collect-to-driver pattern, AND projected total exceeds 50% of driver memory.
+            """
+            import re
+            if not stages:
+                return False
+            abjt = spark_config.get('spark.sql.autoBroadcastJoinThreshold', '')
+            if str(abjt) == '-1':
+                return False
+            for st in stages:
+                reason = st.get('failure_reason', '') or ''
+                if ('maxResultSize' in reason
+                    and st.get('shuffle_read_gb', 0) > 1.0
+                    and st.get('shuffle_write_gb', 0) == 0
+                    and st.get('input_gb', 0) == 0):
+                    match = re.search(r"(\d+) tasks \(([\d.]+) (GiB|MiB)", reason)
+                    if match:
+                        tasks_at_failure = int(match.group(1))
+                        size_gb = float(match.group(2))
+                        if match.group(3) == 'MiB':
+                            size_gb /= 1024
+                        total_tasks = st.get('num_tasks', tasks_at_failure)
+                        projected_gb = (size_gb / max(tasks_at_failure, 1)) * total_tasks
+                        if projected_gb > driver_mem_gb * 0.5:
+                            return True
+                    else:
+                        return True
+            return False
 
         def build_spark_cfg(max_exec, min_exec, sp, executor_disk, vcpu_override=None, mem_override=None):
             d_cores, d_mem = _driver_sizing(sp, max_exec, s_in_gb + s_out_gb)
@@ -527,8 +616,8 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                 "spark.dynamicAllocation.enabled": "true",
                 "spark.sql.adaptive.enabled": "true",
                 "spark.sql.files.maxPartitionBytes": _max_partition_bytes(i_in_gb),
-                "spark.emr-serverless.executor.disk": executor_disk,
-                "spark.emr-serverless.executor.disk.type": "shuffle_optimized",
+                **({"spark.emr-serverless.executor.disk": executor_disk,
+                "spark.emr-serverless.executor.disk.type": "shuffle_optimized"} if executor_disk else {}),
                 "spark.sql.shuffle.partitions": str(sp),
                 "spark.dynamicAllocation.maxExecutors": str(max_exec),
                 "spark.dynamicAllocation.minExecutors": str(min_exec),
@@ -536,6 +625,23 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             }
             if driver_disk:
                 cfg["spark.emr-serverless.driver.disk"] = driver_disk
+            max_result = _driver_max_result_size(s_in_gb + s_out_gb, sp, i_in_gb, d_mem)
+            if max_result:
+                cfg["spark.driver.maxResultSize"] = max_result
+            # Detect broadcast-induced maxResultSize failures:
+            # A stage that reads shuffle, writes nothing (collect to driver),
+            # and failed with maxResultSize indicates a broadcast join collecting
+            # too much data through the driver. Recommend disabling auto-broadcast.
+            if _should_disable_broadcast(stages_raw, _spark_config_raw, s_out_gb, d_mem):
+                cfg["spark.sql.autoBroadcastJoinThreshold"] = "-1"
+            elif (str(_spark_config_raw.get('spark.sql.autoBroadcastJoinThreshold', '')) == '-1'
+                  and any(st.get('shuffle_read_gb', 0) > 10
+                          and st.get('shuffle_write_gb', 0) == 0
+                          and st.get('input_gb', 0) == 0
+                          for st in stages_raw)):
+                # Source had broadcast disabled AND has large collect-pattern stages
+                # confirming the config was needed — preserve it
+                cfg["spark.sql.autoBroadcastJoinThreshold"] = "-1"
             cfg.update(_get_timeout_configs(i_in_gb, duration))
             cfg.update(_get_s3_retry_configs(i_in_gb, i_out_gb))
             cfg.update(_get_iceberg_configs())
