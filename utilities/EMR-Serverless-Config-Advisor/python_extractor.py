@@ -127,6 +127,7 @@ CONFIG_KEYS = [
     "spark.resourceManager.cleanupExpiredHost",
     "spark.scheduler.mode",
     "spark.shuffle.service.enabled",
+    "spark.sql.autoBroadcastJoinThreshold",
     "spark.sql.adaptive.advisoryPartitionSizeInBytes",
     "spark.sql.adaptive.coalescePartitions.enabled",
     "spark.sql.adaptive.coalescePartitions.minPartitionSize",
