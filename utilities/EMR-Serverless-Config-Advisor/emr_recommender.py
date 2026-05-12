@@ -109,13 +109,37 @@ def _select_worker_type(input_gb: float, shuffle_ratio: float,
         "Large":  {"vcpu": 16, "min_mem": 64, "max_mem": 108, "mem_step": 8},
     }
 
-    # Select worker size based on data volume and spill (workload properties)
-    if input_gb > 2048 or (spill_gb > 100):
+    # Select worker size based on actual memory need per executor
+    # Calculate what the job actually uses per executor
+    actual_mem_per_executor = 0
+    if orig_mem_mb > 0 and mem_pct > 0:
+        actual_mem_per_executor = orig_mem_mb / 1024 * mem_pct / 100
+    elif max_peak_mem_gb > 0 and orig_cores > 0:
+        # Estimate from peak memory scaled by utilization
+        actual_mem_per_executor = max_peak_mem_gb * (mem_pct / 100) if mem_pct > 0 else max_peak_mem_gb
+
+    # Memory-based selection: pick smallest worker that fits with 30% headroom
+    mem_need = actual_mem_per_executor * 1.3
+    if mem_need > 54:
         size = "Large"
-    elif input_gb > 500 or (spill_gb > 10) or shuffle_ratio > 50:
-        size = "Large"
-    else:
+    elif mem_need > 27:
+        size = "Medium"
+    elif shuffle_ratio < 20:
+        # IO-heavy, low shuffle → Small (more S3 parallelism)
         size = "Small"
+    else:
+        # Default Medium for balanced/shuffle workloads
+        size = "Medium"
+
+    # Check if spill is relevant for the chosen size
+    # Source spill may not recur if target has more memory per executor
+    worker_max_mem = {"Small": 27, "Medium": 54, "Large": 108}
+    if spill_gb > 10 and actual_mem_per_executor > worker_max_mem.get(size, 27) * 0.8:
+        # Spill would likely recur on this size — bump up
+        if size == "Small":
+            size = "Medium"
+        elif size == "Medium":
+            size = "Large"
 
     r = WORKER_RANGES[size]
 
@@ -148,9 +172,7 @@ def _compute_exec_limits(input_gb: float, vcpu: int, partitions: int = 0,
                         duration_hours: float = 0,
                         stages: list = None) -> Tuple[int, int]:
     req_input = max(1, int(input_gb / 100))
-    part_divisor = 4 if mode == "cost" else 3
-    req_part = max(1, int((partitions / vcpu) / part_divisor)) if partitions > 0 else 0
-    base_req = max(req_input, req_part)
+    base_req = req_input
 
     # Pressure factor based on spill (stable workload property)
     spill_ratio = (spill_gb / max(input_gb, 1)) * 100
@@ -166,14 +188,15 @@ def _compute_exec_limits(input_gb: float, vcpu: int, partitions: int = 0,
     # Uses actual observed task execution time to determine how many cores
     # are needed, independent of the original cluster size.
     if total_task_exec_hours > 0 and duration_hours > 0:
+        # Effective cores = actual parallelism used by the job
+        effective_cores = total_task_exec_hours / duration_hours
         if mode == "cost":
-            # Allow 3x original duration — trade time for fewer executors
-            target_hours = duration_hours * 3
+            # Match source throughput with 1.5x headroom for scheduling overhead
+            cores_needed = effective_cores * 1.2
         else:
-            # Match original duration
-            target_hours = duration_hours
+            # Performance: 2x headroom for faster completion
+            cores_needed = effective_cores * 2.0
 
-        cores_needed = total_task_exec_hours / target_hours
         work_exec = max(2, int(cores_needed / vcpu))
 
         # Efficiency discount: when idle% is very high, the original run was
@@ -186,7 +209,7 @@ def _compute_exec_limits(input_gb: float, vcpu: int, partitions: int = 0,
         max_exec = max(max_exec, work_exec)
 
     # --- Fallback: original-run floor (only when task data is missing) ---
-    elif orig_executors > 0 and orig_cores > 0:
+    if total_task_exec_hours == 0 and orig_executors > 0 and orig_cores > 0:
         orig_total_cores = orig_executors * orig_cores
         if mode == "performance":
             equiv = max(2, int(orig_total_cores * 1.6 / vcpu))
@@ -222,14 +245,10 @@ def _compute_exec_limits(input_gb: float, vcpu: int, partitions: int = 0,
                 max_exec = max(max_exec, batch_exec)
 
     # --- Starvation detection ---
-    # When CPU is saturated (>85%) and idle cores are minimal (<15%),
-    # the observed run was compute-starved. The duration is degraded,
-    # so we must scale beyond what work-based sizing suggests.
-    if cpu_pct > 85 and idle_pct < 15 and total_task_exec_hours > 0 and duration_hours > 0:
-        # The job is clearly bottlenecked on cores. Scale up.
-        starvation_factor = 2.0 if mode == "cost" else 4.0
-        starved_exec = max(2, int((total_task_exec_hours / duration_hours) * starvation_factor / vcpu))
-        max_exec = max(max_exec, starved_exec)
+    # Only applies when work-based sizing is NOT the primary signal.
+    # The work-based formula (effective_cores * 1.5) already accounts for
+    # starvation by matching the observed throughput with headroom.
+    # This fallback only fires when task data is missing.
 
     min_exec = max(1, max_exec // 2)
 
@@ -395,6 +414,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             'total_tasks': data.get('task_summary', {}).get('total_tasks', 0),
             'max_peak_memory_gb': util_data.get('max_peak_memory_gb', 0),
             'orig_executor_cores': int(data.get('spark_config', {}).get('spark.executor.cores', 0) or 0),
+            'orig_executor_mem_gb': float(''.join(c for c in str(data.get('spark_config', {}).get('spark.executor.memory', '0g')).replace('G','g').replace('m','') if c.isdigit() or c == '.') or 0),
             'orig_total_executors': int(util_data.get('total_executors', 0) or 0),
             'total_task_execution_hours': util_data.get('total_task_execution_hours', 0),
             'max_stage_shuffle_write_gb': data.get('shuffle_data_summary', {}).get('max_stage_shuffle_write_gb', 0),
@@ -440,6 +460,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         max_stage_tasks = int(row.get('max_stage_tasks', 0) or 0)
         max_peak_mem_gb = float(row.get('max_peak_memory_gb', 0) or 0)
         orig_cores = int(row.get('orig_executor_cores', 0) or 0)
+        orig_executor_mem_gb = float(row.get('orig_executor_mem_gb', 0) or 0)
         orig_executors = int(row.get('orig_total_executors', 0) or 0)
         total_task_exec_hours = float(row.get('total_task_execution_hours', 0) or 0)
         max_stage_shuf_write = float(row.get('max_stage_shuffle_write_gb', 0) or 0)
@@ -447,7 +468,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         
         sh_ratio = _calculate_shuffle_ratio(i_in_gb, s_in_gb, s_out_gb)
         worker_type, worker_cfg = _select_worker_type(i_in_gb, sh_ratio, mem_pct, spill_gb, cpu_pct,
-                                                      max_peak_mem_gb=max_peak_mem_gb, orig_cores=orig_cores)
+                                                      max_peak_mem_gb=max_peak_mem_gb, orig_cores=orig_cores, orig_mem_mb=int(orig_executor_mem_gb * 1024))
         
         shuffle_data_gb = max(s_in_gb, s_out_gb)
         shuffle_bytes = shuffle_data_gb * 1024 * 1024 * 1024
@@ -523,7 +544,17 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             total_task_exec_hours=total_task_exec_hours, duration_hours=duration, stages=stages_raw,
         )
         sp_cost = cap_partitions(sp_cost, max_exec_cost)
-        executor_disk_cost = _calculate_executor_disk(s_out_gb, disk_spill_gb, spill_gb, max_exec_cost)
+        # Calculate actual memory used per executor on source
+        actual_mem_per_executor = 0
+        if orig_executor_mem_gb > 0 and mem_pct > 0:
+            actual_mem_per_executor = orig_executor_mem_gb * mem_pct / 100
+        # Ignore EC2 spill for disk sizing when target has more memory
+        effective_disk_spill = disk_spill_gb
+        effective_mem_spill = spill_gb
+        if actual_mem_per_executor > 0 and actual_mem_per_executor < worker_cfg["memory"] * 0.8:
+            effective_disk_spill = 0
+            effective_mem_spill = 0
+        executor_disk_cost = _calculate_executor_disk(s_out_gb, effective_disk_spill, effective_mem_spill, max_exec_cost)
         
         # Performance-optimized
         max_exec_perf_init, min_exec_perf = _compute_exec_limits(
@@ -538,7 +569,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             total_task_exec_hours=total_task_exec_hours, duration_hours=duration, stages=stages_raw,
         )
         sp_perf = cap_partitions(sp_perf, max_exec_perf)
-        executor_disk_perf = _calculate_executor_disk(s_out_gb, disk_spill_gb, spill_gb, max_exec_perf)
+        executor_disk_perf = _calculate_executor_disk(s_out_gb, effective_disk_spill, effective_mem_spill, max_exec_perf)
         
         # Build base metrics
         base_metrics = {
@@ -653,6 +684,12 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             elif _spark_config_raw.get('spark.sql.autoBroadcastJoinThreshold'):
                 # Source had autoBroadcastJoinThreshold explicitly set - preserve it
                 cfg["spark.sql.autoBroadcastJoinThreshold"] = str(_spark_config_raw['spark.sql.autoBroadcastJoinThreshold'])
+            # Preserve advisoryPartitionSizeInBytes from source if set
+            adv = _spark_config_raw.get('spark.sql.adaptive.advisoryPartitionSizeInBytes')
+            if adv:
+                cfg['spark.sql.adaptive.advisoryPartitionSizeInBytes'] = str(adv)
+                # When advisory is set, remove explicit partitions — let AQE decide
+                cfg.pop('spark.sql.shuffle.partitions', None)
             cfg.update(_get_timeout_configs(i_in_gb, duration))
             cfg.update(_get_s3_retry_configs(i_in_gb, i_out_gb))
             cfg.update(_get_iceberg_configs())
