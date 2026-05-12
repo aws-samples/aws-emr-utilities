@@ -478,8 +478,10 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             total_data_gb = max(s_in_gb + s_out_gb, 1)
             spill_ratio = spill_gb / total_data_gb
             if spill_ratio > 0.5:  # spill > 50% of data volume
-                spill_floor = partitions  # preserve the auto-tuned value
-                partitions = max(data_floor, spill_floor)
+                # Preserve higher partitions but cap at total vCPU capacity
+                # (1 partition per core = max useful parallelism)
+                spill_ceiling = max(io_ceiling, max_executors * worker_cfg["vcpu"])
+                partitions = max(data_floor, min(partitions, spill_ceiling))
             else:
                 # Apply: at least the data floor, at most the IO ceiling
                 partitions = max(data_floor, min(partitions, io_ceiling))
