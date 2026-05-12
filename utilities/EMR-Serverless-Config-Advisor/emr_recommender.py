@@ -109,13 +109,35 @@ def _select_worker_type(input_gb: float, shuffle_ratio: float,
         "Large":  {"vcpu": 16, "min_mem": 64, "max_mem": 108, "mem_step": 8},
     }
 
-    # Select worker size based on data volume and spill (workload properties)
-    if input_gb > 2048 or (spill_gb > 100):
+    # Select worker size based on actual memory need per executor
+    # Source spill may not apply to target (Serverless has more memory)
+    # Only use spill to upsize if it would still occur on the target
+    actual_mem_per_executor = 0
+    if orig_mem_mb > 0 and mem_pct > 0:
+        actual_mem_per_executor = orig_mem_mb / 1024 * mem_pct / 100
+
+    # Check if spill is relevant: would it still occur on Small (27G)?
+    effective_spill = spill_gb
+    if actual_mem_per_executor > 0 and actual_mem_per_executor < 27:
+        # Source executor used less than 27G — Small can handle it, spill won't recur
+        effective_spill = 0
+
+    if input_gb > 2048 or effective_spill > 100:
         size = "Large"
-    elif input_gb > 500 or (spill_gb > 10) or shuffle_ratio > 50:
-        size = "Large"
+    elif input_gb > 500 or effective_spill > 10:
+        size = "Medium"
     else:
         size = "Small"
+
+    # Post-selection: if the job needs high vCPU (from source), bump up
+    # to keep executor count under 200 (avoid excessive shuffle connections)
+    if size == "Small" and orig_cores > 0:
+        orig_total_vcpu = orig_cores * max(1, int((orig_mem_mb / 1024) / 30 * 50)) if orig_mem_mb > 0 else 0
+        # Simpler: if source had 800+ vCPU, Small would need 200+ executors
+        if orig_total_vcpu > 800:
+            size = "Large"
+        elif orig_total_vcpu > 400:
+            size = "Medium"
 
     r = WORKER_RANGES[size]
 
@@ -395,6 +417,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             'total_tasks': data.get('task_summary', {}).get('total_tasks', 0),
             'max_peak_memory_gb': util_data.get('max_peak_memory_gb', 0),
             'orig_executor_cores': int(data.get('spark_config', {}).get('spark.executor.cores', 0) or 0),
+            'orig_executor_mem_gb': float(''.join(c for c in str(data.get('spark_config', {}).get('spark.executor.memory', '0g')).replace('G','g').replace('m','') if c.isdigit() or c == '.') or 0),
             'orig_total_executors': int(util_data.get('total_executors', 0) or 0),
             'total_task_execution_hours': util_data.get('total_task_execution_hours', 0),
             'max_stage_shuffle_write_gb': data.get('shuffle_data_summary', {}).get('max_stage_shuffle_write_gb', 0),
@@ -440,6 +463,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         max_stage_tasks = int(row.get('max_stage_tasks', 0) or 0)
         max_peak_mem_gb = float(row.get('max_peak_memory_gb', 0) or 0)
         orig_cores = int(row.get('orig_executor_cores', 0) or 0)
+        orig_executor_mem_gb = float(row.get('orig_executor_mem_gb', 0) or 0)
         orig_executors = int(row.get('orig_total_executors', 0) or 0)
         total_task_exec_hours = float(row.get('total_task_execution_hours', 0) or 0)
         max_stage_shuf_write = float(row.get('max_stage_shuffle_write_gb', 0) or 0)
@@ -447,7 +471,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         
         sh_ratio = _calculate_shuffle_ratio(i_in_gb, s_in_gb, s_out_gb)
         worker_type, worker_cfg = _select_worker_type(i_in_gb, sh_ratio, mem_pct, spill_gb, cpu_pct,
-                                                      max_peak_mem_gb=max_peak_mem_gb, orig_cores=orig_cores)
+                                                      max_peak_mem_gb=max_peak_mem_gb, orig_cores=orig_cores, orig_mem_mb=int(orig_executor_mem_gb * 1024))
         
         shuffle_data_gb = max(s_in_gb, s_out_gb)
         shuffle_bytes = shuffle_data_gb * 1024 * 1024 * 1024
