@@ -455,7 +455,14 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         
         # Custom partition calculation
         def auto_tune_custom(shuffle_bytes, max_executors):
-            target_mib = target_partition_size_mib
+            # Adjust target partition size based on memory utilization
+            # High memory pressure -> smaller partitions to reduce per-task memory
+            if mem_pct > 90:
+                target_mib = min(target_partition_size_mib, 128)
+            elif mem_pct > 85:
+                target_mib = min(target_partition_size_mib, 256)
+            else:
+                target_mib = target_partition_size_mib
             if shuffle_bytes > 0:
                 partitions = max(2, int((shuffle_bytes / (target_mib * 1024 * 1024)) + 0.5))
             else:
@@ -479,9 +486,16 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             spill_ratio = spill_gb / total_data_gb
             if spill_ratio > 0.5:  # spill > 50% of data volume
                 # Preserve higher partitions but cap at total vCPU capacity
-                # (1 partition per core = max useful parallelism)
                 spill_ceiling = max(io_ceiling, max_executors * worker_cfg["vcpu"])
                 partitions = max(data_floor, min(partitions, spill_ceiling))
+            elif mem_pct > 85:  # high memory pressure
+                # Allow more partitions to reduce per-task memory, cap at total vCPU
+                mem_ceiling = max(io_ceiling, max_executors * worker_cfg["vcpu"])
+                partitions = max(data_floor, min(partitions, mem_ceiling))
+            elif mem_pct < 70 and idle_pct > 50:  # over-provisioned, low memory pressure
+                # Fewer partitions reduces scheduling overhead, cap at half total vCPU
+                low_mem_ceiling = max(io_ceiling, max_executors * worker_cfg["vcpu"] // 2)
+                partitions = max(data_floor, min(partitions, low_mem_ceiling))
             else:
                 # Apply: at least the data floor, at most the IO ceiling
                 partitions = max(data_floor, min(partitions, io_ceiling))
@@ -636,14 +650,9 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             # too much data through the driver. Recommend disabling auto-broadcast.
             if _should_disable_broadcast(stages_raw, _spark_config_raw, s_out_gb, d_mem):
                 cfg["spark.sql.autoBroadcastJoinThreshold"] = "-1"
-            elif (str(_spark_config_raw.get('spark.sql.autoBroadcastJoinThreshold', '')) == '-1'
-                  and any(st.get('shuffle_read_gb', 0) > 10
-                          and st.get('shuffle_write_gb', 0) == 0
-                          and st.get('input_gb', 0) == 0
-                          for st in stages_raw)):
-                # Source had broadcast disabled AND has large collect-pattern stages
-                # confirming the config was needed — preserve it
-                cfg["spark.sql.autoBroadcastJoinThreshold"] = "-1"
+            elif _spark_config_raw.get('spark.sql.autoBroadcastJoinThreshold'):
+                # Source had autoBroadcastJoinThreshold explicitly set - preserve it
+                cfg["spark.sql.autoBroadcastJoinThreshold"] = str(_spark_config_raw['spark.sql.autoBroadcastJoinThreshold'])
             cfg.update(_get_timeout_configs(i_in_gb, duration))
             cfg.update(_get_s3_retry_configs(i_in_gb, i_out_gb))
             cfg.update(_get_iceberg_configs())
