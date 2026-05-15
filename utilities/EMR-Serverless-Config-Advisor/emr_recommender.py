@@ -210,14 +210,14 @@ def _compute_exec_limits(input_gb: float, vcpu: int, partitions: int = 0,
     # Uses actual observed task execution time to determine how many cores
     # are needed, independent of the original cluster size.
     if total_task_exec_hours > 0 and duration_hours > 0:
+        # Effective cores = actual parallelism used by the job
+        effective_cores = total_task_exec_hours / duration_hours
         if mode == "cost":
-            # Allow 3x original duration — trade time for fewer executors
-            target_hours = duration_hours * 3
+            # Match source throughput with 1.2x scheduling headroom
+            cores_needed = effective_cores * 1.2
         else:
-            # Match original duration
-            target_hours = duration_hours
-
-        cores_needed = total_task_exec_hours / target_hours
+            # Performance: 1.8x for faster completion
+            cores_needed = effective_cores * 1.8
         work_exec = max(2, int(cores_needed / vcpu))
 
         # Efficiency discount: when idle% is very high, the original run was
@@ -228,6 +228,12 @@ def _compute_exec_limits(input_gb: float, vcpu: int, partitions: int = 0,
             work_exec = max(2, int(work_exec * efficiency))
 
         max_exec = max(max_exec, work_exec)
+
+    # --- Starvation floor (for compute-starved jobs) ---
+    if cpu_pct > 85 and idle_pct < 15 and total_task_exec_hours > 0 and duration_hours > 0:
+        starved_cores = (total_task_exec_hours / duration_hours) * 1.5
+        starved_exec = max(2, int(starved_cores / vcpu))
+        max_exec = max(max_exec, starved_exec)
 
     # --- Fallback: original-run floor (only when task data is missing) ---
     elif orig_executors > 0 and orig_cores > 0:
@@ -581,7 +587,11 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             total_task_exec_hours=total_task_exec_hours, duration_hours=duration, stages=stages_raw,
         )
         sp_cost = cap_partitions(sp_cost, max_exec_cost)
-        executor_disk_cost = _calculate_executor_disk(s_out_gb, disk_spill_gb, spill_gb, max_exec_cost)
+        # Ignore EC2 spill for disk when target executor has more memory
+        _actual_mem = orig_executor_mem_gb * mem_pct / 100 if orig_executor_mem_gb > 0 and mem_pct > 0 else 999
+        _eff_disk_spill = 0 if _actual_mem < worker_cfg["memory"] * 0.8 else disk_spill_gb
+        _eff_mem_spill = 0 if _actual_mem < worker_cfg["memory"] * 0.8 else spill_gb
+        executor_disk_cost = _calculate_executor_disk(s_out_gb, _eff_disk_spill, _eff_mem_spill, max_exec_cost)
         
         # Performance-optimized
         max_exec_perf_init, min_exec_perf = _compute_exec_limits(
@@ -596,7 +606,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             total_task_exec_hours=total_task_exec_hours, duration_hours=duration, stages=stages_raw,
         )
         sp_perf = cap_partitions(sp_perf, max_exec_perf)
-        executor_disk_perf = _calculate_executor_disk(s_out_gb, disk_spill_gb, spill_gb, max_exec_perf)
+        executor_disk_perf = _calculate_executor_disk(s_out_gb, _eff_disk_spill, _eff_mem_spill, max_exec_perf)
         
         # Build base metrics
         base_metrics = {
@@ -711,6 +721,12 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             elif _spark_config_raw.get('spark.sql.autoBroadcastJoinThreshold'):
                 # Source had autoBroadcastJoinThreshold explicitly set - preserve it
                 cfg["spark.sql.autoBroadcastJoinThreshold"] = str(_spark_config_raw['spark.sql.autoBroadcastJoinThreshold'])
+            # Preserve advisoryPartitionSizeInBytes from source
+            adv = _spark_config_raw.get('spark.sql.adaptive.advisoryPartitionSizeInBytes')
+            if adv:
+                cfg['spark.sql.adaptive.advisoryPartitionSizeInBytes'] = str(adv)
+                # When advisory is set, let AQE decide partitions dynamically
+                cfg.pop('spark.sql.shuffle.partitions', None)
             cfg.update(_get_timeout_configs(i_in_gb, duration))
             cfg.update(_get_s3_retry_configs(i_in_gb, i_out_gb))
             cfg.update(_get_iceberg_configs())
