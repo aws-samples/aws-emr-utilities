@@ -98,6 +98,23 @@ def _calculate_shuffle_ratio(input_gb, read_gb, write_gb) -> float:
     return round((read_gb + write_gb) / input_gb * 100.0, 2)
 
 
+def _parse_mem_to_mb(mem_str: str) -> int:
+    """Parse memory string like '20G' or '512m' to MB."""
+    if not mem_str:
+        return 0
+    mem_str = str(mem_str).strip().lower()
+    try:
+        if mem_str.endswith('g'):
+            return int(float(mem_str[:-1]) * 1024)
+        elif mem_str.endswith('m'):
+            return int(float(mem_str[:-1]))
+        elif mem_str.endswith('t'):
+            return int(float(mem_str[:-1]) * 1024 * 1024)
+        return int(mem_str)
+    except (ValueError, TypeError):
+        return 0
+
+
 def _select_worker_type(input_gb: float, shuffle_ratio: float,
                         mem_pct: float = 60.0, spill_gb: float = 0.0,
                         cpu_pct: float = 50.0, orig_mem_mb: int = 0,
@@ -145,6 +162,11 @@ def _select_worker_type(input_gb: float, shuffle_ratio: float,
     if max_peak_mem_gb > 0 and orig_cores > 0:
         peak_per_core = max_peak_mem_gb / orig_cores
         mem_needed = int(peak_per_core * 1.5 * r["vcpu"])
+        mem = max(r["min_mem"], min(r["max_mem"], mem_needed))
+    elif orig_mem_mb > 0 and orig_cores > 0:
+        # Scale original memory per core to new worker size, with 30% headroom for OOM safety
+        orig_mem_per_core = orig_mem_mb / 1024 / orig_cores
+        mem_needed = int(orig_mem_per_core * 1.3 * r["vcpu"])
         mem = max(r["min_mem"], min(r["max_mem"], mem_needed))
     elif spill_gb > 0:
         mem = r["max_mem"]
@@ -254,6 +276,18 @@ def _compute_exec_limits(input_gb: float, vcpu: int, partitions: int = 0,
         max_exec = max(max_exec, starved_exec)
 
     min_exec = max(1, max_exec // 2)
+
+    # Cost mode guard: don't recommend more total vCPU-hours than original
+    if mode == "cost" and orig_executors > 0 and orig_cores > 0 and duration_hours > 0:
+        orig_vcpu_hours = orig_executors * orig_cores * duration_hours
+        # Estimate new vCPU-hours: more executors with larger cores running ~2x longer
+        est_duration = total_task_exec_hours / (max_exec * vcpu) if max_exec * vcpu > 0 else duration_hours
+        est_vcpu_hours = max_exec * vcpu * est_duration
+        if est_vcpu_hours > orig_vcpu_hours * 1.1:
+            # Scale down executors to match original vCPU budget
+            budget_exec = max(2, int(orig_vcpu_hours / (vcpu * est_duration)))
+            max_exec = min(max_exec, budget_exec)
+            min_exec = max(1, max_exec // 2)
 
     return max_exec, min_exec
 
@@ -680,6 +714,10 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             cfg.update(_get_timeout_configs(i_in_gb, duration))
             cfg.update(_get_s3_retry_configs(i_in_gb, i_out_gb))
             cfg.update(_get_iceberg_configs())
+            # Only use shuffle_optimized disk when there's spill or heavy shuffle per executor
+            shuffle_per_exec = s_out_gb / max(max_exec, 1)
+            if disk_spill_gb > 0 or spill_gb > 0 or shuffle_per_exec > 50:
+                cfg["spark.emr-serverless.executor.disk.type"] = "shuffle_optimized"
             if sh_ratio > 30:
                 cfg.update({"spark.shuffle.compress": "true", "spark.shuffle.spill.compress": "true"})
             # Serverless storage: only when explicitly enabled and disk pressure is safe
