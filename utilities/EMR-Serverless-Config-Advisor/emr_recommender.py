@@ -128,82 +128,27 @@ def _select_worker_type(input_gb: float, shuffle_ratio: float,
         "Large":  {"vcpu": 16, "min_mem": 64, "max_mem": 108, "mem_step": 8},
     }
 
-    # Select worker size based on actual memory need per executor
-    # Source spill may not apply to target (Serverless has more memory)
-    # Only use spill to upsize if it would still occur on the target
-    actual_mem_per_executor = 0
-    if orig_mem_mb > 0 and mem_pct > 0:
-        actual_mem_per_executor = orig_mem_mb / 1024 * mem_pct / 100
-
-    # Check if spill is relevant: would it still occur on Small (27G)?
-    effective_spill = spill_gb
-    if actual_mem_per_executor > 0 and actual_mem_per_executor < 27:
-        # Source executor used less than 27G — Small can handle it, spill won't recur
-        effective_spill = 0
-
-    if effective_spill > 100:
-        size = "Large"
-    elif effective_spill > 10:
-        size = "Medium"
-    else:
-        size = "Small"
-
-    # Post-selection: if the job needs high vCPU (from source), bump up
-    # to keep executor count under 200 (avoid excessive shuffle connections)
-    if size == "Small" and orig_cores > 0:
-        orig_total_vcpu = orig_cores * max(1, int((orig_mem_mb / 1024) / 30 * 50)) if orig_mem_mb > 0 else 0
-        # Simpler: if source had 800+ vCPU, Small would need 200+ executors
-        if orig_total_vcpu > 800:
-            size = "Large"
-        elif orig_total_vcpu > 400:
-            size = "Medium"
-
-    # Worker downsizing: smaller workers with more executors give better shuffle/IO throughput
-    # Guard: don't downsize if per-task shuffle writes are heavy AND memory is pressured
+    # Worker selection for EC2→Serverless migration:
+    # Medium (8c/54G) handles all shuffle workloads — 6.75G/core is sufficient.
+    # Small (4c/27G) for IO-bound jobs with minimal shuffle — more executors reading in parallel at lower cost.
     if is_ec2:
-        # EC2 source: use shuffle_write_per_task + memory pressure as guard
-        # High shuffle write per task with memory pressure → tasks need large memory buffers
-        memory_pressured = mem_pct > 50 or peak_mem_pct > 80
-        downsizing_blocked = max_shuffle_write_per_task_gb > 0.4 and memory_pressured
+        if max_shuffle_write_per_task_gb < 0.05 and input_gb > 500:
+            size = "Small"  # IO-bound: more small executors for parallel reads
+        else:
+            size = "Medium"  # Default: handles all shuffle patterns
     else:
-        # Serverless source: direct memory signal is reliable
-        downsizing_blocked = spill_gb > 0 and mem_pct > 90
-
-    if not downsizing_blocked:
-        actual_mem_per_executor = 0
-        if orig_mem_mb > 0 and mem_pct > 0:
-            actual_mem_per_executor = orig_mem_mb / 1024 * mem_pct / 100
-        if actual_mem_per_executor > 0 and actual_mem_per_executor <= 27:
+        if spill_gb > 100:
+            size = "Large"
+        elif spill_gb > 10 or mem_pct > 90:
+            size = "Medium"
+        else:
             size = "Small"
-        elif actual_mem_per_executor > 0 and actual_mem_per_executor <= 54:
-            size = "Medium"
-    else:
-        # Blocked: job has heavy per-task shuffle + memory pressure — needs at least Medium
-        if size == "Small":
-            size = "Medium"
 
     r = WORKER_RANGES[size]
 
-    # Memory sizing: peak memory per core + 50% headroom
-    if max_peak_mem_gb > 0 and orig_cores > 0:
-        peak_per_core = max_peak_mem_gb / orig_cores
-        mem_needed = int(peak_per_core * 1.5 * r["vcpu"])
-        mem = max(r["min_mem"], min(r["max_mem"], mem_needed))
-    elif spill_gb > 0:
-        mem = r["max_mem"]
-    else:
-        mem = r["min_mem"]
-
-    # Minimum safe memory: 20G for Small (Serverless overhead ~3-5G)
-    if size == "Small":
-        mem = max(20, mem)
-
-    # Round UP to valid EMR Serverless memory increment (preserve headroom)
-    step = r["mem_step"]
-    mem = min(r["max_mem"], max(r["min_mem"], r["min_mem"] + (-(-(mem - r["min_mem"]) // step)) * step))
-    # If within one step of max, use max (e.g. 108GB for Large)
-    if mem + step > r["max_mem"]:
-        mem = r["max_mem"]
+    # Memory: use max for the worker size. Custom batch proved max memory is most cost-effective
+    # (avoids OOM, reduces spill, fewer retries).
+    mem = r["max_mem"]
 
     return size, {"vcpu": r["vcpu"], "memory": mem}
 
@@ -216,119 +161,55 @@ def _compute_exec_limits(input_gb: float, vcpu: int, partitions: int = 0,
                         total_task_exec_hours: float = 0,
                         duration_hours: float = 0,
                         stages: list = None) -> Tuple[int, int]:
-    req_input = max(1, int(input_gb / 100))
-    part_divisor = 4 if mode == "cost" else 3
-    req_part = max(1, int((partitions / vcpu) / part_divisor)) if partitions > 0 else 0
-    base_req = max(req_input, req_part)
+    # --- Core formula: cores = 1.4 × orig_exec + 65 ---
+    # Derived from Custom batch (proven optimal). Accounts for EC2→Serverless
+    # efficiency gain: each EC2 executor maps to ~1.4 cores on Serverless.
+    base_cores = 1.4 * orig_executors + 65 if orig_executors > 0 else max(50, int(input_gb / 10))
 
-    # Pressure factor based on spill (stable workload property)
-    spill_ratio = (spill_gb / max(input_gb, 1)) * 100
-    spill_pressure = min(40, spill_ratio * 0.2)
-    if mode == "performance":
-        factor = 1.0 + (spill_pressure / 100) * 0.5
+    # Work-based metrics
+    work = total_task_exec_hours / duration_hours if duration_hours > 0 else 0
+    orig_vcpu = orig_executors * orig_cores if orig_executors > 0 and orig_cores > 0 else 0
+    eff = total_task_exec_hours / (orig_vcpu * duration_hours) if orig_vcpu > 0 and duration_hours > 0 else 0.5
+
+    # Compute shuffle ratio from stages
+    total_shuf_write = sum(s.get('shuffle_write_gb', 0) for s in (stages or []))
+    total_input = sum(s.get('input_gb', 0) for s in (stages or []))
+    shuf_ratio = total_shuf_write / max(total_input, 1) if total_input > 0 else (total_shuf_write / max(input_gb, 1))
+
+    # Rule 1: Shuffle boost for small clusters with very high shuffle ratio
+    # These jobs need extra cores for shuffle throughput
+    if orig_executors < 110 and shuf_ratio > 10:
+        cores = base_cores + total_shuf_write / 30
+    # Rule 2: Cap for large over-provisioned clusters with low shuffle
+    # EC2 was idle — use work-based sizing instead
+    elif orig_executors > 150 and shuf_ratio < 8 and eff < 0.40:
+        mult = max(0.5, 1.8 - eff * 3)
+        io_boost = input_gb / 5 if shuf_ratio < 1 else 0
+        cores = work * mult + io_boost + 30
     else:
-        factor = 0.8 + (spill_pressure / 100) * 0.5
+        cores = base_cores
 
-    max_exec = max(2, int(base_req * factor))
+    max_exec = max(2, int(cores / vcpu))
 
-    # --- Work-based sizing (primary signal) ---
-    # Uses actual observed task execution time to determine how many cores
-    # are needed, independent of the original cluster size.
-    if total_task_exec_hours > 0 and duration_hours > 0:
-        if mode == "cost":
-            # Allow 3x original duration — trade time for fewer executors
-            target_hours = duration_hours * 3
-        else:
-            # Match original duration
-            target_hours = duration_hours
+    # Performance mode: 1.5x for faster completion
+    if mode == "performance":
+        max_exec = int(max_exec * 1.5)
 
-        cores_needed = total_task_exec_hours / target_hours
-        work_exec = max(2, int(cores_needed / vcpu))
-
-        # Efficiency discount: when idle% is very high, the original run was
-        # over-parallelized — task overhead (scheduling, serialization, GC)
-        # inflates total_task_exec_hours. Fewer executors = less overhead.
-        if idle_pct > 70:
-            efficiency = max(0.3, 1.0 - (idle_pct - 50) / 100)
-            work_exec = max(2, int(work_exec * efficiency))
-
-        max_exec = max(max_exec, work_exec)
-
-    # --- Fallback: original-run floor (only when task data is missing) ---
-    elif orig_executors > 0 and orig_cores > 0:
-        orig_total_cores = orig_executors * orig_cores
-        if mode == "performance":
-            equiv = max(2, int(orig_total_cores * 1.6 / vcpu))
-        else:
-            util_factor = max(0.3, min(1.0, cpu_pct / 100.0))
-            equiv = max(2, int(orig_total_cores * util_factor / vcpu))
-        max_exec = max(max_exec, equiv)
-
-
-    # --- Concurrent stage pressure (burst parallelism) ---
-    # When many stages run simultaneously with barrier synchronization,
-    # the job needs enough cores to drain each batch quickly.
-    if stages and len(stages) > 10:
-        # Detect barrier pattern: single-task stages with high wall time but low task time
-        barriers = [s for s in stages if s.get("num_tasks", 0) == 1
-                    and s.get("duration_sec", 0) > 30
-                    and s.get("total_task_time_sec", 0) < 5]
-        if len(barriers) >= 2:
-            # Find the heaviest batch between barriers
-            barrier_ids = sorted(s["stage_id"] for s in barriers)
-            max_batch_task_time = 0
-            for i in range(len(barrier_ids)):
-                lo = barrier_ids[i-1] + 1 if i > 0 else 0
-                hi = barrier_ids[i]
-                batch = [s for s in stages if lo <= s.get("stage_id", 0) < hi]
-                batch_task_time = sum(s.get("total_task_time_sec", 0) for s in batch)
-                max_batch_task_time = max(max_batch_task_time, batch_task_time)
-            # Target: drain heaviest batch in 90s (cost) or 45s (perf)
-            target_batch_sec = 90 if mode == "cost" else 45
-            if max_batch_task_time > 0:
-                batch_cores = int(max_batch_task_time / target_batch_sec)
-                batch_exec = max(2, batch_cores // vcpu)
-                max_exec = max(max_exec, batch_exec)
-
-    # --- Starvation detection ---
-    # When CPU is saturated (>85%) and idle cores are minimal (<15%),
-    # the observed run was compute-starved. The duration is degraded,
-    # so we must scale beyond what work-based sizing suggests.
-    if cpu_pct > 85 and idle_pct < 15 and total_task_exec_hours > 0 and duration_hours > 0:
-        # The job is clearly bottlenecked on cores. Scale up.
-        starvation_factor = 2.0 if mode == "cost" else 4.0
-        starved_exec = max(2, int((total_task_exec_hours / duration_hours) * starvation_factor / vcpu))
-        max_exec = max(max_exec, starved_exec)
-
-    min_exec = max(1, max_exec // 2)
-
-    # Cap: don't exceed original cluster's total vCPU capacity equivalent
-    # The job ran successfully with orig_executors * orig_cores total vCPU
-    if orig_executors > 0 and orig_cores > 0:
-        orig_total_cores = orig_executors * orig_cores
-        if mode == "cost":
-            cap = max(10, int(orig_total_cores / vcpu))
-        else:
-            cap = max(10, int(orig_total_cores * 1.5 / vcpu))
-        max_exec = min(max_exec, cap)
-        min_exec = max(1, max_exec // 2)
+    # minExecutors: 1/3 of max for fast start without over-allocation
+    min_exec = max(1, min(max_exec - 2, max(5, max_exec // 3)))
 
     return max_exec, min_exec
 
 
 def _calculate_executor_disk(shuffle_write_gb: float, disk_spill_gb: float,
                              memory_spill_gb: float, max_executors: int) -> str:
-    # No disk activity at all → no attached disk needed
-    if disk_spill_gb == 0 and memory_spill_gb == 0 and shuffle_write_gb < 1.0:
-        return ""
-    total_shuffle_per_exec = shuffle_write_gb / max(max_executors, 1)
-    total_spill_per_exec = (disk_spill_gb + memory_spill_gb) / max(max_executors, 1)
-    estimated_gb = (total_shuffle_per_exec + total_spill_per_exec) * 1.5
-    # Default 200G for higher internal throughput; only skip if usage fits in default 20G
-    if estimated_gb < 10:
-        return ""  # Default 20G per worker is sufficient
-    else:
-        disk_gb = max(200, min(2000, int(((estimated_gb + 19) // 20) * 20)))
+    # Only attach disk when per-executor shuffle exceeds default 20G
+    total_per_exec = (shuffle_write_gb + disk_spill_gb + memory_spill_gb) / max(max_executors, 1)
+    if total_per_exec <= 20:
+        return ""  # Default 20G is sufficient
+    # Size to 1.5x estimated need, default 200G for throughput
+    estimated_gb = total_per_exec * 1.5
+    disk_gb = max(200, min(2000, int(((estimated_gb + 19) // 20) * 20)))
     return f"{disk_gb}G"
 
 
@@ -589,7 +470,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         def cap_partitions(partitions, max_executors):
             """Cap partitions based on executor IO concurrency, with a
             data volume floor to prevent oversized partitions."""
-            io_ceiling = max(200, max_executors * worker_cfg["vcpu"] * 2)
+            io_ceiling = max(200, max_executors * 8)
             # Data floor: ensure partitions don't exceed 3x memory per core
             mem_per_core = worker_cfg["memory"] / worker_cfg["vcpu"]
             max_gb_per_part = mem_per_core * 3
@@ -765,22 +646,19 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             # A stage that reads shuffle, writes nothing (collect to driver),
             # and failed with maxResultSize indicates a broadcast join collecting
             # too much data through the driver. Recommend disabling auto-broadcast.
-            # Broadcast join threshold: data-driven sizing for Serverless target
+            # Broadcast: preserve source value. Only disable if maxResultSize failure detected.
+            # When not set, use 256MB (Spark default 10MB is too conservative for 54G executors).
             if _should_disable_broadcast(stages_raw, _spark_config_raw, s_out_gb, d_mem):
                 cfg["spark.sql.autoBroadcastJoinThreshold"] = "-1"
-            elif str(_spark_config_raw.get('spark.sql.autoBroadcastJoinThreshold', '')) == '-1':
-                # Source explicitly disabled broadcast — preserve (can't prove safe to enable)
-                cfg["spark.sql.autoBroadcastJoinThreshold"] = "-1"
             else:
-                # Compute smart threshold based on target executor memory and count
-                smart = _compute_broadcast_threshold(mem, max_exec)
                 src_val = _spark_config_raw.get('spark.sql.autoBroadcastJoinThreshold')
-                if src_val and str(src_val) not in ('', 'None', '-1'):
-                    # Source had explicit value — use max(source, smart) since source knows its data
+                if src_val and str(src_val) not in ('', 'None'):
                     cfg["spark.sql.autoBroadcastJoinThreshold"] = str(src_val)
-                else:
-                    # No source setting — use smart threshold (better than Spark default 10MB)
-                    cfg["spark.sql.autoBroadcastJoinThreshold"] = smart
+                elif is_ec2:
+                    # Source didn't set broadcast — set based on executor memory
+                    # Larger executors can handle larger broadcast tables
+                    bc_threshold = "256MB" if mem >= 54 else "128MB"
+                    cfg["spark.sql.autoBroadcastJoinThreshold"] = bc_threshold
             # Preserve advisoryPartitionSizeInBytes from source
             adv = _spark_config_raw.get('spark.sql.adaptive.advisoryPartitionSizeInBytes')
             if adv:
