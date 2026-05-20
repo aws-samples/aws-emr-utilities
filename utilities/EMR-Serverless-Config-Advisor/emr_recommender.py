@@ -706,10 +706,34 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                     # Larger executors can handle larger broadcast tables
                     bc_threshold = "256MB" if mem >= 54 else "128MB"
                     cfg["spark.sql.autoBroadcastJoinThreshold"] = bc_threshold
-            # Preserve advisoryPartitionSizeInBytes from source
+            # Advisory partition size: better than explicit shuffle.partitions (adaptive to data)
             adv = _spark_config_raw.get('spark.sql.adaptive.advisoryPartitionSizeInBytes')
             if adv:
-                cfg['spark.sql.adaptive.advisoryPartitionSizeInBytes'] = str(adv)
+                adv_bytes = int(str(adv).replace('MB','').replace('mb','')) * 1024 * 1024 if 'MB' in str(adv).upper() or 'mb' in str(adv) else int(adv)
+                # Check if advisory would create too many partitions (>50000 = excessive overhead)
+                estimated_partitions = int(s_out_gb * 1024 * 1024 * 1024 / max(adv_bytes, 1)) if s_out_gb > 0 else 0
+                if estimated_partitions > 50000:
+                    # Advisory too small for this shuffle volume
+                    # Progressive partition sizing: ensure at least 1000 partitions for parallelism
+                    parts = int(s_out_gb / 5)  # Start with 5GB per partition
+                    if parts < 1000:
+                        parts = int(s_out_gb / 2)  # Try 2GB per partition
+                    if parts < 1000:
+                        parts = int(s_out_gb)  # Fall back to 1GB per partition
+                    cfg['spark.sql.shuffle.partitions'] = str(max(200, parts))
+                else:
+                    cfg['spark.sql.adaptive.advisoryPartitionSizeInBytes'] = str(adv)
+                    src_parts = _spark_config_raw.get('spark.sql.shuffle.partitions')
+                    if src_parts and str(src_parts) not in ('', 'None'):
+                        cfg['spark.sql.shuffle.partitions'] = str(src_parts)
+                    else:
+                        cfg.pop('spark.sql.shuffle.partitions', None)
+            elif s_out_gb > 10 and is_ec2:
+                # Compute advisory: target 6 waves of tasks per core for good parallelism
+                target_tasks = max_exec * worker_cfg["vcpu"] * 6
+                advisory_bytes = int(s_out_gb * 1024 * 1024 * 1024 / max(target_tasks, 1))
+                advisory_bytes = max(128 * 1024 * 1024, min(1024 * 1024 * 1024, advisory_bytes))  # 128MB-1GB
+                cfg['spark.sql.adaptive.advisoryPartitionSizeInBytes'] = str(advisory_bytes)
             cfg.update(_get_timeout_configs(i_in_gb, duration))
             cfg.update(_get_s3_retry_configs(i_in_gb, i_out_gb))
             cfg.update(_get_iceberg_configs())
