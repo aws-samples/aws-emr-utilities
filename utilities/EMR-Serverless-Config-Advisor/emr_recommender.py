@@ -129,13 +129,25 @@ def _select_worker_type(input_gb: float, shuffle_ratio: float,
     }
 
     # Worker selection for EC2→Serverless migration:
-    # Medium (8c/54G) handles all shuffle workloads — 6.75G/core is sufficient.
-    # Small (4c/27G) for IO-bound jobs with minimal shuffle — more executors reading in parallel at lower cost.
+    # Balance memory fit + shuffle coordination (fewer executors = less N² overhead)
     if is_ec2:
-        if max_shuffle_write_per_task_gb < 0.05 and input_gb > 500:
-            size = "Small"  # IO-bound: more small executors for parallel reads
+        # Compute memory need per core from EC2 actual usage
+        orig_mem_gb = orig_mem_mb / 1024 if orig_mem_mb > 0 else 20
+        mem_per_core = orig_mem_gb * mem_pct / 100 / max(orig_cores, 1)
+
+        # Memory needed for each worker size (sub-linear scaling, 30% headroom for peak)
+        mem_for_small = max(20, mem_per_core * (4 ** 0.7) * 1.3)   # 4c target
+        mem_for_medium = max(20, mem_per_core * (8 ** 0.7) * 1.3)  # 8c target
+
+        # Pick smallest worker where memory fits
+        # Executor count check deferred to _compute_exec_limits which will
+        # bump up worker size if too many executors needed
+        if mem_for_small <= 27:
+            size = "Small"
+        elif mem_for_medium <= 54:
+            size = "Medium"
         else:
-            size = "Medium"  # Default: handles all shuffle patterns
+            size = "Large"
     else:
         if spill_gb > 100:
             size = "Large"
@@ -146,8 +158,7 @@ def _select_worker_type(input_gb: float, shuffle_ratio: float,
 
     r = WORKER_RANGES[size]
 
-    # Memory: use max for the worker size. Custom batch proved max memory is most cost-effective
-    # (avoids OOM, reduces spill, fewer retries).
+    # Memory: always use max for the worker size (prevents OOM — Spark memory is spiky)
     mem = r["max_mem"]
 
     return size, {"vcpu": r["vcpu"], "memory": mem}
@@ -158,14 +169,11 @@ def _compute_exec_limits(input_gb: float, vcpu: int, partitions: int = 0,
                         idle_pct: float = 50.0, spill_gb: float = 0.0,
                         mode: str = "cost",
                         orig_executors: int = 0, orig_cores: int = 0,
+                        orig_mem_mb: int = 0,
                         total_task_exec_hours: float = 0,
                         duration_hours: float = 0,
-                        stages: list = None) -> Tuple[int, int]:
-    # --- Core formula: cores = 1.4 × orig_exec + 65 ---
-    # Derived from Custom batch (proven optimal). Accounts for EC2→Serverless
-    # efficiency gain: each EC2 executor maps to ~1.4 cores on Serverless.
-    base_cores = 1.4 * orig_executors + 65 if orig_executors > 0 else max(50, int(input_gb / 10))
-
+                        stages: list = None,
+                        is_ec2_source: bool = False) -> Tuple[int, int]:
     # Work-based metrics
     work = total_task_exec_hours / duration_hours if duration_hours > 0 else 0
     orig_vcpu = orig_executors * orig_cores if orig_executors > 0 and orig_cores > 0 else 0
@@ -176,18 +184,39 @@ def _compute_exec_limits(input_gb: float, vcpu: int, partitions: int = 0,
     total_input = sum(s.get('input_gb', 0) for s in (stages or []))
     shuf_ratio = total_shuf_write / max(total_input, 1) if total_input > 0 else (total_shuf_write / max(input_gb, 1))
 
-    # Rule 1: Shuffle boost for small clusters with very high shuffle ratio
-    # These jobs need extra cores for shuffle throughput
-    if orig_executors < 110 and shuf_ratio > 10:
-        cores = base_cores + total_shuf_write / 30
-    # Rule 2: Cap for large over-provisioned clusters with low shuffle
-    # EC2 was idle — use work-based sizing instead
-    elif orig_executors > 150 and shuf_ratio < 8 and eff < 0.40:
-        mult = max(0.5, 1.8 - eff * 3)
-        io_boost = input_gb / 5 if shuf_ratio < 1 else 0
-        cores = work * mult + io_boost + 30
+    if is_ec2_source:
+        # --- EC2 → Serverless: apply efficiency gain ---
+        # Serverless 8c/54G executors are more efficient than EC2 executors due to:
+        # 1. More memory per core → less spill, less GC
+        # 2. Larger executors → less shuffle overhead
+        # The efficiency gain depends on how much MORE memory/core Serverless provides.
+        serverless_mem_per_core = 54 / 8 if vcpu == 8 else 27 / 4  # target worker mem/core
+        ec2_mem_per_core = (orig_mem_mb / 1024) / orig_cores if orig_cores > 0 and orig_mem_mb > 0 else 6.0
+
+        # Memory efficiency: if EC2 had less mem/core, Serverless gains more (less spill)
+        # If EC2 already had equal or more mem/core, gain is minimal
+        mem_ratio = min(1.0, ec2_mem_per_core / serverless_mem_per_core)
+        # Scaling: ranges from 0.47 (EC2 had low mem/core) to 0.80 (EC2 had high mem/core)
+        base_efficiency = 0.47 + 0.33 * mem_ratio
+        per_exec_factor = min(1.4, base_efficiency * orig_cores) if orig_cores > 0 else 1.4
+        base_cores = per_exec_factor * orig_executors + 65 if orig_executors > 0 else max(50, int(input_gb / 10))
+
+        # Rule 1: Shuffle boost for small clusters with very high shuffle ratio
+        if orig_executors < 110 and shuf_ratio > 10:
+            cores = base_cores + total_shuf_write / 30
+        # Rule 2: Cap for large over-provisioned clusters
+        elif orig_executors > 150 and shuf_ratio < 8 and eff < 0.40:
+            mult = max(0.5, 1.8 - eff * 3)
+            io_boost = input_gb / 5 if shuf_ratio < 1 else 0
+            cores = work * mult + io_boost + 30
+        else:
+            cores = base_cores
     else:
-        cores = base_cores
+        # --- Serverless source: use actual configuration directly ---
+        # The source already ran on Serverless — match its configured capacity.
+        # orig_vcpu = what was set as maxExecutors × cores (the proven config).
+        # Add 10% headroom for variability between runs.
+        cores = max(work * 1.1, orig_vcpu * 1.1) if orig_vcpu > 0 else work * 1.1
 
     max_exec = max(2, int(cores / vcpu))
 
@@ -203,13 +232,17 @@ def _compute_exec_limits(input_gb: float, vcpu: int, partitions: int = 0,
 
 def _calculate_executor_disk(shuffle_write_gb: float, disk_spill_gb: float,
                              memory_spill_gb: float, max_executors: int) -> str:
-    # Only attach disk when per-executor shuffle exceeds default 20G
-    total_per_exec = (shuffle_write_gb + disk_spill_gb + memory_spill_gb) / max(max_executors, 1)
-    if total_per_exec <= 20:
-        return ""  # Default 20G is sufficient
-    # Size to 1.5x estimated need, default 200G for throughput
-    estimated_gb = total_per_exec * 1.5
-    disk_gb = max(200, min(2000, int(((estimated_gb + 19) // 20) * 20)))
+    """Attach shuffle_optimized disk for shuffle-intensive jobs.
+    Shuffle-optimized disks provide higher IOPS and faster disk access,
+    benefiting jobs with significant shuffle operations or disk spill.
+    For non-shuffle workloads, default disk avoids unnecessary cost.
+    """
+    total_shuffle_and_spill = shuffle_write_gb + disk_spill_gb + memory_spill_gb
+    if total_shuffle_and_spill < 500:
+        return ""  # Not shuffle-intensive — default disk sufficient
+    # Shuffle-intensive: attach shuffle_optimized disk
+    per_exec = total_shuffle_and_spill / max(max_executors, 1)
+    disk_gb = max(200, min(2000, int(per_exec * 1.5 / 20) * 20 + 20))
     return f"{disk_gb}G"
 
 
@@ -507,16 +540,30 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         # Cost-optimized
         max_exec_cost_init, min_exec_cost = _compute_exec_limits(
             i_in_gb, worker_cfg["vcpu"], 0, mem_pct, cpu_pct, idle_pct, spill_gb, mode="cost",
-            orig_executors=orig_executors, orig_cores=orig_cores,
-            total_task_exec_hours=total_task_exec_hours, duration_hours=duration, stages=stages_raw,
+            orig_executors=orig_executors, orig_cores=orig_cores, orig_mem_mb=int(orig_executor_mem_gb * 1024),
+            total_task_exec_hours=total_task_exec_hours, duration_hours=duration, stages=stages_raw, is_ec2_source=is_ec2,
         )
         sp_cost, target_mib_cost = auto_tune_custom(shuffle_bytes, max_exec_cost_init)
         max_exec_cost, min_exec_cost = _compute_exec_limits(
             i_in_gb, worker_cfg["vcpu"], sp_cost, mem_pct, cpu_pct, idle_pct, spill_gb, mode="cost",
-            orig_executors=orig_executors, orig_cores=orig_cores,
-            total_task_exec_hours=total_task_exec_hours, duration_hours=duration, stages=stages_raw,
+            orig_executors=orig_executors, orig_cores=orig_cores, orig_mem_mb=int(orig_executor_mem_gb * 1024),
+            total_task_exec_hours=total_task_exec_hours, duration_hours=duration, stages=stages_raw, is_ec2_source=is_ec2,
         )
         sp_cost = cap_partitions(sp_cost, max_exec_cost)
+
+        # Bump up worker size if too many executors (shuffle coordination overhead)
+        # Always go Small→Medium→Large (never skip Medium)
+        if is_ec2 and max_exec_cost > 50 and worker_type == "Small":
+            worker_type = "Medium"
+            worker_cfg = {"vcpu": 8, "memory": 54}
+            max_exec_cost = max(2, max_exec_cost * 4 // 8)  # preserve total cores
+            min_exec_cost = max(1, min(max_exec_cost - 2, max(5, max_exec_cost // 3)))
+        if is_ec2 and max_exec_cost > 100 and worker_type == "Medium":
+            worker_type = "Large"
+            worker_cfg = {"vcpu": 16, "memory": 108}
+            max_exec_cost = max(2, max_exec_cost * 8 // 16)  # preserve total cores
+            min_exec_cost = max(1, min(max_exec_cost - 2, max(5, max_exec_cost // 3)))
+
         # Ignore EC2 spill for disk when target executor has more memory
         _orig_mem_gb = float(''.join(c for c in str(row.get('_spark_config_raw', {}).get('spark.executor.memory', '0g')).lower().replace('g','') if c.isdigit() or c == '.') or 0)
         _actual_mem = _orig_mem_gb * mem_pct / 100 if _orig_mem_gb > 0 and mem_pct > 0 else 999
@@ -527,14 +574,14 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         # Performance-optimized
         max_exec_perf_init, min_exec_perf = _compute_exec_limits(
             i_in_gb, worker_cfg["vcpu"], 0, mem_pct, cpu_pct, idle_pct, spill_gb, mode="performance",
-            orig_executors=orig_executors, orig_cores=orig_cores,
-            total_task_exec_hours=total_task_exec_hours, duration_hours=duration, stages=stages_raw,
+            orig_executors=orig_executors, orig_cores=orig_cores, orig_mem_mb=int(orig_executor_mem_gb * 1024),
+            total_task_exec_hours=total_task_exec_hours, duration_hours=duration, stages=stages_raw, is_ec2_source=is_ec2,
         )
         sp_perf, target_mib_perf = auto_tune_custom(shuffle_bytes, max_exec_perf_init)
         max_exec_perf, min_exec_perf = _compute_exec_limits(
             i_in_gb, worker_cfg["vcpu"], sp_perf, mem_pct, cpu_pct, idle_pct, spill_gb, mode="performance",
-            orig_executors=orig_executors, orig_cores=orig_cores,
-            total_task_exec_hours=total_task_exec_hours, duration_hours=duration, stages=stages_raw,
+            orig_executors=orig_executors, orig_cores=orig_cores, orig_mem_mb=int(orig_executor_mem_gb * 1024),
+            total_task_exec_hours=total_task_exec_hours, duration_hours=duration, stages=stages_raw, is_ec2_source=is_ec2,
         )
         sp_perf = cap_partitions(sp_perf, max_exec_perf)
         executor_disk_perf = _calculate_executor_disk(s_out_gb, _eff_disk_spill, _eff_mem_spill, max_exec_perf)
@@ -659,10 +706,29 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                     # Larger executors can handle larger broadcast tables
                     bc_threshold = "256MB" if mem >= 54 else "128MB"
                     cfg["spark.sql.autoBroadcastJoinThreshold"] = bc_threshold
-            # Preserve advisoryPartitionSizeInBytes from source
+            # Advisory partition size: better than explicit shuffle.partitions (adaptive to data)
             adv = _spark_config_raw.get('spark.sql.adaptive.advisoryPartitionSizeInBytes')
             if adv:
-                cfg['spark.sql.adaptive.advisoryPartitionSizeInBytes'] = str(adv)
+                adv_bytes = int(str(adv).replace('MB','').replace('mb','')) * 1024 * 1024 if 'MB' in str(adv).upper() or 'mb' in str(adv) else int(adv)
+                # Check if advisory would create too many partitions (>50000 = excessive overhead)
+                estimated_partitions = int(s_out_gb * 1024 * 1024 * 1024 / max(adv_bytes, 1)) if s_out_gb > 0 else 0
+                if estimated_partitions > 50000:
+                    # Advisory too small for this shuffle volume
+                    # Use ~5GB per partition (proven optimal for large shuffle jobs)
+                    cfg['spark.sql.shuffle.partitions'] = str(max(200, int(s_out_gb / 5)))
+                else:
+                    cfg['spark.sql.adaptive.advisoryPartitionSizeInBytes'] = str(adv)
+                    src_parts = _spark_config_raw.get('spark.sql.shuffle.partitions')
+                    if src_parts and str(src_parts) not in ('', 'None'):
+                        cfg['spark.sql.shuffle.partitions'] = str(src_parts)
+                    else:
+                        cfg.pop('spark.sql.shuffle.partitions', None)
+            elif s_out_gb > 10 and is_ec2:
+                # Compute advisory: target 6 waves of tasks per core for good parallelism
+                target_tasks = max_exec * worker_cfg["vcpu"] * 6
+                advisory_bytes = int(s_out_gb * 1024 * 1024 * 1024 / max(target_tasks, 1))
+                advisory_bytes = max(128 * 1024 * 1024, min(1024 * 1024 * 1024, advisory_bytes))  # 128MB-1GB
+                cfg['spark.sql.adaptive.advisoryPartitionSizeInBytes'] = str(advisory_bytes)
             cfg.update(_get_timeout_configs(i_in_gb, duration))
             cfg.update(_get_s3_retry_configs(i_in_gb, i_out_gb))
             cfg.update(_get_iceberg_configs())
