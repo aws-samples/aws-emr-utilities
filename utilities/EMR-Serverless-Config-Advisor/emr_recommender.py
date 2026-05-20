@@ -203,13 +203,17 @@ def _compute_exec_limits(input_gb: float, vcpu: int, partitions: int = 0,
 
 def _calculate_executor_disk(shuffle_write_gb: float, disk_spill_gb: float,
                              memory_spill_gb: float, max_executors: int) -> str:
-    # Only attach disk when per-executor shuffle exceeds default 20G
-    total_per_exec = (shuffle_write_gb + disk_spill_gb + memory_spill_gb) / max(max_executors, 1)
-    if total_per_exec <= 20:
-        return ""  # Default 20G is sufficient
-    # Size to 1.5x estimated need, default 200G for throughput
-    estimated_gb = total_per_exec * 1.5
-    disk_gb = max(200, min(2000, int(((estimated_gb + 19) // 20) * 20)))
+    """Attach shuffle_optimized disk for shuffle-intensive jobs.
+    Shuffle-optimized disks provide higher IOPS and faster disk access,
+    benefiting jobs with significant shuffle operations or disk spill.
+    For non-shuffle workloads, default disk avoids unnecessary cost.
+    """
+    total_shuffle_and_spill = shuffle_write_gb + disk_spill_gb + memory_spill_gb
+    if total_shuffle_and_spill < 500:
+        return ""  # Not shuffle-intensive — default disk sufficient
+    # Shuffle-intensive: attach shuffle_optimized disk
+    per_exec = total_shuffle_and_spill / max(max_executors, 1)
+    disk_gb = max(200, min(2000, int(per_exec * 1.5 / 20) * 20 + 20))
     return f"{disk_gb}G"
 
 
