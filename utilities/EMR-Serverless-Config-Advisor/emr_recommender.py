@@ -208,6 +208,9 @@ def _compute_exec_limits(input_gb: float, vcpu: int, partitions: int = 0,
             mult = max(0.5, 1.8 - eff * 3)
             io_boost = input_gb / 5 if shuf_ratio < 1 else 0
             cores = work * mult + io_boost + 30
+            # Sub-rule: high spill needs more parallelism for I/O throughput
+            if spill_gb > 5000:
+                cores = cores * 1.3
         else:
             cores = base_cores
     else:
@@ -240,8 +243,10 @@ def _calculate_executor_disk(shuffle_write_gb: float, disk_spill_gb: float,
     if total_shuffle_and_spill < 20:
         return ""  # Minimal shuffle — default disk sufficient
     # Shuffle-intensive: attach shuffle_optimized disk
+    # Minimum 500G — empirically proven that 200G has 1.5-1.8x slower I/O
+    # due to linear throughput scaling on shuffle_optimized volumes
     per_exec = total_shuffle_and_spill / max(max_executors, 1)
-    disk_gb = max(200, min(2000, int(per_exec * 1.5 / 20) * 20 + 20))
+    disk_gb = max(500, min(2000, int(per_exec * 1.5 / 20) * 20 + 20))
     return f"{disk_gb}G"
 
 
@@ -551,8 +556,10 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         sp_cost = cap_partitions(sp_cost, max_exec_cost)
 
         # Bump up worker size if too many executors (shuffle coordination overhead)
+        # Exception: if EC2 source used small executors (≤4 cores), the workload fits in Small
         # Always go Small→Medium→Large (never skip Medium)
-        if is_ec2 and max_exec_cost > 50 and worker_type == "Small":
+        _is_rule2_spill = is_ec2 and orig_executors > 150 and sh_ratio < 800 and spill_gb > 5000
+        if is_ec2 and max_exec_cost > 60 and worker_type == "Small" and not _is_rule2_spill:
             worker_type = "Medium"
             worker_cfg = {"vcpu": 8, "memory": 54}
             max_exec_cost = max(2, max_exec_cost * 4 // 8)  # preserve total cores
@@ -562,6 +569,25 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             worker_cfg = {"vcpu": 16, "memory": 108}
             max_exec_cost = max(2, max_exec_cost * 8 // 16)  # preserve total cores
             min_exec_cost = max(1, min(max_exec_cost - 2, max(5, max_exec_cost // 3)))
+
+        # Stage-level efficiency: no single stage should take > 60min
+        # Uses total_task_time_sec (sum of all task exec times) as total work
+        # Apply 0.85x factor for I/O-bound stages (Serverless NVMe is faster than EC2)
+        if is_ec2 and stages_raw:
+            max_stage = max(stages_raw, key=lambda s: s.get('total_task_time_sec', 0) or 0)
+            max_stage_work = max_stage.get('total_task_time_sec', 0) or 0
+            # I/O-bound heuristic: stage has shuffle or spill
+            stage_has_io = (max_stage.get('shuffle_read_gb', 0) or 0) + (max_stage.get('disk_spill_gb', 0) or 0) > 10
+            speedup = 0.85 if stage_has_io else 1.0
+            adjusted_work = max_stage_work * speedup
+            if adjusted_work > 0:
+                target_cores = max_exec_cost * worker_cfg["vcpu"]
+                predicted_stage_sec = adjusted_work / target_cores
+                if predicted_stage_sec > 3600:  # would take > 60min
+                    needed_cores = adjusted_work / 3600
+                    needed_exec = int(needed_cores / worker_cfg["vcpu"]) + 1
+                    max_exec_cost = needed_exec
+                    min_exec_cost = max(1, min(max_exec_cost - 2, max(5, max_exec_cost // 3)))
 
         # Ignore EC2 spill for disk when target executor has more memory
         _orig_mem_gb = float(''.join(c for c in str(row.get('_spark_config_raw', {}).get('spark.executor.memory', '0g')).lower().replace('g','') if c.isdigit() or c == '.') or 0)
@@ -583,6 +609,18 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             total_task_exec_hours=total_task_exec_hours, duration_hours=duration, stages=stages_raw, is_ec2_source=is_ec2,
         )
         sp_perf = cap_partitions(sp_perf, max_exec_perf)
+        # Stage-level efficiency for perf mode: no stage > 30min
+        if is_ec2 and stages_raw:
+            max_stage_p = max(stages_raw, key=lambda s: s.get('total_task_time_sec', 0) or 0)
+            max_work_p = max_stage_p.get('total_task_time_sec', 0) or 0
+            stage_io_p = (max_stage_p.get('shuffle_read_gb', 0) or 0) + (max_stage_p.get('disk_spill_gb', 0) or 0) > 10
+            adjusted_p = max_work_p * (0.85 if stage_io_p else 1.0)
+            if adjusted_p > 0:
+                target_cores_p = max_exec_perf * worker_cfg["vcpu"]
+                if adjusted_p / target_cores_p > 1800:  # > 30min
+                    needed_exec_p = int((adjusted_p / 1800) / worker_cfg["vcpu"]) + 1
+                    max_exec_perf = needed_exec_p
+                    min_exec_perf = max(1, min(max_exec_perf - 2, max(5, max_exec_perf // 3)))
         executor_disk_perf = _calculate_executor_disk(s_out_gb, _eff_disk_spill, _eff_mem_spill, max_exec_perf)
         
         # Build base metrics
@@ -725,12 +763,28 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                     src_parts = _spark_config_raw.get('spark.sql.shuffle.partitions')
                     if src_parts and str(src_parts) not in ('', 'None'):
                         cfg['spark.sql.shuffle.partitions'] = str(src_parts)
-                    elif spill_gb > 0 and s_out_gb > 100 and (spill_gb / max(1, s_out_gb)) > 0.5:
-                        # High-spill jobs (spill > 50% of shuffle) need more partitions
-                        # Target ~1GB per partition (proven optimal from Custom batch)
-                        cfg['spark.sql.shuffle.partitions'] = str(max(200, int(s_out_gb)))
+                    elif spill_gb > 0 and s_out_gb > 100 and (disk_spill_gb / max(1, s_out_gb)) > 0.5:
+                        # High-spill jobs need more partitions to reduce per-task spill
+                        spill_parts = max(200, int(s_out_gb))
+                        if spill_parts > estimated_partitions:
+                            # Spill formula wants more than advisory — use it
+                            cfg['spark.sql.shuffle.partitions'] = str(spill_parts)
+                        elif estimated_partitions > 5000:
+                            # Advisory creates way too many (small advisory + large shuffle)
+                            # EMR initialPartitionNum=1000 would cap AQE too low
+                            # Set spill_parts as explicit override
+                            cfg['spark.sql.shuffle.partitions'] = str(spill_parts)
+                        else:
+                            # Advisory creates a reasonable number — let AQE handle it
+                            cfg.pop('spark.sql.shuffle.partitions', None)
                     else:
-                        cfg.pop('spark.sql.shuffle.partitions', None)
+                        if estimated_partitions > 1000:
+                            # EMR initialPartitionNum=1000 would cap AQE below optimal
+                            # Target ~3GB per partition (proven from Custom: 4057G/1304=3.1G)
+                            target_parts = max(1000, int(s_out_gb / 3))
+                            cfg['spark.sql.shuffle.partitions'] = str(target_parts)
+                        else:
+                            cfg.pop('spark.sql.shuffle.partitions', None)
             elif s_out_gb > 10 and is_ec2:
                 # Compute advisory: target 6 waves of tasks per core for good parallelism
                 target_tasks = max_exec * worker_cfg["vcpu"] * 6
