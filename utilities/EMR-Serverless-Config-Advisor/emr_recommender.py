@@ -140,9 +140,8 @@ def _select_worker_type(input_gb: float, shuffle_ratio: float,
         mem_for_medium = max(20, mem_per_core * (8 ** 0.7) * 1.3)  # 8c target
 
         # Pick smallest worker where memory fits
-        # Executor count check deferred to _compute_exec_limits which will
-        # bump up worker size if too many executors needed
-        if mem_for_small <= 27:
+        # Exception: shuffle-heavy jobs need Medium for shuffle buffer headroom
+        if mem_for_small <= 27 and max_shuffle_write_per_task_gb < 1.0:
             size = "Small"
         elif mem_for_medium <= 54:
             size = "Medium"
@@ -238,8 +237,8 @@ def _calculate_executor_disk(shuffle_write_gb: float, disk_spill_gb: float,
     For non-shuffle workloads, default disk avoids unnecessary cost.
     """
     total_shuffle_and_spill = shuffle_write_gb + disk_spill_gb + memory_spill_gb
-    if total_shuffle_and_spill < 500:
-        return ""  # Not shuffle-intensive — default disk sufficient
+    if total_shuffle_and_spill < 20:
+        return ""  # Minimal shuffle — default disk sufficient
     # Shuffle-intensive: attach shuffle_optimized disk
     per_exec = total_shuffle_and_spill / max(max_executors, 1)
     disk_gb = max(200, min(2000, int(per_exec * 1.5 / 20) * 20 + 20))
@@ -702,10 +701,9 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                 if src_val and str(src_val) not in ('', 'None'):
                     cfg["spark.sql.autoBroadcastJoinThreshold"] = str(src_val)
                 elif is_ec2:
-                    # Source didn't set broadcast — set based on executor memory
-                    # Larger executors can handle larger broadcast tables
-                    bc_threshold = "256MB" if mem >= 54 else "128MB"
-                    cfg["spark.sql.autoBroadcastJoinThreshold"] = bc_threshold
+                    # Don't override broadcast threshold — aggressive values can change
+                    # query plans and cause OOM from broadcast table memory pressure
+                    pass
             # Advisory partition size: better than explicit shuffle.partitions (adaptive to data)
             adv = _spark_config_raw.get('spark.sql.adaptive.advisoryPartitionSizeInBytes')
             if adv:
