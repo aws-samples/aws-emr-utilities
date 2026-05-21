@@ -675,6 +675,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                 "spark.executor.memory": f"{mem}g",
                 "spark.dynamicAllocation.enabled": "true",
                 "spark.sql.adaptive.enabled": "true",
+                "spark.sql.adaptive.coalescePartitions.parallelismFirst": "false",
                 "spark.sql.files.maxPartitionBytes": _max_partition_bytes(i_in_gb),
                 **({"spark.emr-serverless.executor.disk": executor_disk,
                 "spark.emr-serverless.executor.disk.type": "shuffle_optimized"} if executor_disk else {}),
@@ -724,6 +725,10 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                     src_parts = _spark_config_raw.get('spark.sql.shuffle.partitions')
                     if src_parts and str(src_parts) not in ('', 'None'):
                         cfg['spark.sql.shuffle.partitions'] = str(src_parts)
+                    elif spill_gb > 0 and s_out_gb > 100 and (spill_gb / max(1, s_out_gb)) > 0.5:
+                        # High-spill jobs (spill > 50% of shuffle) need more partitions
+                        # Target ~1GB per partition (proven optimal from Custom batch)
+                        cfg['spark.sql.shuffle.partitions'] = str(max(200, int(s_out_gb)))
                     else:
                         cfg.pop('spark.sql.shuffle.partitions', None)
             elif s_out_gb > 10 and is_ec2:
@@ -732,6 +737,14 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                 advisory_bytes = int(s_out_gb * 1024 * 1024 * 1024 / max(target_tasks, 1))
                 advisory_bytes = max(128 * 1024 * 1024, min(1024 * 1024 * 1024, advisory_bytes))  # 128MB-1GB
                 cfg['spark.sql.adaptive.advisoryPartitionSizeInBytes'] = str(advisory_bytes)
+            # Preserve AQE coalescing settings from source when set
+            for aqe_key in ['spark.sql.adaptive.coalescePartitions.minPartitionSize',
+                           'spark.sql.adaptive.coalescePartitions.parallelismFirst',
+                           'spark.sql.adaptive.rebalancePartitionsSmallPartitionFactor',
+                           'spark.sql.adaptive.skewJoin.skewedPartitionThresholdInBytes']:
+                src_val = _spark_config_raw.get(aqe_key)
+                if src_val and str(src_val) not in ('', 'None'):
+                    cfg[aqe_key] = str(src_val)
             cfg.update(_get_timeout_configs(i_in_gb, duration))
             cfg.update(_get_s3_retry_configs(i_in_gb, i_out_gb))
             cfg.update(_get_iceberg_configs())
