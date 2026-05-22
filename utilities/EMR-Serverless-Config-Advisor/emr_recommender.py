@@ -131,22 +131,16 @@ def _select_worker_type(input_gb: float, shuffle_ratio: float,
     # Worker selection for EC2→Serverless migration:
     # Balance memory fit + shuffle coordination (fewer executors = less N² overhead)
     if is_ec2:
-        # Compute memory need per core from EC2 actual usage
+        # Default to Medium (8c/54G) for higher disk throughput (250 MiB/s vs 120 MiB/s on 4c)
+        # Only use Large if memory requirements exceed Medium capacity
         orig_mem_gb = orig_mem_mb / 1024 if orig_mem_mb > 0 else 20
         mem_per_core = orig_mem_gb * mem_pct / 100 / max(orig_cores, 1)
+        mem_for_medium = max(20, mem_per_core * (8 ** 0.7) * 1.3)
 
-        # Memory needed for each worker size (sub-linear scaling, 30% headroom for peak)
-        mem_for_small = max(20, mem_per_core * (4 ** 0.7) * 1.3)   # 4c target
-        mem_for_medium = max(20, mem_per_core * (8 ** 0.7) * 1.3)  # 8c target
-
-        # Pick smallest worker where memory fits
-        # Exception: shuffle-heavy jobs need Medium for shuffle buffer headroom
-        if mem_for_small <= 27 and max_shuffle_write_per_task_gb < 1.0:
-            size = "Small"
-        elif mem_for_medium <= 54:
-            size = "Medium"
-        else:
+        if mem_for_medium > 54:
             size = "Large"
+        else:
+            size = "Medium"
     else:
         if spill_gb > 100:
             size = "Large"
@@ -717,6 +711,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                 "spark.sql.files.maxPartitionBytes": _max_partition_bytes(i_in_gb),
                 **({"spark.emr-serverless.executor.disk": executor_disk,
                 "spark.emr-serverless.executor.disk.type": "shuffle_optimized"} if executor_disk else {}),
+                "spark.emr-serverless.memoryOverheadFactor": "0.1",
                 "spark.sql.shuffle.partitions": str(sp),
                 "spark.dynamicAllocation.maxExecutors": str(max_exec),
                 "spark.dynamicAllocation.minExecutors": str(min_exec),
@@ -763,28 +758,20 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                     src_parts = _spark_config_raw.get('spark.sql.shuffle.partitions')
                     if src_parts and str(src_parts) not in ('', 'None'):
                         cfg['spark.sql.shuffle.partitions'] = str(src_parts)
-                    elif spill_gb > 0 and s_out_gb > 100 and (disk_spill_gb / max(1, s_out_gb)) > 0.5:
-                        # High-spill jobs need more partitions to reduce per-task spill
-                        spill_parts = max(200, int(s_out_gb))
-                        if spill_parts > estimated_partitions:
-                            # Spill formula wants more than advisory — use it
-                            cfg['spark.sql.shuffle.partitions'] = str(spill_parts)
-                        elif estimated_partitions > 5000:
-                            # Advisory creates way too many (small advisory + large shuffle)
-                            # EMR initialPartitionNum=1000 would cap AQE too low
-                            # Set spill_parts as explicit override
-                            cfg['spark.sql.shuffle.partitions'] = str(spill_parts)
-                        else:
-                            # Advisory creates a reasonable number — let AQE handle it
-                            cfg.pop('spark.sql.shuffle.partitions', None)
                     else:
-                        if estimated_partitions > 1000:
-                            # EMR initialPartitionNum=1000 would cap AQE below optimal
-                            # Target ~3GB per partition (proven from Custom: 4057G/1304=3.1G)
-                            target_parts = max(1000, int(s_out_gb / 3))
-                            cfg['spark.sql.shuffle.partitions'] = str(target_parts)
+                        # Always set explicit partitions to avoid EMR initialPartitionNum=1000 cap
+                        # Split by spill: spill-heavy needs smaller tasks, no-spill needs fewer tasks
+                        if disk_spill_gb / max(1, s_out_gb) > 0.5:
+                            # Spill-heavy: ~1GB per partition or advisory-based (capped), whichever is more
+                            target_parts = max(200, int(s_out_gb), min(estimated_partitions, 2000))
                         else:
-                            cfg.pop('spark.sql.shuffle.partitions', None)
+                            # No significant spill: ~3GB per partition (reduce scheduling overhead)
+                            target_parts = max(200, int(s_out_gb / 3))
+                        # Floor: ensure enough parallelism when size-based formula gives too few
+                        if target_parts < 1000:
+                            min_parts = max_exec * worker_cfg["vcpu"] * 8
+                            target_parts = max(target_parts, min(min_parts, 1500))
+                        cfg['spark.sql.shuffle.partitions'] = str(target_parts)
             elif s_out_gb > 10 and is_ec2:
                 # Compute advisory: target 6 waves of tasks per core for good parallelism
                 target_tasks = max_exec * worker_cfg["vcpu"] * 6
@@ -792,6 +779,15 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                 advisory_bytes = max(128 * 1024 * 1024, min(1024 * 1024 * 1024, advisory_bytes))  # 128MB-1GB
                 cfg['spark.sql.adaptive.advisoryPartitionSizeInBytes'] = str(advisory_bytes)
             # Preserve AQE coalescing settings from source when set
+            # Skew join optimization: set threshold based on advisory size
+            if 'spark.sql.adaptive.advisoryPartitionSizeInBytes' in cfg:
+                _adv_val = cfg['spark.sql.adaptive.advisoryPartitionSizeInBytes']
+                _adv_b = int(str(_adv_val).replace('MB','').replace('mb','')) * 1024 * 1024 if 'MB' in str(_adv_val).upper() else int(_adv_val)
+                if _adv_b >= 500_000_000:  # 500MB+
+                    cfg['spark.sql.adaptive.skewJoin.skewedPartitionThresholdInBytes'] = str(_adv_b + 10*1024*1024)
+                    cfg['spark.sql.adaptive.rebalancePartitionsSmallPartitionFactor'] = '0.5'
+                else:
+                    cfg['spark.sql.adaptive.skewJoin.skewedPartitionThresholdInBytes'] = str(_adv_b // 2)
             for aqe_key in ['spark.sql.adaptive.coalescePartitions.minPartitionSize',
                            'spark.sql.adaptive.coalescePartitions.parallelismFirst',
                            'spark.sql.adaptive.rebalancePartitionsSmallPartitionFactor',
