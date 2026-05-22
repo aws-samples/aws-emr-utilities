@@ -208,6 +208,9 @@ def _compute_exec_limits(input_gb: float, vcpu: int, partitions: int = 0,
             mult = max(0.5, 1.8 - eff * 3)
             io_boost = input_gb / 5 if shuf_ratio < 1 else 0
             cores = work * mult + io_boost + 30
+            # Sub-rule: high spill needs more parallelism for I/O throughput
+            if spill_gb > 5000:
+                cores = cores * 1.3
         else:
             cores = base_cores
     else:
@@ -553,8 +556,10 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         sp_cost = cap_partitions(sp_cost, max_exec_cost)
 
         # Bump up worker size if too many executors (shuffle coordination overhead)
+        # Exception: if EC2 source used small executors (≤4 cores), the workload fits in Small
         # Always go Small→Medium→Large (never skip Medium)
-        if is_ec2 and max_exec_cost > 50 and worker_type == "Small":
+        _is_rule2_spill = is_ec2 and orig_executors > 150 and sh_ratio < 800 and spill_gb > 5000
+        if is_ec2 and max_exec_cost > 60 and worker_type == "Small" and not _is_rule2_spill:
             worker_type = "Medium"
             worker_cfg = {"vcpu": 8, "memory": 54}
             max_exec_cost = max(2, max_exec_cost * 4 // 8)  # preserve total cores
@@ -567,7 +572,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
 
         # Stage-level efficiency: no single stage should take > 60min
         # Uses total_task_time_sec (sum of all task exec times) as total work
-        # Apply 0.7x factor for I/O-bound stages (Serverless NVMe is faster than EC2)
+        # Apply 0.85x factor for I/O-bound stages (Serverless NVMe is faster than EC2)
         if is_ec2 and stages_raw:
             max_stage = max(stages_raw, key=lambda s: s.get('total_task_time_sec', 0) or 0)
             max_stage_work = max_stage.get('total_task_time_sec', 0) or 0
