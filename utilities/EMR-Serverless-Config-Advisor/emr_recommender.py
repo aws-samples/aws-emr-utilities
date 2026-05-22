@@ -131,16 +131,22 @@ def _select_worker_type(input_gb: float, shuffle_ratio: float,
     # Worker selection for EC2→Serverless migration:
     # Balance memory fit + shuffle coordination (fewer executors = less N² overhead)
     if is_ec2:
-        # Default to Medium (8c/54G) for higher disk throughput (250 MiB/s vs 120 MiB/s on 4c)
-        # Only use Large if memory requirements exceed Medium capacity
+        # Worker selection based on workload profile:
+        # 8c: shuffle/spill-heavy jobs benefit from higher per-executor disk throughput (250 MiB/s)
+        # 4c: input-heavy jobs benefit from more executors (more S3 read parallelism)
         orig_mem_gb = orig_mem_mb / 1024 if orig_mem_mb > 0 else 20
         mem_per_core = orig_mem_gb * mem_pct / 100 / max(orig_cores, 1)
         mem_for_medium = max(20, mem_per_core * (8 ** 0.7) * 1.3)
 
         if mem_for_medium > 54:
             size = "Large"
-        else:
+        elif max_shuffle_write_per_task_gb >= 1.0 or spill_gb > 20000:
+            # High per-task shuffle write needs Medium for memory headroom
             size = "Medium"
+        else:
+            # Default to Small (4c) for S3 read parallelism
+            # Worker bump logic later promotes to Medium when executor count > 60
+            size = "Small"
     else:
         if spill_gb > 100:
             size = "Large"
@@ -240,14 +246,17 @@ def _calculate_executor_disk(shuffle_write_gb: float, disk_spill_gb: float,
     # Minimum 500G — empirically proven that 200G has 1.5-1.8x slower I/O
     # due to linear throughput scaling on shuffle_optimized volumes
     per_exec = total_shuffle_and_spill / max(max_executors, 1)
-    disk_gb = max(500, min(2000, int(per_exec * 1.5 / 20) * 20 + 20))
+    disk_gb = max(200, min(2000, int(per_exec * 1.5 / 20) * 20 + 20))
     return f"{disk_gb}G"
 
 
-def _max_partition_bytes(input_gb: float) -> str:
-    if input_gb >= 1024:
+def _max_partition_bytes(input_gb: float, advisory_bytes: int = 0) -> str:
+    if advisory_bytes >= 500_000_000:  # 500MB+ advisory
         return "512m"
-    return "128m"
+    elif advisory_bytes > 0:
+        return "256m"
+    # No advisory: use 256MB (EMR 7.13+ recommended default)
+    return "256m"
 
 
 def _get_timeout_configs(input_gb: float, duration_hours: float) -> Dict[str, str]:
@@ -463,6 +472,14 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                                                       max_shuffle_write_per_task_gb=max_shuffle_write_per_task_gb,
                                                       peak_mem_pct=peak_mem_pct, is_ec2=is_ec2)
 
+        # Large advisory (>=500MB) means large partitions — need 8c for memory headroom
+        _src_adv = str(_spark_config_raw.get('spark.sql.adaptive.advisoryPartitionSizeInBytes', ''))
+        if is_ec2 and worker_type == "Small" and 'MB' in _src_adv.upper():
+            _adv_val = int(_src_adv.replace('MB','').replace('mb',''))
+            if _adv_val >= 500:
+                worker_type = "Medium"
+                worker_cfg = {"vcpu": 8, "memory": 54}
+
         # If source uses broadcast > 256MB, upsize worker to safely hold broadcast tables
         _src_bc = str(_spark_config_raw.get('spark.sql.autoBroadcastJoinThreshold', ''))
         if _src_bc and _src_bc not in ('-1', 'None', ''):
@@ -553,7 +570,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         # Exception: if EC2 source used small executors (≤4 cores), the workload fits in Small
         # Always go Small→Medium→Large (never skip Medium)
         _is_rule2_spill = is_ec2 and orig_executors > 150 and sh_ratio < 800 and spill_gb > 5000
-        if is_ec2 and max_exec_cost > 60 and worker_type == "Small" and not _is_rule2_spill:
+        if is_ec2 and max_exec_cost > 70 and worker_type == "Small" and not _is_rule2_spill:
             worker_type = "Medium"
             worker_cfg = {"vcpu": 8, "memory": 54}
             max_exec_cost = max(2, max_exec_cost * 4 // 8)  # preserve total cores
@@ -577,8 +594,8 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             if adjusted_work > 0:
                 target_cores = max_exec_cost * worker_cfg["vcpu"]
                 predicted_stage_sec = adjusted_work / target_cores
-                if predicted_stage_sec > 3600:  # would take > 60min
-                    needed_cores = adjusted_work / 3600
+                if predicted_stage_sec > 2700:  # would take > 45min
+                    needed_cores = adjusted_work / 2700
                     needed_exec = int(needed_cores / worker_cfg["vcpu"]) + 1
                     max_exec_cost = needed_exec
                     min_exec_cost = max(1, min(max_exec_cost - 2, max(5, max_exec_cost // 3)))
@@ -586,8 +603,8 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         # Ignore EC2 spill for disk when target executor has more memory
         _orig_mem_gb = float(''.join(c for c in str(row.get('_spark_config_raw', {}).get('spark.executor.memory', '0g')).lower().replace('g','') if c.isdigit() or c == '.') or 0)
         _actual_mem = _orig_mem_gb * mem_pct / 100 if _orig_mem_gb > 0 and mem_pct > 0 else 999
-        _eff_disk_spill = 0 if _actual_mem < worker_cfg["memory"] else disk_spill_gb
-        _eff_mem_spill = 0 if _actual_mem < worker_cfg["memory"] else spill_gb
+        _eff_disk_spill = 0 if _actual_mem < worker_cfg["memory"] and disk_spill_gb < 500 else disk_spill_gb
+        _eff_mem_spill = 0 if _actual_mem < worker_cfg["memory"] and spill_gb < 5000 else spill_gb
         executor_disk_cost = _calculate_executor_disk(s_out_gb, _eff_disk_spill, _eff_mem_spill, max_exec_cost)
         
         # Performance-optimized
@@ -700,6 +717,8 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             driver_disk = _driver_disk_sizing(total_tasks)
             vcpu = vcpu_override or worker_cfg["vcpu"]
             mem = mem_override or worker_cfg["memory"]
+            _adv_raw = _spark_config_raw.get('spark.sql.adaptive.advisoryPartitionSizeInBytes')
+            _adv_bytes_for_mpb = int(str(_adv_raw).replace('MB','').replace('mb','')) * 1024 * 1024 if _adv_raw and 'MB' in str(_adv_raw).upper() else (int(_adv_raw) if _adv_raw and str(_adv_raw) not in ('', 'None') else 0)
             cfg = {
                 "spark.driver.cores": str(d_cores),
                 "spark.driver.memory": f"{d_mem}G",
@@ -708,10 +727,9 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                 "spark.dynamicAllocation.enabled": "true",
                 "spark.sql.adaptive.enabled": "true",
                 "spark.sql.adaptive.coalescePartitions.parallelismFirst": "false",
-                "spark.sql.files.maxPartitionBytes": _max_partition_bytes(i_in_gb),
+                "spark.sql.files.maxPartitionBytes": _max_partition_bytes(i_in_gb, _adv_bytes_for_mpb),
                 **({"spark.emr-serverless.executor.disk": executor_disk,
                 "spark.emr-serverless.executor.disk.type": "shuffle_optimized"} if executor_disk else {}),
-                "spark.emr-serverless.memoryOverheadFactor": "0.1",
                 "spark.sql.shuffle.partitions": str(sp),
                 "spark.dynamicAllocation.maxExecutors": str(max_exec),
                 "spark.dynamicAllocation.minExecutors": str(min_exec),
@@ -755,6 +773,10 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                     cfg['spark.sql.shuffle.partitions'] = str(max(200, parts))
                 else:
                     cfg['spark.sql.adaptive.advisoryPartitionSizeInBytes'] = str(adv)
+                    # Large-input, low-shuffle, no-spill: smaller advisory + broadcast for better parallelism
+                    if i_in_gb > 1500 and s_out_gb < 250 and disk_spill_gb < 10:
+                        cfg['spark.sql.adaptive.advisoryPartitionSizeInBytes'] = '33554432'  # 32MB
+                        cfg['spark.sql.autoBroadcastJoinThreshold'] = '200m'
                     src_parts = _spark_config_raw.get('spark.sql.shuffle.partitions')
                     if src_parts and str(src_parts) not in ('', 'None'):
                         cfg['spark.sql.shuffle.partitions'] = str(src_parts)
@@ -763,7 +785,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                         # Split by spill: spill-heavy needs smaller tasks, no-spill needs fewer tasks
                         if disk_spill_gb / max(1, s_out_gb) > 0.5:
                             # Spill-heavy: ~1GB per partition or advisory-based (capped), whichever is more
-                            target_parts = max(200, int(s_out_gb), min(estimated_partitions, 2000))
+                            target_parts = max(200, int(s_out_gb * 1.4), min(estimated_partitions, 2000))
                         else:
                             # No significant spill: ~3GB per partition (reduce scheduling overhead)
                             target_parts = max(200, int(s_out_gb / 3))
@@ -786,8 +808,9 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                 if _adv_b >= 500_000_000:  # 500MB+
                     cfg['spark.sql.adaptive.skewJoin.skewedPartitionThresholdInBytes'] = str(_adv_b + 10*1024*1024)
                     cfg['spark.sql.adaptive.rebalancePartitionsSmallPartitionFactor'] = '0.5'
-                else:
-                    cfg['spark.sql.adaptive.skewJoin.skewedPartitionThresholdInBytes'] = str(_adv_b // 2)
+                elif disk_spill_gb > 500:
+                    # Spill-heavy with small advisory: skew splitting prevents OOM
+                    cfg['spark.sql.adaptive.skewJoin.skewedPartitionThresholdInBytes'] = str(max(67108864, _adv_b // 2))
             for aqe_key in ['spark.sql.adaptive.coalescePartitions.minPartitionSize',
                            'spark.sql.adaptive.coalescePartitions.parallelismFirst',
                            'spark.sql.adaptive.rebalancePartitionsSmallPartitionFactor',
