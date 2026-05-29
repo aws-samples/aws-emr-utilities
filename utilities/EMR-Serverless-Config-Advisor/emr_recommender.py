@@ -120,7 +120,8 @@ def _select_worker_type(input_gb: float, shuffle_ratio: float,
                         cpu_pct: float = 50.0, orig_mem_mb: int = 0,
                         max_peak_mem_gb: float = 0, orig_cores: int = 0,
                         max_shuffle_write_per_task_gb: float = 0,
-                        peak_mem_pct: float = 0, is_ec2: bool = False) -> Tuple[str, Dict]:
+                        peak_mem_pct: float = 0, is_ec2: bool = False,
+                        shuffle_write_gb: float = 0) -> Tuple[str, Dict]:
     # EMR Serverless memory ranges per vCPU size
     WORKER_RANGES = {
         "Small":  {"vcpu": 4,  "min_mem": 8,  "max_mem": 27, "mem_step": 1},
@@ -131,29 +132,57 @@ def _select_worker_type(input_gb: float, shuffle_ratio: float,
     # Worker selection for EC2→Serverless migration:
     # Balance memory fit + shuffle coordination (fewer executors = less N² overhead)
     if is_ec2:
-        # Worker selection based on workload profile:
-        # 8c: shuffle/spill-heavy jobs benefit from higher per-executor disk throughput (250 MiB/s)
-        # 4c: input-heavy jobs benefit from more executors (more S3 read parallelism)
-        orig_mem_gb = orig_mem_mb / 1024 if orig_mem_mb > 0 else 20
-        mem_per_core = orig_mem_gb * mem_pct / 100 / max(orig_cores, 1)
-        mem_for_medium = max(20, mem_per_core * (8 ** 0.7) * 1.3)
-
-        if mem_for_medium > 54:
+        # Worker selection based on workload profile (same logic as Serverless path):
+        # 16c: (a) shuffle-dominated with tiny input (extreme shuffle ratio, huge spill)
+        #      (b) CPU-bound scan: moderate input, zero spill, moderate shuffle (32-100%)
+        # 8c:  significant spill (needs 250 MiB/s disk per executor)
+        # 4c:  high input, zero/low spill, low shuffle ratio (<25%) — I/O bound
+        #
+        # EC2 fix: use max(input, shuffle_write) as effective data volume
+        # because EC2 jobs may read from HDFS cache (reporting tiny input_gb)
+        effective_input = max(input_gb, shuffle_write_gb)
+        # Spill/shuffle ratio distinguishes structural spill (compute-bound) from memory-limited spill
+        # structural: spill >> shuffle (the shuffle processing itself causes spill) → needs 16c
+        # memory-limited: spill ≈ shuffle (just ran out of memory) → will disappear with better AQE
+        spill_shuffle_ratio = spill_gb / max(shuffle_write_gb, 1)
+        if input_gb < 10 and shuffle_ratio > 5000 and spill_shuffle_ratio > 3:
+            # Shuffle-only with structural spill: fewer fat executors (16c)
             size = "Large"
-        elif max_shuffle_write_per_task_gb >= 1.0 or spill_gb > 20000:
-            # High per-task shuffle write needs Medium for memory headroom
-            size = "Medium"
-        else:
-            # Default to Small (4c) for S3 read parallelism
-            # Worker bump logic later promotes to Medium when executor count > 60
+        elif effective_input > 400 and shuffle_ratio > 25 and shuffle_ratio < 200:
+            # CPU-bound scan+shuffle
+            size = "Large"
+        elif shuffle_ratio > 200:
+            # Shuffle-heavy: needs 8c for disk throughput
+            # UNLESS CPU-saturated with low spill/shuffle (= I/O bound, needs parallelism)
+            if cpu_pct > 85 and spill_shuffle_ratio < 2:
+                size = "Small"  # CPU-bound, non-structural spill → more executors
+            else:
+                size = "Medium"
+        elif effective_input > 400:
+            # Large data volume, low shuffle — more parallelism (4c)
             size = "Small"
+        else:
+            size = "Medium"
     else:
-        if spill_gb > 100:
+        # Serverless source worker selection based on workload profile:
+        # 16c: (a) shuffle-dominated with tiny input (extreme shuffle ratio, huge spill)
+        #      (b) CPU-bound scan: moderate input, zero spill, moderate shuffle (32-100%)
+        # 8c:  significant spill (needs 250 MiB/s disk per executor)
+        # 4c:  high input, zero/low spill, low shuffle ratio (<25%) — I/O bound
+        if input_gb < 10 and shuffle_ratio > 5000:
+            # Shuffle-only jobs (tiny input, massive shuffle+spill): fewer fat executors
             size = "Large"
-        elif spill_gb > 10 or mem_pct > 90:
+        elif input_gb > 400 and spill_gb < 10 and shuffle_ratio > 25 and shuffle_ratio < 200:
+            # CPU-bound scan+shuffle: moderate shuffle means CPU work after scan
+            size = "Large"
+        elif spill_gb > 100 or (spill_gb > 10 and shuffle_ratio > 100):
+            # Spill-heavy: needs 250 MiB/s disk throughput (8c Fargate limit)
             size = "Medium"
-        else:
+        elif input_gb > 400 and spill_gb < 10:
+            # I/O-bound: high input, no spill, low shuffle — more S3 parallelism
             size = "Small"
+        else:
+            size = "Medium"
 
     r = WORKER_RANGES[size]
 
@@ -214,11 +243,36 @@ def _compute_exec_limits(input_gb: float, vcpu: int, partitions: int = 0,
         else:
             cores = base_cores
     else:
-        # --- Serverless source: use actual configuration directly ---
-        # The source already ran on Serverless — match its configured capacity.
-        # orig_vcpu = what was set as maxExecutors × cores (the proven config).
-        # Add 10% headroom for variability between runs.
-        cores = max(work * 1.1, orig_vcpu * 1.1) if orig_vcpu > 0 else work * 1.1
+        # --- Serverless source: match proven parallelism ---
+        # The source config achieved a known runtime. Match its total core count.
+        # The worker type may differ (e.g. 16c vs 8c), so we express this as
+        # total cores needed, then divide by the target vcpu to get executor count.
+        #
+        # Key insight: the source's total_task_exec_hours / duration_hours gives
+        # the average concurrent cores that were BUSY. This is the true parallelism
+        # requirement — not the allocated cores (which may include idle time).
+        if total_task_exec_hours > 0 and duration_hours > 0:
+            busy_cores = total_task_exec_hours / duration_hours
+            # Use the higher of busy cores vs allocated cores
+            # (busy cores can exceed allocated when tasks queue)
+            cores = max(busy_cores, orig_vcpu) if orig_vcpu > 0 else busy_cores
+            # Starvation detection: if idle% < 10%, the job was compute-starved.
+            # It needed more cores than it got. Scale up by 2-4x to eliminate starvation.
+            if idle_pct < 10 and orig_vcpu > 0:
+                # The job used ALL its cores with no idle time — it was bottlenecked.
+                # Estimate true need: work / target_stage_time
+                # Use 0.8 factor: not all cores are available for the heaviest stage
+                # (some may run concurrent smaller stages)
+                if stages:
+                    max_work = max((s.get('total_task_time_sec',0) or 0) for s in stages)
+                    cores_for_stage = max_work / (3600 * 0.8)
+                    cores = max(cores, cores_for_stage)
+                else:
+                    cores = cores * 2  # 2x when starved and no stage data
+        elif orig_vcpu > 0:
+            cores = orig_vcpu
+        else:
+            cores = max(16, int(input_gb / 10))
 
     max_exec = max(2, int(cores / vcpu))
 
@@ -470,7 +524,8 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         worker_type, worker_cfg = _select_worker_type(i_in_gb, sh_ratio, mem_pct, spill_gb, cpu_pct,
                                                       max_peak_mem_gb=max_peak_mem_gb, orig_cores=orig_cores, orig_mem_mb=int(orig_executor_mem_gb * 1024),
                                                       max_shuffle_write_per_task_gb=max_shuffle_write_per_task_gb,
-                                                      peak_mem_pct=peak_mem_pct, is_ec2=is_ec2)
+                                                      peak_mem_pct=peak_mem_pct, is_ec2=is_ec2,
+                                                      shuffle_write_gb=s_out_gb)
 
         # Large advisory (>=500MB) means large partitions — need 8c for memory headroom
         _src_adv = str(_spark_config_raw.get('spark.sql.adaptive.advisoryPartitionSizeInBytes', ''))
@@ -748,76 +803,99 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             # When not set, use 256MB (Spark default 10MB is too conservative for 54G executors).
             if _should_disable_broadcast(stages_raw, _spark_config_raw, s_out_gb, d_mem):
                 cfg["spark.sql.autoBroadcastJoinThreshold"] = "-1"
-            else:
+            elif vcpu < 16:
                 src_val = _spark_config_raw.get('spark.sql.autoBroadcastJoinThreshold')
-                if src_val and str(src_val) not in ('', 'None'):
-                    cfg["spark.sql.autoBroadcastJoinThreshold"] = str(src_val)
+                if src_val and str(src_val) not in ('', 'None', '-1'):
+                    # Validate: broadcast must fit in executor memory budget
+                    # Safe limit: 10% of executor memory / 3 concurrent broadcasts
+                    safe_mb = int(mem * 1024 * 0.10 / 3)
+                    # Parse source value to MB
+                    sv = str(src_val).upper().replace(' ','')
+                    if sv.endswith('MB'):
+                        src_mb = int(sv[:-2])
+                    elif sv.endswith('M'):
+                        src_mb = int(sv[:-1])
+                    else:
+                        src_mb = int(sv) // (1024*1024) if sv.isdigit() and int(sv) > 1024 else int(sv) if sv.isdigit() else 0
+                    if src_mb > 0 and src_mb <= safe_mb:
+                        cfg["spark.sql.autoBroadcastJoinThreshold"] = str(src_val)
+                    elif src_mb > safe_mb:
+                        # Cap at safe limit for this worker size
+                        cfg["spark.sql.autoBroadcastJoinThreshold"] = f"{safe_mb}MB"
+                    else:
+                        cfg["spark.sql.autoBroadcastJoinThreshold"] = str(src_val)
+                elif src_val and str(src_val) == '-1':
+                    cfg["spark.sql.autoBroadcastJoinThreshold"] = "-1"
                 elif is_ec2:
                     # Don't override broadcast threshold — aggressive values can change
                     # query plans and cause OOM from broadcast table memory pressure
                     pass
-            # Advisory partition size: better than explicit shuffle.partitions (adaptive to data)
-            adv = _spark_config_raw.get('spark.sql.adaptive.advisoryPartitionSizeInBytes')
-            if adv:
-                adv_bytes = int(str(adv).replace('MB','').replace('mb','')) * 1024 * 1024 if 'MB' in str(adv).upper() or 'mb' in str(adv) else int(adv)
-                # Check if advisory would create too many partitions (>50000 = excessive overhead)
-                estimated_partitions = int(s_out_gb * 1024 * 1024 * 1024 / max(adv_bytes, 1)) if s_out_gb > 0 else 0
-                if estimated_partitions > 50000:
-                    # Advisory too small for this shuffle volume
-                    # Progressive partition sizing: ensure at least 1000 partitions for parallelism
-                    parts = int(s_out_gb / 5)  # Start with 5GB per partition
-                    if parts < 1000:
-                        parts = int(s_out_gb / 2)  # Try 2GB per partition
-                    if parts < 1000:
-                        parts = int(s_out_gb)  # Fall back to 1GB per partition
-                    cfg['spark.sql.shuffle.partitions'] = str(max(200, parts))
                 else:
-                    cfg['spark.sql.adaptive.advisoryPartitionSizeInBytes'] = str(adv)
-                    # Large-input, low-shuffle, no-spill: smaller advisory + broadcast for better parallelism
-                    if i_in_gb > 1500 and s_out_gb < 250 and disk_spill_gb < 10:
-                        cfg['spark.sql.adaptive.advisoryPartitionSizeInBytes'] = '33554432'  # 32MB
-                        cfg['spark.sql.autoBroadcastJoinThreshold'] = '200m'
-                    src_parts = _spark_config_raw.get('spark.sql.shuffle.partitions')
-                    if src_parts and str(src_parts) not in ('', 'None'):
-                        cfg['spark.sql.shuffle.partitions'] = str(src_parts)
-                    else:
-                        # Always set explicit partitions to avoid EMR initialPartitionNum=1000 cap
-                        # Split by spill: spill-heavy needs smaller tasks, no-spill needs fewer tasks
-                        if disk_spill_gb / max(1, s_out_gb) > 0.5:
-                            # Spill-heavy: ~1GB per partition or advisory-based (capped), whichever is more
-                            target_parts = max(200, int(s_out_gb * 1.4), min(estimated_partitions, 2000))
-                        else:
-                            # No significant spill: ~3GB per partition (reduce scheduling overhead)
-                            target_parts = max(200, int(s_out_gb / 3))
-                        # Floor: ensure enough parallelism when size-based formula gives too few
-                        if target_parts < 1000:
-                            min_parts = max_exec * worker_cfg["vcpu"] * 8
-                            target_parts = max(target_parts, min(min_parts, 1500))
-                        cfg['spark.sql.shuffle.partitions'] = str(target_parts)
+                    # No source broadcast set. Compute safe value for scan-heavy jobs:
+                    # High input + low shuffle ratio = likely has dimension table joins
+                    # that benefit from broadcast (avoids shuffle of large fact table)
+                    safe_mb = int(mem * 1024 * 0.10 / 3)
+                    if i_in_gb > 500 and sh_ratio < 30 and safe_mb >= 100:
+                        cfg["spark.sql.autoBroadcastJoinThreshold"] = f"{min(safe_mb, 256)}MB"
+            # Advisory partition size: compute from workload profile (not preserved from source)
+            # Skip for 16c workers — B1 proved simple partitioning works best
+            # But still set parallelismFirst=false and explicit partitions for stability
+            adv = _spark_config_raw.get('spark.sql.adaptive.advisoryPartitionSizeInBytes')
+            if vcpu >= 16:
+                # 16c (B1 style): no advisory/skew, but set parallelismFirst=false
+                # to prevent AQE from creating too many tiny partitions
+                cfg['spark.sql.adaptive.coalescePartitions.parallelismFirst'] = 'false'
+                cfg['spark.sql.adaptive.skewJoin.enabled'] = 'true'
+            elif adv:
+                # 4c/8c: Compute advisory, partitions, and skew from workload profile.
+                #
+                # Key Spark AQE principle:
+                #   shuffle.partitions = initial reducer count (pre-coalesce)
+                #   advisory = target post-coalesce partition size
+                #   AQE coalesces small partitions UP TO advisory size
+                #
+                # So partitions should be SET HIGHER than shuffle/advisory to give
+                # AQE room to coalesce. Rule: partitions = 2-3x the advisory-based target.
+                #
+                if disk_spill_gb > 500 and i_in_gb > 50:
+                    # Spill-heavy: 640MB advisory, aggressive skew splitting
+                    advisory_bytes = 640 * 1024 * 1024
+                    advisory_target = max(200, int(s_out_gb * 1024 / 640))  # shuffle / advisory
+                    computed_parts = advisory_target * 2  # 2x: AQE coalesces down to advisory
+                    cfg['spark.sql.adaptive.advisoryPartitionSizeInBytes'] = '640MB'
+                    cfg['spark.sql.adaptive.coalescePartitions.minPartitionSize'] = '320MB'
+                    cfg['spark.sql.adaptive.skewJoin.enabled'] = 'true'
+                    cfg['spark.sql.adaptive.skewJoin.skewedPartitionThresholdInBytes'] = '67108864'
+                    cfg['spark.sql.adaptive.rebalancePartitionsSmallPartitionFactor'] = '0.5'
+                elif s_out_gb > 100:
+                    # High shuffle, low spill: 3GB advisory
+                    advisory_bytes = 3 * 1024 * 1024 * 1024
+                    advisory_target = max(200, int(s_out_gb / 3))  # shuffle / advisory
+                    computed_parts = advisory_target * 3  # 3x: AQE coalesces down to advisory
+                    cfg['spark.sql.adaptive.advisoryPartitionSizeInBytes'] = str(advisory_bytes)
+                    cfg['spark.sql.adaptive.coalescePartitions.minPartitionSize'] = '1536MB'  # advisory/2
+                    cfg['spark.sql.adaptive.skewJoin.enabled'] = 'true'
+                else:
+                    # Low shuffle: 128MB advisory
+                    advisory_bytes = 128 * 1024 * 1024
+                    advisory_target = max(200, int(s_out_gb * 1024 / 128)) if s_out_gb > 0 else sp
+                    computed_parts = max(advisory_target * 2, 200)
+                    cfg['spark.sql.adaptive.advisoryPartitionSizeInBytes'] = str(advisory_bytes)
+                    cfg['spark.sql.adaptive.coalescePartitions.minPartitionSize'] = '64MB'
+                    cfg['spark.sql.adaptive.skewJoin.enabled'] = 'true'
+                cfg['spark.sql.shuffle.partitions'] = str(computed_parts)
+                cfg['spark.sql.adaptive.coalescePartitions.parallelismFirst'] = 'false'
             elif s_out_gb > 10 and is_ec2:
                 # Compute advisory: target 6 waves of tasks per core for good parallelism
                 target_tasks = max_exec * worker_cfg["vcpu"] * 6
                 advisory_bytes = int(s_out_gb * 1024 * 1024 * 1024 / max(target_tasks, 1))
                 advisory_bytes = max(128 * 1024 * 1024, min(1024 * 1024 * 1024, advisory_bytes))  # 128MB-1GB
                 cfg['spark.sql.adaptive.advisoryPartitionSizeInBytes'] = str(advisory_bytes)
+                cfg['spark.sql.adaptive.coalescePartitions.minPartitionSize'] = str(max(64*1024*1024, advisory_bytes // 2))
+                cfg['spark.sql.adaptive.coalescePartitions.parallelismFirst'] = 'false'
+                cfg['spark.sql.adaptive.skewJoin.enabled'] = 'true'
             # Preserve AQE coalescing settings from source when set
-            # Skew join optimization: set threshold based on advisory size
-            if 'spark.sql.adaptive.advisoryPartitionSizeInBytes' in cfg:
-                _adv_val = cfg['spark.sql.adaptive.advisoryPartitionSizeInBytes']
-                _adv_b = int(str(_adv_val).replace('MB','').replace('mb','')) * 1024 * 1024 if 'MB' in str(_adv_val).upper() else int(_adv_val)
-                if _adv_b >= 500_000_000:  # 500MB+
-                    cfg['spark.sql.adaptive.skewJoin.skewedPartitionThresholdInBytes'] = str(_adv_b + 10*1024*1024)
-                    cfg['spark.sql.adaptive.rebalancePartitionsSmallPartitionFactor'] = '0.5'
-                elif disk_spill_gb > 500:
-                    # Spill-heavy with small advisory: skew splitting prevents OOM
-                    cfg['spark.sql.adaptive.skewJoin.skewedPartitionThresholdInBytes'] = str(max(67108864, _adv_b // 2))
-            for aqe_key in ['spark.sql.adaptive.coalescePartitions.minPartitionSize',
-                           'spark.sql.adaptive.coalescePartitions.parallelismFirst',
-                           'spark.sql.adaptive.rebalancePartitionsSmallPartitionFactor',
-                           'spark.sql.adaptive.skewJoin.skewedPartitionThresholdInBytes']:
-                src_val = _spark_config_raw.get(aqe_key)
-                if src_val and str(src_val) not in ('', 'None'):
-                    cfg[aqe_key] = str(src_val)
+            # Skew is already handled in the computed block above
             cfg.update(_get_timeout_configs(i_in_gb, duration))
             cfg.update(_get_s3_retry_configs(i_in_gb, i_out_gb))
             cfg.update(_get_iceberg_configs())
@@ -928,7 +1006,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         }
         io_mult = 0
         io_target = None
-        if shuffle_fetch_wait_pct > 50:
+        if shuffle_fetch_wait_pct > 50 and spill_gb < 50:
             # IOPS-based: 5 MB/s effective per disk for shuffle random IO
             # Target: shuffle IO completes within 30% of job duration
             dur_sec = duration * 3600
