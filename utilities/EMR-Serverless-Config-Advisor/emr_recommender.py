@@ -861,7 +861,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                 # So partitions should be SET HIGHER than shuffle/advisory to give
                 # AQE room to coalesce. Rule: partitions = 2-3x the advisory-based target.
                 #
-                if disk_spill_gb > 500 and i_in_gb > 50:
+                if disk_spill_gb > 500 and i_in_gb > 50 and i_in_gb < 2000:
                     # Spill-heavy: 640MB advisory, aggressive skew splitting
                     advisory_bytes = 640 * 1024 * 1024
                     advisory_target = max(200, int(s_out_gb * 1024 / 640))  # shuffle / advisory
