@@ -253,9 +253,13 @@ def _compute_exec_limits(input_gb: float, vcpu: int, partitions: int = 0,
         # requirement — not the allocated cores (which may include idle time).
         if total_task_exec_hours > 0 and duration_hours > 0:
             busy_cores = total_task_exec_hours / duration_hours
-            # Use the higher of busy cores vs allocated cores
-            # (busy cores can exceed allocated when tasks queue)
-            cores = max(busy_cores, orig_vcpu) if orig_vcpu > 0 else busy_cores
+            # Over-provisioning detection: if idle > 50%, the source had way more cores
+            # than needed. Don't trust orig_vcpu — use busy_cores * 2 (peak ≈ 2x avg).
+            if idle_pct > 50:
+                cores = busy_cores * 2
+            else:
+                # Use the higher of busy cores vs allocated cores
+                cores = max(busy_cores, orig_vcpu) if orig_vcpu > 0 else busy_cores
             # Starvation detection: if idle% < 10%, the job was compute-starved.
             # It needed more cores than it got. Scale up by 2-4x to eliminate starvation.
             if idle_pct < 10 and orig_vcpu > 0:
