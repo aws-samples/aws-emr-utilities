@@ -218,7 +218,17 @@ def _compute_exec_limits(input_gb: float, vcpu: int, partitions: int = 0,
         # The source already ran on Serverless — match its configured capacity.
         # orig_vcpu = what was set as maxExecutors × cores (the proven config).
         # Add 10% headroom for variability between runs.
-        cores = max(work * 1.1, orig_vcpu * 1.1) if orig_vcpu > 0 else work * 1.1
+        # Over-provisioning detection: if idle > 50%, source had far more cores than needed.
+        # Use busy_cores * 2 (peak ≈ 2x average) instead of inflated orig_vcpu.
+        if idle_pct > 50 and total_task_exec_hours > 0 and duration_hours > 0:
+            cores = (total_task_exec_hours / duration_hours) * 2
+        else:
+            # Over-provisioning detection: if idle > 50%, source had far more cores than needed.
+            # Use busy_cores * 2 (peak ≈ 2x average) instead of inflated orig_vcpu.
+            if idle_pct > 50 and total_task_exec_hours > 0 and duration_hours > 0:
+                cores = (total_task_exec_hours / duration_hours) * 2
+            else:
+                cores = max(work * 1.1, orig_vcpu * 1.1) if orig_vcpu > 0 else work * 1.1
 
     max_exec = max(2, int(cores / vcpu))
 
@@ -764,8 +774,9 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                     # query plans and cause OOM from broadcast table memory pressure
                     pass
             # Advisory partition size: better than explicit shuffle.partitions (adaptive to data)
+            # Skip for very large input (>3000GB) — spill is from volume, not skew
             adv = _spark_config_raw.get('spark.sql.adaptive.advisoryPartitionSizeInBytes')
-            if adv:
+            if adv and i_in_gb < 3000:
                 adv_bytes = int(str(adv).replace('MB','').replace('mb','')) * 1024 * 1024 if 'MB' in str(adv).upper() or 'mb' in str(adv) else int(adv)
                 # Check if advisory would create too many partitions (>50000 = excessive overhead)
                 estimated_partitions = int(s_out_gb * 1024 * 1024 * 1024 / max(adv_bytes, 1)) if s_out_gb > 0 else 0
