@@ -129,30 +129,69 @@ def _select_worker_type(input_gb: float, shuffle_ratio: float,
     }
 
     # Worker selection for EC2→Serverless migration:
-    # Balance memory fit + shuffle coordination (fewer executors = less N² overhead)
-    if is_ec2:
-        # Worker selection based on workload profile:
-        # 8c: shuffle/spill-heavy jobs benefit from higher per-executor disk throughput (250 MiB/s)
-        # 4c: input-heavy jobs benefit from more executors (more S3 read parallelism)
-        orig_mem_gb = orig_mem_mb / 1024 if orig_mem_mb > 0 else 20
-        mem_per_core = orig_mem_gb * mem_pct / 100 / max(orig_cores, 1)
-        mem_for_medium = max(20, mem_per_core * (8 ** 0.7) * 1.3)
+    # Worker selection based on EMR Serverless hardware fundamentals:
+    # - Memory/core: constant 6.75 GB across 4c/8c/16c
+    # - Disk: 250 MiB/s per container regardless of size
+    # - Network/core: 4c=3.1Gbps > 8c=1.9Gbps > 16c=0.94Gbps
+    # → 4c default (best I/O per vCPU)
+    # → 8c for high shuffle+spill (N² coordination overhead)
+    # → 16c for extreme shuffle-only or CPU-bound scan+shuffle
+    _shuf_gb = input_gb * shuffle_ratio / 100 if shuffle_ratio > 0 else 0
 
-        if mem_for_medium > 54:
+    if is_ec2:
+        # EC2→Serverless: normalize spill to predict Serverless behavior.
+        _ec2_mem_per_core = (orig_mem_mb / 1024) / max(orig_cores, 1) if orig_cores > 0 and orig_mem_mb > 0 else 6.75
+        _predicted_spill = spill_gb * (6.75 / max(_ec2_mem_per_core, 1))
+        _spill_shuf = _predicted_spill / max(_shuf_gb, 1)
+
+        # Determine bottleneck from predicted Serverless resource needs:
+        # disk_rate = (shuffle + predicted_spill) — what hits the local disk
+        _pred_disk_rate = _shuf_gb + _predicted_spill  # total over job lifetime (not per hour)
+
+        if input_gb < 10 and shuffle_ratio > 5000 and _spill_shuf > 3:
+            # Shuffle-only with structural spill: N² coordination + compute-bound
             size = "Large"
-        elif max_shuffle_write_per_task_gb >= 1.0 or spill_gb > 20000:
-            # High per-task shuffle write needs Medium for memory headroom
+        elif _pred_disk_rate < 3000 and _spill_shuf > 5:
+            # Low disk I/O but extreme structural spill: compute-bound shuffle aggregation
+            size = "Large"
+        elif input_gb > 400 and _predicted_spill < 10 and 25 < shuffle_ratio < 200:
+            # CPU-bound scan+shuffle: moderate shuffle after heavy scan
+            size = "Large"
+        elif _pred_disk_rate > 5000:
+            # Disk-bound: check if spill is structural
+            if _spill_shuf > 3:
+                # Structural spill: shuffle coordination matters → 8c
+                size = "Medium"
+            else:
+                # Non-structural: more containers = more aggregate disk throughput → 4c
+                size = "Small"
+        elif _shuf_gb > 1000 and _predicted_spill > 500 and input_gb < 2000 and _spill_shuf > 3:
+            # High shuffle + structural spill + moderate input
             size = "Medium"
         else:
-            # Default to Small (4c) for S3 read parallelism
-            # Worker bump logic later promotes to Medium when executor count > 60
+            # Default: 4c for best I/O throughput per vCPU
             size = "Small"
     else:
-        if spill_gb > 100:
+        # Serverless worker selection based on hardware fundamentals:
+        # - Memory/core is constant (6.75 GB) across 4c/8c/16c
+        # - Disk throughput is same (250 MiB/s) regardless of worker size
+        # - Network/core: 4c=3.1Gbps, 8c=1.9Gbps, 16c=0.94Gbps
+        # → 4c is default (best network + disk throughput per vCPU)
+        # → 8c when shuffle > 1000GB (N² coordination overhead with many executors)
+        # → 16c only for extreme shuffle-only jobs or CPU-bound scan+shuffle
+        _shuf_gb = input_gb * shuffle_ratio / 100 if shuffle_ratio > 0 else 0
+        if input_gb < 10 and shuffle_ratio > 5000:
+            # Shuffle-only (tiny input, extreme shuffle): N² coordination dominates
             size = "Large"
-        elif spill_gb > 10 or mem_pct > 90:
+        elif input_gb > 400 and spill_gb < 10 and 25 < shuffle_ratio < 200:
+            # CPU-bound scan+shuffle: moderate shuffle after heavy scan
+            size = "Large"
+        elif _shuf_gb > 1000 and spill_gb > 500 and input_gb < 2000:
+            # High shuffle + high spill + moderate input: fewer executors reduce coordination
+            # Skip for very large input (>2000GB) — scan-dominated, needs 4c network throughput
             size = "Medium"
         else:
+            # Default: 4c gives best I/O throughput per vCPU
             size = "Small"
 
     r = WORKER_RANGES[size]
@@ -492,10 +531,8 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                 worker_type = "Medium"
                 worker_cfg = {"vcpu": 8, "memory": 54}
 
-        # Extreme spill+shuffle from large EC2 cluster: use Large (16c/108G) for max throughput
-        if is_ec2 and orig_executors > 200 and spill_gb > 25000 and disk_spill_gb > 1000:
-            worker_type = "Large"
-            worker_cfg = {"vcpu": 16, "memory": 108}
+        # (Removed: extreme spill override to Large — on Serverless, 16c doesn't give
+        # more disk/memory per core. Worker selection above already handles this correctly.)
 
         # If source uses broadcast > 256MB, upsize worker to safely hold broadcast tables
         _src_bc = str(_spark_config_raw.get('spark.sql.autoBroadcastJoinThreshold', ''))
@@ -584,19 +621,9 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         sp_cost = cap_partitions(sp_cost, max_exec_cost)
 
         # Bump up worker size if too many executors (shuffle coordination overhead)
-        # Exception: if EC2 source used small executors (≤4 cores), the workload fits in Small
-        # Always go Small→Medium→Large (never skip Medium)
-        _is_rule2_spill = is_ec2 and orig_executors > 150 and sh_ratio < 800 and spill_gb > 5000
-        if is_ec2 and max_exec_cost > 70 and worker_type == "Small" and not _is_rule2_spill:
-            worker_type = "Medium"
-            worker_cfg = {"vcpu": 8, "memory": 54}
-            max_exec_cost = max(2, max_exec_cost * 4 // 8)  # preserve total cores
-            min_exec_cost = max(1, min(max_exec_cost - 2, max(5, max_exec_cost // 3)))
-        if is_ec2 and max_exec_cost > 100 and worker_type == "Medium":
-            worker_type = "Large"
-            worker_cfg = {"vcpu": 16, "memory": 108}
-            max_exec_cost = max(2, max_exec_cost * 8 // 16)  # preserve total cores
-            min_exec_cost = max(1, min(max_exec_cost - 2, max(5, max_exec_cost // 3)))
+        # Worker bump logic disabled: on EMR Serverless, all worker sizes get the same
+        # disk throughput (250 MiB/s) and memory/core (6.75G). More small executors
+        # gives better I/O throughput per vCPU. No reason to upsize.
 
         # Stage-level efficiency: no single stage should take > 60min
         # Uses total_task_time_sec (sum of all task exec times) as total work
@@ -747,7 +774,9 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                 "spark.sql.files.maxPartitionBytes": _max_partition_bytes(i_in_gb, _adv_bytes_for_mpb),
                 **({"spark.emr-serverless.executor.disk": executor_disk,
                 "spark.emr-serverless.executor.disk.type": "shuffle_optimized"} if executor_disk else {}),
-                "spark.sql.shuffle.partitions": str(sp),
+                # Only set shuffle.partitions when > EMR default (1000).
+                # Below that, let EMR's default handle it — AQE coalesces based on advisory.
+                **({"spark.sql.shuffle.partitions": str(sp)} if sp > 1000 else {}),
                 "spark.dynamicAllocation.maxExecutors": str(max_exec),
                 "spark.dynamicAllocation.minExecutors": str(min_exec),
                 "spark.dynamicAllocation.initialExecutors": str(min_exec),
@@ -775,8 +804,10 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                     pass
             # Advisory partition size: better than explicit shuffle.partitions (adaptive to data)
             # Skip for very large input (>3000GB) — spill is from volume, not skew
+            # Skip AQE overrides for 16c workers — B1 proved simple partitioning works best
+            # for shuffle-only and CPU-bound scan jobs that get 16c.
             adv = _spark_config_raw.get('spark.sql.adaptive.advisoryPartitionSizeInBytes')
-            if adv and i_in_gb < 3000:
+            if adv and i_in_gb < 3000 and vcpu < 16:
                 adv_bytes = int(str(adv).replace('MB','').replace('mb','')) * 1024 * 1024 if 'MB' in str(adv).upper() or 'mb' in str(adv) else int(adv)
                 # Check if advisory would create too many partitions (>50000 = excessive overhead)
                 estimated_partitions = int(s_out_gb * 1024 * 1024 * 1024 / max(adv_bytes, 1)) if s_out_gb > 0 else 0
@@ -812,7 +843,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                             min_parts = max_exec * worker_cfg["vcpu"] * 8
                             target_parts = max(target_parts, min(min_parts, 1500))
                         cfg['spark.sql.shuffle.partitions'] = str(target_parts)
-            elif s_out_gb > 10 and is_ec2:
+            elif s_out_gb > 10 and is_ec2 and vcpu < 16:
                 # Compute advisory: target 6 waves of tasks per core for good parallelism
                 target_tasks = max_exec * worker_cfg["vcpu"] * 6
                 advisory_bytes = int(s_out_gb * 1024 * 1024 * 1024 / max(target_tasks, 1))
