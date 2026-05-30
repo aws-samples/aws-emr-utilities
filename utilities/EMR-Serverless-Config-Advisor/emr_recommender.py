@@ -877,6 +877,11 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                 src_val = _spark_config_raw.get(aqe_key)
                 if src_val and str(src_val) not in ('', 'None'):
                     cfg[aqe_key] = str(src_val)
+            # Structural spill protection: when disk_spill >> shuffle_write,
+            # skewed partitions cause disk overflow. Set aggressive skew threshold.
+            if disk_spill_gb > 500 and s_out_gb > 0 and disk_spill_gb / s_out_gb > 2:
+                cfg['spark.sql.adaptive.skewJoin.skewedPartitionThresholdInBytes'] = '67108864'
+                cfg['spark.sql.adaptive.rebalancePartitionsSmallPartitionFactor'] = '0.5'
             cfg.update(_get_timeout_configs(i_in_gb, duration))
             cfg.update(_get_s3_retry_configs(i_in_gb, i_out_gb))
             cfg.update(_get_iceberg_configs())
