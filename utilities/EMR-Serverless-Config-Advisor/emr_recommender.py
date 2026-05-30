@@ -834,7 +834,11 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                         parts = int(s_out_gb)  # Fall back to 1GB per partition
                     cfg['spark.sql.shuffle.partitions'] = str(max(200, parts))
                 else:
-                    cfg['spark.sql.adaptive.advisoryPartitionSizeInBytes'] = str(adv)
+                    # Cap advisory at 640MB max (proven optimal for Serverless)
+                    if adv_bytes > 640 * 1024 * 1024:
+                        cfg['spark.sql.adaptive.advisoryPartitionSizeInBytes'] = str(640 * 1024 * 1024)
+                    else:
+                        cfg['spark.sql.adaptive.advisoryPartitionSizeInBytes'] = str(adv)
                     # Large-input, low-shuffle, no-spill: smaller advisory + broadcast for better parallelism
                     if i_in_gb > 1500 and s_out_gb < 250 and disk_spill_gb < 10:
                         cfg['spark.sql.adaptive.advisoryPartitionSizeInBytes'] = '33554432'  # 32MB
@@ -860,7 +864,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                 # Compute advisory: target 6 waves of tasks per core for good parallelism
                 target_tasks = max_exec * worker_cfg["vcpu"] * 6
                 advisory_bytes = int(s_out_gb * 1024 * 1024 * 1024 / max(target_tasks, 1))
-                advisory_bytes = max(128 * 1024 * 1024, min(1024 * 1024 * 1024, advisory_bytes))  # 128MB-1GB
+                advisory_bytes = max(128 * 1024 * 1024, min(640 * 1024 * 1024, advisory_bytes))  # 128MB-640MB
                 cfg['spark.sql.adaptive.advisoryPartitionSizeInBytes'] = str(advisory_bytes)
             # Preserve AQE coalescing settings from source when set
             # Skew join optimization: set threshold based on advisory size
