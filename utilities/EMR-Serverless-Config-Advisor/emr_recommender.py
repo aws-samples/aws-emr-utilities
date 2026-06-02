@@ -540,11 +540,20 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             _bc_mb = 0
             if _src_bc.upper().endswith('MB'):
                 _bc_mb = int(''.join(c for c in _src_bc[:-2] if c.isdigit()) or 0)
+            elif _src_bc.upper().endswith('GB'):
+                _bc_mb = int(''.join(c for c in _src_bc[:-2] if c.isdigit()) or 0) * 1024
             elif _src_bc.lower().endswith('m'):
                 _bc_mb = int(''.join(c for c in _src_bc[:-1] if c.isdigit()) or 0)
+            elif _src_bc.lower().endswith('g'):
+                _bc_mb = int(''.join(c for c in _src_bc[:-1] if c.isdigit()) or 0) * 1024
+            elif _src_bc.isdigit():
+                _bc_mb = int(_src_bc) // (1024 * 1024)
             if _bc_mb > 256 and worker_type == "Small":
                 worker_type = "Medium"
                 worker_cfg = {"vcpu": 8, "memory": 54}
+            if _bc_mb > 256 and worker_type == "Medium":
+                worker_type = "Large"
+                worker_cfg = {"vcpu": 16, "memory": 108}
 
         shuffle_data_gb = max(s_in_gb, s_out_gb)
         shuffle_bytes = shuffle_data_gb * 1024 * 1024 * 1024
@@ -622,8 +631,22 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
 
         # Bump up worker size if too many executors (shuffle coordination overhead)
         # Worker bump logic disabled: on EMR Serverless, all worker sizes get the same
-        # disk throughput (250 MiB/s) and memory/core (6.75G). More small executors
-        # gives better I/O throughput per vCPU. No reason to upsize.
+        # Worker bump for high executor counts:
+        # On Serverless, each executor = separate Fargate instance. Shuffle is ALL cross-network.
+        # At 150+ instances, N² shuffle connections (150²=22,500+) create significant
+        # network overhead. Bump to larger workers to reduce instance count.
+        if max_exec_cost > 150 and worker_type == "Small":
+            _prev_cores = max_exec_cost * 4
+            worker_type = "Medium"
+            worker_cfg = {"vcpu": 8, "memory": 54}
+            max_exec_cost = max(2, _prev_cores // 8)
+            min_exec_cost = max(1, min(max_exec_cost - 2, max(5, max_exec_cost // 3)))
+        if max_exec_cost > 150 and worker_type == "Medium":
+            _prev_cores = max_exec_cost * 8
+            worker_type = "Large"
+            worker_cfg = {"vcpu": 16, "memory": 108}
+            max_exec_cost = max(2, _prev_cores // 16)
+            min_exec_cost = max(1, min(max_exec_cost - 2, max(5, max_exec_cost // 3)))
 
         # Stage-level efficiency: no single stage should take > 60min
         # Uses total_task_time_sec (sum of all task exec times) as total work
