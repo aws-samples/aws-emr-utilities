@@ -161,6 +161,61 @@ spark-submit --master local[*] --driver-memory 32g \
   --output /tmp/output/
 ```
 
+## Optimizing Serverless Configurations: A Two-Phase Approach
+
+Use a two-phase process to ensure optimal performance and cost for your EMR Serverless deployments.
+
+### Phase 1: Initial Serverless Configuration (Quick Start)
+
+We start by estimating the necessary serverless resources (worker size, number of executors, disk space) based on metrics from your existing EC2 environment. This initial configuration is intentionally conservative — slightly over-provisioned to guarantee your job completes successfully on the first attempt.
+
+**Goal:** Ensure a successful first run, even if it's not the most cost-effective.
+
+### Phase 2: Optimal Serverless Configuration (Fine-Tuning)
+
+This phase leverages actual runtime data from your serverless job — things like how much data was spilled to disk, fetch wait times, and actual disk I/O. We eliminate guesswork and rely on real-world performance data ("ground truth").
+
+**Goal:** Achieve the best possible cost and performance.
+
+### Why This Two-Phase Approach Is Effective
+
+EC2 metrics are helpful for an initial estimate, but serverless environments behave differently. Here's a breakdown of key differences:
+
+| Factor | Phase 1 (EC2 Source) | Phase 2 (Serverless Source) |
+|--------|---------------------|---------------------------|
+| **Spill** | Must predict (EC2 memory config ≠ Serverless) | Measures actual spill |
+| **Shuffle** | Same data, but different configs change AQE coalescing | Measures actual distribution |
+| **Broadcast** | Can't predict HashedRelation expansion | Measures actual broadcast sizes |
+| **Fetch Wait** | EC2 uses shared local NVMe; Serverless uses per-executor disk | Measures actual contention |
+| **Executor Utilization** | Estimated from EC2 utilization | Measures actual idle/active time |
+| **Disk Throughput** | Predicted from specs | Identifies actual bottleneck |
+
+**Spill:** Predicting spill (when data exceeds memory) is difficult when moving from EC2 to Serverless due to differences in memory-per-core ratios. Phase 2 measures actual spill.
+
+**Shuffle:** Although the underlying data and Spark engine are consistent, the configurations we recommend for Serverless (executor count, partition count, advisory size) differ from EC2. These differences alter how Adaptive Query Execution (AQE) optimizes partition coalescing and shuffle data distribution. Phase 2 precisely measures actual shuffle volume under the Serverless configuration.
+
+**Broadcast:** Predicting the final size of broadcasted data is difficult due to dynamic data sizes and the potential expansion of HashedRelation tables (Parquet on disk → deserialized in-memory hash table can be 5-10× larger). Phase 2 measures actual broadcast sizes using accumulator metrics.
+
+**Fetch Wait:** Shuffle read happens over the network between executors in both EC2 and Serverless, and fetch wait time is recorded in both event logs. However, the disk architecture differs significantly: on EC2, multiple executors share fast local NVMe on the same node, while on Serverless, each executor gets its own dedicated disk with a fixed bandwidth cap (250 MiB/s for shuffle-optimized). Fetch wait tends to be higher on Serverless for disk-heavy jobs.
+
+**In short:** Phase 1 leverages existing EC2 metrics to create an initial EMR Serverless configuration. Phase 2 refines this with precise, data-driven insights from the EMR Serverless environment.
+
+### How It Works
+
+The recommendation engine supports both phases (controlled by an `is_ec2` flag derived from the event log format). The workflow is:
+
+1. **Run Phase 1** — Analyze EC2 event logs to produce an initial Serverless configuration
+2. **Run the job** on EMR Serverless with the Phase 1 config
+3. **Run Phase 2** — Analyze the Serverless event log to produce an optimized configuration
+
+```bash
+# Phase 1: from EC2 source
+python3 pipeline_wrapper.py --input s3://bucket/ec2-event-logs/ --output /tmp/phase1/
+
+# Phase 2: from Serverless run
+python3 pipeline_wrapper.py --input s3://bucket/serverless-event-logs/ --output /tmp/phase2/
+```
+
 ## Recommendation Modes
 
 | Mode | Strategy | Best For |
