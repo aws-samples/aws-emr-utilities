@@ -648,7 +648,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
 
             # Executor floor: disk throughput must deliver peak stage IO in 15 min
             _peak_disk_io = _peak_shuf_w + _peak_shuf_r
-            _disk_throughput = 0.244  # GB/s (250 MiB/s shuffle_optimized)
+            _disk_throughput = 0.244  # GB/s per executor
             if _peak_disk_io > 1000:
                 _target_stage_sec = 900  # 15 min
                 _n_disk = int(math.ceil(_peak_disk_io / (_target_stage_sec * _disk_throughput)))
