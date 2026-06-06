@@ -5,6 +5,7 @@ Supports both local filesystem and S3 for input/output.
 """
 
 import sys
+import math
 import json
 import glob
 from pathlib import Path
@@ -612,6 +613,49 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             max_exec_cost = max(2, max_exec_cost * 8 // 16)  # preserve total cores
             min_exec_cost = max(1, min(max_exec_cost - 2, max(5, max_exec_cost // 3)))
 
+        # Serverless path: bump worker size based on actual shuffle/spill metrics.
+        # Serverless event logs have accurate metrics — use them directly.
+        if not is_ec2:
+            _total_shuffle_gb = s_in_gb + s_out_gb
+            _orig_vcpu = worker_cfg["vcpu"]
+            if (_total_shuffle_gb > 15000 or spill_gb > 50000) and worker_type != "Large":
+                worker_type = "Large"
+                worker_cfg = {"vcpu": 16, "memory": 108}
+                max_exec_cost = max(2, max_exec_cost * _orig_vcpu // 16)
+                min_exec_cost = max(1, min(max_exec_cost - 2, max(5, max_exec_cost // 3)))
+            elif (_total_shuffle_gb > 5000 or spill_gb > 10000) and worker_type == "Small":
+                worker_type = "Medium"
+                worker_cfg = {"vcpu": 8, "memory": 54}
+                max_exec_cost = max(2, max_exec_cost * 4 // 8)
+                min_exec_cost = max(1, min(max_exec_cost - 2, max(5, max_exec_cost // 3)))
+
+        # Serverless path: right-size partitions and executors from actual metrics
+        if not is_ec2 and stages_raw:
+            _per_task_mem_gb = worker_cfg["memory"] * 0.6 / worker_cfg["vcpu"]
+            # Find peak stage shuffle (max of write and read)
+            _peak_shuf_w = max((s.get("shuffle_write_gb", 0) or 0) for s in stages_raw)
+            _peak_shuf_r = max((s.get("shuffle_read_gb", 0) or 0) for s in stages_raw)
+            _peak_shuf = max(_peak_shuf_w, _peak_shuf_r)
+
+            # Partition sizing: target zero spill (partition fits in per-task memory)
+            # Use 70% of per-task memory for build side hash table headroom
+            _serverless_spill_override = False
+            if spill_gb > _peak_shuf and _peak_shuf > 100:
+                _target_partitions = int(math.ceil(_peak_shuf / (_per_task_mem_gb * 0.7)))
+                if _target_partitions > sp_cost:
+                    sp_cost = _target_partitions
+                    _serverless_spill_override = True
+
+            # Executor floor: disk throughput must deliver peak stage IO in 15 min
+            _peak_disk_io = _peak_shuf_w + _peak_shuf_r
+            _disk_throughput = 0.244  # GB/s (250 MiB/s shuffle_optimized)
+            if _peak_disk_io > 1000:
+                _target_stage_sec = 900  # 15 min
+                _n_disk = int(math.ceil(_peak_disk_io / (_target_stage_sec * _disk_throughput)))
+                if _n_disk > max_exec_cost:
+                    max_exec_cost = _n_disk
+                    min_exec_cost = max(1, min(max_exec_cost - 2, max(5, max_exec_cost // 3)))
+
         # Stage-level efficiency: no single stage should take > 60min
         # Uses total_task_time_sec (sum of all task exec times) as total work
         # Apply 0.85x factor for I/O-bound stages (Serverless NVMe is faster than EC2)
@@ -632,9 +676,9 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                     min_exec_cost = max(1, min(max_exec_cost - 2, max(5, max_exec_cost // 3)))
 
         # Account for EC2 spill conservatively: Serverless has more memory per core
-        # and AQE reduces spill, but not to zero. Use 20% of observed spill as safety floor.
-        _eff_disk_spill = disk_spill_gb * 0.2
-        _eff_mem_spill = spill_gb * 0.2
+        # and AQE reduces spill, but not to zero. Use 10% of observed spill as safety floor.
+        _eff_disk_spill = disk_spill_gb * 0.1
+        _eff_mem_spill = spill_gb * 0.1
         executor_disk_cost = _calculate_executor_disk(s_out_gb, _eff_disk_spill, _eff_mem_spill, max_exec_cost)
         # Performance-optimized
         max_exec_perf_init, min_exec_perf = _compute_exec_limits(
@@ -773,15 +817,23 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             # A stage that reads shuffle, writes nothing (collect to driver),
             # and failed with maxResultSize indicates a broadcast join collecting
             # too much data through the driver. Recommend disabling auto-broadcast.
-            # Broadcast: set default 30MB for Medium/Large workers (sufficient for dimension tables
-            # without risking OOM from large broadcasts). Don't inherit source value.
+            # Broadcast: preserve source value. Only disable if maxResultSize failure detected.
+            # When not set, use 256MB (Spark default 10MB is too conservative for 54G executors).
             if _should_disable_broadcast(stages_raw, _spark_config_raw, s_out_gb, d_mem):
                 cfg["spark.sql.autoBroadcastJoinThreshold"] = "-1"
-            elif worker_type in ("Medium", "Large"):
-                cfg["spark.sql.autoBroadcastJoinThreshold"] = "30m"
-            # Advisory partition size: better than explicit shuffle.partitions (adaptive to data)
+            else:
+                src_val = _spark_config_raw.get('spark.sql.autoBroadcastJoinThreshold')
+                if src_val and str(src_val) not in ('', 'None'):
+                    cfg["spark.sql.autoBroadcastJoinThreshold"] = str(src_val)
+                elif is_ec2:
+                    # Don't override broadcast threshold — aggressive values can change
+                    # query plans and cause OOM from broadcast table memory pressure
+                    pass
+            # Advisory partition size: skip if Serverless spill analysis overrode partitions
             adv = _spark_config_raw.get('spark.sql.adaptive.advisoryPartitionSizeInBytes')
-            if adv:
+            if not is_ec2 and '_serverless_spill_override' in dir() and _serverless_spill_override:
+                cfg['spark.sql.shuffle.partitions'] = str(sp)
+            elif adv:
                 adv_bytes = _parse_size_to_bytes(adv)
                 # Check if advisory would create too many partitions (>50000 = excessive overhead)
                 estimated_partitions = int(s_out_gb * 1024 * 1024 * 1024 / max(adv_bytes, 1)) if s_out_gb > 0 else 0
@@ -948,9 +1000,11 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         }
         io_mult = 0
         io_target = None
-        if shuffle_fetch_wait_pct > 50:
+        if shuffle_fetch_wait_pct > 50 and spill_gb < 20000:
             # IOPS-based: 5 MB/s effective per disk for shuffle random IO
             # Target: shuffle IO completes within 30% of job duration
+            # Skip when spill > 20TB — high spill + fetch wait indicates capacity/OOM issue,
+            # not disk throughput. Downsizing would make OOM worse.
             dur_sec = duration * 3600
             total_shuf_mb = (s_in_gb + s_out_gb) * 1024
             target_sec = dur_sec * 0.3
