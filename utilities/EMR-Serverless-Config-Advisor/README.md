@@ -216,6 +216,104 @@ python3 pipeline_wrapper.py --input s3://bucket/ec2-event-logs/ --output /tmp/ph
 python3 pipeline_wrapper.py --input s3://bucket/serverless-event-logs/ --output /tmp/phase2/
 ```
 
+## Future State (Preview)
+
+### Feedback-Driven Optimization with GenAI
+
+The Config Advisor evolves from a one-shot recommender into a continuously learning system that combines deterministic rules with GenAI-powered diagnostics.
+
+#### Architecture
+
+```
+┌──────────┐     ┌──────────────┐     ┌──────────────┐     ┌────────────────┐
+│ Job Run  │────>│  Extractor   │────>│  Feedback    │────>│  Iceberg Table │
+│ (Event   │     │  (enhanced)  │     │  Engine      │     │  (full history)│
+│   Log)   │     │              │     │  (rules)     │     │                │
+└──────────┘     └──────────────┘     └──────────────┘     └───────┬────────┘
+                                                                    │
+       ┌────────────────────────────────────────────────────────────┘
+       │
+       ▼
+  ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+  │  GenAI       │────>│ Recommender  │────>│  Next Run    │
+  │  (periodic)  │     │ (constraints │     │  Config      │
+  │              │     │  + formulas) │     │              │
+  └──────────────┘     └──────────────┘     └──────────────┘
+```
+
+#### Capabilities
+
+| Capability | Rule-Based | GenAI-Assisted |
+|-----------|-----------|----------------|
+| **Partition sizing** (shuffle / per-task memory) | ✅ | |
+| **Executor count** (disk IO / throughput) | ✅ | |
+| **Worker type selection** (shuffle volume thresholds) | ✅ | |
+| **Disk sizing** (per-executor shuffle + spill + headroom) | ✅ | |
+| **Spill elimination** (detect advisory too large) | ✅ | |
+| **Compression recommendation** (CPU idle + high shuffle) | ✅ | |
+| **IO-downsize guard** (spill indicates capacity, not IOPS) | ✅ | |
+| **Failure diagnosis from driver logs** (exact root cause) | | ✅ |
+| **Trend prediction** (data growth, seasonality) | | ✅ |
+| **Cross-job correlation** (shared tables growing) | | ✅ |
+| **Anomaly explanation** (why this run cost 4x more) | | ✅ |
+| **SQL optimization suggestions** (UNION→UNION ALL, column pruning) | | ✅ |
+| **Recommendation narrative** (human-readable explanation) | | ✅ |
+| **Regression detection** (new config worse than previous) | ✅ | |
+| **Convergence tracking** (stop tuning when stable) | ✅ | |
+
+#### Feedback Loop
+
+After each run, the system records outcomes and updates learned constraints:
+
+| Signal | Rule | Constraint Updated |
+|--------|------|-------------------|
+| Spill > shuffle volume | Partitions too large | `min_partitions` increased |
+| Fetch wait > 20% | Insufficient disk bandwidth | `min_executors` increased |
+| FetchFailed tasks > 0 | Disk full or executor OOM | `min_disk` increased |
+| No issues + fast completion | Over-provisioned | Executor floor relaxed by 10% |
+| Broadcast crash (>8 GB) | HashedRelation too large | `max_broadcast_threshold` lowered |
+
+#### GenAI Integration Points
+
+1. **Post-run diagnosis** — Parse unstructured driver logs, identify novel errors, produce actionable explanation
+2. **Weekly trend analysis** — Analyze full run history, detect seasonality and growth patterns, predict next run's needs
+3. **Cross-job insights** — Correlate shared table growth across multiple jobs, proactively adjust affected configs
+4. **Recommendation narrative** — Generate human-readable explanation of why each config value was chosen
+5. **SQL plan analysis** — Identify query anti-patterns (redundant sorts, unnecessary UNION DISTINCT, missing column pruning)
+
+#### Optional Log Enrichment
+
+For richer diagnostics, the pipeline accepts optional log sources:
+
+```bash
+# Standard: event log only
+python3 pipeline_wrapper.py --input s3://bucket/event-log.zip --output /tmp/out/
+
+# Enriched: event log + driver log
+python3 pipeline_wrapper.py --input s3://bucket/event-log.zip --output /tmp/out/ \
+  --driver-log s3://bucket/driver/stderr.gz
+
+# Full: event log + complete S3 log directory
+python3 pipeline_wrapper.py --input s3://bucket/event-log.zip --output /tmp/out/ \
+  --log-path s3://emr-logs/cluster-id/
+```
+
+| Source | Additional Signals |
+|--------|-------------------|
+| Event log only | Stage metrics, executor counts, shuffle/spill totals |
+| + Driver log | Exact error messages, AQE coalescing decisions, retry counts, broadcast failures |
+| + Full log path | Per-executor GC/heap, instance-state (disk util, memory), CloudWatch metrics |
+
+#### Convergence
+
+A job's config is considered converged when 3 consecutive runs show:
+- Fetch wait < 10%
+- Spill < 5% of shuffle volume
+- Zero task/stage failures
+- Cost within 5% of previous run
+
+At convergence, the system monitors for drift without recommending further changes.
+
 ## Recommendation Modes
 
 | Mode | Strategy | Best For |
