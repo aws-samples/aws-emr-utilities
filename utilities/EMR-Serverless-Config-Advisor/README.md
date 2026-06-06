@@ -161,6 +161,159 @@ spark-submit --master local[*] --driver-memory 32g \
   --output /tmp/output/
 ```
 
+## Optimizing Serverless Configurations: A Two-Phase Approach
+
+Use a two-phase process to ensure optimal performance and cost for your EMR Serverless deployments.
+
+### Phase 1: Initial Serverless Configuration (Quick Start)
+
+We start by estimating the necessary serverless resources (worker size, number of executors, disk space) based on metrics from your existing EC2 environment. This initial configuration is intentionally conservative — slightly over-provisioned to guarantee your job completes successfully on the first attempt.
+
+**Goal:** Ensure a successful first run, even if it's not the most cost-effective.
+
+### Phase 2: Optimal Serverless Configuration (Fine-Tuning)
+
+This phase leverages actual runtime data from your serverless job — things like how much data was spilled to disk, fetch wait times, and actual disk I/O. We eliminate guesswork and rely on real-world performance data ("ground truth").
+
+**Goal:** Achieve the best possible cost and performance.
+
+### Why This Two-Phase Approach Is Effective
+
+EC2 metrics are helpful for an initial estimate, but serverless environments behave differently. Here's a breakdown of key differences:
+
+| Factor | Phase 1 (EC2 Source) | Phase 2 (Serverless Source) |
+|--------|---------------------|---------------------------|
+| **Spill** | Must predict (EC2 memory config ≠ Serverless) | Measures actual spill |
+| **Shuffle** | Same data, but different configs change AQE coalescing | Measures actual distribution |
+| **Broadcast** | Can't predict HashedRelation expansion | Measures actual broadcast sizes |
+| **Fetch Wait** | EC2 uses shared local NVMe; Serverless uses per-executor disk | Measures actual contention |
+| **Executor Utilization** | Estimated from EC2 utilization | Measures actual idle/active time |
+| **Disk Throughput** | Predicted from specs | Identifies actual bottleneck |
+
+**Spill:** Predicting spill (when data exceeds memory) is difficult when moving from EC2 to Serverless due to differences in memory-per-core ratios. Phase 2 measures actual spill.
+
+**Shuffle:** Although the underlying data and Spark engine are consistent, the configurations we recommend for Serverless (executor count, partition count, advisory size) differ from EC2. These differences alter how Adaptive Query Execution (AQE) optimizes partition coalescing and shuffle data distribution. Phase 2 precisely measures actual shuffle volume under the Serverless configuration.
+
+**Broadcast:** Predicting the final size of broadcasted data is difficult due to dynamic data sizes and the potential expansion of HashedRelation tables (Parquet on disk → deserialized in-memory hash table can be 5-10× larger). Phase 2 measures actual broadcast sizes using accumulator metrics.
+
+**Fetch Wait:** Shuffle read happens over the network between executors in both EC2 and Serverless, and fetch wait time is recorded in both event logs. However, the disk architecture differs significantly: on EC2, multiple executors share fast local NVMe on the same node, while on Serverless, each executor gets its own dedicated disk with a fixed bandwidth cap (250 MiB/s for shuffle-optimized). Fetch wait tends to be higher on Serverless for disk-heavy jobs.
+
+**In short:** Phase 1 leverages existing EC2 metrics to create an initial EMR Serverless configuration. Phase 2 refines this with precise, data-driven insights from the EMR Serverless environment.
+
+### How It Works
+
+The recommendation engine supports both phases (controlled by an `is_ec2` flag derived from the event log format). The workflow is:
+
+1. **Run Phase 1** — Analyze EC2 event logs to produce an initial Serverless configuration
+2. **Run the job** on EMR Serverless with the Phase 1 config
+3. **Run Phase 2** — Analyze the Serverless event log to produce an optimized configuration
+
+```bash
+# Phase 1: from EC2 source
+python3 pipeline_wrapper.py --input s3://bucket/ec2-event-logs/ --output /tmp/phase1/
+
+# Phase 2: from Serverless run
+python3 pipeline_wrapper.py --input s3://bucket/serverless-event-logs/ --output /tmp/phase2/
+```
+
+## Future State (Preview)
+
+### Feedback-Driven Optimization with GenAI
+
+The Config Advisor evolves from a one-shot recommender into a continuously learning system that combines deterministic rules with GenAI-powered diagnostics.
+
+#### Architecture
+
+```
+┌──────────┐     ┌──────────────┐     ┌──────────────┐     ┌────────────────┐
+│ Job Run  │────>│  Extractor   │────>│  Feedback    │────>│  Iceberg Table │
+│ (Event   │     │  (enhanced)  │     │  Engine      │     │  (full history)│
+│   Log)   │     │              │     │  (rules)     │     │                │
+└──────────┘     └──────────────┘     └──────────────┘     └───────┬────────┘
+                                                                    │
+       ┌────────────────────────────────────────────────────────────┘
+       │
+       ▼
+  ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+  │  GenAI       │────>│ Recommender  │────>│  Next Run    │
+  │  (periodic)  │     │ (constraints │     │  Config      │
+  │              │     │  + formulas) │     │              │
+  └──────────────┘     └──────────────┘     └──────────────┘
+```
+
+#### Capabilities
+
+| Capability | Rule-Based | GenAI-Assisted |
+|-----------|-----------|----------------|
+| **Partition sizing** (shuffle / per-task memory) | ✅ | |
+| **Executor count** (disk IO / throughput) | ✅ | |
+| **Worker type selection** (shuffle volume thresholds) | ✅ | |
+| **Disk sizing** (per-executor shuffle + spill + headroom) | ✅ | |
+| **Spill elimination** (detect advisory too large) | ✅ | |
+| **Compression recommendation** (CPU idle + high shuffle) | ✅ | |
+| **IO-downsize guard** (spill indicates capacity, not IOPS) | ✅ | |
+| **Failure diagnosis from driver logs** (exact root cause) | | ✅ |
+| **Trend prediction** (data growth, seasonality) | | ✅ |
+| **Cross-job correlation** (shared tables growing) | | ✅ |
+| **Anomaly explanation** (why this run cost 4x more) | | ✅ |
+| **SQL optimization suggestions** (UNION→UNION ALL, column pruning) | | ✅ |
+| **Recommendation narrative** (human-readable explanation) | | ✅ |
+| **Regression detection** (new config worse than previous) | ✅ | |
+| **Convergence tracking** (stop tuning when stable) | ✅ | |
+
+#### Feedback Loop
+
+After each run, the system records outcomes and updates learned constraints:
+
+| Signal | Rule | Constraint Updated |
+|--------|------|-------------------|
+| Spill > shuffle volume | Partitions too large | `min_partitions` increased |
+| Fetch wait > 20% | Insufficient disk bandwidth | `min_executors` increased |
+| FetchFailed tasks > 0 | Disk full or executor OOM | `min_disk` increased |
+| No issues + fast completion | Over-provisioned | Executor floor relaxed by 10% |
+| Broadcast crash (>8 GB) | HashedRelation too large | `max_broadcast_threshold` lowered |
+
+#### GenAI Integration Points
+
+1. **Post-run diagnosis** — Parse unstructured driver logs, identify novel errors, produce actionable explanation
+2. **Weekly trend analysis** — Analyze full run history, detect seasonality and growth patterns, predict next run's needs
+3. **Cross-job insights** — Correlate shared table growth across multiple jobs, proactively adjust affected configs
+4. **Recommendation narrative** — Generate human-readable explanation of why each config value was chosen
+5. **SQL plan analysis** — Identify query anti-patterns (redundant sorts, unnecessary UNION DISTINCT, missing column pruning)
+
+#### Optional Log Enrichment
+
+For richer diagnostics, the pipeline accepts optional log sources:
+
+```bash
+# Standard: event log only
+python3 pipeline_wrapper.py --input s3://bucket/event-log.zip --output /tmp/out/
+
+# Enriched: event log + driver log
+python3 pipeline_wrapper.py --input s3://bucket/event-log.zip --output /tmp/out/ \
+  --driver-log s3://bucket/driver/stderr.gz
+
+# Full: event log + complete S3 log directory
+python3 pipeline_wrapper.py --input s3://bucket/event-log.zip --output /tmp/out/ \
+  --log-path s3://emr-logs/cluster-id/
+```
+
+| Source | Additional Signals |
+|--------|-------------------|
+| Event log only | Stage metrics, executor counts, shuffle/spill totals |
+| + Driver log | Exact error messages, AQE coalescing decisions, retry counts, broadcast failures |
+| + Full log path | Per-executor GC/heap, instance-state (disk util, memory), CloudWatch metrics |
+
+#### Convergence
+
+A job's config is considered converged when 3 consecutive runs show:
+- Fetch wait < 10%
+- Spill < 5% of shuffle volume
+- Zero task/stage failures
+- Cost within 5% of previous run
+
+At convergence, the system monitors for drift without recommending further changes.
+
 ## Recommendation Modes
 
 | Mode | Strategy | Best For |
