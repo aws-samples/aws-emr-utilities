@@ -895,6 +895,11 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             cfg.update(_get_iceberg_configs())
             if sh_ratio > 30:
                 cfg.update({"spark.shuffle.compress": "true", "spark.shuffle.spill.compress": "true"})
+
+            # Serverless: recommend zstd when disk-bound with CPU headroom
+            # zstd gives 50-100% better compression than lz4, reducing disk IO significantly
+            if not is_ec2 and shuffle_fetch_wait_pct > 20 and cpu_pct < 50:
+                cfg["spark.io.compression.codec"] = "zstd"
             # Serverless storage: only when explicitly enabled and disk pressure is safe
             if serverless_storage:
                 disk_spill_per_exec = (disk_spill_gb + spill_gb) / max(max_exec, 1)
