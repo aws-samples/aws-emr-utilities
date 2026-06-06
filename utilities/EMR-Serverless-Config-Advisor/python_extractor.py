@@ -244,6 +244,17 @@ def decompress_content(content: bytes, filename: str) -> bytes:
             return gzip.decompress(content)
         elif filename.endswith('.bz2'):
             return bz2.decompress(content)
+        # Try zstd if content starts with magic bytes — handles extensionless v2 event logs
+        if len(content) > 4 and content[:4] == b"\x28\xb5\x2f\xfd":
+            dctx = zstd.ZstdDecompressor()
+            chunks = []
+            with dctx.stream_reader(BytesIO(content)) as reader:
+                while True:
+                    chunk = reader.read(1024*1024)
+                    if not chunk:
+                        break
+                    chunks.append(chunk)
+            return b"".join(chunks)
         return content
     except Exception as e:
         print(f"Error decompressing {filename}: {e}", file=sys.stderr)
