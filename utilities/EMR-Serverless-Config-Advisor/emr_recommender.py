@@ -182,8 +182,30 @@ def _select_worker_type(input_gb: float, shuffle_ratio: float,
 
     r = WORKER_RANGES[size]
 
-    # Memory: always use max for the worker size (prevents OOM — Spark memory is spiky)
-    mem = r["max_mem"]
+    # Memory right-sizing: use observed peak memory to pick appropriate memory level
+    # instead of always maxing out (which over-provisions and slows worker allocation)
+    if size == "Small":
+        # For Small workers: right-size based on observed peak memory
+        # 2x headroom for stability (prevents OOM under data growth)
+        if max_peak_mem_gb > 0 and peak_mem_pct > 0:
+            needed_mem = max_peak_mem_gb * 2.0  # 2x headroom for OOM safety
+            needed_mem = max(needed_mem, 8)  # minimum 8g
+            mem = min(r["max_mem"], max(r["min_mem"], int(needed_mem + 0.99)))
+        elif mem_pct > 0 and orig_mem_mb > 0:
+            used_gb = (orig_mem_mb / 1024) * (mem_pct / 100)
+            needed_mem = used_gb * 2.0
+            mem = min(r["max_mem"], max(r["min_mem"], int(needed_mem + 0.99)))
+        else:
+            # No data — use max (safe default)
+            mem = r["max_mem"]
+    elif size == "Medium":
+        if max_peak_mem_gb > 0:
+            needed_mem = max_peak_mem_gb * 2.0
+            mem = min(r["max_mem"], max(r["min_mem"], int(needed_mem / r["mem_step"] + 0.99) * r["mem_step"]))
+        else:
+            mem = r["max_mem"]
+    else:
+        mem = r["max_mem"]
 
     return size, {"vcpu": r["vcpu"], "memory": mem}
 
@@ -276,13 +298,24 @@ def _calculate_executor_disk(shuffle_write_gb: float, disk_spill_gb: float,
 
 
 def _max_partition_bytes(input_gb: float, advisory_bytes: int = 0) -> str:
-    if advisory_bytes >= 500_000_000:  # 500MB+ advisory
+    """Compute maxPartitionBytes for scan stages.
+    
+    Controls how much data each scan task reads. Should be large enough
+    to avoid excessive task overhead but small enough to fit in memory.
+    For shuffle-heavy jobs, scan partition size matters less (AQE reshuffles).
+    """
+    if advisory_bytes >= 500_000_000:  # 500MB+ advisory — large partitions OK
         return "512m"
+    elif advisory_bytes >= 256_000_000:
+        return "256m"
     elif advisory_bytes > 0:
+        # Align scan partitions with advisory to reduce coalescing overhead
         return "128m"
-    # No advisory: base on input size
-    if input_gb >= 1024:
+    # No advisory: scale with input size
+    if input_gb >= 2000:
         return "512m"
+    elif input_gb >= 500:
+        return "256m"
     return "128m"
 
 
@@ -598,8 +631,11 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         )
         sp_cost = cap_partitions(sp_cost, max_exec_cost)
 
+        # EMR Serverless: never reduce partitions below 1000 (EMR default + AQE coalesces down)
+        if not is_ec2:
+            sp_cost = max(1000, sp_cost)
+
         # Bump up worker size if too many executors (shuffle coordination overhead)
-        # Exception: if EC2 source used small executors (≤4 cores), the workload fits in Small
         # Always go Small→Medium→Large (never skip Medium)
         _is_rule2_spill = is_ec2 and orig_executors > 150 and sh_ratio < 800 and spill_gb > 5000
         if is_ec2 and max_exec_cost > 70 and worker_type == "Small" and not _is_rule2_spill:
@@ -693,6 +729,8 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             total_task_exec_hours=total_task_exec_hours, duration_hours=duration, stages=stages_raw, is_ec2_source=is_ec2,
         )
         sp_perf = cap_partitions(sp_perf, max_exec_perf)
+        if not is_ec2:
+            sp_perf = max(1000, sp_perf)
         # Stage-level efficiency for perf mode: no stage > 30min
         if is_ec2 and stages_raw:
             max_stage_p = max(stages_raw, key=lambda s: s.get('total_task_time_sec', 0) or 0)
