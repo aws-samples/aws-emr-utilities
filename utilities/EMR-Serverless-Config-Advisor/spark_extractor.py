@@ -32,7 +32,12 @@ import zstandard as zstd
 # ── S3 app discovery (shared by both modes) ─────────────────────────
 
 def discover_apps(input_path, limit):
-    """Discover application prefixes from S3. Returns [(s3_prefix, app_name, is_rolling)]."""
+    """Discover application prefixes from S3. Returns [(s3_prefix, app_name, is_rolling)].
+    
+    Supports:
+    - Flat: s3://bucket/path/eventlog_v2_<id>/
+    - Nested EMR Serverless: s3://bucket/path/jobs/<job-id>/sparklogs/eventlog_v2_<id>/
+    """
     parts = input_path.replace("s3://", "").split("/", 1)
     bucket = parts[0]
     prefix = parts[1] if len(parts) > 1 else ""
@@ -40,9 +45,10 @@ def discover_apps(input_path, limit):
         prefix += "/"
 
     s3 = boto3.client("s3", region_name="us-east-1")
-    resp = s3.list_objects_v2(Bucket=bucket, Prefix=prefix, Delimiter="/")
     app_prefixes = []
 
+    # First try flat discovery (top-level eventlog_v2_ or application_ dirs)
+    resp = s3.list_objects_v2(Bucket=bucket, Prefix=prefix, Delimiter="/")
     for cp in resp.get("CommonPrefixes", []):
         p = cp["Prefix"]
         name = p.rstrip("/").rsplit("/", 1)[-1]
@@ -57,6 +63,29 @@ def discover_apps(input_path, limit):
         if name.startswith("application_") and not k.endswith("/"):
             app_prefixes.append((k, name, False))
 
+    # If nothing found at top level, search recursively for eventlog_v2_ dirs
+    if not app_prefixes:
+        paginator = s3.get_paginator("list_objects_v2")
+        seen = set()
+        for page in paginator.paginate(Bucket=bucket, Prefix=prefix):
+            for obj in page.get("Contents", []):
+                key = obj["Key"]
+                # Look for /eventlog_v2_<id>/events_ pattern
+                if "/eventlog_v2_" in key and "/events_" in key:
+                    # Extract the eventlog_v2_ directory prefix
+                    idx = key.index("/eventlog_v2_")
+                    dir_end = key.index("/", idx + 1)
+                    ev_prefix = key[:dir_end + 1]
+                    name = ev_prefix.rstrip("/").rsplit("/", 1)[-1]
+                    if name not in seen:
+                        seen.add(name)
+                        app_prefixes.append((ev_prefix, name, True))
+                        if len(app_prefixes) >= limit:
+                            break
+            if len(app_prefixes) >= limit:
+                break
+
+    # Fallback: input path itself is an app
     if not app_prefixes:
         dir_name = prefix.rstrip("/").rsplit("/", 1)[-1]
         if dir_name.startswith("eventlog_v2_"):
@@ -94,19 +123,33 @@ def read_app_from_s3(spark, bucket, app_prefix, app_name, is_rolling):
         s3_path += "/"
 
     if is_rolling:
-        # Directory of zstd files — use binaryFile with streaming decompress
+        # Directory of event files — may be zstd (no extension) or plain text
+        # Read all files that start with "events_"
         raw = (spark.read.format("binaryFile").load(s3_path)
-               .filter("path LIKE '%.zstd'"))
+               .filter("path LIKE '%/events_%'"))
 
         def stream_decompress(iterator):
             import zstandard, io
             dctx = zstandard.ZstdDecompressor()
+            ZSTD_MAGIC = b'\x28\xb5\x2f\xfd'
             for row in iterator:
-                reader = dctx.stream_reader(io.BytesIO(row.content))
-                for line in io.TextIOWrapper(reader, encoding="utf-8"):
-                    line = line.strip()
-                    if line:
-                        yield (line,)
+                data = row.content
+                try:
+                    if data[:4] == ZSTD_MAGIC:
+                        reader = dctx.stream_reader(io.BytesIO(data))
+                        text = io.TextIOWrapper(reader, encoding="utf-8")
+                    else:
+                        text = io.StringIO(data.decode("utf-8", errors="ignore"))
+                    for line in text:
+                        line = line.strip()
+                        if line:
+                            yield (line,)
+                except Exception:
+                    # Fallback: treat as plain text
+                    for line in data.decode("utf-8", errors="ignore").splitlines():
+                        line = line.strip()
+                        if line:
+                            yield (line,)
 
         lines_rdd = raw.rdd.mapPartitions(stream_decompress)
         lines_df = spark.createDataFrame(lines_rdd, ["line"])
@@ -173,7 +216,7 @@ def _decompress_one_file(args):
 
 
 def phase_a_decompress(input_path, local_base, limit, workers=50):
-    """Decompress all apps from S3 to local jsonl files — flat parallelism."""
+    """Decompress all apps from S3 to HDFS jsonl files — flat parallelism."""
     bucket, app_prefixes = discover_apps(input_path, limit)
 
     all_tasks = []
@@ -182,12 +225,16 @@ def phase_a_decompress(input_path, local_base, limit, workers=50):
             all_tasks.append((bucket, key, app_name))
 
     print(f"Phase A: Decompressing {len(app_prefixes)} apps, {len(all_tasks)} files with {workers} threads")
-    os.makedirs(local_base, exist_ok=True)
+
+    # Write to local staging first, then upload to HDFS
+    import subprocess
+    staging = "/tmp/spark_extractor_local_staging"
+    os.makedirs(staging, exist_ok=True)
 
     app_files = {}
     app_counts = {}
     for _, app_name, _ in app_prefixes:
-        d = os.path.join(local_base, app_name)
+        d = os.path.join(staging, app_name)
         os.makedirs(d, exist_ok=True)
         app_files[app_name] = open(os.path.join(d, "events.jsonl"), "w")
         app_counts[app_name] = 0
@@ -210,11 +257,26 @@ def phase_a_decompress(input_path, local_base, limit, workers=50):
     for f in app_files.values():
         f.close()
 
+    # Copy to HDFS so all YARN executors can access
+    hdfs_base = local_base.replace("hdfs://", "")  # Strip scheme for CLI
+    subprocess.run(["hdfs", "dfs", "-rm", "-r", "-f", hdfs_base], capture_output=True)
+    subprocess.run(["hdfs", "dfs", "-mkdir", "-p", hdfs_base], check=True, capture_output=True)
+    # Put each app dir individually to maintain structure
+    for app_name in app_counts.keys():
+        src = os.path.join(staging, app_name)
+        subprocess.run(["hdfs", "dfs", "-put", "-f", src, hdfs_base + "/"],
+                       capture_output=True)
+
     elapsed = time.time() - start
     total_lines = sum(app_counts.values())
     for app_name, count in app_counts.items():
         print(f"  ✓ {app_name}: {count} events")
-    print(f"Phase A done: {len(app_prefixes)} apps, {total_lines} events in {elapsed:.1f}s")
+    print(f"Phase A done: {len(app_prefixes)} apps, {total_lines} events in {elapsed:.1f}s (staged to HDFS: {hdfs_base})")
+
+    # Cleanup local staging
+    import shutil
+    shutil.rmtree(staging, ignore_errors=True)
+
     return list(app_counts.keys())
 
 
@@ -250,11 +312,13 @@ def phase_b_spark_extract(app_names, local_base, output_path, limit,
     schema = None
     if not s3_mode:
         for app_id in app_names[:limit]:
-            p = os.path.join(local_base, app_id, "events.jsonl")
-            if os.path.exists(p) and os.path.getsize(p) > 0:
-                schema = spark.read.json("file://" + p).schema
+            p = local_base + "/" + app_id + "/events.jsonl"
+            try:
+                schema = spark.read.json(p).schema
                 print(f"Schema inferred ({len(schema.fields)} fields), reusing for all apps")
                 break
+            except Exception:
+                continue
 
     for idx, app_id in enumerate(app_names[:limit], 1):
         print(f"  [{idx}/{total_apps}] Extracting {app_id}...", flush=True)
@@ -266,14 +330,11 @@ def phase_b_spark_extract(app_names, local_base, output_path, limit,
                     print(f"  Skip {app_id}: no data")
                     continue
             else:
-                jsonl_path = os.path.join(local_base, app_id, "events.jsonl")
-                if not os.path.exists(jsonl_path) or os.path.getsize(jsonl_path) == 0:
-                    print(f"  Skip {app_id}: no data")
-                    continue
+                jsonl_path = local_base + "/" + app_id + "/events.jsonl"
                 if schema:
-                    df = spark.read.schema(schema).json("file://" + jsonl_path)
+                    df = spark.read.schema(schema).json(jsonl_path)
                 else:
-                    df = spark.read.json("file://" + jsonl_path)
+                    df = spark.read.json(jsonl_path)
             df.cache()
             total_events = df.count()
 
@@ -1070,7 +1131,7 @@ if __name__ == "__main__":
                         help="Treat --input as a single app S3 path (for parallel orchestration)")
     args = parser.parse_args()
 
-    LOCAL_STAGING = "/tmp/spark_extractor_staging"
+    LOCAL_STAGING = "hdfs:///tmp/spark_extractor_staging"
 
     print(f"\n{'='*60}")
     start = time.time()
