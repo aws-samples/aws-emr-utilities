@@ -632,8 +632,8 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         sp_cost = cap_partitions(sp_cost, max_exec_cost)
 
         # EMR Serverless: never reduce partitions below 1000 (EMR default + AQE coalesces down)
-        if not is_ec2:
-            sp_cost = max(1000, sp_cost)
+        # Applies to all paths — target is always Serverless
+        sp_cost = max(1000, sp_cost)
 
         # Bump up worker size if too many executors (shuffle coordination overhead)
         # Always go Small→Medium→Large (never skip Medium)
@@ -729,8 +729,8 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             total_task_exec_hours=total_task_exec_hours, duration_hours=duration, stages=stages_raw, is_ec2_source=is_ec2,
         )
         sp_perf = cap_partitions(sp_perf, max_exec_perf)
-        if not is_ec2:
-            sp_perf = max(1000, sp_perf)
+        # EMR Serverless: never reduce partitions below 1000 (target is always Serverless)
+        sp_perf = max(1000, sp_perf)
         # Stage-level efficiency for perf mode: no stage > 30min
         if is_ec2 and stages_raw:
             max_stage_p = max(stages_raw, key=lambda s: s.get('total_task_time_sec', 0) or 0)
