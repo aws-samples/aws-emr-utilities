@@ -273,8 +273,10 @@ def _compute_exec_limits(input_gb: float, vcpu: int, partitions: int = 0,
     if mode == "performance":
         max_exec = int(max_exec * 1.5)
 
-    # minExecutors: 1/3 of max for fast start without over-allocation
-    min_exec = max(1, min(max_exec - 2, max(5, max_exec // 3)))
+    # minExecutors: keep small pool ready between stages (avoid cold ramp-up between stages)
+    # initialExecutors: moderate pre-warm for fast ramp-up without over-allocation
+    min_exec = 3
+    initial_exec = min(max_exec, max(5, max_exec // 4))  # 25% of max, floor 5
 
     return max_exec, min_exec
 
@@ -844,7 +846,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                 "spark.sql.shuffle.partitions": str(sp),
                 "spark.dynamicAllocation.maxExecutors": str(max_exec),
                 "spark.dynamicAllocation.minExecutors": str(min_exec),
-                "spark.dynamicAllocation.initialExecutors": str(min_exec),
+                "spark.dynamicAllocation.initialExecutors": str(min(max_exec, max(5, max_exec // 4))),
             }
             if driver_disk:
                 cfg["spark.emr-serverless.driver.disk"] = driver_disk
@@ -893,8 +895,8 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                 needed_exec = max(needed_exec, max_exec)  # don't reduce below existing
                 if needed_exec > max_exec:
                     cfg['spark.dynamicAllocation.maxExecutors'] = str(needed_exec)
-                    cfg['spark.dynamicAllocation.minExecutors'] = str(max(10, needed_exec // 3))
-                    cfg['spark.dynamicAllocation.initialExecutors'] = str(max(10, needed_exec // 3))
+                    cfg['spark.dynamicAllocation.minExecutors'] = '3'
+                    cfg['spark.dynamicAllocation.initialExecutors'] = str(min(needed_exec, max(5, needed_exec // 4)))
             elif s_out_gb > 10 and is_ec2:
                 # Compute advisory: target 6 waves of tasks per core for good parallelism
                 target_tasks = max_exec * worker_cfg["vcpu"] * 6
@@ -902,20 +904,9 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                 advisory_bytes = max(128 * 1024 * 1024, min(1024 * 1024 * 1024, advisory_bytes))  # 128MB-1GB
                 cfg['spark.sql.adaptive.advisoryPartitionSizeInBytes'] = str(advisory_bytes)
             # Preserve AQE coalescing settings from source when set
-            # Skew join optimization: set threshold based on advisory size
-            if 'spark.sql.adaptive.advisoryPartitionSizeInBytes' in cfg:
-                _adv_val = cfg['spark.sql.adaptive.advisoryPartitionSizeInBytes']
-                _adv_b = _parse_size_to_bytes(_adv_val)
-                if _adv_b >= 500_000_000:  # 500MB+
-                    cfg['spark.sql.adaptive.skewJoin.skewedPartitionThresholdInBytes'] = str(_adv_b + 10*1024*1024)
-                    cfg['spark.sql.adaptive.rebalancePartitionsSmallPartitionFactor'] = '0.5'
-            for aqe_key in ['spark.sql.adaptive.coalescePartitions.minPartitionSize',
-                           'spark.sql.adaptive.coalescePartitions.parallelismFirst',
-                           'spark.sql.adaptive.rebalancePartitionsSmallPartitionFactor',
-                           'spark.sql.adaptive.skewJoin.skewedPartitionThresholdInBytes']:
-                src_val = _spark_config_raw.get(aqe_key)
-                if src_val and str(src_val) not in ('', 'None'):
-                    cfg[aqe_key] = str(src_val)
+            # Stability-first: don't override AQE skew/rebalance settings (let EMR defaults handle)
+            # Only set parallelismFirst=false (proven safe, -24% runtime improvement)
+            cfg['spark.sql.adaptive.coalescePartitions.parallelismFirst'] = 'false'
             cfg.update(_get_timeout_configs(i_in_gb, duration))
             cfg.update(_get_s3_retry_configs(i_in_gb, i_out_gb))
             cfg.update(_get_iceberg_configs())
