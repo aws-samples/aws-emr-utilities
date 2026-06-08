@@ -860,46 +860,41 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                 cfg["spark.sql.autoBroadcastJoinThreshold"] = "-1"
             else:
                 cfg["spark.sql.autoBroadcastJoinThreshold"] = "30m"
-            # Advisory partition size: skip if Serverless spill analysis overrode partitions
+            # Advisory partition size: compute safe value based on per-task memory
             adv = _spark_config_raw.get('spark.sql.adaptive.advisoryPartitionSizeInBytes')
-            if not is_ec2 and '_serverless_spill_override' in dir() and _serverless_spill_override:
-                cfg['spark.sql.shuffle.partitions'] = str(sp)
+            per_task_mem_gb = worker_cfg["memory"] * 0.6 / worker_cfg["vcpu"]
+            # Safe advisory = per_task_mem * 0.5 (accounts for hash join expansion ~2-3x)
+            safe_advisory_bytes = int(per_task_mem_gb * 0.5 * 1024 * 1024 * 1024)
+            
+            # Determine if spill is significant relative to shuffle volume
+            shuffle_total_gb = max(s_in_gb + s_out_gb, 1)
+            spill_ratio = spill_gb / shuffle_total_gb
+            
+            if spill_ratio > 0.05:  # spill > 5% of shuffle = advisory likely too large
+                # Do NOT set advisory (let AQE use default 64MB, coalesces conservatively)
+                pass
             elif adv:
                 adv_bytes = _parse_size_to_bytes(adv)
-                # Check if advisory would create too many partitions (>50000 = excessive overhead)
-                estimated_partitions = int(s_out_gb * 1024 * 1024 * 1024 / max(adv_bytes, 1)) if s_out_gb > 0 else 0
-                if estimated_partitions > 50000:
-                    # Advisory too small for this shuffle volume
-                    # Progressive partition sizing: ensure at least 1000 partitions for parallelism
-                    parts = int(s_out_gb / 5)  # Start with 5GB per partition
-                    if parts < 1000:
-                        parts = int(s_out_gb / 2)  # Try 2GB per partition
-                    if parts < 1000:
-                        parts = int(s_out_gb)  # Fall back to 1GB per partition
-                    cfg['spark.sql.shuffle.partitions'] = str(max(200, parts))
-                else:
+                if adv_bytes <= safe_advisory_bytes:
                     cfg['spark.sql.adaptive.advisoryPartitionSizeInBytes'] = str(adv)
-                    # Large-input, low-shuffle, no-spill: smaller advisory + broadcast for better parallelism
-                    if i_in_gb > 1500 and s_out_gb < 250 and disk_spill_gb < 10:
-                        cfg['spark.sql.adaptive.advisoryPartitionSizeInBytes'] = '33554432'  # 32MB
-                        cfg['spark.sql.autoBroadcastJoinThreshold'] = '200m'
-                    src_parts = _spark_config_raw.get('spark.sql.shuffle.partitions')
-                    if src_parts and str(src_parts) not in ('', 'None'):
-                        cfg['spark.sql.shuffle.partitions'] = str(src_parts)
-                    else:
-                        # Always set explicit partitions to avoid EMR initialPartitionNum=1000 cap
-                        # Split by spill: spill-heavy needs smaller tasks, no-spill needs fewer tasks
-                        if disk_spill_gb / max(1, s_out_gb) > 0.5:
-                            # Spill-heavy: ~1GB per partition or advisory-based (capped), whichever is more
-                            target_parts = max(200, int(s_out_gb * 1.4), min(estimated_partitions, 2000))
-                        else:
-                            # No significant spill: ~3GB per partition (reduce scheduling overhead)
-                            target_parts = max(200, int(s_out_gb / 3))
-                        # Floor: ensure enough parallelism when size-based formula gives too few
-                        if target_parts < 1000:
-                            min_parts = max_exec * worker_cfg["vcpu"] * 8
-                            target_parts = max(target_parts, min(min_parts, 1500))
-                        cfg['spark.sql.shuffle.partitions'] = str(target_parts)
+                # else: don't set (too large, would cause spill)
+            
+            # Partitions: if spill is significant relative to shuffle, compute from zero-spill formula
+            if spill_ratio > 0.05:
+                # Zero-spill target: peak_shuffle / (per_task_mem * 0.7)
+                peak_shuffle_gb = max(s_in_gb, s_out_gb)
+                zero_spill_parts = int(peak_shuffle_gb / (per_task_mem_gb * 0.7))
+                zero_spill_parts = max(1000, zero_spill_parts)
+                sp = zero_spill_parts
+                cfg['spark.sql.shuffle.partitions'] = str(sp)
+                # MaxExecutors: size for 2-3 waves (avoid 4-6 waves of waiting)
+                target_waves = 4
+                needed_exec = int(sp / (worker_cfg["vcpu"] * target_waves))
+                needed_exec = max(needed_exec, max_exec)  # don't reduce below existing
+                if needed_exec > max_exec:
+                    cfg['spark.dynamicAllocation.maxExecutors'] = str(needed_exec)
+                    cfg['spark.dynamicAllocation.minExecutors'] = str(max(10, needed_exec // 3))
+                    cfg['spark.dynamicAllocation.initialExecutors'] = str(max(10, needed_exec // 3))
             elif s_out_gb > 10 and is_ec2:
                 # Compute advisory: target 6 waves of tasks per core for good parallelism
                 target_tasks = max_exec * worker_cfg["vcpu"] * 6
