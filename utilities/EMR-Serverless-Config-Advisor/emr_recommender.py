@@ -902,20 +902,9 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                 advisory_bytes = max(128 * 1024 * 1024, min(1024 * 1024 * 1024, advisory_bytes))  # 128MB-1GB
                 cfg['spark.sql.adaptive.advisoryPartitionSizeInBytes'] = str(advisory_bytes)
             # Preserve AQE coalescing settings from source when set
-            # Skew join optimization: set threshold based on advisory size
-            if 'spark.sql.adaptive.advisoryPartitionSizeInBytes' in cfg:
-                _adv_val = cfg['spark.sql.adaptive.advisoryPartitionSizeInBytes']
-                _adv_b = _parse_size_to_bytes(_adv_val)
-                if _adv_b >= 500_000_000:  # 500MB+
-                    cfg['spark.sql.adaptive.skewJoin.skewedPartitionThresholdInBytes'] = str(_adv_b + 10*1024*1024)
-                    cfg['spark.sql.adaptive.rebalancePartitionsSmallPartitionFactor'] = '0.5'
-            for aqe_key in ['spark.sql.adaptive.coalescePartitions.minPartitionSize',
-                           'spark.sql.adaptive.coalescePartitions.parallelismFirst',
-                           'spark.sql.adaptive.rebalancePartitionsSmallPartitionFactor',
-                           'spark.sql.adaptive.skewJoin.skewedPartitionThresholdInBytes']:
-                src_val = _spark_config_raw.get(aqe_key)
-                if src_val and str(src_val) not in ('', 'None'):
-                    cfg[aqe_key] = str(src_val)
+            # Stability-first: don't override AQE skew/rebalance settings (let EMR defaults handle)
+            # Only set parallelismFirst=false (proven safe, -24% runtime improvement)
+            cfg['spark.sql.adaptive.coalescePartitions.parallelismFirst'] = 'false'
             cfg.update(_get_timeout_configs(i_in_gb, duration))
             cfg.update(_get_s3_retry_configs(i_in_gb, i_out_gb))
             cfg.update(_get_iceberg_configs())
