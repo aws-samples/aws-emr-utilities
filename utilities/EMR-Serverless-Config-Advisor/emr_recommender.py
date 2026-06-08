@@ -273,9 +273,9 @@ def _compute_exec_limits(input_gb: float, vcpu: int, partitions: int = 0,
     if mode == "performance":
         max_exec = int(max_exec * 1.5)
 
-    # minExecutors: keep small pool ready between stages (avoid cold ramp-up between stages)
-    # initialExecutors: moderate pre-warm for fast ramp-up without over-allocation
-    min_exec = 3
+    # minExecutors: pre-warm 1/3 of max for fast ramp-up on short queries
+    # Confirmed: minExec=3 causes 2x regression on short queries due to slow dynamic allocation ramp-up
+    min_exec = max(3, max_exec // 3)
     initial_exec = min(max_exec, max(5, max_exec // 4))  # 25% of max, floor 5
 
     return max_exec, min_exec
@@ -846,7 +846,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                 "spark.sql.shuffle.partitions": str(sp),
                 "spark.dynamicAllocation.maxExecutors": str(max_exec),
                 "spark.dynamicAllocation.minExecutors": str(min_exec),
-                "spark.dynamicAllocation.initialExecutors": str(min(max_exec, max(5, max_exec // 4))),
+                "spark.dynamicAllocation.initialExecutors": str(min_exec),
             }
             if driver_disk:
                 cfg["spark.emr-serverless.driver.disk"] = driver_disk
@@ -895,8 +895,8 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                 needed_exec = max(needed_exec, max_exec)  # don't reduce below existing
                 if needed_exec > max_exec:
                     cfg['spark.dynamicAllocation.maxExecutors'] = str(needed_exec)
-                    cfg['spark.dynamicAllocation.minExecutors'] = '3'
-                    cfg['spark.dynamicAllocation.initialExecutors'] = str(min(needed_exec, max(5, needed_exec // 4)))
+                    cfg['spark.dynamicAllocation.minExecutors'] = str(max(3, needed_exec // 3))
+                    cfg['spark.dynamicAllocation.initialExecutors'] = str(max(3, needed_exec // 3))
             elif s_out_gb > 10 and is_ec2:
                 # Compute advisory: target 6 waves of tasks per core for good parallelism
                 target_tasks = max_exec * worker_cfg["vcpu"] * 6
