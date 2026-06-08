@@ -10,3 +10,4 @@ target/
 *.tar.gz
 *.rar
 .DS_Store
+utilities/EMR-Serverless-Config-Advisor/whitepaper.md
