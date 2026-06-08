@@ -855,18 +855,11 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             # A stage that reads shuffle, writes nothing (collect to driver),
             # and failed with maxResultSize indicates a broadcast join collecting
             # too much data through the driver. Recommend disabling auto-broadcast.
-            # Broadcast: preserve source value. Only disable if maxResultSize failure detected.
-            # When not set, use 256MB (Spark default 10MB is too conservative for 54G executors).
+            # Broadcast: cap at 30MB for stability (prevents OOM from HashedRelation expansion)
             if _should_disable_broadcast(stages_raw, _spark_config_raw, s_out_gb, d_mem):
                 cfg["spark.sql.autoBroadcastJoinThreshold"] = "-1"
             else:
-                src_val = _spark_config_raw.get('spark.sql.autoBroadcastJoinThreshold')
-                if src_val and str(src_val) not in ('', 'None'):
-                    cfg["spark.sql.autoBroadcastJoinThreshold"] = str(src_val)
-                elif is_ec2:
-                    # Don't override broadcast threshold — aggressive values can change
-                    # query plans and cause OOM from broadcast table memory pressure
-                    pass
+                cfg["spark.sql.autoBroadcastJoinThreshold"] = "30m"
             # Advisory partition size: skip if Serverless spill analysis overrode partitions
             adv = _spark_config_raw.get('spark.sql.adaptive.advisoryPartitionSizeInBytes')
             if not is_ec2 and '_serverless_spill_override' in dir() and _serverless_spill_override:
