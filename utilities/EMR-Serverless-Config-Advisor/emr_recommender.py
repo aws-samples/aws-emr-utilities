@@ -267,7 +267,7 @@ def _compute_exec_limits(input_gb: float, vcpu: int, partitions: int = 0,
         # Add 10% headroom for variability between runs.
         cores = max(work * 1.1, orig_vcpu * 1.1) if orig_vcpu > 0 else work * 1.1
 
-    max_exec = max(2, int(cores / vcpu))
+    max_exec = max(4, int(cores / vcpu))  # EMR Serverless minimum is 4
 
     # Performance mode: 1.5x for faster completion
     if mode == "performance":
