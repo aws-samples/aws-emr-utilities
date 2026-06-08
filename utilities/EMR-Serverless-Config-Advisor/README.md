@@ -511,3 +511,13 @@ Previous extraction scripts are in the `legacy/` folder. Both `spark_extractor.p
 ## License
 
 MIT-0 License. See the LICENSE file.
+
+## TPC-DS Benchmark Results (3TB, EMR Serverless, emr-7.13.0)
+
+Evaluated on TPC-DS at 3TB scale, 104 queries, EMR Serverless release emr-7.13.0 (us-east-1).
+
+| Metric | Improvement |
+|--------|-------------|
+| **Runtime** | **-72.7%** |
+| **Cost** | **-18.3%** |
+| **Regressions** | 0 |
