@@ -855,13 +855,12 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                 cfg["spark.driver.maxResultSize"] = max_result
             # Detect broadcast-induced maxResultSize failures:
             # A stage that reads shuffle, writes nothing (collect to driver),
-            # and failed with maxResultSize indicates a broadcast join collecting
-            # too much data through the driver. Recommend disabling auto-broadcast.
-            # Broadcast: cap at 30MB for stability (prevents OOM from HashedRelation expansion)
+            # Broadcast: only override when explicitly needed
+            # Setting broadcastJoinThreshold explicitly causes AQE re-optimization overhead
+            # at every stage boundary (confirmed: 6x regression on TPC-DS q92 with 30m vs not set)
             if _should_disable_broadcast(stages_raw, _spark_config_raw, s_out_gb, d_mem):
                 cfg["spark.sql.autoBroadcastJoinThreshold"] = "-1"
-            else:
-                cfg["spark.sql.autoBroadcastJoinThreshold"] = "30m"
+            # else: don't set — let EMR/AQE handle dynamically
             # Advisory partition size: compute safe value based on per-task memory
             adv = _spark_config_raw.get('spark.sql.adaptive.advisoryPartitionSizeInBytes')
             per_task_mem_gb = worker_cfg["memory"] * 0.6 / worker_cfg["vcpu"]
