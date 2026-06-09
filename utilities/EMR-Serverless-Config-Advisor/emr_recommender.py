@@ -269,6 +269,15 @@ def _compute_exec_limits(input_gb: float, vcpu: int, partitions: int = 0,
 
     max_exec = max(4, int(cores / vcpu))  # EMR Serverless minimum is 4
 
+    # Compute capacity floor: ensure enough cores to complete work within target time
+    # work = total_task_exec_hours / duration = avg concurrent cores used on source
+    # If source was CPU-efficient (>70%), we need at least that many cores
+    if is_ec2_source and total_task_exec_hours > 0 and duration_hours > 0:
+        target_hours = duration_hours * 1.2  # allow 20% slower than EC2
+        compute_cores_needed = total_task_exec_hours / target_hours
+        compute_exec_floor = max(4, int(compute_cores_needed / vcpu))
+        max_exec = max(max_exec, compute_exec_floor)
+
     # Performance mode: 1.5x for faster completion
     if mode == "performance":
         max_exec = int(max_exec * 1.5)
