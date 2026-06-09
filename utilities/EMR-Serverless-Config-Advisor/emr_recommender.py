@@ -855,31 +855,23 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                 cfg["spark.driver.maxResultSize"] = max_result
             # Detect broadcast-induced maxResultSize failures:
             # A stage that reads shuffle, writes nothing (collect to driver),
-            # and failed with maxResultSize indicates a broadcast join collecting
-            # too much data through the driver. Recommend disabling auto-broadcast.
-            # Broadcast: cap at 30MB for stability (prevents OOM from HashedRelation expansion)
+            # Broadcast: only override when explicitly needed
+            # Setting broadcastJoinThreshold explicitly causes AQE re-optimization overhead
+            # at every stage boundary (confirmed: 6x regression on TPC-DS q92 with 30m vs not set)
             if _should_disable_broadcast(stages_raw, _spark_config_raw, s_out_gb, d_mem):
                 cfg["spark.sql.autoBroadcastJoinThreshold"] = "-1"
-            else:
-                cfg["spark.sql.autoBroadcastJoinThreshold"] = "30m"
+            # else: don't set — let EMR/AQE handle dynamically
             # Advisory partition size: compute safe value based on per-task memory
             adv = _spark_config_raw.get('spark.sql.adaptive.advisoryPartitionSizeInBytes')
             per_task_mem_gb = worker_cfg["memory"] * 0.6 / worker_cfg["vcpu"]
-            # Safe advisory = per_task_mem * 0.5 (accounts for hash join expansion ~2-3x)
-            safe_advisory_bytes = int(per_task_mem_gb * 0.5 * 1024 * 1024 * 1024)
             
             # Determine if spill is significant relative to shuffle volume
             shuffle_total_gb = max(s_in_gb + s_out_gb, 1)
             spill_ratio = spill_gb / shuffle_total_gb
             
-            if spill_ratio > 0.05:  # spill > 5% of shuffle = advisory likely too large
-                # Do NOT set advisory (let AQE use default 64MB, coalesces conservatively)
-                pass
-            elif adv:
-                adv_bytes = _parse_size_to_bytes(adv)
-                if adv_bytes <= safe_advisory_bytes:
-                    cfg['spark.sql.adaptive.advisoryPartitionSizeInBytes'] = str(adv)
-                # else: don't set (too large, would cause spill)
+            # Advisory: don't set — let EMR defaults handle (64MB + AQE coalesces as needed)
+            # Setting advisory explicitly risks spill (1GB advisory caused 158TB spill on sup-trvlr-bml)
+            # EMR's default AQE coalescing is safe and effective for all workload sizes
             
             # Partitions: if spill is significant relative to shuffle, compute from zero-spill formula
             if spill_ratio > 0.05:
@@ -898,11 +890,8 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                     cfg['spark.dynamicAllocation.minExecutors'] = str(max(3, needed_exec // 3))
                     cfg['spark.dynamicAllocation.initialExecutors'] = str(max(3, needed_exec // 3))
             elif s_out_gb > 10 and is_ec2:
-                # Compute advisory: target 6 waves of tasks per core for good parallelism
-                target_tasks = max_exec * worker_cfg["vcpu"] * 6
-                advisory_bytes = int(s_out_gb * 1024 * 1024 * 1024 / max(target_tasks, 1))
-                advisory_bytes = max(128 * 1024 * 1024, min(1024 * 1024 * 1024, advisory_bytes))  # 128MB-1GB
-                cfg['spark.sql.adaptive.advisoryPartitionSizeInBytes'] = str(advisory_bytes)
+                # Don't set advisory — EMR defaults are safe for all workloads
+                pass
             # Preserve AQE coalescing settings from source when set
             # Stability-first: don't override AQE skew/rebalance settings (let EMR defaults handle)
             # Only set parallelismFirst=false (proven safe, -24% runtime improvement)
