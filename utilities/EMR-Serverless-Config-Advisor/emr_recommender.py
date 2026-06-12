@@ -232,11 +232,11 @@ def _compute_exec_limits(input_gb: float, vcpu: int, partitions: int = 0,
 
     if is_ec2_source:
         # --- EC2 → Serverless: apply efficiency gain ---
-        # Serverless 8c/54G executors are more efficient than EC2 executors due to:
+        # Serverless executors are more efficient than EC2 executors due to:
         # 1. More memory per core → less spill, less GC
         # 2. Larger executors → less shuffle overhead
         # The efficiency gain depends on how much MORE memory/core Serverless provides.
-        serverless_mem_per_core = 54 / 8 if vcpu == 8 else 27 / 4  # target worker mem/core
+        serverless_mem_per_core = 6.75  # all tiers: 27/4 = 54/8 = 108/16
         ec2_mem_per_core = (orig_mem_mb / 1024) / orig_cores if orig_cores > 0 and orig_mem_mb > 0 else 6.0
 
         # Memory efficiency: if EC2 had less mem/core, Serverless gains more (less spill)
@@ -244,8 +244,11 @@ def _compute_exec_limits(input_gb: float, vcpu: int, partitions: int = 0,
         mem_ratio = min(1.0, ec2_mem_per_core / serverless_mem_per_core)
         # Scaling: ranges from 0.47 (EC2 had low mem/core) to 0.80 (EC2 had high mem/core)
         base_efficiency = 0.47 + 0.33 * mem_ratio
-        per_exec_factor = min(1.4, base_efficiency * orig_cores) if orig_cores > 0 else 1.4
-        base_cores = per_exec_factor * orig_executors + 65 if orig_executors > 0 else max(50, int(input_gb / 10))
+        # Anchor on total source cores, not executor count: a 15-core EC2 executor
+        # carries 15 cores of parallelism. The old per_exec_factor formula capped
+        # each EC2 executor's contribution at 1.4 cores, which mapped a
+        # 118×15c cluster (1770 cores) to 230 cores — an 87% capacity loss.
+        base_cores = orig_vcpu * base_efficiency if orig_vcpu > 0 else max(50, int(input_gb / 10))
 
         # Rule 1: Shuffle boost for small clusters with very high shuffle ratio
         if orig_executors < 110 and shuf_ratio > 10:
@@ -269,17 +272,34 @@ def _compute_exec_limits(input_gb: float, vcpu: int, partitions: int = 0,
 
     max_exec = max(4, int(cores / vcpu))  # EMR Serverless minimum is 4
 
-    # Compute capacity floor: ensure enough cores to complete work within target time
-    # work = total_task_exec_hours / duration = avg concurrent cores used on source
-    # If source was CPU-efficient (>70%), we need at least that many cores
+    # Compute capacity floor: ensure enough cores to complete the source's
+    # work within a target wall-clock.
+    # - EC2 task-hours include spill/GC waste that Serverless eliminates via
+    #   higher mem/core — discount by base_efficiency (validated: 2035 EC2
+    #   task-hours → 1362 actual on Serverless ≈ 0.67×, matching the 0.666
+    #   base_efficiency for that source).
+    # - Divide by achievable slot packing (~0.70 observed at 72% CPU util on
+    #   a healthy run): perfect packing across hundreds of sequential stages
+    #   with ramp-up is not possible, so raw work/target undercounts.
+    # - Cost target is 1.0x EC2 wall-clock (never slower than the source —
+    #   the old 1.2x target shipped configs that regressed the migration).
+    #   Performance target is 0.25x (4x faster), floored at 20 min wall-clock —
+    #   below that, dynamic-allocation ramp-up and per-stage scheduling overhead
+    #   dominate and extra parallelism is pure waste. Serverless N×T pricing
+    #   makes wall-clock speed roughly core-hour-neutral above the floor.
+    #   Replaces the blanket 1.5x multiplier for EC2 sources.
+    #   (Validated: reproduces the proven 300-exec config for a 118×15c source.)
     if is_ec2_source and total_task_exec_hours > 0 and duration_hours > 0:
-        target_hours = duration_hours * 1.2  # allow 20% slower than EC2
-        compute_cores_needed = total_task_exec_hours / target_hours
+        PACKING_EFFICIENCY = 0.70
+        if mode == "performance":
+            target_hours = max(duration_hours * 0.25, min(duration_hours, 20.0 / 60.0))
+        else:
+            target_hours = duration_hours
+        compute_cores_needed = (total_task_exec_hours * base_efficiency) / target_hours / PACKING_EFFICIENCY
         compute_exec_floor = max(4, int(compute_cores_needed / vcpu))
         max_exec = max(max_exec, compute_exec_floor)
-
-    # Performance mode: 1.5x for faster completion
-    if mode == "performance":
+    elif mode == "performance":
+        # Non-EC2 sources: 1.5x for faster completion
         max_exec = int(max_exec * 1.5)
 
     # minExecutors: pre-warm 1/3 of max for fast ramp-up on short queries
@@ -722,6 +742,81 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                     max_exec_cost = needed_exec
                     min_exec_cost = max(1, min(max_exec_cost - 2, max(5, max_exec_cost // 3)))
 
+        # EC2 source: re-derive partitions from PEAK-STAGE shuffle and couple them
+        # to the final executor budget. Sizing from total shuffle bytes overshoots
+        # by roughly the stage count (verified: 5250 partitions on 82×16c Large =
+        # 4-5 waves/stage across 250+ sequential stages → shuffle-fetch congestion
+        # collapse, 75% of executor time in fetch-wait, MetadataFetchFailed storms,
+        # 301min vs 25min for the same job at ≤1 wave). AQE coalesces each stage
+        # down from this ceiling, so the largest stage is what must fit.
+        def _ec2_partition_budget(max_exec):
+            _peak_r = max(((s.get("shuffle_read_gb", 0) or 0) for s in stages_raw), default=0)
+            _peak_w = max(((s.get("shuffle_write_gb", 0) or 0) for s in stages_raw), default=0)
+            peak_shuf_gb = max(_peak_r, _peak_w)
+            if peak_shuf_gb <= 0:
+                return None
+            target_gb = max(0.25, target_partition_size_mib / 1024.0)
+            parts = int(math.ceil(peak_shuf_gb / target_gb))
+            # Spill floor: largest stage's partition must fit in per-task memory
+            per_task_mem_gb = worker_cfg["memory"] * 0.6 / worker_cfg["vcpu"]
+            spill_floor = int(math.ceil(peak_shuf_gb / (per_task_mem_gb * 0.7)))
+            # Wave cap: never more than 2 waves per stage. If the spill floor
+            # needs more partitions than 2 waves allow, raise executors —
+            # never trade spill safety for wave stacking.
+            if spill_floor > 2 * max_exec * worker_cfg["vcpu"]:
+                max_exec = int(math.ceil(spill_floor / (2.0 * worker_cfg["vcpu"])))
+            wave_cap = 2 * max_exec * worker_cfg["vcpu"]
+            parts = max(1000, min(max(parts, spill_floor), wave_cap))
+            if parts % 2 != 0:
+                parts += 1
+            return parts, max_exec
+
+        # Shuffle-serving floor — executors double as shuffle servers, and the
+        # two roles scale differently: compute capacity scales with CORES, but
+        # shuffle serving scales with HOSTS (every concurrently-running reducer
+        # holds fetch streams open to every map host, so each host must re-serve
+        # its share of total shuffle write under full fan-in). A spill-discounted
+        # compute answer can be correct on cores yet collapse on serving.
+        #
+        # The binding constraint is the per-host SERVING RATE:
+        #     shuffle_write_gb / hosts / target_duration_sec
+        # not raw GB/host (a longer job serves the same bytes more slowly) and
+        # not connection count alone (connections × per-connection volume is
+        # what saturates Netty/TCP — the rate captures the product). This is
+        # network/fan-in bound, NOT disk bound: thresholds sit ~6x below the
+        # 0.244 GB/s shuffle_optimized GP3 per-executor throughput.
+        #
+        # Calibration (shared-clickstream, ~14-17TB shuffle write):
+        #   0.057 GB/s/host demanded (82 hosts, 62min compute budget)
+        #          → fetch timeouts → unregisterOutputOnHost storms →
+        #            congestion collapse (301 min, 75% fetch-wait)
+        #   0.033 GB/s/host (300 hosts, 25min) → healthy (45% fetch-wait)
+        #   0.021 GB/s/host (118 EC2 hosts, 95min) → completed (48% fetch-wait)
+        # Safe ceiling: 0.04 GB/s/host — above the healthiest observed run,
+        # well below the observed collapse point.
+        SAFE_SERVING_GBPS = 0.04
+        _serve_target_cost_h = duration
+        _serve_target_perf_h = (max(duration * 0.25, min(duration, 20.0 / 60.0))
+                                if is_ec2 else duration)
+
+        def _serving_floor(target_h):
+            if s_out_gb <= 1000 or target_h <= 0:
+                return 0
+            return int(math.ceil(s_out_gb / (SAFE_SERVING_GBPS * target_h * 3600)))
+
+        _floor_cost = _serving_floor(_serve_target_cost_h)
+        if _floor_cost > max_exec_cost:
+            max_exec_cost = _floor_cost
+            min_exec_cost = max(1, min(max_exec_cost - 2, max(5, max_exec_cost // 3)))
+
+        if is_ec2 and stages_raw:
+            _budget = _ec2_partition_budget(max_exec_cost)
+            if _budget:
+                sp_cost, _new_max = _budget
+                if _new_max != max_exec_cost:
+                    max_exec_cost = _new_max
+                    min_exec_cost = max(1, min(max_exec_cost - 2, max(5, max_exec_cost // 3)))
+
         # Account for EC2 spill conservatively: Serverless has more memory per core
         # and AQE reduces spill, but not to zero. Use 10% of observed spill as safety floor.
         _eff_disk_spill = disk_spill_gb * 0.1
@@ -753,6 +848,20 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                 if adjusted_p / target_cores_p > 1800:  # > 30min
                     needed_exec_p = int((adjusted_p / 1800) / worker_cfg["vcpu"]) + 1
                     max_exec_perf = needed_exec_p
+                    min_exec_perf = max(1, min(max_exec_perf - 2, max(5, max_exec_perf // 3)))
+        # Shuffle-serving floor for perf mode (see cost path above; perf
+        # targets a faster wall-clock, so it needs proportionally more hosts)
+        _floor_perf = _serving_floor(_serve_target_perf_h)
+        if _floor_perf > max_exec_perf:
+            max_exec_perf = _floor_perf
+            min_exec_perf = max(1, min(max_exec_perf - 2, max(5, max_exec_perf // 3)))
+        # Couple perf partitions to the perf executor budget (see cost path above)
+        if is_ec2 and stages_raw:
+            _budget_p = _ec2_partition_budget(max_exec_perf)
+            if _budget_p:
+                sp_perf, _new_max_p = _budget_p
+                if _new_max_p != max_exec_perf:
+                    max_exec_perf = _new_max_p
                     min_exec_perf = max(1, min(max_exec_perf - 2, max(5, max_exec_perf // 3)))
         executor_disk_perf = _calculate_executor_disk(s_out_gb, _eff_disk_spill, _eff_mem_spill, max_exec_perf)
         
@@ -882,8 +991,15 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             # Setting advisory explicitly risks spill (1GB advisory caused 158TB spill on sup-trvlr-bml)
             # EMR's default AQE coalescing is safe and effective for all workload sizes
             
-            # Partitions: if spill is significant relative to shuffle, compute from zero-spill formula
-            if spill_ratio > 0.05:
+            # Partitions: if spill is significant relative to shuffle, compute from zero-spill formula.
+            # Serverless sources only — EC2 sources are sized upstream by
+            # _ec2_partition_budget from per-stage peak shuffle with a ≤2-wave cap.
+            # This block previously also ran for EC2 sources using APP-LEVEL
+            # cumulative shuffle, which overshoots by ~stage count (verified:
+            # emitted 5250 partitions × 82 executors for a 253-stage job →
+            # 4-5 waves/stage → shuffle-fetch congestion collapse, 75% of
+            # executor time in fetch-wait, 301min vs 25min for the same job).
+            if spill_ratio > 0.05 and not is_ec2:
                 # Zero-spill target: peak_shuffle / (per_task_mem * 0.7)
                 peak_shuffle_gb = max(s_in_gb, s_out_gb)
                 zero_spill_parts = int(peak_shuffle_gb / (per_task_mem_gb * 0.7))
