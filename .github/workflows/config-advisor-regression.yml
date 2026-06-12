@@ -1,0 +1,29 @@
+name: Config Advisor regression gate
+
+# Any PR that touches the recommender must pass the golden-fixture
+# regression suite. Intentional output changes require regenerating
+# tests/golden_baseline.json in the same PR (the diff is then visible
+# to reviewers, with the reason recorded in the baseline's history).
+on:
+  pull_request:
+    paths:
+      - 'utilities/EMR-Serverless-Config-Advisor/emr_recommender.py'
+      - 'utilities/EMR-Serverless-Config-Advisor/tests/**'
+  push:
+    branches: [main]
+    paths:
+      - 'utilities/EMR-Serverless-Config-Advisor/emr_recommender.py'
+      - 'utilities/EMR-Serverless-Config-Advisor/tests/**'
+
+jobs:
+  golden-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run golden-fixture regression suite
+        working-directory: utilities/EMR-Serverless-Config-Advisor
+        run: python3 tests/test_recommender_golden.py
