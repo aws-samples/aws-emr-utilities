@@ -1094,6 +1094,38 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             },
         })
         
+        # EC2 → Serverless: proactively exclude InferWindowGroupLimit.
+        # The Spark 3.5.5+ codegen regression (broken WindowGroupLimit codegen
+        # → interpreted fallback, 10-50x slower window stages) CANNOT be
+        # detected from an EC2 source log — the source ran a Spark version
+        # where the rule doesn't exist or isn't broken. Skew-based detection
+        # only works for Serverless-source logs. Window functions are
+        # identified from window-shaped stage signatures (few-task stages
+        # with high skew are unreliable on EC2 logs, so gate only on source
+        # platform: the exclusion is a no-op on queries without window
+        # functions and removes a known crash-adjacent regression otherwise).
+        _wgl_rule = 'org.apache.spark.sql.catalyst.optimizer.InferWindowGroupLimit'
+        if is_ec2 and not (window_skew_findings or window_coalesce_regression):
+            for _rec in (cost_rec, perf_rec):
+                _existing = _rec['spark_configs'].get('spark.sql.optimizer.excludedRules', '')
+                if _wgl_rule not in _existing:
+                    _rec['spark_configs']['spark.sql.optimizer.excludedRules'] = (
+                        f'{_existing},{_wgl_rule}' if _existing else _wgl_rule)
+            _wgl_note = {
+                'type': 'window_group_limit_proactive',
+                'severity': 'MEDIUM',
+                'message': ('EC2 source: InferWindowGroupLimit excluded proactively. '
+                            'EMR Serverless Spark 3.5.5+ has a codegen regression in '
+                            'WindowGroupLimitExec (interpreted fallback, 10-50x slower '
+                            'window stages). The source event log cannot exhibit this '
+                            'bug, so it is excluded preventively; no-op without window '
+                            'functions.'),
+                'recommendation': f'spark.sql.optimizer.excludedRules={_wgl_rule}',
+                'affected_stages': [],
+            }
+            cost_rec.setdefault('bottleneck_warnings', []).append(_wgl_note)
+            perf_rec.setdefault('bottleneck_warnings', []).append(_wgl_note)
+
         # Inject WindowGroupLimit recommendation if detected
         if window_skew_findings or window_coalesce_regression:
             excluded_rule = 'org.apache.spark.sql.catalyst.optimizer.InferWindowGroupLimit'

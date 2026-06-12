@@ -1,5 +1,16 @@
 {
- "history": [],
+ "history": [
+  {
+   "changed_lines": 4,
+   "changes": [
+    "ump/application_1780882631787_0001 [cost] spark_configs.spark.sql.optimizer.excludedRules: golden=None current='org.apache.spark.sql.catalyst.optimizer.InferWindowGroupLimit'",
+    "ump/application_1780882631787_0001 [performance] spark_configs.spark.sql.optimizer.excludedRules: golden=None current='org.apache.spark.sql.catalyst.optimizer.InferWindowGroupLimit'",
+    "ump/application_1780907816475_0003 [cost] spark_configs.spark.sql.optimizer.excludedRules: golden=None current='org.apache.spark.sql.catalyst.optimizer.InferWindowGroupLimit'",
+    "ump/application_1780907816475_0003 [performance] spark_configs.spark.sql.optimizer.excludedRules: golden=None current='org.apache.spark.sql.catalyst.optimizer.InferWindowGroupLimit'"
+   ],
+   "reason": "Proactive InferWindowGroupLimit exclusion for EC2->Serverless: source logs cannot exhibit the Spark 3.5.5+ codegen regression (source ran older Spark), so skew-based detection never fires on migrations; exclusion is a no-op without window functions"
+  }
+ ],
  "snapshot": {
   "b12": {
    "eventlog_v2_00g5r690ovjblo0b": {
@@ -326,6 +337,7 @@
      "spark_configs.spark.dynamicAllocation.minExecutors": "23",
      "spark_configs.spark.emr-serverless.executor.disk": "200G",
      "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
+     "spark_configs.spark.sql.optimizer.excludedRules": "org.apache.spark.sql.catalyst.optimizer.InferWindowGroupLimit",
      "spark_configs.spark.sql.shuffle.partitions": "1000",
      "worker.max_executors": 71,
      "worker.memory_gb": 54,
@@ -338,6 +350,7 @@
      "spark_configs.spark.dynamicAllocation.minExecutors": "44",
      "spark_configs.spark.emr-serverless.executor.disk": "200G",
      "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
+     "spark_configs.spark.sql.optimizer.excludedRules": "org.apache.spark.sql.catalyst.optimizer.InferWindowGroupLimit",
      "spark_configs.spark.sql.shuffle.partitions": "1000",
      "worker.max_executors": 134,
      "worker.memory_gb": 54,
@@ -352,6 +365,7 @@
      "spark_configs.spark.dynamicAllocation.minExecutors": "25",
      "spark_configs.spark.emr-serverless.executor.disk": "360G",
      "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
+     "spark_configs.spark.sql.optimizer.excludedRules": "org.apache.spark.sql.catalyst.optimizer.InferWindowGroupLimit",
      "spark_configs.spark.sql.shuffle.partitions": "1852",
      "worker.max_executors": 76,
      "worker.memory_gb": 108,
@@ -364,6 +378,7 @@
      "spark_configs.spark.dynamicAllocation.minExecutors": "102",
      "spark_configs.spark.emr-serverless.executor.disk": "200G",
      "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
+     "spark_configs.spark.sql.optimizer.excludedRules": "org.apache.spark.sql.catalyst.optimizer.InferWindowGroupLimit",
      "spark_configs.spark.sql.shuffle.partitions": "1852",
      "worker.max_executors": 306,
      "worker.memory_gb": 108,
