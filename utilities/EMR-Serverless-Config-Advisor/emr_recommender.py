@@ -182,21 +182,24 @@ def _select_worker_type(input_gb: float, shuffle_ratio: float,
 
     r = WORKER_RANGES[size]
 
-    # Memory right-sizing: use observed peak memory to pick appropriate memory level
-    # instead of always maxing out (which over-provisions and slows worker allocation)
-    if size == "Small":
-        # For Small workers: right-size based on observed peak memory
-        # 2x headroom for stability (prevents OOM under data growth)
+    # Memory right-sizing: only for Serverless-source jobs where peak memory
+    # was measured under the same hard cgroup enforcement.
+    # EC2-source jobs always get max memory because:
+    #   - YARN enforcement is soft (poll-based, executor leaks past container)
+    #   - EC2 peak metrics undercount actual Serverless memory needs
+    #   - First migration must succeed; right-size on the second run
+    if is_ec2:
+        mem = r["max_mem"]
+    elif size == "Small":
         if max_peak_mem_gb > 0 and peak_mem_pct > 0:
-            needed_mem = max_peak_mem_gb * 2.0  # 2x headroom for OOM safety
-            needed_mem = max(needed_mem, 8)  # minimum 8g
+            needed_mem = max_peak_mem_gb * 2.0
+            needed_mem = max(needed_mem, 8)
             mem = min(r["max_mem"], max(r["min_mem"], int(needed_mem + 0.99)))
         elif mem_pct > 0 and orig_mem_mb > 0:
             used_gb = (orig_mem_mb / 1024) * (mem_pct / 100)
             needed_mem = used_gb * 2.0
             mem = min(r["max_mem"], max(r["min_mem"], int(needed_mem + 0.99)))
         else:
-            # No data — use max (safe default)
             mem = r["max_mem"]
     elif size == "Medium":
         if max_peak_mem_gb > 0:
