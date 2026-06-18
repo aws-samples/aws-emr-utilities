@@ -145,7 +145,9 @@ def _select_worker_type(input_gb: float, shuffle_ratio: float,
                         cpu_pct: float = 50.0, orig_mem_mb: int = 0,
                         max_peak_mem_gb: float = 0, orig_cores: int = 0,
                         max_shuffle_write_per_task_gb: float = 0,
-                        peak_mem_pct: float = 0, is_ec2: bool = False) -> Tuple[str, Dict]:
+                        peak_mem_pct: float = 0, is_ec2: bool = False,
+                        disk_spill_gb: float = 0.0,
+                        total_shuffle_gb: float = 0.0) -> Tuple[str, Dict]:
     # EMR Serverless memory ranges per vCPU size
     WORKER_RANGES = {
         "Small":  {"vcpu": 4,  "min_mem": 8,  "max_mem": 27, "mem_step": 1},
@@ -173,9 +175,22 @@ def _select_worker_type(input_gb: float, shuffle_ratio: float,
             # Worker bump logic later promotes to Medium when executor count > 60
             size = "Small"
     else:
-        if spill_gb > 100:
-            size = "Large"
-        elif spill_gb > 10 or mem_pct > 90:
+        # Serverless worker selection based on empirical A/B/C validation:
+        # - Medium (8c/54G): wins when disk spill is the bottleneck stage.
+        #   54G heap → G1GC 16MB regions → 45% less GC overhead vs 27G/8MB regions.
+        #   Justified when spill dominates shuffle (spill_ratio > 0.3).
+        # - Small (4c/27G): default — same speed as Medium for non-spill workloads
+        #   but 25-40% cheaper due to finer dynamic allocation granularity (27G vs 54G
+        #   release increments).
+        # - Large (16c/108G): decided downstream once partition/executor counts are
+        #   known — beneficial when shuffle locality > 50% (partition_count ≤ 2×cores),
+        #   allowing 500 MiB/s local NVMe reads instead of network fetches.
+        _total_shuf = total_shuffle_gb if total_shuffle_gb > 0 else 0
+        _spill_ratio = disk_spill_gb / max(_total_shuf, 1) if disk_spill_gb > 0 else 0
+
+        if disk_spill_gb > 500 or (disk_spill_gb > 100 and _spill_ratio > 0.3):
+            size = "Medium"
+        elif mem_pct > 90 and max_peak_mem_gb > 20:
             size = "Medium"
         else:
             size = "Small"
@@ -564,7 +579,9 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         worker_type, worker_cfg = _select_worker_type(i_in_gb, sh_ratio, mem_pct, spill_gb, cpu_pct,
                                                       max_peak_mem_gb=max_peak_mem_gb, orig_cores=orig_cores, orig_mem_mb=int(orig_executor_mem_gb * 1024),
                                                       max_shuffle_write_per_task_gb=max_shuffle_write_per_task_gb,
-                                                      peak_mem_pct=peak_mem_pct, is_ec2=is_ec2)
+                                                      peak_mem_pct=peak_mem_pct, is_ec2=is_ec2,
+                                                      disk_spill_gb=disk_spill_gb,
+                                                      total_shuffle_gb=s_in_gb + s_out_gb)
 
         # Large advisory (>=500MB) means large partitions — need 8c for memory headroom
         _src_adv = str(_spark_config_raw.get('spark.sql.adaptive.advisoryPartitionSizeInBytes', ''))
@@ -683,21 +700,30 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             max_exec_cost = max(2, max_exec_cost * 8 // 16)  # preserve total cores
             min_exec_cost = max(1, min(max_exec_cost - 2, max(5, max_exec_cost // 3)))
 
-        # Serverless path: bump worker size based on actual shuffle/spill metrics.
-        # Serverless event logs have accurate metrics — use them directly.
+        # Serverless path: worker type adjustment based on empirical A/B/C results.
+        # Large is ONLY beneficial when shuffle locality > 50% — partition count is
+        # close to (executor_count × cores_per_executor), so most shuffle reads hit
+        # local NVMe at 500 MiB/s instead of network. This occurs in final-stage
+        # aggregations with low partition count. For high total shuffle, Large is
+        # WORSE due to sub-linear Fargate ENI bandwidth scaling above 8 vCPU.
         if not is_ec2:
             _total_shuffle_gb = s_in_gb + s_out_gb
-            _orig_vcpu = worker_cfg["vcpu"]
-            if (_total_shuffle_gb > 15000 or spill_gb > 50000) and worker_type != "Large":
+            _total_cores = max_exec_cost * worker_cfg["vcpu"]
+            _locality_ratio = sp_cost / max(_total_cores, 1) if sp_cost > 0 else 999
+
+            if _locality_ratio <= 2.0 and _total_shuffle_gb > 500 and sp_cost <= max_exec_cost * 16:
+                _orig_vcpu = worker_cfg["vcpu"]
                 worker_type = "Large"
                 worker_cfg = {"vcpu": 16, "memory": 108}
                 max_exec_cost = max(2, max_exec_cost * _orig_vcpu // 16)
                 min_exec_cost = max(1, min(max_exec_cost - 2, max(5, max_exec_cost // 3)))
-            elif (_total_shuffle_gb > 5000 or spill_gb > 10000) and worker_type == "Small":
-                worker_type = "Medium"
-                worker_cfg = {"vcpu": 8, "memory": 54}
-                max_exec_cost = max(2, max_exec_cost * 4 // 8)
-                min_exec_cost = max(1, min(max_exec_cost - 2, max(5, max_exec_cost // 3)))
+            elif worker_type == "Small":
+                _spill_ratio = disk_spill_gb / max(_total_shuffle_gb, 1)
+                if disk_spill_gb > 500 or (disk_spill_gb > 50 and _spill_ratio > 0.3):
+                    worker_type = "Medium"
+                    worker_cfg = {"vcpu": 8, "memory": 54}
+                    max_exec_cost = max(2, max_exec_cost * 4 // 8)
+                    min_exec_cost = max(1, min(max_exec_cost - 2, max(5, max_exec_cost // 3)))
 
         # Serverless path: right-size partitions and executors from actual metrics
         if not is_ec2 and stages_raw:
@@ -1003,10 +1029,32 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             # 4-5 waves/stage → shuffle-fetch congestion collapse, 75% of
             # executor time in fetch-wait, 301min vs 25min for the same job).
             if spill_ratio > 0.05 and not is_ec2:
-                # Zero-spill target: peak_shuffle / (per_task_mem * 0.7)
-                peak_shuffle_gb = max(s_in_gb, s_out_gb)
-                zero_spill_parts = int(peak_shuffle_gb / (per_task_mem_gb * 0.7))
+                # Zero-spill target: use per-stage peak shuffle (not app total)
+                # and account for hash-table expansion via observed disk spill
+                _peak_shuf_stages = max(
+                    (s.get("shuffle_read_gb", 0) for s in stages_raw if s.get("num_tasks", 0) > 0),
+                    default=max(s_in_gb, s_out_gb))
+                _peak_shuf_stages = max(_peak_shuf_stages, max(
+                    (s.get("shuffle_write_gb", 0) for s in stages_raw if s.get("num_tasks", 0) > 0),
+                    default=0))
+
+                # Method 1: partition sizing from per-task memory budget
+                zero_spill_parts = int(math.ceil(_peak_shuf_stages / (per_task_mem_gb * 0.7)))
+
+                # Method 2: disk-spill overshoot — if tasks are already spilling to disk,
+                # scale partitions proportionally to eliminate the overshoot.
+                # disk_spill ≈ (build_side - available_mem) per task × num_tasks
+                # needed_parts = current_parts × (available + overshoot) / available
+                _src_parts = int(_spark_config_raw.get('spark.sql.shuffle.partitions', '0') or 0)
+                if _src_parts > 0 and disk_spill_gb > 10:
+                    _disk_per_task = disk_spill_gb / _src_parts
+                    _overshoot_ratio = (per_task_mem_gb + _disk_per_task) / per_task_mem_gb
+                    _disk_based_parts = int(math.ceil(_src_parts * _overshoot_ratio * 1.2))
+                    zero_spill_parts = max(zero_spill_parts, _disk_based_parts)
+
                 zero_spill_parts = max(1000, zero_spill_parts)
+                if zero_spill_parts % 2 != 0:
+                    zero_spill_parts += 1
                 sp = zero_spill_parts
                 cfg['spark.sql.shuffle.partitions'] = str(sp)
                 # MaxExecutors: size for 2-3 waves (avoid 4-6 waves of waiting)
