@@ -15,6 +15,9 @@ This pipeline uses a backlog table to track and process Spark event logs increme
 
 ## Architecture
 
+The core pipeline (01-06) is self-contained — no external AI/ML dependencies.
+The feedback layer (07-10) is opt-in for teams that want data-driven parameter tuning.
+
 ```
 ┌─────────────────────┐
 │ 1. Discovery Job    │  Scans S3 for new event logs
@@ -34,6 +37,25 @@ This pipeline uses a backlog table to track and process Spark event logs increme
     │ Extract  │ -->  │  Iceberg │ -->  │Recommend │ -->  │  Write   │
     │ Metrics  │      │  Load    │      │Generator │      │ to Table │
     └──────────┘      └──────────┘      └──────────┘      └──────────┘
+                                              │
+                                              ▼
+┌────────────────── AI/ML Feedback Layer (OPT-IN) ─────────────────────────────┐
+│                                                                               │
+│  ┌──────────┐      ┌──────────┐      ┌──────────┐      ┌──────────┐         │
+│  │  Step 5  │      │  Step 6  │      │  Step 7  │      │  Step 8  │         │
+│  │Benchmark │ -->  │ Feedback │ -->  │  Model   │      │LLM Plan  │         │
+│  │ Runner   │      │   Loop   │      │ Trainer  │      │ Analyzer │         │
+│  └──────────┘      └──────────┘      └──────────┘      └──────────┘         │
+│    (07)              (08)              (09)              (10)                  │
+│  Runs workloads    Predicted vs     Learns params     Claude diagnoses       │
+│  with rec configs  actual deltas    from feedback     anomalous plans        │
+│                         │                │                                    │
+│                         ▼                ▼                                    │
+│                   ┌──────────────────────────┐                               │
+│                   │   model-latest.json      │──> Recommender (Step 3)       │
+│                   │   (learned parameters)   │                               │
+│                   └──────────────────────────┘                               │
+└───────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Pipeline Scripts
@@ -47,6 +69,14 @@ This pipeline uses a backlog table to track and process Spark event logs increme
 | `04_json_to_iceberg_enhanced.py` | Load metrics to Iceberg tables | Called by orchestrator |
 | `05_emr_recommender.py` | Generate recommendations | Called by orchestrator |
 | `06_write_to_iceberg.py` | Write recommendations to table | Called by orchestrator |
+| `07_benchmark_runner.py` | Run workloads with recommended configs | Opt-in: nightly / on-demand |
+| `08_feedback_loop.py` | Compare predicted vs actual outcomes | Opt-in: after benchmark runs |
+| `09_model_trainer.py` | Learn parameters from feedback data | Opt-in: weekly / after 20+ records |
+| `10_llm_plan_analyzer.py` | LLM diagnosis of anomalous query plans | Opt-in: on-demand |
+
+> **Note:** Scripts 07-10 are entirely optional. The core pipeline (01-06) works
+> standalone with no AI/ML dependencies. The feedback layer is for teams that want
+> to continuously improve recommendations by measuring actual outcomes.
 
 ## Quick Start (5 Minutes)
 

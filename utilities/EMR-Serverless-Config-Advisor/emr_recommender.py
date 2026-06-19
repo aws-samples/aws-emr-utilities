@@ -53,6 +53,57 @@ except ImportError:
     log.warning("boto3 not available - S3 support disabled")
 
 
+# ──────────────────────────────────────────────────────────────────────────────
+# Learned parameters — OPT-IN ONLY.
+# Only loaded when model_path is explicitly passed to generate_dual_recommendations().
+# Without it, the recommender uses validated hand-tuned defaults with zero
+# external dependencies. No S3 calls, no model files, no feedback loop required.
+# ──────────────────────────────────────────────────────────────────────────────
+_LEARNED_PARAMS = None
+
+def _load_learned_params(model_path: str = None) -> dict:
+    """Load learned parameters from a model artifact. OPT-IN: only called when
+    the caller explicitly provides model_path. Never auto-discovers or fetches.
+    """
+    global _LEARNED_PARAMS
+    if _LEARNED_PARAMS is not None:
+        return _LEARNED_PARAMS
+
+    if not model_path:
+        return None
+
+    if not S3_AVAILABLE and model_path.startswith("s3://"):
+        log.debug("boto3 not available, skipping model load")
+        return None
+
+    try:
+        if model_path.startswith("s3://"):
+            parts = model_path.replace("s3://", "").split("/", 1)
+            body = boto3.client("s3").get_object(Bucket=parts[0], Key=parts[1])["Body"].read()
+            model = json.loads(body)
+        else:
+            with open(model_path) as f:
+                model = json.load(f)
+
+        if model.get("status") == "trained":
+            _LEARNED_PARAMS = model.get("parameters", {})
+            log.info("Loaded learned parameters (v%d, %d samples)",
+                     model.get("version", 0), model.get("sample_count", 0))
+            return _LEARNED_PARAMS
+    except Exception as e:
+        log.debug("Model not loaded (%s), using hand-tuned defaults", e)
+
+    return None
+
+
+def get_param(name: str, default):
+    """Get a parameter value: learned if available, else hand-tuned default."""
+    params = _LEARNED_PARAMS
+    if params and name in params:
+        return params[name]
+    return default
+
+
 def is_s3_path(path: str) -> bool:
     """Check if path is S3."""
     return path.startswith('s3://')
@@ -242,8 +293,9 @@ def _compute_exec_limits(input_gb: float, vcpu: int, partitions: int = 0,
         # Memory efficiency: if EC2 had less mem/core, Serverless gains more (less spill)
         # If EC2 already had equal or more mem/core, gain is minimal
         mem_ratio = min(1.0, ec2_mem_per_core / serverless_mem_per_core)
-        # Scaling: ranges from 0.47 (EC2 had low mem/core) to 0.80 (EC2 had high mem/core)
-        base_efficiency = 0.47 + 0.33 * mem_ratio
+        eff_low = get_param("base_efficiency_low", 0.47)
+        eff_high = get_param("base_efficiency_high", 0.80)
+        base_efficiency = eff_low + (eff_high - eff_low) * mem_ratio
         # Anchor on total source cores, not executor count: a 15-core EC2 executor
         # carries 15 cores of parallelism. The old per_exec_factor formula capped
         # each EC2 executor's contribution at 1.4 cores, which mapped a
@@ -290,7 +342,7 @@ def _compute_exec_limits(input_gb: float, vcpu: int, partitions: int = 0,
     #   Replaces the blanket 1.5x multiplier for EC2 sources.
     #   (Validated: reproduces the proven 300-exec config for a 118×15c source.)
     if is_ec2_source and total_task_exec_hours > 0 and duration_hours > 0:
-        PACKING_EFFICIENCY = 0.70
+        PACKING_EFFICIENCY = get_param("packing_efficiency", 0.70)
         if mode == "performance":
             target_hours = max(duration_hours * 0.25, min(duration_hours, 20.0 / 60.0))
         else:
@@ -458,9 +510,19 @@ def _detect_window_group_limit_coalesce_regression(stages, sql_executions, execu
 
 def generate_dual_recommendations(input_path: str, limit: int = 100,
                                   target_partition_size_mib: int = 1024,
-                                  serverless_storage: bool = False) -> Tuple[List[Dict], List[Dict]]:
-    """Generate cost, performance, and IO-optimized recommendations."""
-    
+                                  serverless_storage: bool = False,
+                                  model_path: str = None) -> Tuple[List[Dict], List[Dict]]:
+    """Generate cost, performance, and IO-optimized recommendations.
+
+    Args:
+        model_path: OPT-IN. S3 or local path to a learned parameter model
+                    (produced by 09_model_trainer.py). If omitted (default),
+                    the recommender uses hand-tuned defaults with zero
+                    external dependencies — no feedback loop required.
+    """
+    if model_path:
+        _load_learned_params(model_path)
+
     # Load metrics
     all_data = load_json_files(input_path, limit)
     
@@ -794,7 +856,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         #   0.021 GB/s/host (118 EC2 hosts, 95min) → completed (48% fetch-wait)
         # Safe ceiling: 0.04 GB/s/host — above the healthiest observed run,
         # well below the observed collapse point.
-        SAFE_SERVING_GBPS = 0.04
+        SAFE_SERVING_GBPS = get_param("safe_serving_gbps", 0.04)
         _serve_target_cost_h = duration
         _serve_target_perf_h = (max(duration * 0.25, min(duration, 20.0 / 60.0))
                                 if is_ec2 else duration)
