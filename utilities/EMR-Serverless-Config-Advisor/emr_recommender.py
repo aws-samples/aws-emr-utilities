@@ -723,6 +723,24 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                     max_exec_cost = max(2, max_exec_cost * 4 // 8)
                     min_exec_cost = max(1, min(max_exec_cost - 2, max(5, max_exec_cost // 3)))
 
+            # Rule 3: driver coordination overhead → Medium
+            # At 80+ Small executors, driver faces: heartbeat processing storms
+            # (SPARK-14289), MapOutputTracker fan-in (SPARK-28362), single-threaded
+            # DAGScheduler event loop backlog (SPARK-23626). Promoting to Medium
+            # halves executor count while preserving total cores.
+            # Threshold is higher than EC2 (>70) because Serverless has no YARN RM
+            # overhead and a dedicated driver Fargate task.
+            if worker_type == "Small" and max_exec_cost > 80:
+                worker_type = "Medium"
+                worker_cfg = {"vcpu": 8, "memory": 54}
+                max_exec_cost = max(2, max_exec_cost * 4 // 8)
+                min_exec_cost = max(1, min(max_exec_cost - 2, max(5, max_exec_cost // 3)))
+            if worker_type == "Medium" and max_exec_cost > 80:
+                worker_type = "Large"
+                worker_cfg = {"vcpu": 16, "memory": 108}
+                max_exec_cost = max(2, max_exec_cost * 8 // 16)
+                min_exec_cost = max(1, min(max_exec_cost - 2, max(5, max_exec_cost // 3)))
+
         # Serverless path: right-size partitions and executors from actual metrics
         if not is_ec2 and stages_raw:
             _per_task_mem_gb = worker_cfg["memory"] * 0.6 / worker_cfg["vcpu"]
