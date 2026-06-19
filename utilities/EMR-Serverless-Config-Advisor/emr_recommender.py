@@ -669,6 +669,13 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         # Applies to all paths — target is always Serverless
         sp_cost = max(1000, sp_cost)
 
+        # Contention-prone workloads: high memory spill with low disk spill indicates
+        # internal execution memory pool contention (hash-agg heavy). Promoting to
+        # Large (16c) does NOT help — same contention rate as Medium (8c), stochastic.
+        # Guard: disk_spill < 200GB absolute AND < 30% of memory spill. Large absolute
+        # disk spill (e.g. 5TB) means real data overflow, not internal contention.
+        _contention_prone = (spill_gb > 500 and disk_spill_gb < 200 and disk_spill_gb < spill_gb * 0.3)
+
         # Bump up worker size if too many executors (shuffle coordination overhead)
         # Always go Small→Medium→Large (never skip Medium)
         _is_rule2_spill = is_ec2 and orig_executors > 150 and sh_ratio < 800 and spill_gb > 5000
@@ -677,7 +684,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             worker_cfg = {"vcpu": 8, "memory": 54}
             max_exec_cost = max(2, max_exec_cost * 4 // 8)  # preserve total cores
             min_exec_cost = max(1, min(max_exec_cost - 2, max(5, max_exec_cost // 3)))
-        if is_ec2 and max_exec_cost > 100 and worker_type == "Medium":
+        if is_ec2 and max_exec_cost > 100 and worker_type == "Medium" and not _contention_prone:
             worker_type = "Large"
             worker_cfg = {"vcpu": 16, "memory": 108}
             max_exec_cost = max(2, max_exec_cost * 8 // 16)  # preserve total cores
@@ -688,7 +695,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         if not is_ec2:
             _total_shuffle_gb = s_in_gb + s_out_gb
             _orig_vcpu = worker_cfg["vcpu"]
-            if (_total_shuffle_gb > 15000 or spill_gb > 50000) and worker_type != "Large":
+            if (_total_shuffle_gb > 15000 or spill_gb > 50000) and worker_type != "Large" and not _contention_prone:
                 worker_type = "Large"
                 worker_cfg = {"vcpu": 16, "memory": 108}
                 max_exec_cost = max(2, max_exec_cost * _orig_vcpu // 16)
