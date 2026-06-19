@@ -723,19 +723,26 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                     max_exec_cost = max(2, max_exec_cost * 4 // 8)
                     min_exec_cost = max(1, min(max_exec_cost - 2, max(5, max_exec_cost // 3)))
 
-            # Rule 3: driver coordination overhead → Medium
-            # At 80+ Small executors, driver faces: heartbeat processing storms
+            # Rule 3: driver coordination overhead → promote worker type
+            # At 80+ executors, driver faces: heartbeat processing storms
             # (SPARK-14289), MapOutputTracker fan-in (SPARK-28362), single-threaded
-            # DAGScheduler event loop backlog (SPARK-23626). Promoting to Medium
+            # DAGScheduler event loop backlog (SPARK-23626). Promoting worker type
             # halves executor count while preserving total cores.
             # Threshold is higher than EC2 (>70) because Serverless has no YARN RM
             # overhead and a dedicated driver Fargate task.
+            #
+            # EXCEPTION: contention-prone workloads (high memory spill relative to
+            # disk spill) must NOT promote to Large — empirically proved that Large
+            # (16c) has same contention rate as Medium (8c) with stochastic severity.
+            # Small→Medium is safe (halves contention probability); Medium→Large is
+            # a coin flip on hash-agg-heavy workloads.
+            _contention_prone = (spill_gb > 500 and disk_spill_gb < spill_gb * 0.3)
             if worker_type == "Small" and max_exec_cost > 80:
                 worker_type = "Medium"
                 worker_cfg = {"vcpu": 8, "memory": 54}
                 max_exec_cost = max(2, max_exec_cost * 4 // 8)
                 min_exec_cost = max(1, min(max_exec_cost - 2, max(5, max_exec_cost // 3)))
-            if worker_type == "Medium" and max_exec_cost > 80:
+            if worker_type == "Medium" and max_exec_cost > 80 and not _contention_prone:
                 worker_type = "Large"
                 worker_cfg = {"vcpu": 16, "memory": 108}
                 max_exec_cost = max(2, max_exec_cost * 8 // 16)
