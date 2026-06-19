@@ -7,6 +7,13 @@
   {
    "changed_lines": 0,
    "reason": "Initial baseline: two-constraint sizing model + WGL proactive exclusion"
+  },
+  {
+   "changed_lines": 1,
+   "changes": [
+    "benchmarks/eventlog_v2_00g6b8uts0018o0b: NEW app not in golden baseline"
+   ],
+   "reason": "Add TPC-H benchmark fixture (PR #170)"
   }
  ],
  "snapshot": {
@@ -325,6 +332,34 @@
      "worker.min_executors": 6,
      "worker.type": "Large",
      "worker.vcpu": 16
+    }
+   }
+  },
+  "benchmarks": {
+   "eventlog_v2_00g6b8uts0018o0b": {
+    "cost": {
+     "spark_configs.spark.dynamicAllocation.maxExecutors": "52",
+     "spark_configs.spark.dynamicAllocation.minExecutors": "17",
+     "spark_configs.spark.emr-serverless.executor.disk": "200G",
+     "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
+     "spark_configs.spark.sql.shuffle.partitions": "1000",
+     "worker.max_executors": 52,
+     "worker.memory_gb": 15,
+     "worker.min_executors": 17,
+     "worker.type": "Small",
+     "worker.vcpu": 4
+    },
+    "performance": {
+     "spark_configs.spark.dynamicAllocation.maxExecutors": "78",
+     "spark_configs.spark.dynamicAllocation.minExecutors": "26",
+     "spark_configs.spark.emr-serverless.executor.disk": "200G",
+     "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
+     "spark_configs.spark.sql.shuffle.partitions": "1000",
+     "worker.max_executors": 78,
+     "worker.memory_gb": 15,
+     "worker.min_executors": 26,
+     "worker.type": "Small",
+     "worker.vcpu": 4
     }
    }
   },

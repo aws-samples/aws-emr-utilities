@@ -30,7 +30,7 @@ import tempfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 TOOL_DIR = os.path.dirname(HERE)
 RECOMMENDER = os.path.join(TOOL_DIR, "emr_recommender.py")
-FIXTURES = [os.path.join(HERE, "fixtures", "b12"), os.path.join(HERE, "fixtures", "ec2_migration")]
+FIXTURES = [os.path.join(HERE, "fixtures", "b12"), os.path.join(HERE, "fixtures", "ec2_migration"), os.path.join(HERE, "fixtures", "benchmarks")]
 GOLDEN = os.path.join(HERE, "golden_baseline.json")
 
 # The fields that constitute the recommendation "contract". Anything else in
