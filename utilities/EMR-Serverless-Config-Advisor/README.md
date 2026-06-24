@@ -521,3 +521,64 @@ Evaluated on TPC-DS at 3TB scale, 104 queries, EMR Serverless release emr-7.13.0
 | **Runtime** | **-72.7%** |
 | **Cost** | **-18.3%** |
 | **Regressions** | 0 |
+
+
+
+---
+
+## Bucket Recommender (No Event Log Required)
+
+For **new jobs without event log history**, the Bucket Recommender provides optimal starting configurations based on workload characteristics.
+
+### Quick Start
+
+```bash
+# Simple: just pick your size (generous defaults)
+python3 bucket_recommender.py --size M --sub-category General
+
+# Better: provide target duration for precise executor count
+python3 bucket_recommender.py --size L --sub-category Shuffle-Optimized \
+  --target-duration 30 --input-size-gb 2500 --shuffle-gb 4000
+
+# Best: provide event log metrics for maximum precision
+python3 bucket_recommender.py --size L --sub-category Shuffle-Optimized \
+  --target-duration 30 --task-hours 100 --shuffle-gb 4000
+
+# Output as spark-submit parameters (paste into StartJobRun):
+python3 bucket_recommender.py --size M --sub-category General --format spark-submit
+```
+
+### Two-Step Selection
+
+**Step 1: Choose Size** (by input data volume):
+
+| Size | Input Data | Duration | Default maxExecutors |
+|------|-----------|----------|---------------------|
+| XS | Near-zero (<5GB, <5min) | <5 min | 3 |
+| S | 5–100 GB | 5–30 min | 50 |
+| M | 100 GB – 1 TB | 15–60 min | 100 |
+| L | 1–5 TB | 20–120 min | 200 |
+| XL | >5 TB | 1–4 hours | 500 |
+
+**Step 2: Choose Sub-Category** (default = General):
+
+| Sub-Category | When to Use |
+|---|---|
+| **General** | Default. Safe for any workload. Pick this if unsure. |
+| **Compute-Optimized** | Pure scan/filter/write, shuffle <10% of input |
+| **Shuffle-Optimized** | Shuffle >1TB or >30% of input, GROUP BY, multi-table JOINs |
+| **Memory-Optimized** | 20+ JOINs, wide tables (100+ cols), OOM history |
+| **IO-Optimized** | Tiny input (<10GB) with 100x+ fan-out (EXPLODE, CROSS JOIN) |
+| **Iceberg-Maintenance** | Compaction, expire snapshots, rewrite manifests |
+
+### 3 Precision Modes
+
+| Mode | Input Required | Precision |
+|------|---------------|-----------|
+| Default | Just size + sub-category | Generous (safe, may over-provision) |
+| Proxy | + `--target-duration` + `--shuffle-gb` | Good (estimated from throughput model) |
+| Event Log | + `--task-hours` from prior run | Best (same formula as full Config Advisor) |
+
+### Sizing Guide
+
+See [docs/sizing-guide.md](docs/sizing-guide.md) for the full selection guide with examples and decision flowchart.
