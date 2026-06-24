@@ -173,9 +173,21 @@ def _select_worker_type(input_gb: float, shuffle_ratio: float,
             # Worker bump logic later promotes to Medium when executor count > 60
             size = "Small"
     else:
-        if spill_gb > 100:
+        # Serverless source: spill from a prior run reflects the OLD config's
+        # memory pressure, not an intrinsic workload requirement. A 4c/27g run
+        # that spills 9TB would run spill-free on 8c/54g (more memory per task).
+        # Exception: if the source was ALREADY on Large (16c/108g) and still
+        # spilling, the workload genuinely needs Large — don't downsize.
+        orig_mem_gb = orig_mem_mb / 1024 if orig_mem_mb > 0 else 27
+        orig_cores_eff = max(orig_cores, 4)
+        mem_per_core = orig_mem_gb / orig_cores_eff
+
+        if orig_cores >= 16 and orig_mem_gb >= 100:
+            # Source already ran on Large — keep it (proven working config)
             size = "Large"
-        elif spill_gb > 10 or mem_pct > 90:
+        elif max_shuffle_write_per_task_gb >= 1.0 or mem_per_core > 13.5:
+            size = "Medium"
+        elif mem_pct > 90 and orig_mem_gb >= 50:
             size = "Medium"
         else:
             size = "Small"
@@ -669,6 +681,13 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         # Applies to all paths — target is always Serverless
         sp_cost = max(1000, sp_cost)
 
+        # Contention-prone workloads: high memory spill with low disk spill indicates
+        # internal execution memory pool contention (hash-agg heavy). Promoting to
+        # Large (16c) does NOT help — same contention rate as Medium (8c), stochastic.
+        # Guard: disk_spill < 200GB absolute AND < 30% of memory spill. Large absolute
+        # disk spill (e.g. 5TB) means real data overflow, not internal contention.
+        _contention_prone = (spill_gb > 500 and disk_spill_gb < 200 and disk_spill_gb < spill_gb * 0.3)
+
         # Bump up worker size if too many executors (shuffle coordination overhead)
         # Always go Small→Medium→Large (never skip Medium)
         _is_rule2_spill = is_ec2 and orig_executors > 150 and sh_ratio < 800 and spill_gb > 5000
@@ -677,26 +696,27 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             worker_cfg = {"vcpu": 8, "memory": 54}
             max_exec_cost = max(2, max_exec_cost * 4 // 8)  # preserve total cores
             min_exec_cost = max(1, min(max_exec_cost - 2, max(5, max_exec_cost // 3)))
-        if is_ec2 and max_exec_cost > 100 and worker_type == "Medium":
+        if is_ec2 and max_exec_cost > 100 and worker_type == "Medium" and not _contention_prone:
             worker_type = "Large"
             worker_cfg = {"vcpu": 16, "memory": 108}
             max_exec_cost = max(2, max_exec_cost * 8 // 16)  # preserve total cores
             min_exec_cost = max(1, min(max_exec_cost - 2, max(5, max_exec_cost // 3)))
 
-        # Serverless path: bump worker size based on actual shuffle/spill metrics.
-        # Serverless event logs have accurate metrics — use them directly.
+        # Serverless path: promote worker only on executor count (coordination overhead),
+        # matching the EC2 logic. Raw spill/shuffle volume is NOT a promotion trigger —
+        # spill is curable by the new config's higher memory/core, and shuffle serving
+        # is handled by the serving-floor executor count (which already scales hosts).
         if not is_ec2:
-            _total_shuffle_gb = s_in_gb + s_out_gb
             _orig_vcpu = worker_cfg["vcpu"]
-            if (_total_shuffle_gb > 15000 or spill_gb > 50000) and worker_type != "Large":
-                worker_type = "Large"
-                worker_cfg = {"vcpu": 16, "memory": 108}
-                max_exec_cost = max(2, max_exec_cost * _orig_vcpu // 16)
-                min_exec_cost = max(1, min(max_exec_cost - 2, max(5, max_exec_cost // 3)))
-            elif (_total_shuffle_gb > 5000 or spill_gb > 10000) and worker_type == "Small":
+            if max_exec_cost > 70 and worker_type == "Small" and not _contention_prone:
                 worker_type = "Medium"
                 worker_cfg = {"vcpu": 8, "memory": 54}
                 max_exec_cost = max(2, max_exec_cost * 4 // 8)
+                min_exec_cost = max(1, min(max_exec_cost - 2, max(5, max_exec_cost // 3)))
+            elif max_exec_cost > 100 and worker_type == "Medium" and not _contention_prone:
+                worker_type = "Large"
+                worker_cfg = {"vcpu": 16, "memory": 108}
+                max_exec_cost = max(2, max_exec_cost * 8 // 16)
                 min_exec_cost = max(1, min(max_exec_cost - 2, max(5, max_exec_cost // 3)))
 
         # Serverless path: right-size partitions and executors from actual metrics
