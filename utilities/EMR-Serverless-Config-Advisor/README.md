@@ -533,8 +533,14 @@ For **new jobs without event log history**, the Bucket Recommender provides opti
 ### Quick Start
 
 ```bash
-# Pick your size and sub-category — ready to run:
-python3 bucket_recommender.py --size M --sub-category General
+# Just pick your size — that's it:
+python3 bucket_recommender.py --size M
+
+# Output as spark-submit parameters (paste directly into StartJobRun):
+python3 bucket_recommender.py --size L --format spark-submit
+
+# Optionally pick a sub-category if you know your workload pattern:
+python3 bucket_recommender.py --size L --sub-category Shuffle-Optimized
 
 # Optionally specify your SLA and data volume for tighter sizing:
 python3 bucket_recommender.py --size L --sub-category Shuffle-Optimized \
@@ -543,9 +549,6 @@ python3 bucket_recommender.py --size L --sub-category Shuffle-Optimized \
 # After first successful run, feed back event log metrics for optimal sizing:
 python3 bucket_recommender.py --size L --sub-category Shuffle-Optimized \
   --task-hours 100 --shuffle-gb 4000 --target-duration 30
-
-# Output as spark-submit parameters (paste into StartJobRun):
-python3 bucket_recommender.py --size M --sub-category General --format spark-submit
 ```
 
 ### Two-Step Selection
