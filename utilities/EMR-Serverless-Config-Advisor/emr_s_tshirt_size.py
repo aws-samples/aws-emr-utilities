@@ -181,12 +181,26 @@ def _max_partition_bytes(size, input_gb):
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description="EMR Serverless Bucket Recommender")
-    p.add_argument("--size", required=True, choices=SIZES, help="T-shirt size (XS/S/M/L/XL)")
+    p.add_argument("--size", choices=SIZES, help="T-shirt size (XS/S/M/L/XL). Optional if --num-files is provided with Iceberg-Maintenance.")
     p.add_argument("--sub-category", default="General", choices=SUB_CATEGORIES, help="Optimization axis (default: General)")
     p.add_argument("--input-size-gb", type=float, help="Input data size in GB (improves maxPartitionBytes selection)")
     p.add_argument("--num-files", type=int, help="Number of files to compact (for Iceberg-Maintenance)")
     p.add_argument("--format", choices=["json", "spark-submit", "table"], default="table")
     args = p.parse_args()
+
+    # Auto-derive size from num-files for Iceberg-Maintenance
+    if not args.size:
+        if args.sub_category == "Iceberg-Maintenance" and args.num_files:
+            if args.num_files <= 500:
+                args.size = "S"
+            elif args.num_files <= 5000:
+                args.size = "M"
+            elif args.num_files <= 20000:
+                args.size = "L"
+            else:
+                args.size = "XL"
+        else:
+            p.error("--size is required (unless using --sub-category Iceberg-Maintenance with --num-files)")
 
     result = recommend(
         size=args.size,
