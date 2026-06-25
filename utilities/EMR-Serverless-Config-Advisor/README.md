@@ -32,7 +32,7 @@ python3 emr_s_tshirt_size.py --size L --format spark-submit
 Know your workload pattern? Add a sub-category:
 
 ```bash
-python3 emr_s_tshirt_size.py --size L --sub-category Shuffle-Optimized
+python3 emr_s_tshirt_size.py --size L --sub-category Optimized
 ```
 
 ### Choosing Your Size
@@ -47,16 +47,14 @@ python3 emr_s_tshirt_size.py --size L --sub-category Shuffle-Optimized
 
 ### Choosing a Sub-Category
 
-Default is **General** — safe for any workload. Pick a specialized category only if your workload clearly matches one of these patterns:
+Default is **General** — safe for any workload. Pick a specialized category only if your workload clearly matches:
 
-| Sub-Category | The Pattern |
-|---|---|
-| **General** | Mixed workload, or you are not sure. Start here. |
-| **Compute-Optimized** | Scan, filter, transform, write. Little to no shuffle. |
-| **Shuffle-Optimized** | Heavy GROUP BY or multi-table JOINs. Shuffle exceeds 1 TB or 30% of input. |
-| **Memory-Optimized** | Twenty or more JOINs. Wide tables. History of out-of-memory failures. |
-| **IO-Optimized** | Tiny input that explodes into massive intermediate data (EXPLODE, CROSS JOIN). |
-| **Iceberg-Maintenance** | File compaction, snapshot expiration, manifest rewrites. No business logic. |
+| Sub-Category | The Pattern | Difference from General |
+|---|---|---|
+| **General** | Mixed workload, or you are not sure. Start here. | 1-wave partitions, 200G disk |
+| **Optimized** | Heavy GROUP BY, multi-table JOINs, shuffle >1 TB or >30% of input, 20+ joins. | 2-wave partitions, 1000G disk |
+| **IO-Optimized** | Tiny input that explodes into massive intermediate data (EXPLODE, CROSS JOIN). | Optimized + smaller workers × 2 executors for disk parallelism |
+| **Iceberg-Maintenance** | File compaction, snapshot expiration, manifest rewrites. No business logic. | Fixed 4c/14G workers, scaled by file count |
 
 For **Iceberg-Maintenance**, if you know the number of files to compact, just provide that — sizing is handled automatically:
 
@@ -152,9 +150,27 @@ A common pattern: use the T-shirt sizer for the initial run, then feed the resul
 
 **Stability over speed.** The T-shirt sizer prioritizes job completion — configs are intentionally generous. The Fine Tuner balances precision with safety, using measured metrics to right-size without over-provisioning.
 
-**AQE handles the rest.** Shuffle partitions are set high (minimum 1000 for any non-trivial job). Adaptive Query Execution coalesces unused partitions at runtime — there is no penalty for over-partitioning.
+**AQE handles the rest.** Shuffle partitions are set using a wave-based formula: `waves × maxExecutors × cores` (min 1000, max 10000). General uses 1 wave; Optimized and IO-Optimized use 2 waves. Adaptive Query Execution coalesces unused partitions at runtime.
 
 **Dynamic allocation scales down.** EMR Serverless releases idle executors automatically. A higher `maxExecutors` ceiling allows the job to scale up when needed without risking under-provisioning.
+
+### Config Matrix
+
+| Size | Sub-category | Cores | Memory | maxExec | Total vCPU | Partitions | Disk |
+|------|-------------|-------|--------|---------|-----------|-----------|------|
+| XS | General | 1 | 2G | 3 | 3 | 20 | — |
+| S | General | 4 | 27G | 50 | 200 | 1000 | 200G |
+| S | Optimized | 4 | 27G | 50 | 200 | 1000 | 1000G |
+| S | IO-Optimized | 4 | 27G | 100 | 400 | 1000 | 1000G |
+| M | General | 8 | 54G | 50 | 400 | 1000 | 200G |
+| M | Optimized | 8 | 54G | 50 | 400 | 1000 | 1000G |
+| M | IO-Optimized | 4 | 27G | 100 | 400 | 1000 | 1000G |
+| L | General | 8 | 54G | 100 | 800 | 1000 | 200G |
+| L | Optimized | 8 | 54G | 100 | 800 | 1600 | 1000G |
+| L | IO-Optimized | 4 | 27G | 200 | 800 | 1600 | 1000G |
+| XL | General | 16 | 108G | 125 | 2000 | 2000 | 200G |
+| XL | Optimized | 16 | 108G | 125 | 2000 | 4000 | 1000G |
+| XL | IO-Optimized | 8 | 54G | 250 | 2000 | 4000 | 1000G |
 
 ---
 
