@@ -307,8 +307,10 @@ def _compute_exec_limits(input_gb: float, vcpu: int, partitions: int = 0,
 
     # minExecutors: pre-warm 1/3 of max for fast ramp-up on short queries
     # Confirmed: minExec=3 causes 2x regression on short queries due to slow dynamic allocation ramp-up
-    min_exec = max(3, max_exec // 3)
-    initial_exec = min(max_exec, max(5, max_exec // 4))  # 25% of max, floor 5
+    # Guard: EMR Serverless enforces initialExecutors >= 3 internally, so maxExecutors must be >= 3
+    max_exec = max(3, max_exec)
+    min_exec = min(max_exec, max(3, max_exec // 3))
+    initial_exec = min(max_exec, max(3, max_exec // 4))
 
     return max_exec, min_exec
 
@@ -675,8 +677,8 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         if is_ec2 and max_exec_cost > 70 and worker_type == "Small" and not _is_rule2_spill:
             worker_type = "Medium"
             worker_cfg = {"vcpu": 8, "memory": 54}
-            max_exec_cost = max(2, max_exec_cost * 4 // 8)  # preserve total cores
-            min_exec_cost = max(1, min(max_exec_cost - 2, max(5, max_exec_cost // 3)))
+            max_exec_cost = max(3, max_exec_cost * 4 // 8)  # preserve total cores
+            min_exec_cost = max(1, min(max_exec_cost, max(3, max_exec_cost // 3)))
         if is_ec2 and max_exec_cost > 100 and worker_type == "Medium":
             worker_type = "Large"
             worker_cfg = {"vcpu": 16, "memory": 108}
