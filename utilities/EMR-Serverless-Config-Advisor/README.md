@@ -135,11 +135,9 @@ A common pattern: use the T-shirt sizer for the initial run, then feed the resul
 
 ## Design Principles
 
-**Stability over speed.** Configs from both tools prioritize job completion. A job that runs 20% slower is preferable to one that fails.
+**Stability over speed.** The T-shirt sizer prioritizes job completion — configs are intentionally generous. The Fine Tuner balances precision with safety, using measured metrics to right-size without over-provisioning.
 
 **AQE handles the rest.** Shuffle partitions are set high (minimum 1000 for any non-trivial job). Adaptive Query Execution coalesces unused partitions at runtime — there is no penalty for over-partitioning.
-
-**Never Large workers.** 16-core executors cause TaskMemoryManager contention under concurrent hash aggregation. The tools use Small (4-core) or Medium (8-core) workers and compensate with higher executor counts.
 
 **Dynamic allocation scales down.** Setting a high `maxExecutors` does not waste money. EMR Serverless releases unused executors automatically. Over-provisioning the ceiling is free insurance.
 
