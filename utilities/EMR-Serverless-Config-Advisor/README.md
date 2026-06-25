@@ -156,25 +156,25 @@ A common pattern: use the T-shirt sizer for the initial run, then feed the resul
 
 ### Config Matrix
 
-Worker type (cores/memory) and disk are fixed by size + sub-category. `maxExecutors` and `partitions` use generous defaults below but are dynamically computed when `--target-duration-minutes` or event log data is provided.
+Worker type (cores/memory) and disk are fixed by size + sub-category. `maxExecutors` and `partitions` use generous defaults for General but are dynamically computed for Optimized/IO-Optimized.
 
 | Size | Sub-category | Cores | Memory | maxExec | Partitions | Disk |
 |------|-------------|-------|--------|---------|-----------|------|
 | XS | General | 1 | 2G | 3 | 20 | — |
 | S | General | 4 | 27G | 50 | 1000 | 200G |
-| S | Optimized | 4 | 27G | computed | computed (2-wave) | 1000G |
-| S | IO-Optimized | 4 | 27G | computed × 2 | computed (2-wave) | 1000G |
+| S | Optimized | 4 | 27G | f(input) | 2 × maxExec × cores | 1000G |
+| S | IO-Optimized | 4 | 27G | f(input) × 2 | 2 × maxExec × cores | 1000G |
 | M | General | 8 | 54G | 50 | 1000 | 200G |
-| M | Optimized | 8 | 54G | computed | computed (2-wave) | 1000G |
-| M | IO-Optimized | 4 | 27G | computed × 2 | computed (2-wave) | 1000G |
+| M | Optimized | 8 | 54G | f(input) | 2 × maxExec × cores | 1000G |
+| M | IO-Optimized | 4 | 27G | f(input) × 2 | 2 × maxExec × cores | 1000G |
 | L | General | 8 | 54G | 100 | 1000 | 200G |
-| L | Optimized | 8 | 54G | computed | computed (2-wave) | 1000G |
-| L | IO-Optimized | 4 | 27G | computed × 2 | computed (2-wave) | 1000G |
+| L | Optimized | 8 | 54G | f(input) | 2 × maxExec × cores | 1000G |
+| L | IO-Optimized | 4 | 27G | f(input) × 2 | 2 × maxExec × cores | 1000G |
 | XL | General | 16 | 108G | 125 | 2000 | 200G |
-| XL | Optimized | 16 | 108G | computed | computed (2-wave) | 1000G |
-| XL | IO-Optimized | 8 | 54G | computed × 2 | computed (2-wave) | 1000G |
+| XL | Optimized | 16 | 108G | f(input) | 2 × maxExec × cores | 1000G |
+| XL | IO-Optimized | 8 | 54G | f(input) × 2 | 2 × maxExec × cores | 1000G |
 
-Partition formula: `waves × maxExecutors × cores` (min 1000, max 10000). General = 1 wave, Optimized/IO-Optimized = 2 waves.
+Where `f(input)` = max(compute_floor, shuffle_serving_floor) derived from target duration, shuffle volume, or task-hours. Partitions: min 1000, max 10000.
 
 ---
 
