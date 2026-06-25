@@ -58,6 +58,15 @@ Default is **General** — safe for any workload. Pick a specialized category on
 | **IO-Optimized** | Tiny input that explodes into massive intermediate data (EXPLODE, CROSS JOIN). |
 | **Iceberg-Maintenance** | File compaction, snapshot expiration, manifest rewrites. No business logic. |
 
+For **Iceberg-Maintenance**, size by file count rather than input volume:
+
+| Files to Compact | Recommended Size | Example |
+|-----------------|-----------------|---------|
+| Under 500 | S | `--size S --sub-category Iceberg-Maintenance --num-files 200` |
+| 500 to 5,000 | M | `--size M --sub-category Iceberg-Maintenance --num-files 2000` |
+| 5,000 to 20,000 | L | `--size L --sub-category Iceberg-Maintenance --num-files 10000` |
+| Over 20,000 | XL | `--size XL --sub-category Iceberg-Maintenance --num-files 50000` |
+
 ---
 
 ## Fine Tuner
