@@ -58,6 +58,21 @@ Default is **General** — safe for any workload. Pick a specialized category on
 | **IO-Optimized** | Tiny input that explodes into massive intermediate data (EXPLODE, CROSS JOIN). |
 | **Iceberg-Maintenance** | File compaction, snapshot expiration, manifest rewrites. No business logic. |
 
+For **Iceberg-Maintenance**, if you know the number of files to compact, just provide that — sizing is handled automatically:
+
+```bash
+python3 emr_s_tshirt_size.py --sub-category Iceberg-Maintenance --num-files 3000
+```
+
+Or pick a size manually based on file count:
+
+| Files to Compact | Recommended Size |
+|-----------------|-----------------|
+| Under 500 | S |
+| 500 to 5,000 | M |
+| 5,000 to 20,000 | L |
+| Over 20,000 | XL |
+
 ---
 
 ## Fine Tuner
