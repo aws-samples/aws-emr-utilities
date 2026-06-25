@@ -7,17 +7,17 @@ Assigns a pre-configured "bucket" of Spark settings based on:
   - Sub-category (General/Compute/Shuffle/Memory/IO/Iceberg) — driven by workload pattern
 
 Usage:
-  # Default (General, generous maxExecutors):
-  python3 bucket_recommender.py --size M --sub-category General
+  # First run — just pick your size:
+  python3 bucket_recommender.py --size M
 
-  # With target duration (computes precise maxExecutors):
-  python3 bucket_recommender.py --size L --sub-category Shuffle-Optimized --target-duration 30
+  # With sub-category:
+  python3 bucket_recommender.py --size L --sub-category Shuffle-Optimized
 
-  # With event log metrics (most precise):
-  python3 bucket_recommender.py --size L --sub-category Shuffle-Optimized --target-duration 30 --task-hours 100 --shuffle-gb 4100
+  # As spark-submit params:
+  python3 bucket_recommender.py --size M --format spark-submit
 
-  # JSON output for automation:
-  python3 bucket_recommender.py --size M --sub-category General --format json
+  # After first run, use the full Config Advisor with event log for precise tuning:
+  python3 emr_recommender.py --input-path s3://your-bucket/event-logs/application_id/
 """
 import argparse
 import json
@@ -181,25 +181,17 @@ def _max_partition_bytes(size, input_gb):
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description="EMR Serverless Bucket Recommender")
-    p.add_argument("--size", required=True, choices=SIZES, help="T-shirt size")
-    p.add_argument("--sub-category", default="General", choices=SUB_CATEGORIES)
-    p.add_argument("--target-duration", type=int, help="Target job duration (minutes)")
-    p.add_argument("--input-size-gb", type=float, help="Input data size in GB")
-    p.add_argument("--shuffle-gb", type=float, help="Expected shuffle write volume in GB")
-    p.add_argument("--task-hours", type=float, help="Total task execution hours (from event log)")
-    p.add_argument("--fan-out-factor", type=float, help="Fan-out multiplier (for IO-Optimized)")
-    p.add_argument("--num-files", type=int, help="Number of files (for Iceberg-Maintenance)")
+    p.add_argument("--size", required=True, choices=SIZES, help="T-shirt size (XS/S/M/L/XL)")
+    p.add_argument("--sub-category", default="General", choices=SUB_CATEGORIES, help="Optimization axis (default: General)")
+    p.add_argument("--input-size-gb", type=float, help="Input data size in GB (improves maxPartitionBytes selection)")
+    p.add_argument("--num-files", type=int, help="Number of files to compact (for Iceberg-Maintenance)")
     p.add_argument("--format", choices=["json", "spark-submit", "table"], default="table")
     args = p.parse_args()
 
     result = recommend(
         size=args.size,
         sub_category=args.sub_category,
-        target_duration_minutes=args.target_duration,
         input_size_gb=args.input_size_gb,
-        shuffle_write_gb=args.shuffle_gb,
-        task_hours=args.task_hours,
-        fan_out_factor=args.fan_out_factor,
         num_files=args.num_files,
     )
 

@@ -533,22 +533,17 @@ For **new jobs without event log history**, the Bucket Recommender provides opti
 ### Quick Start
 
 ```bash
-# Just pick your size — that's it:
+# First run — just pick your size:
 python3 bucket_recommender.py --size M
+
+# With a sub-category if you know your workload pattern:
+python3 bucket_recommender.py --size L --sub-category Shuffle-Optimized
 
 # Output as spark-submit parameters (paste directly into StartJobRun):
 python3 bucket_recommender.py --size L --format spark-submit
 
-# Optionally pick a sub-category if you know your workload pattern:
-python3 bucket_recommender.py --size L --sub-category Shuffle-Optimized
-
-# Optionally specify your SLA and data volume for tighter sizing:
-python3 bucket_recommender.py --size L --sub-category Shuffle-Optimized \
-  --input-size-gb 2500 --shuffle-gb 4000 --target-duration 30
-
-# After first successful run, feed back event log metrics for optimal sizing:
-python3 bucket_recommender.py --size L --sub-category Shuffle-Optimized \
-  --task-hours 100 --shuffle-gb 4000 --target-duration 30
+# After first successful run — use the full Config Advisor with the event log:
+python3 emr_recommender.py --input-path s3://your-bucket/event-logs/application_id/
 ```
 
 ### Two-Step Selection
@@ -574,15 +569,14 @@ python3 bucket_recommender.py --size L --sub-category Shuffle-Optimized \
 | **IO-Optimized** | Tiny input (<10GB) with 100x+ fan-out (EXPLODE, CROSS JOIN) |
 | **Iceberg-Maintenance** | Compaction, expire snapshots, rewrite manifests |
 
-### 3 Precision Modes
+### Two-Phase Optimization
 
-| Mode | Input Required | Precision |
-|------|---------------|-----------|
-| Default | Just size + sub-category | Safe defaults (stable, won't under-provision) |
-| Proxy | + `--target-duration` (your SLA) + `--shuffle-gb` | Tighter (computed from throughput model) |
-| Event Log | + `--task-hours` from prior run | Optimal (same formula as full Config Advisor) |
+| Phase | Tool | Input | When |
+|-------|------|-------|------|
+| **1. First run** | `bucket_recommender.py` | Size + sub-category | No event log yet |
+| **2. Subsequent runs** | `emr_recommender.py` | Event log S3 path | After first successful run |
 
-> **`--target-duration`** is your desired SLA — "I want this job to finish within N minutes." If you don't know, omit it and the recommender uses safe defaults.
+> Start with the Bucket Recommender. After the job completes, its event log is written to S3. Feed that path to the full Config Advisor for optimal sizing on all subsequent runs.
 | Event Log | + `--task-hours` from prior run | Best (same formula as full Config Advisor) |
 
 ### Sizing Guide
