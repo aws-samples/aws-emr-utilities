@@ -533,16 +533,16 @@ For **new jobs without event log history**, the Bucket Recommender provides opti
 ### Quick Start
 
 ```bash
-# Simple: just pick your size (generous defaults)
+# Pick your size and sub-category — ready to run:
 python3 bucket_recommender.py --size M --sub-category General
 
-# Better: provide target duration for precise executor count
+# Optionally specify your SLA and data volume for tighter sizing:
 python3 bucket_recommender.py --size L --sub-category Shuffle-Optimized \
-  --target-duration 30 --input-size-gb 2500 --shuffle-gb 4000
+  --input-size-gb 2500 --shuffle-gb 4000 --target-duration 30
 
-# Best: provide event log metrics for maximum precision
+# After first successful run, feed back event log metrics for optimal sizing:
 python3 bucket_recommender.py --size L --sub-category Shuffle-Optimized \
-  --target-duration 30 --task-hours 100 --shuffle-gb 4000
+  --task-hours 100 --shuffle-gb 4000 --target-duration 30
 
 # Output as spark-submit parameters (paste into StartJobRun):
 python3 bucket_recommender.py --size M --sub-category General --format spark-submit
@@ -575,8 +575,11 @@ python3 bucket_recommender.py --size M --sub-category General --format spark-sub
 
 | Mode | Input Required | Precision |
 |------|---------------|-----------|
-| Default | Just size + sub-category | Generous (safe, may over-provision) |
-| Proxy | + `--target-duration` + `--shuffle-gb` | Good (estimated from throughput model) |
+| Default | Just size + sub-category | Safe defaults (stable, won't under-provision) |
+| Proxy | + `--target-duration` (your SLA) + `--shuffle-gb` | Tighter (computed from throughput model) |
+| Event Log | + `--task-hours` from prior run | Optimal (same formula as full Config Advisor) |
+
+> **`--target-duration`** is your desired SLA — "I want this job to finish within N minutes." If you don't know, omit it and the recommender uses safe defaults.
 | Event Log | + `--task-hours` from prior run | Best (same formula as full Config Advisor) |
 
 ### Sizing Guide
