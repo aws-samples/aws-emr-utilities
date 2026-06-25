@@ -1,220 +1,366 @@
 #!/usr/bin/env python3
 """
-EMR Serverless Bucket Recommender — Optimal Spark configs for new jobs without event logs.
+EMR Serverless T-Shirt Size Recommender
 
-Assigns a pre-configured "bucket" of Spark settings based on:
-  - T-shirt size (XS/S/M/L/XL) — driven by input data volume
-  - Sub-category (General/Compute/Shuffle/Memory/IO/Iceberg) — driven by workload pattern
+Structure:
+  Size (T-shirt):    XS | S | M | L | XL
+  Sub-category:      General | Optimized | IO-Optimized
+  Special:           Iceberg Maintenance
+
+- General:      Balanced defaults, 1-wave partitions, 200G disk
+- Optimized:    Heavy workloads (joins, shuffle, aggregation), 2-wave partitions, 1000G disk
+- IO-Optimized: Optimized + one tier smaller worker × 2 executors (max disk parallelism)
 
 Usage:
-  # First run — just pick your size:
-  python3 bucket_recommender.py --size M
-
-  # With sub-category:
-  python3 bucket_recommender.py --size L --sub-category Shuffle-Optimized
-
-  # As spark-submit params:
-  python3 bucket_recommender.py --size M --format spark-submit
-
-  # After first run, use the full Config Advisor with event log for precise tuning:
-  python3 emr_recommender.py --input-path s3://your-bucket/event-logs/application_id/
+  python3 emr_s_tshirt_size.py --size M
+  python3 emr_s_tshirt_size.py --size L --sub-category Optimized
+  python3 emr_s_tshirt_size.py --size M --format spark-submit
 """
-import argparse
-import json
 import math
-from typing import Optional
+from dataclasses import dataclass, field
+from typing import Dict, Optional
 
-# EMR 7.x window optimization bug — exclude unconditionally (zero cost if no windows)
+# WGL exclusion — defensive; prevents infinite loop on EMR 7.x window functions
 WGL_RULE = "org.apache.spark.sql.catalyst.optimizer.InferWindowGroupLimit"
 
+# ─── T-Shirt Sizes ───────────────────────────────────────────────────────────
+SIZES = ["XS", "S", "M", "L", "XL"]
+SUB_CATEGORIES = ["General", "Optimized", "IO-Optimized", "Iceberg-Maintenance"]
+
 # Generous defaults when user provides no sizing input.
-# Dynamic allocation scales down unused executors — no cost penalty.
+# Dynamic allocation scales down unused — no cost penalty for over-setting.
 DEFAULT_MAX_EXECUTORS = {"XS": 3, "S": 50, "M": 100, "L": 200, "XL": 500}
 
-SIZES = ["XS", "S", "M", "L", "XL"]
-SUB_CATEGORIES = ["General", "Compute-Optimized", "Shuffle-Optimized", "Memory-Optimized", "IO-Optimized", "Iceberg-Maintenance"]
+
+@dataclass
+class WorkloadIntent:
+    input_size_gb: float = 100.0
+    workload_type: str = "etl"
+    num_joins: int = 5
+    largest_table_gb: float = 50.0
+    is_compaction: bool = False
+    target_duration_minutes: Optional[int] = None
+    shuffle_write_gb: Optional[float] = None
+    shuffle_ratio_pct: Optional[float] = None
+    shj_count: Optional[int] = None
+    fan_out_factor: Optional[float] = None
+    num_files: Optional[int] = None
+    task_hours: Optional[float] = None
+    actual_duration_hours: Optional[float] = None
 
 
-def recommend(
-    size: str,
-    sub_category: str = "General",
-    target_duration_minutes: Optional[int] = None,
-    input_size_gb: Optional[float] = None,
-    shuffle_write_gb: Optional[float] = None,
-    task_hours: Optional[float] = None,
-    fan_out_factor: Optional[float] = None,
-    num_files: Optional[int] = None,
-) -> dict:
-    """Generate Spark configs for given size + sub-category."""
-    size = size.upper()
-    assert size in SIZES, f"Size must be one of {SIZES}"
+@dataclass
+class BucketResult:
+    size: str
+    sub_bucket: str
+    worker_type: str
+    configs: Dict[str, str] = field(default_factory=dict)
+    rationale: str = ""
 
-    cores, mem, max_exec = _resolve_worker_and_executors(
-        size, sub_category, target_duration_minutes, input_size_gb, shuffle_write_gb, task_hours
-    )
-    partitions = _resolve_partitions(size, input_size_gb, shuffle_write_gb, max_exec, cores)
-    mpb = _max_partition_bytes(size, input_size_gb or 100)
+    @property
+    def label(self):
+        return f"{self.size}/{self.sub_bucket}"
 
-    # Base configs (all buckets)
-    configs = {
-        "spark.executor.cores": str(cores),
-        "spark.executor.memory": mem,
-        "spark.driver.cores": str(min(cores, 8)),
-        "spark.driver.memory": mem if cores >= 8 else ("27G" if max_exec > 50 else "14G"),
-        "spark.dynamicAllocation.enabled": "true",
-        "spark.dynamicAllocation.maxExecutors": str(max_exec),
-        "spark.dynamicAllocation.minExecutors": str(max(1 if size == "XS" else 3, int(max_exec * 0.3))),
-        "spark.sql.shuffle.partitions": str(partitions),
-        "spark.sql.files.maxPartitionBytes": mpb,
-        "spark.sql.adaptive.enabled": "true",
-        "spark.sql.optimizer.excludedRules": WGL_RULE,
-    }
 
-    # Sub-category specific overrides
-    if sub_category == "Shuffle-Optimized":
-        configs.update({
-            "spark.shuffle.compress": "true",
-            "spark.shuffle.spill.compress": "true",
-            "spark.emr-serverless.executor.disk": "1000G",
-            "spark.emr-serverless.executor.disk.type": "shuffle_optimized",
-            "spark.sql.adaptive.advisoryPartitionSizeInBytes": "256m",
-            "spark.network.timeout": "1200s",
-        })
-    elif sub_category == "Memory-Optimized":
-        configs.update({
-            "spark.sql.autoBroadcastJoinThreshold": "-1",
-            "spark.sql.join.forceApplyShuffledHashJoin": "false",
-            "spark.sql.adaptive.advisoryPartitionSizeInBytes": "64m",
-            "spark.emr-serverless.executor.disk": "1000G",
-            "spark.emr-serverless.executor.disk.type": "shuffle_optimized",
-            "spark.memory.fraction": "0.7",
-        })
-    elif sub_category == "IO-Optimized":
-        configs.update({
-            "spark.shuffle.compress": "true",
-            "spark.shuffle.spill.compress": "true",
-            "spark.emr-serverless.executor.disk": "1000G",
-            "spark.emr-serverless.executor.disk.type": "shuffle_optimized",
-            "spark.network.timeout": "1200s",
-        })
-    elif sub_category == "Iceberg-Maintenance":
-        configs.update({
-            "spark.sql.files.maxPartitionBytes": "512m",
-        })
-        # Override executor sizing for compaction
-        if num_files:
-            configs["spark.dynamicAllocation.maxExecutors"] = str(min(100, max(5, math.ceil(num_files / 20))))
+# ─── Selection Logic ──────────────────────────────────────────────────────────
 
-    # XS overrides (micro jobs)
+def select_bucket(intent: WorkloadIntent) -> BucketResult:
+    """Select size + sub-category from workload intent."""
+    if intent.workload_type == "iceberg_maintenance" or intent.is_compaction:
+        return _iceberg_maintenance(intent)
+
+    size = _classify_size(intent)
     if size == "XS":
-        configs["spark.dynamicAllocation.initialExecutors"] = "1"
+        return _xs(intent)
 
-    return {
-        "size": size,
-        "sub_category": sub_category,
-        "spark_configs": configs,
-        "spark_submit_params": " ".join(f"--conf {k}={v}" for k, v in configs.items()),
+    sub = _classify_sub_category(intent)
+    builders = {
+        "General": _general,
+        "Optimized": _optimized,
+        "IO-Optimized": _io_optimized,
     }
+    return builders[sub](size, intent)
 
 
-def _resolve_worker_and_executors(size, sub_category, target_min, input_gb, shuffle_gb, task_hours):
-    """Determine worker type and maxExecutors based on available inputs."""
-    if size == "XS":
-        return 1, "2G", 3
+def _classify_size(intent: WorkloadIntent) -> str:
+    gb = intent.input_size_gb
+    if gb <= 5 and (intent.target_duration_minutes is None or intent.target_duration_minutes <= 5):
+        if intent.workload_type in ("micro", "etl", "compaction", "iceberg_maintenance"):
+            return "XS"
+        return "S"
+    elif gb <= 100:
+        return "S"
+    elif gb <= 1000:
+        return "M"
+    elif gb <= 5000:
+        return "L"
+    return "XL"
 
-    # Memory-Optimized always uses Medium (8c/54G)
-    if sub_category == "Memory-Optimized":
-        cores, mem = 8, "54G"
-    elif size in ("XL",):
-        cores, mem = 8, "54G"
-    else:
-        cores, mem = 4, "27G"
 
-    # Mode 3: Event log (most precise)
-    if task_hours and task_hours > 0:
-        target_h = (target_min / 60.0) if target_min else 1.0
-        max_exec = math.ceil(task_hours / (target_h * 0.70 * cores))
-        if shuffle_gb and shuffle_gb > 1000 and target_min:
-            serving = math.ceil(shuffle_gb / (0.04 * target_min * 60))
-            max_exec = max(max_exec, serving)
-        return cores, mem, max(10, max_exec)
+def _classify_sub_category(intent: WorkloadIntent) -> str:
+    """Determine sub-category from workload signals."""
+    # IO-Optimized: tiny input with massive fan-out
+    if intent.input_size_gb < 10 and (
+        (intent.fan_out_factor and intent.fan_out_factor > 100) or
+        (intent.shuffle_ratio_pct and intent.shuffle_ratio_pct > 10000)
+    ):
+        return "IO-Optimized"
 
-    # Mode 2: Proxy (target duration provided)
-    if target_min and input_gb:
+    # Optimized: heavy shuffle, many joins, or large aggregation
+    if intent.shuffle_write_gb and intent.shuffle_write_gb > 1000:
+        return "Optimized"
+    if intent.shuffle_ratio_pct and intent.shuffle_ratio_pct >= 30:
+        return "Optimized"
+    if intent.num_joins >= 20 or (intent.shj_count and intent.shj_count >= 40):
+        return "Optimized"
+    if intent.workload_type in ("aggregation", "join_heavy") and intent.input_size_gb > 500:
+        return "Optimized"
+
+    return "General"
+
+
+# ─── Helpers ──────────────────────────────────────────────────────────────────
+
+def _pick_worker(max_exec: int) -> dict:
+    """Bump worker size to reduce N² shuffle coordination overhead."""
+    if max_exec > 200:
+        return {"cores": 16, "mem": "108G", "label": "large"}
+    if max_exec > 70:
+        return {"cores": 8, "mem": "54G", "label": "medium"}
+    return {"cores": 4, "mem": "27G", "label": "small"}
+
+
+def _resolve_max_executors(size: str, intent: WorkloadIntent, cores: int) -> int:
+    """3 modes for maxExecutors:
+    Mode 3 (best): Event log → task_hours / (target × packing × cores)
+    Mode 2 (good): Proxy → input_gb / (throughput × target × packing)
+    Mode 1 (safe): No input → generous default per size
+    """
+    PACKING = 0.70
+
+    # Mode 3: Event log
+    if intent.task_hours is not None and intent.task_hours > 0:
+        target_h = (intent.target_duration_minutes / 60.0) if intent.target_duration_minutes else 1.0
+        n = math.ceil(intent.task_hours / (target_h * PACKING * cores))
+        if intent.shuffle_write_gb and intent.shuffle_write_gb > 1000:
+            serving = math.ceil(intent.shuffle_write_gb / (0.04 * target_h * 3600))
+            n = max(n, serving)
+        return max(10, n)
+
+    # Mode 2: Proxy
+    if intent.target_duration_minutes is not None:
         throughput = 0.5 * cores
-        work_min = input_gb / max(0.1, throughput)
-        max_exec = math.ceil(work_min / (target_min * 0.50))
-        if shuffle_gb and shuffle_gb > 1000:
-            serving = math.ceil(shuffle_gb / (0.04 * target_min * 60))
-            max_exec = max(max_exec, serving)
-        return cores, mem, max(10, max_exec)
+        work_min = intent.input_size_gb / max(0.1, throughput)
+        n = math.ceil(work_min / (intent.target_duration_minutes * 0.50))
+        if intent.shuffle_write_gb and intent.shuffle_write_gb > 1000:
+            target_sec = intent.target_duration_minutes * 60
+            serving = math.ceil(intent.shuffle_write_gb / (0.04 * target_sec))
+            n = max(n, serving)
+        return max(10, n)
 
     # Mode 1: Generous default
-    max_exec = DEFAULT_MAX_EXECUTORS[size]
-    # Promote to Medium if default exceeds 70
-    if max_exec > 70 and cores == 4:
-        cores, mem = 8, "54G"
-        max_exec = math.ceil(max_exec / 2)
-    return cores, mem, max_exec
+    return DEFAULT_MAX_EXECUTORS[size]
 
 
-def _resolve_partitions(size, input_gb, shuffle_gb, max_exec, cores):
-    """Minimum 1000 for S+. AQE coalesces unused partitions."""
-    if size == "XS":
-        return 20
-    shuf = shuffle_gb or (input_gb or 100) * 0.3
-    computed = min(int(shuf * 1024 / 128), 2 * max_exec * cores)
-    return max(1000, computed)
+def _shuffle_partitions(n: int, cores: int, waves: int = 1) -> int:
+    """Compute shuffle partitions. Min 1000, max 10000.
+    waves=1: light shuffle (General)
+    waves=2: heavy shuffle (Optimized, IO-Optimized)
+    """
+    computed = waves * n * cores
+    return max(1000, min(computed, 10000))
 
 
-def _max_partition_bytes(size, input_gb):
-    if size == "XS":
-        return "32m"
-    if input_gb < 10:
-        return "64m"
-    if input_gb < 500:
-        return "128m"
-    if input_gb < 3000:
-        return "256m"
+def _max_partition_bytes(input_gb: float) -> str:
+    if input_gb < 10: return "64m"
+    if input_gb < 500: return "128m"
+    if input_gb < 3000: return "256m"
     return "512m"
 
 
+def _base_configs() -> Dict[str, str]:
+    return {
+        "spark.dynamicAllocation.enabled": "true",
+        "spark.sql.optimizer.excludedRules": WGL_RULE,
+    }
+
+
+# ─── XS ──────────────────────────────────────────────────────────────────────
+
+def _xs(intent: WorkloadIntent) -> BucketResult:
+    configs = {
+        **_base_configs(),
+        "spark.executor.cores": "1",
+        "spark.executor.memory": "2G",
+        "spark.driver.cores": "1",
+        "spark.driver.memory": "2G",
+        "spark.dynamicAllocation.maxExecutors": "3",
+        "spark.dynamicAllocation.minExecutors": "1",
+        "spark.dynamicAllocation.initialExecutors": "1",
+        "spark.sql.shuffle.partitions": "20",
+        "spark.sql.files.maxPartitionBytes": "32m",
+    }
+    return BucketResult("XS", "General", "micro", configs,
+        rationale="Micro job (describe, count, SCD2, catalog ops) — minimal resources")
+
+
+# ─── Iceberg Maintenance ──────────────────────────────────────────────────────
+
+def _iceberg_maintenance(intent: WorkloadIntent) -> BucketResult:
+    num_files = intent.num_files or max(20, int(intent.input_size_gb * 1024 / 100))
+    max_exec = min(100, max(5, math.ceil(num_files / 20)))
+    configs = {
+        **_base_configs(),
+        "spark.executor.cores": "4",
+        "spark.executor.memory": "14G",
+        "spark.driver.cores": "4",
+        "spark.driver.memory": "14G",
+        "spark.dynamicAllocation.maxExecutors": str(max_exec),
+        "spark.sql.shuffle.partitions": "1000",
+        "spark.sql.files.maxPartitionBytes": "512m",
+        "spark.emr-serverless.executor.disk": "200G",
+        "spark.emr-serverless.executor.disk.type": "shuffle_optimized",
+    }
+    return BucketResult("M", "Iceberg-Maintenance", "small", configs,
+        rationale=f"Iceberg maintenance — scale by file count ({num_files} files)")
+
+
+# ─── General ─────────────────────────────────────────────────────────────────
+
+def _general(size: str, intent: WorkloadIntent) -> BucketResult:
+    n = _resolve_max_executors(size, intent, 4)
+    w = _pick_worker(n)
+    if w["cores"] > 4:
+        n = math.ceil(n * 4 / w["cores"])
+    parts = _shuffle_partitions(n, w["cores"], waves=1)
+    configs = {
+        **_base_configs(),
+        "spark.executor.cores": str(w["cores"]),
+        "spark.executor.memory": w["mem"],
+        "spark.driver.cores": "4" if n <= 50 else "8",
+        "spark.driver.memory": "14G" if n <= 50 else "27G",
+        "spark.dynamicAllocation.maxExecutors": str(n),
+        "spark.sql.shuffle.partitions": str(parts),
+        "spark.sql.files.maxPartitionBytes": _max_partition_bytes(intent.input_size_gb),
+        "spark.emr-serverless.executor.disk": "200G",
+        "spark.emr-serverless.executor.disk.type": "shuffle_optimized",
+        "spark.network.timeout": "1200s",
+    }
+    return BucketResult(size, "General", w["label"], configs,
+        rationale="Balanced defaults — suitable for most workloads")
+
+
+# ─── Optimized ────────────────────────────────────────────────────────────────
+
+def _optimized(size: str, intent: WorkloadIntent) -> BucketResult:
+    n = _resolve_max_executors(size, intent, 4)
+    w = _pick_worker(n)
+    if w["cores"] > 4:
+        n = math.ceil(n * 4 / w["cores"])
+    parts = _shuffle_partitions(n, w["cores"], waves=2)
+    configs = {
+        **_base_configs(),
+        "spark.executor.cores": str(w["cores"]),
+        "spark.executor.memory": w["mem"],
+        "spark.driver.cores": "4" if n <= 50 else "8",
+        "spark.driver.memory": "14G" if n <= 50 else "27G",
+        "spark.dynamicAllocation.maxExecutors": str(n),
+        "spark.sql.shuffle.partitions": str(parts),
+        "spark.sql.files.maxPartitionBytes": _max_partition_bytes(intent.input_size_gb),
+        "spark.emr-serverless.executor.disk": "1000G",
+        "spark.emr-serverless.executor.disk.type": "shuffle_optimized",
+        "spark.network.timeout": "1200s",
+    }
+    return BucketResult(size, "Optimized", w["label"], configs,
+        rationale="Heavy workload — more partitions and disk for shuffle/joins/aggregation")
+
+
+# ─── IO-Optimized ─────────────────────────────────────────────────────────────
+
+def _io_optimized(size: str, intent: WorkloadIntent) -> BucketResult:
+    # Start from Optimized config, then downsize worker and double executors
+    n = _resolve_max_executors(size, intent, 4)
+    w = _pick_worker(n)
+    if w["cores"] > 4:
+        n = math.ceil(n * 4 / w["cores"])
+    # Downsize one tier, double executors (more hosts = more disk throughput)
+    if w["cores"] == 16:
+        cores, mem, label = 8, "54G", "medium"
+        n = n * 2
+    elif w["cores"] == 8:
+        cores, mem, label = 4, "27G", "small"
+        n = n * 2
+    else:
+        cores, mem, label = 4, "27G", "small"
+        # Already smallest — just double executors
+        n = n * 2
+    parts = _shuffle_partitions(n, cores, waves=2)
+    # IO-Opt maxPartitionBytes: scale by size (not input_gb which is tiny for fan-out)
+    io_mpb = {"S": "128m", "M": "128m", "L": "128m", "XL": "256m"}.get(size, "128m")
+    configs = {
+        **_base_configs(),
+        "spark.executor.cores": str(cores),
+        "spark.executor.memory": mem,
+        "spark.driver.cores": "4",
+        "spark.driver.memory": "27G",
+        "spark.dynamicAllocation.maxExecutors": str(n),
+        "spark.sql.shuffle.partitions": str(parts),
+        "spark.sql.files.maxPartitionBytes": io_mpb,
+        "spark.emr-serverless.executor.disk": "1000G",
+        "spark.emr-serverless.executor.disk.type": "shuffle_optimized",
+        "spark.network.timeout": "1200s",
+    }
+    return BucketResult(size, "IO-Optimized", label, configs,
+        rationale="Massive fan-out — smaller workers × more hosts for disk parallelism")
+
+
+# ─── CLI ──────────────────────────────────────────────────────────────────────
+
 if __name__ == "__main__":
-    p = argparse.ArgumentParser(description="EMR Serverless Bucket Recommender")
-    p.add_argument("--size", choices=SIZES, help="T-shirt size (XS/S/M/L/XL). Optional if --num-files is provided with Iceberg-Maintenance.")
-    p.add_argument("--sub-category", default="General", choices=SUB_CATEGORIES, help="Optimization axis (default: General)")
-    p.add_argument("--input-size-gb", type=float, help="Input data size in GB (improves maxPartitionBytes selection)")
-    p.add_argument("--num-files", type=int, help="Number of files to compact (for Iceberg-Maintenance)")
+    import argparse
+    import json
+
+    p = argparse.ArgumentParser(description="EMR Serverless T-Shirt Size Recommender")
+    p.add_argument("--size", choices=SIZES, help="T-shirt size (XS/S/M/L/XL)")
+    p.add_argument("--sub-category", default="General", choices=SUB_CATEGORIES)
+    p.add_argument("--input-size-gb", type=float, help="Input data size in GB")
+    p.add_argument("--num-files", type=int, help="Number of files (for Iceberg-Maintenance)")
     p.add_argument("--format", choices=["json", "spark-submit", "table"], default="table")
     args = p.parse_args()
 
-    # Auto-derive size from num-files for Iceberg-Maintenance
     if not args.size:
         if args.sub_category == "Iceberg-Maintenance" and args.num_files:
-            if args.num_files <= 500:
-                args.size = "S"
-            elif args.num_files <= 5000:
-                args.size = "M"
-            elif args.num_files <= 20000:
-                args.size = "L"
-            else:
-                args.size = "XL"
+            if args.num_files <= 500: args.size = "S"
+            elif args.num_files <= 5000: args.size = "M"
+            elif args.num_files <= 20000: args.size = "L"
+            else: args.size = "XL"
         else:
-            p.error("--size is required (unless using --sub-category Iceberg-Maintenance with --num-files)")
+            p.error("--size is required (unless using Iceberg-Maintenance with --num-files)")
 
-    result = recommend(
-        size=args.size,
-        sub_category=args.sub_category,
-        input_size_gb=args.input_size_gb,
+    # Build intent
+    intent = WorkloadIntent(
+        input_size_gb=args.input_size_gb or {"XS": 1, "S": 50, "M": 500, "L": 2500, "XL": 10000}[args.size],
+        is_compaction=(args.sub_category == "Iceberg-Maintenance"),
         num_files=args.num_files,
     )
 
-    if args.format == "json":
-        print(json.dumps(result, indent=2))
-    elif args.format == "spark-submit":
-        print(result["spark_submit_params"])
+    # Route
+    if args.sub_category == "Iceberg-Maintenance":
+        result = _iceberg_maintenance(intent)
+    elif args.size == "XS":
+        result = _xs(intent)
     else:
-        print(f"\n  Bucket: {result['size']}/{result['sub_category']}\n")
-        for k, v in result["spark_configs"].items():
+        builders = {"General": _general, "Optimized": _optimized, "IO-Optimized": _io_optimized}
+        result = builders[args.sub_category](args.size, intent)
+
+    if args.format == "json":
+        print(json.dumps({"size": result.size, "sub_category": result.sub_bucket,
+                          "spark_configs": result.configs,
+                          "spark_submit_params": " ".join(f"--conf {k}={v}" for k, v in result.configs.items())}, indent=2))
+    elif args.format == "spark-submit":
+        print(" ".join(f"--conf {k}={v}" for k, v in result.configs.items()))
+    else:
+        print(f"\n  Bucket: {result.label}\n")
+        for k, v in result.configs.items():
             print(f"  {k:<55} = {v}")
         print()
