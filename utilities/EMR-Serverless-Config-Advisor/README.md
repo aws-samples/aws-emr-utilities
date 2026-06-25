@@ -139,7 +139,7 @@ A common pattern: use the T-shirt sizer for the initial run, then feed the resul
 
 **AQE handles the rest.** Shuffle partitions are set high (minimum 1000 for any non-trivial job). Adaptive Query Execution coalesces unused partitions at runtime — there is no penalty for over-partitioning.
 
-**Dynamic allocation scales down.** Setting a high `maxExecutors` does not waste money. EMR Serverless releases unused executors automatically. Over-provisioning the ceiling is free insurance.
+**Dynamic allocation scales down.** EMR Serverless releases idle executors automatically. A higher `maxExecutors` ceiling allows the job to scale up when needed without risking under-provisioning.
 
 ---
 
