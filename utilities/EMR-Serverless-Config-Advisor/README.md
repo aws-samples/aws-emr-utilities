@@ -526,14 +526,14 @@ Evaluated on TPC-DS at 3TB scale, 104 queries, EMR Serverless release emr-7.13.0
 
 ---
 
-## Bucket Recommender (No Event Log Required)
+## T-Shirt Sizing (No Event Log Required)
 
-For **new jobs without event log history**, the Bucket Recommender provides optimal starting configurations based on workload characteristics.
+`emr_s_tshirt_size.py` generates optimal EMR Serverless Spark configs based on workload size and pattern — no event log needed.
 
 ### Quick Start
 
 ```bash
-# First run — just pick your size:
+# Pick your size — get configs ready to run:
 python3 emr_s_tshirt_size.py --size M
 
 # With a sub-category if you know your workload pattern:
@@ -541,9 +541,6 @@ python3 emr_s_tshirt_size.py --size L --sub-category Shuffle-Optimized
 
 # Output as spark-submit parameters (paste directly into StartJobRun):
 python3 emr_s_tshirt_size.py --size L --format spark-submit
-
-# After first successful run — use the full Config Advisor with the event log:
-python3 emr_s_fine_tuner.py --input-path s3://your-bucket/event-logs/application_id/
 ```
 
 ### Two-Step Selection
@@ -569,14 +566,17 @@ python3 emr_s_fine_tuner.py --input-path s3://your-bucket/event-logs/application
 | **IO-Optimized** | Tiny input (<10GB) with 100x+ fan-out (EXPLODE, CROSS JOIN) |
 | **Iceberg-Maintenance** | Compaction, expire snapshots, rewrite manifests |
 
-### Two-Phase Optimization
+### Two Tools
 
-| Phase | Tool | Input | When |
-|-------|------|-------|------|
-| **1. First run** | `emr_s_tshirt_size.py` | Size + sub-category | No event log yet |
-| **2. Subsequent runs** | `emr_s_fine_tuner.py` | Event log S3 path | After first successful run |
+| Tool | Input | Use When |
+|------|-------|----------|
+| **`emr_s_tshirt_size.py`** | Size + sub-category | Quick safe configs — no event log needed |
+| **`emr_s_fine_tuner.py`** | Event log S3 path | Precise optimization from measured workload metrics |
 
-> Start with the Bucket Recommender. After the job completes, its event log is written to S3. Feed that path to the full Config Advisor for optimal sizing on all subsequent runs.
+> For further optimization, feed an event log into the Fine Tuner:
+> ```bash
+> python3 emr_s_fine_tuner.py --input-path s3://your-bucket/event-logs/application_id/
+> ```
 | Event Log | + `--task-hours` from prior run | Best (same formula as full Config Advisor) |
 
 ### Sizing Guide
