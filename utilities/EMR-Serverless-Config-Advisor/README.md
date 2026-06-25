@@ -61,7 +61,7 @@ The advisor extracts 80+ metrics from Spark event logs and uses them to calculat
 │              │         │            │                                          │
 │              │         │            ▼                                          │
 │              │         │  ┌──────────────────┐  ┌───────────────────┐          │
-│              │         │  │ emr_recommender.py│─▶│write_to_iceberg.py│          │
+│              │         │  │ emr_s_fine_tuner.py│─▶│write_to_iceberg.py│          │
 │              │         │  │ (cost + perf)     │  │ (Spark + Glue)    │          │
 │              │         │  └──────────────────┘  └───────────────────┘          │
 │              │         │                                                      │
@@ -75,7 +75,7 @@ The advisor extracts 80+ metrics from Spark event logs and uses them to calculat
 | `spark_extractor.py` | Extracts metrics from Spark event logs using PySpark (runs on EMR) |
 | `python_extractor.py` | Extracts metrics from Spark event logs using pure Python (runs anywhere) |
 | `pipeline_wrapper.py` | End-to-end orchestrator: extract → recommend → format (no Spark required) |
-| `emr_recommender.py` | Generates cost and performance optimized Spark configurations |
+| `emr_s_fine_tuner.py` | Generates cost and performance optimized Spark configurations |
 | `format_to_job_config.py` | Converts recommendations into EMR Serverless `sparkSubmitParameters` format |
 | `lambda_orchestrator.py` | Lambda function that submits parallel EMR Serverless extraction jobs |
 | `write_to_iceberg.py` | Writes metrics and recommendations to an Iceberg table via Spark |
@@ -121,7 +121,7 @@ python3 python_extractor.py \
 Generate recommendations:
 
 ```bash
-python3 emr_recommender.py \
+python3 emr_s_fine_tuner.py \
   --input-path /tmp/extracted/ \
   --output-cost cost.json \
   --output-perf perf.json
@@ -435,7 +435,7 @@ ORDER BY total_memory_spilled_gb DESC;
 | `--workers` | Parallel processing workers | 20 |
 | `--profile` | AWS profile name for S3 access | default |
 
-### emr_recommender.py
+### emr_s_fine_tuner.py
 
 | Flag | Description | Default |
 |------|-------------|---------|
@@ -534,16 +534,16 @@ For **new jobs without event log history**, the Bucket Recommender provides opti
 
 ```bash
 # First run — just pick your size:
-python3 bucket_recommender.py --size M
+python3 emr_s_tshirt_size.py --size M
 
 # With a sub-category if you know your workload pattern:
-python3 bucket_recommender.py --size L --sub-category Shuffle-Optimized
+python3 emr_s_tshirt_size.py --size L --sub-category Shuffle-Optimized
 
 # Output as spark-submit parameters (paste directly into StartJobRun):
-python3 bucket_recommender.py --size L --format spark-submit
+python3 emr_s_tshirt_size.py --size L --format spark-submit
 
 # After first successful run — use the full Config Advisor with the event log:
-python3 emr_recommender.py --input-path s3://your-bucket/event-logs/application_id/
+python3 emr_s_fine_tuner.py --input-path s3://your-bucket/event-logs/application_id/
 ```
 
 ### Two-Step Selection
@@ -573,8 +573,8 @@ python3 emr_recommender.py --input-path s3://your-bucket/event-logs/application_
 
 | Phase | Tool | Input | When |
 |-------|------|-------|------|
-| **1. First run** | `bucket_recommender.py` | Size + sub-category | No event log yet |
-| **2. Subsequent runs** | `emr_recommender.py` | Event log S3 path | After first successful run |
+| **1. First run** | `emr_s_tshirt_size.py` | Size + sub-category | No event log yet |
+| **2. Subsequent runs** | `emr_s_fine_tuner.py` | Event log S3 path | After first successful run |
 
 > Start with the Bucket Recommender. After the job completes, its event log is written to S3. Feed that path to the full Config Advisor for optimal sizing on all subsequent runs.
 | Event Log | + `--task-hours` from prior run | Best (same formula as full Config Advisor) |
