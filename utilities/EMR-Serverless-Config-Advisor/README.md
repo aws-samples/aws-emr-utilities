@@ -35,6 +35,49 @@ Know your workload pattern? Add a sub-category:
 python3 emr_s_tshirt_size.py --size L --sub-category Optimized
 ```
 
+### Sizing Explode / Fan-Out Jobs
+
+If your job has small input but produces massive intermediate data (EXPLODE, CROSS JOIN, array expansion), provide the shuffle volume or fan-out factor so the tool can size correctly:
+
+```bash
+# You know the shuffle volume (check Spark UI from a prior run):
+python3 emr_s_tshirt_size.py --size S --input-size-gb 3 --shuffle-write-gb 4000
+
+# You know the amplification factor (e.g. EXPLODE on 500-element arrays):
+python3 emr_s_tshirt_size.py --size S --input-size-gb 3 --fan-out-factor 500
+```
+
+The tool auto-bumps the size and sub-category when shuffle signals indicate a heavier workload than the input size alone suggests.
+
+### Migrating from EC2? Provide Your Current Runtime
+
+If you know how long the job currently takes (from YARN UI, EMR Step history, or the EMR Serverless console), pass it in minutes. The tool will right-size executor count to match that runtime — no over-provisioning:
+
+```bash
+# Job currently takes 45 minutes on EC2:
+python3 emr_s_tshirt_size.py --size L --target-duration-minutes 45
+
+# Job takes 2 hours, with 5TB shuffle:
+python3 emr_s_tshirt_size.py --size XL --target-duration-minutes 120 --shuffle-write-gb 5000
+```
+
+Without `--target-duration-minutes`, the tool uses generous defaults (safe but potentially over-provisioned). With it, executor count is computed precisely from network and disk throughput constraints.
+
+### For Optimized Runs: Use the Fine Tuner
+
+The T-shirt sizer is a starting point. After your first successful run, pass the event log to the Fine Tuner for precise, measured configs:
+
+```bash
+# First run — use T-shirt sizing:
+python3 emr_s_tshirt_size.py --size L --sub-category Optimized --format spark-submit
+
+# After the run completes, extract the event log and get precise configs:
+python3 python_extractor.py --input s3://your-bucket/event-logs/app_id/ --output /tmp/extracted/
+python3 emr_s_fine_tuner.py --input-path /tmp/extracted/
+```
+
+The Fine Tuner analyzes actual task metrics, shuffle volumes, spill, and memory utilization to produce configs that are typically 30–60% cheaper than T-shirt defaults while maintaining the same or better performance.
+
 ### Choosing Your Size
 
 | Size | Input Data | Typical Duration |
