@@ -192,13 +192,24 @@ def _max_partition_bytes(input_gb: float) -> str:
 
 
 def _executor_disk(shuffle_gb: float, max_exec: int) -> str:
-    """Right-size disk: shuffle per executor × 1.5 safety margin, rounded up to 20G increments.
-    Min 200G, max 2000G."""
+    """Right-size disk: shuffle per executor × 3 safety margin (accounts for
+    multi-stage accumulation, spill, and skew). Min 200G, max 2000G.
+    Minimum 500G when shuffle is significant (>100GB)."""
     if shuffle_gb <= 0 or max_exec <= 0:
         return "200G"
-    per_exec = shuffle_gb / max_exec * 1.5
-    disk = max(200, min(2000, int(math.ceil(per_exec / 20) * 20)))
+    per_exec = shuffle_gb / max_exec * 3
+    min_disk = 500 if shuffle_gb > 100 else 200
+    disk = max(min_disk, min(2000, int(math.ceil(per_exec / 20) * 20)))
     return f"{disk}G"
+
+
+def _driver_sizing(worker_cores: int) -> tuple:
+    """Driver matches worker tier, capped at 8c/54G (driver doesn't run tasks)."""
+    if worker_cores >= 8:
+        return "8", "54G"
+    elif worker_cores >= 4:
+        return "4", "27G"
+    return "1", "2G"
 
 
 def _s3_retry_configs(input_gb: float) -> Dict[str, str]:
@@ -266,12 +277,13 @@ def _general(size: str, intent: WorkloadIntent) -> BucketResult:
     if w["cores"] > 4:
         n = math.ceil(n * 4 / w["cores"])
     parts = _shuffle_partitions(n, w["cores"], waves=1)
+    drv_cores, drv_mem = _driver_sizing(w["cores"])
     configs = {
         **_base_configs(),
         "spark.executor.cores": str(w["cores"]),
         "spark.executor.memory": w["mem"],
-        "spark.driver.cores": "4" if n <= 50 else "8",
-        "spark.driver.memory": "14G" if n <= 50 else "27G",
+        "spark.driver.cores": drv_cores,
+        "spark.driver.memory": drv_mem,
         "spark.dynamicAllocation.maxExecutors": str(n),
         "spark.sql.shuffle.partitions": str(parts),
         "spark.sql.files.maxPartitionBytes": _max_partition_bytes(intent.input_size_gb),
@@ -300,12 +312,13 @@ def _optimized(size: str, intent: WorkloadIntent) -> BucketResult:
         n = max(n, capacity_floor)
         disk = _executor_disk(shuffle_gb, n)  # recalc after floor bump
     parts = _shuffle_partitions(n, w["cores"], waves=2)
+    drv_cores, drv_mem = _driver_sizing(w["cores"])
     configs = {
         **_base_configs(),
         "spark.executor.cores": str(w["cores"]),
         "spark.executor.memory": w["mem"],
-        "spark.driver.cores": "4" if n <= 50 else "8",
-        "spark.driver.memory": "14G" if n <= 50 else "27G",
+        "spark.driver.cores": drv_cores,
+        "spark.driver.memory": drv_mem,
         "spark.dynamicAllocation.maxExecutors": str(n),
         "spark.sql.shuffle.partitions": str(parts),
         "spark.sql.files.maxPartitionBytes": _max_partition_bytes(intent.input_size_gb),
@@ -347,12 +360,13 @@ def _io_optimized(size: str, intent: WorkloadIntent) -> BucketResult:
     parts = _shuffle_partitions(n, cores, waves=2)
     # IO-Opt maxPartitionBytes: scale by size (not input_gb which is tiny for fan-out)
     io_mpb = {"S": "128m", "M": "128m", "L": "128m", "XL": "256m"}.get(size, "128m")
+    drv_cores, drv_mem = _driver_sizing(cores)
     configs = {
         **_base_configs(),
         "spark.executor.cores": str(cores),
         "spark.executor.memory": mem,
-        "spark.driver.cores": "4",
-        "spark.driver.memory": "27G",
+        "spark.driver.cores": drv_cores,
+        "spark.driver.memory": drv_mem,
         "spark.dynamicAllocation.maxExecutors": str(n),
         "spark.sql.shuffle.partitions": str(parts),
         "spark.sql.files.maxPartitionBytes": io_mpb,
