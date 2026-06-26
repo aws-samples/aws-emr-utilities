@@ -199,25 +199,26 @@ A common pattern: use the T-shirt sizer for the initial run, then feed the resul
 
 ### Config Matrix
 
-Worker type (cores/memory) and disk are fixed by size + sub-category. `maxExecutors` and `partitions` use generous defaults for General but are dynamically computed for Optimized/IO-Optimized.
+Worker type (cores/memory) is fixed by size + sub-category. `maxExecutors`, `partitions`, and `disk` are dynamically computed for Optimized/IO-Optimized.
 
 | Size | Sub-category | Cores | Memory | maxExec | Partitions | Disk |
 |------|-------------|-------|--------|---------|-----------|------|
 | XS | General | 1 | 2G | 3 | 20 | — |
 | S | General | 4 | 27G | 50 | 1000 | 200G |
-| S | Optimized | 4 | 27G | f(input) | 2 × maxExec × cores | 1000G |
-| S | IO-Optimized | 4 | 27G | f(input) × 2 | 2 × maxExec × cores | 1000G |
+| S | Optimized | 4 | 27G | f(input) | 2 × maxExec × cores | f(shuffle) |
+| S | IO-Optimized | 4 | 27G | f(input) × 2 | 2 × maxExec × cores | f(shuffle) |
 | M | General | 8 | 54G | 50 | 1000 | 200G |
-| M | Optimized | 8 | 54G | f(input) | 2 × maxExec × cores | 1000G |
-| M | IO-Optimized | 4 | 27G | f(input) × 2 | 2 × maxExec × cores | 1000G |
+| M | Optimized | 8 | 54G | f(input) | 2 × maxExec × cores | f(shuffle) |
+| M | IO-Optimized | 4 | 27G | f(input) × 2 | 2 × maxExec × cores | f(shuffle) |
 | L | General | 8 | 54G | 100 | 1000 | 200G |
-| L | Optimized | 8 | 54G | f(input) | 2 × maxExec × cores | 1000G |
-| L | IO-Optimized | 4 | 27G | f(input) × 2 | 2 × maxExec × cores | 1000G |
+| L | Optimized | 8 | 54G | f(input) | 2 × maxExec × cores | f(shuffle) |
+| L | IO-Optimized | 4 | 27G | f(input) × 2 | 2 × maxExec × cores | f(shuffle) |
 | XL | General | 16 | 108G | 125 | 2000 | 200G |
-| XL | Optimized | 16 | 108G | f(input) | 2 × maxExec × cores | 1000G |
-| XL | IO-Optimized | 8 | 54G | f(input) × 2 | 2 × maxExec × cores | 1000G |
+| XL | Optimized | 16 | 108G | f(input) | 2 × maxExec × cores | f(shuffle) |
+| XL | IO-Optimized | 8 | 54G | f(input) × 2 | 2 × maxExec × cores | f(shuffle) |
 
-Where `f(input)` = max(compute_floor, shuffle_serving_floor) derived from target duration, shuffle volume, or task-hours. Partitions: min 1000, max 10000.
+- `f(input)` — executor count derived from target duration, shuffle volume, and throughput constraints (min 1000, max 10000 for partitions)
+- `f(shuffle)` — disk per executor: `shuffle_gb / maxExec × 1.5` (min 200G, max 2000G)
 
 ---
 
