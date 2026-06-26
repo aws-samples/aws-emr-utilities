@@ -84,6 +84,9 @@ def select_bucket(intent: WorkloadIntent) -> BucketResult:
 
 def _classify_size(intent: WorkloadIntent) -> str:
     gb = intent.input_size_gb
+    # Critique #2: explode jobs have tiny input but massive shuffle — size by shuffle
+    if intent.shuffle_write_gb and intent.shuffle_write_gb > gb * 10:
+        gb = intent.shuffle_write_gb / 4  # treat as if input is 25% of shuffle volume
     if gb <= 5 and (intent.target_duration_minutes is None or intent.target_duration_minutes <= 5):
         if intent.workload_type in ("micro", "etl", "compaction", "iceberg_maintenance"):
             return "XS"
@@ -135,27 +138,37 @@ def _resolve_max_executors(size: str, intent: WorkloadIntent, cores: int) -> int
     Mode 3 (best): Event log → task_hours / (target × packing × cores)
     Mode 2 (good): Proxy → input_gb / (throughput × target × packing)
     Mode 1 (safe): No input → generous default per size
+
+    Three constraints (Mode 2/3):
+      - compute_floor: enough cores to finish work in target time
+      - serving_floor: enough hosts to serve shuffle at 0.04 GB/s/host (network)
+      - disk_floor: enough executors to write/read shuffle at 0.244 GB/s/executor (disk)
     """
     PACKING = 0.70
+    NETWORK_SERVING_GBPS = 0.04   # per host — above this → fetch timeouts
+    DISK_THROUGHPUT_GBPS = 0.244  # per executor on shuffle_optimized NVMe
 
     # Mode 3: Event log
     if intent.task_hours is not None and intent.task_hours > 0:
         target_h = (intent.target_duration_minutes / 60.0) if intent.target_duration_minutes else 1.0
+        target_sec = target_h * 3600
         n = math.ceil(intent.task_hours / (target_h * PACKING * cores))
         if intent.shuffle_write_gb and intent.shuffle_write_gb > 1000:
-            serving = math.ceil(intent.shuffle_write_gb / (0.04 * target_h * 3600))
-            n = max(n, serving)
+            serving = math.ceil(intent.shuffle_write_gb / (NETWORK_SERVING_GBPS * target_sec))
+            disk = math.ceil(intent.shuffle_write_gb / (DISK_THROUGHPUT_GBPS * target_sec))
+            n = max(n, serving, disk)
         return max(10, n)
 
     # Mode 2: Proxy
     if intent.target_duration_minutes is not None:
+        target_sec = intent.target_duration_minutes * 60
         throughput = 0.5 * cores
         work_min = intent.input_size_gb / max(0.1, throughput)
         n = math.ceil(work_min / (intent.target_duration_minutes * 0.50))
         if intent.shuffle_write_gb and intent.shuffle_write_gb > 1000:
-            target_sec = intent.target_duration_minutes * 60
-            serving = math.ceil(intent.shuffle_write_gb / (0.04 * target_sec))
-            n = max(n, serving)
+            serving = math.ceil(intent.shuffle_write_gb / (NETWORK_SERVING_GBPS * target_sec))
+            disk = math.ceil(intent.shuffle_write_gb / (DISK_THROUGHPUT_GBPS * target_sec))
+            n = max(n, serving, disk)
         return max(10, n)
 
     # Mode 1: Generous default
@@ -178,10 +191,30 @@ def _max_partition_bytes(input_gb: float) -> str:
     return "512m"
 
 
+def _executor_disk(shuffle_gb: float, max_exec: int) -> str:
+    """Right-size disk: shuffle per executor × 1.5 safety margin, rounded up to 20G increments.
+    Min 200G, max 2000G."""
+    if shuffle_gb <= 0 or max_exec <= 0:
+        return "200G"
+    per_exec = shuffle_gb / max_exec * 1.5
+    disk = max(200, min(2000, int(math.ceil(per_exec / 20) * 20)))
+    return f"{disk}G"
+
+
+def _s3_retry_configs(input_gb: float) -> Dict[str, str]:
+    """S3 retry configs for large jobs that hit S3 hard."""
+    if input_gb >= 1000:
+        return {"spark.hadoop.fs.s3a.retry.limit": "15", "spark.hadoop.fs.s3a.attempts.maximum": "15"}
+    elif input_gb >= 100:
+        return {"spark.hadoop.fs.s3a.retry.limit": "10", "spark.hadoop.fs.s3a.attempts.maximum": "10"}
+    return {}
+
+
 def _base_configs() -> Dict[str, str]:
     return {
         "spark.dynamicAllocation.enabled": "true",
         "spark.sql.optimizer.excludedRules": WGL_RULE,
+        "spark.sql.adaptive.coalescePartitions.parallelismFirst": "false",
     }
 
 
@@ -245,6 +278,7 @@ def _general(size: str, intent: WorkloadIntent) -> BucketResult:
         "spark.emr-serverless.executor.disk": "200G",
         "spark.emr-serverless.executor.disk.type": "shuffle_optimized",
         "spark.network.timeout": "1200s",
+        **_s3_retry_configs(intent.input_size_gb),
     }
     return BucketResult(size, "General", w["label"], configs,
         rationale="Balanced defaults — suitable for most workloads")
@@ -257,6 +291,14 @@ def _optimized(size: str, intent: WorkloadIntent) -> BucketResult:
     w = _pick_worker(n)
     if w["cores"] > 4:
         n = math.ceil(n * 4 / w["cores"])
+    # Disk capacity floor: shuffle per executor must fit in 70% of disk
+    shuffle_gb = intent.shuffle_write_gb or 0
+    disk = _executor_disk(shuffle_gb, n)
+    disk_val = int(disk.replace("G", ""))
+    if shuffle_gb > 0:
+        capacity_floor = math.ceil(shuffle_gb / (disk_val * 0.7))
+        n = max(n, capacity_floor)
+        disk = _executor_disk(shuffle_gb, n)  # recalc after floor bump
     parts = _shuffle_partitions(n, w["cores"], waves=2)
     configs = {
         **_base_configs(),
@@ -267,9 +309,10 @@ def _optimized(size: str, intent: WorkloadIntent) -> BucketResult:
         "spark.dynamicAllocation.maxExecutors": str(n),
         "spark.sql.shuffle.partitions": str(parts),
         "spark.sql.files.maxPartitionBytes": _max_partition_bytes(intent.input_size_gb),
-        "spark.emr-serverless.executor.disk": "1000G",
+        "spark.emr-serverless.executor.disk": disk,
         "spark.emr-serverless.executor.disk.type": "shuffle_optimized",
         "spark.network.timeout": "1200s",
+        **_s3_retry_configs(intent.input_size_gb),
     }
     return BucketResult(size, "Optimized", w["label"], configs,
         rationale="Heavy workload — more partitions and disk for shuffle/joins/aggregation")
@@ -292,8 +335,15 @@ def _io_optimized(size: str, intent: WorkloadIntent) -> BucketResult:
         n = n * 2
     else:
         cores, mem, label = 4, "27G", "small"
-        # Already smallest — just double executors
         n = n * 2
+    # Disk capacity floor
+    shuffle_gb = intent.shuffle_write_gb or 0
+    disk = _executor_disk(shuffle_gb, n)
+    disk_val = int(disk.replace("G", ""))
+    if shuffle_gb > 0:
+        capacity_floor = math.ceil(shuffle_gb / (disk_val * 0.7))
+        n = max(n, capacity_floor)
+        disk = _executor_disk(shuffle_gb, n)
     parts = _shuffle_partitions(n, cores, waves=2)
     # IO-Opt maxPartitionBytes: scale by size (not input_gb which is tiny for fan-out)
     io_mpb = {"S": "128m", "M": "128m", "L": "128m", "XL": "256m"}.get(size, "128m")
@@ -306,9 +356,10 @@ def _io_optimized(size: str, intent: WorkloadIntent) -> BucketResult:
         "spark.dynamicAllocation.maxExecutors": str(n),
         "spark.sql.shuffle.partitions": str(parts),
         "spark.sql.files.maxPartitionBytes": io_mpb,
-        "spark.emr-serverless.executor.disk": "1000G",
+        "spark.emr-serverless.executor.disk": disk,
         "spark.emr-serverless.executor.disk.type": "shuffle_optimized",
         "spark.network.timeout": "1200s",
+        **_s3_retry_configs(intent.input_size_gb),
     }
     return BucketResult(size, "IO-Optimized", label, configs,
         rationale="Massive fan-out — smaller workers × more hosts for disk parallelism")
@@ -324,6 +375,9 @@ if __name__ == "__main__":
     p.add_argument("--size", choices=SIZES, help="T-shirt size (XS/S/M/L/XL)")
     p.add_argument("--sub-category", default="General", choices=SUB_CATEGORIES)
     p.add_argument("--input-size-gb", type=float, help="Input data size in GB")
+    p.add_argument("--shuffle-write-gb", type=float, help="Estimated shuffle volume in GB (for heavy joins/aggregations)")
+    p.add_argument("--fan-out-factor", type=float, help="Estimated output amplification (for EXPLODE/CROSS JOIN, e.g. 500)")
+    p.add_argument("--target-duration-minutes", type=int, help="Target job runtime in minutes (e.g. current EC2 runtime)")
     p.add_argument("--num-files", type=int, help="Number of files (for Iceberg-Maintenance)")
     p.add_argument("--format", choices=["json", "spark-submit", "table"], default="table")
     args = p.parse_args()
@@ -338,10 +392,14 @@ if __name__ == "__main__":
             p.error("--size is required (unless using Iceberg-Maintenance with --num-files)")
 
     # Build intent
+    input_gb = args.input_size_gb or {"XS": 1, "S": 50, "M": 500, "L": 2500, "XL": 10000}[args.size]
     intent = WorkloadIntent(
-        input_size_gb=args.input_size_gb or {"XS": 1, "S": 50, "M": 500, "L": 2500, "XL": 10000}[args.size],
+        input_size_gb=input_gb,
         is_compaction=(args.sub_category == "Iceberg-Maintenance"),
         num_files=args.num_files,
+        shuffle_write_gb=args.shuffle_write_gb,
+        fan_out_factor=args.fan_out_factor,
+        target_duration_minutes=args.target_duration_minutes,
     )
 
     # Route
@@ -350,8 +408,16 @@ if __name__ == "__main__":
     elif args.size == "XS":
         result = _xs(intent)
     else:
+        # Re-classify size when shuffle signals indicate larger workload
+        effective_size = _classify_size(intent)
+        if SIZES.index(effective_size) > SIZES.index(args.size):
+            args.size = effective_size
+        # Auto-select sub-category when shuffle/fan-out signals are provided
+        sub = args.sub_category
+        if sub == "General" and (args.shuffle_write_gb or args.fan_out_factor):
+            sub = _classify_sub_category(intent)
         builders = {"General": _general, "Optimized": _optimized, "IO-Optimized": _io_optimized}
-        result = builders[args.sub_category](args.size, intent)
+        result = builders[sub](args.size, intent)
 
     if args.format == "json":
         print(json.dumps({"size": result.size, "sub_category": result.sub_bucket,
