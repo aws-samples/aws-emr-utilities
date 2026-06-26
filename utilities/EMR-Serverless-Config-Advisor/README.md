@@ -61,7 +61,7 @@ python3 emr_s_tshirt_size.py --size L --target-duration-minutes 45
 python3 emr_s_tshirt_size.py --size XL --target-duration-minutes 120 --shuffle-write-gb 5000
 ```
 
-Without `--target-duration-minutes`, the tool uses generous defaults (safe but potentially over-provisioned). With it, executor count is computed precisely from network and disk throughput constraints.
+Without `--target-duration-minutes`, the tool uses generous defaults. With it, executor count is right-sized to match your target runtime.
 
 ### For Optimized Runs: Use the Fine Tuner
 
