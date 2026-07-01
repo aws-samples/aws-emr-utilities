@@ -106,7 +106,26 @@ echo "refresh_meta" | hbase shell
 
 **Step 6.** Validate the Read Replica — verify regions show OPEN status in the HBase Master UI and run sample reads to confirm data visibility.
 
-**Step 7.** *(StoreFileTracker migration only — skip if already on FILE tracker)* Run the `generateStoreFileList` tool on the Read Replica to create `.filelist` manifests for all tables:
+**Step 7.** Prepare for cutover on the primary cluster — disable balancing and compactions, take snapshots:
+
+```bash
+# Using the helper script:
+./scripts/pre-cutover.sh
+
+# Or manually:
+echo "balance_switch false" | hbase shell
+echo "compaction_switch false" | hbase shell
+echo "snapshot '<table>', '<table>_pre_migration_$(date +%Y%m%d)'" | hbase shell
+```
+
+**Step 8.** Final refresh on the Read Replica:
+
+```bash
+echo "refresh_meta" | hbase shell
+hbase org.apache.hadoop.hbase.client.example.RefreshHFilesClient '<table>'
+```
+
+**Step 9.** *(StoreFileTracker migration only — skip if already on FILE tracker)* Run the `generateStoreFileList` tool on the Read Replica to create `.filelist` manifests for all tables:
 
 ```bash
 # For a single table:
@@ -126,7 +145,7 @@ The tool is idempotent — re-running skips stores that already have manifests.
 aws s3 ls s3://<your-bucket>/<hbase-root>/data/default/<table>/<region-hash>/<column-family>/ | grep ".filelist"
 ```
 
-**Step 8.** *(StoreFileTracker migration only — skip if already on FILE tracker)* Switch the store file tracker on the Read Replica:
+**Step 10.** *(StoreFileTracker migration only — skip if already on FILE tracker)* Switch the store file tracker on the Read Replica:
 
 ```bash
 # For a single table:
@@ -146,25 +165,6 @@ Confirm the tracker is set by describing the table:
 ```bash
 echo "describe '<table>'" | hbase shell
 # Should show: METADATA => {'hbase.store.file-tracker.impl' => 'FILE'}
-```
-
-**Step 9.** Prepare for cutover on the primary cluster — disable balancing and compactions, take snapshots:
-
-```bash
-# Using the helper script:
-./scripts/pre-cutover.sh
-
-# Or manually:
-echo "balance_switch false" | hbase shell
-echo "compaction_switch false" | hbase shell
-echo "snapshot '<table>', '<table>_pre_migration_$(date +%Y%m%d)'" | hbase shell
-```
-
-**Step 10.** Final refresh on the Read Replica:
-
-```bash
-echo "refresh_meta" | hbase shell
-hbase org.apache.hadoop.hbase.client.example.RefreshHFilesClient '<table>'
 ```
 
 **Step 11.** Check for inconsistencies on the Read Replica:
