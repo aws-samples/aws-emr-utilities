@@ -321,13 +321,30 @@ def _calculate_executor_disk(shuffle_write_gb: float, disk_spill_gb: float,
     Shuffle-optimized disks provide higher IOPS and faster disk access,
     benefiting jobs with significant shuffle operations or disk spill.
     For non-shuffle workloads, default disk avoids unnecessary cost.
+    
+    Disk tier selection also considers IOPS/throughput needs:
+      - 200G + 16c: 250 MiB/s, 3,000 IOPS (small shuffle)
+      - 1000G + 16c: 500 MiB/s, 6,000 IOPS (medium shuffle)
+      - 2000G + 16c: 500 MiB/s, 16,000 IOPS (large shuffle, IOPS-bound)
+    
+    For massive shuffle (>10 TB), the IOPS tier matters more than capacity.
     """
     total_shuffle_and_spill = shuffle_write_gb + disk_spill_gb + memory_spill_gb
     if total_shuffle_and_spill < 20:
         return ""  # Minimal shuffle — default disk sufficient
-    # Shuffle-intensive: attach shuffle_optimized disk
-    # Minimum 500G — empirically proven that 200G has 1.5-1.8x slower I/O
-    # due to linear throughput scaling on shuffle_optimized volumes
+    
+    # IOPS-tier selection: for large shuffle, bump to 2000G for 16K IOPS
+    # regardless of per-executor capacity needs.
+    # Rationale: shuffle blocks are typically 16-200 KB; serving them is
+    # IOPS-bound, not throughput-bound. 2000G gives 16K IOPS vs 3K at 200G.
+    if shuffle_write_gb > 10000:
+        return "2000G"  # Massive shuffle: need 16K IOPS tier
+    if shuffle_write_gb > 2000:
+        return "2000G"  # Large shuffle: 16K IOPS helps significantly
+    if shuffle_write_gb > 500:
+        return "1000G"  # Medium shuffle: 6K IOPS tier
+    
+    # Small-to-moderate shuffle: size by capacity
     per_exec = total_shuffle_and_spill / max(max_executors, 1)
     disk_gb = max(200, min(2000, int(per_exec * 1.5 / 20) * 20 + 20))
     return f"{disk_gb}G"
@@ -618,12 +635,24 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
 
         def cap_partitions(partitions, max_executors):
             """Cap partitions based on executor IO concurrency, with a
-            data volume floor to prevent oversized partitions."""
+            data volume floor to prevent oversized partitions.
+            
+            Key constraint: partitions must keep data per partition ≤ 1 GB
+            to minimize IOPS pressure (fewer blocks = fewer I/O operations
+            for shuffle serving). The io_ceiling only applies when partition
+            size would remain safe (≤ 1 GB)."""
             io_ceiling = max(200, max_executors * 8)
             # Data floor: ensure partitions don't exceed 3x memory per core
             mem_per_core = worker_cfg["memory"] / worker_cfg["vcpu"]
             max_gb_per_part = mem_per_core * 3
             data_floor = max(2, int((s_in_gb + s_out_gb) / max_gb_per_part)) if max_gb_per_part > 0 else 200
+            
+            # IOPS-aware floor: target ~5 GB raw shuffle per partition
+            # (raw shuffle wire bytes are ~5× in-memory size, so 5 GB raw ≈ 1 GB in-memory)
+            # This keeps shuffle block count low for better IOPS performance
+            peak_shuffle_gb = max(s_in_gb, s_out_gb)
+            iops_floor = int(math.ceil(peak_shuffle_gb / 5.0)) if peak_shuffle_gb > 0 else 0
+            
             # Spill override: if spill is significant relative to shuffle/input,
             # partitions are undersized — don't cap them down
             total_data_gb = max(s_in_gb + s_out_gb, 1)
@@ -631,18 +660,18 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             if spill_ratio > 0.5:  # spill > 50% of data volume
                 # Preserve higher partitions but cap at total vCPU capacity
                 spill_ceiling = max(io_ceiling, max_executors * worker_cfg["vcpu"])
-                partitions = max(data_floor, min(partitions, spill_ceiling))
+                partitions = max(data_floor, max(iops_floor, min(partitions, spill_ceiling)))
             elif mem_pct > 85:  # high memory pressure
                 # Allow more partitions to reduce per-task memory, cap at total vCPU
                 mem_ceiling = max(io_ceiling, max_executors * worker_cfg["vcpu"])
-                partitions = max(data_floor, min(partitions, mem_ceiling))
+                partitions = max(data_floor, max(iops_floor, min(partitions, mem_ceiling)))
             elif mem_pct < 70 and idle_pct > 50:  # over-provisioned, low memory pressure
                 # Fewer partitions reduces scheduling overhead, cap at half total vCPU
                 low_mem_ceiling = max(io_ceiling, max_executors * worker_cfg["vcpu"] // 2)
-                partitions = max(data_floor, min(partitions, low_mem_ceiling))
+                partitions = max(data_floor, max(iops_floor, min(partitions, low_mem_ceiling)))
             else:
-                # Apply: at least the data floor, at most the IO ceiling
-                partitions = max(data_floor, min(partitions, io_ceiling))
+                # Apply: at least the data floor and IOPS floor, at most the IO ceiling
+                partitions = max(data_floor, max(iops_floor, min(partitions, io_ceiling)))
             if partitions % 2 != 0:
                 partitions += 1
             return partitions
@@ -760,7 +789,10 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             peak_shuf_gb = max(_peak_r, _peak_w)
             if peak_shuf_gb <= 0:
                 return None
-            target_gb = max(0.25, target_partition_size_mib / 1024.0)
+            # Target ~5 GB raw shuffle per partition (≈ 1 GB in-memory)
+            # Raw shuffle bytes overstate in-memory footprint by ~5× because
+            # shuffle records are typically 500-1000 bytes vs 5-15 KB rows.
+            target_gb = 5.0
             parts = int(math.ceil(peak_shuf_gb / target_gb))
             # Spill floor: largest stage's partition must fit in per-task memory
             per_task_mem_gb = worker_cfg["memory"] * 0.6 / worker_cfg["vcpu"]

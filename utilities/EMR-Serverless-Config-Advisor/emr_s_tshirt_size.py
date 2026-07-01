@@ -175,13 +175,35 @@ def _resolve_max_executors(size: str, intent: WorkloadIntent, cores: int) -> int
     return DEFAULT_MAX_EXECUTORS[size]
 
 
-def _shuffle_partitions(n: int, cores: int, waves: int = 1) -> int:
-    """Compute shuffle partitions. Min 1000, max 10000.
-    waves=1: light shuffle (General)
-    waves=2: heavy shuffle (Optimized, IO-Optimized)
+def _shuffle_partitions(n: int, cores: int, waves: int = 1,
+                        shuffle_write_gb: float = 0) -> int:
+    """Compute shuffle partitions balancing parallelism vs IOPS.
+
+    Key insight: raw shuffle wire bytes overstate in-memory partition size by ~5×
+    (shuffle records are typically 500-1000 bytes vs 5-15 KB decompressed rows).
+    Targeting ~5 GB of raw shuffle per partition keeps in-memory footprint ~1 GB,
+    while minimizing shuffle block count (fewer IOPS operations).
+
+    Examples:
+      65 TB shuffle → 13,000 partitions (5 GB raw / ~1 GB in-memory each)
+      4 TB shuffle  → 4,000 partitions (parallelism floor wins)
+      50 GB shuffle → 480 partitions (parallelism floor wins)
+
+    Floor: waves × n × cores (ensures enough tasks for full parallelism).
     """
-    computed = waves * n * cores
-    return max(1000, min(computed, 10000))
+    parallelism = waves * n * cores
+
+    if shuffle_write_gb > 0:
+        # Target ~5 GB raw shuffle per partition ≈ 1 GB in-memory
+        # (shuffle wire bytes include serialization overhead, hash headers,
+        #  and are typically 3-5× the deserialized in-memory size)
+        by_size = max(200, int(math.ceil(shuffle_write_gb / 5.0)))
+        # Use the larger of parallelism floor and size-based
+        # Minimum 1000 — EMR Serverless default + AQE coalesces down from here
+        return max(1000, max(parallelism, by_size))
+    else:
+        # Fallback: parallelism-based, capped at 10K
+        return max(1000, min(parallelism, 10000))
 
 
 def _max_partition_bytes(input_gb: float) -> str:
@@ -276,7 +298,8 @@ def _general(size: str, intent: WorkloadIntent) -> BucketResult:
     w = _pick_worker(n)
     if w["cores"] > 4:
         n = math.ceil(n * 4 / w["cores"])
-    parts = _shuffle_partitions(n, w["cores"], waves=1)
+    parts = _shuffle_partitions(n, w["cores"], waves=1,
+                               shuffle_write_gb=intent.shuffle_write_gb or 0)
     drv_cores, drv_mem = _driver_sizing(w["cores"])
     configs = {
         **_base_configs(),
@@ -311,7 +334,7 @@ def _optimized(size: str, intent: WorkloadIntent) -> BucketResult:
         capacity_floor = math.ceil(shuffle_gb / (disk_val * 0.7))
         n = max(n, capacity_floor)
         disk = _executor_disk(shuffle_gb, n)  # recalc after floor bump
-    parts = _shuffle_partitions(n, w["cores"], waves=2)
+    parts = _shuffle_partitions(n, w["cores"], waves=2, shuffle_write_gb=shuffle_gb)
     drv_cores, drv_mem = _driver_sizing(w["cores"])
     configs = {
         **_base_configs(),
@@ -357,7 +380,7 @@ def _io_optimized(size: str, intent: WorkloadIntent) -> BucketResult:
         capacity_floor = math.ceil(shuffle_gb / (disk_val * 0.7))
         n = max(n, capacity_floor)
         disk = _executor_disk(shuffle_gb, n)
-    parts = _shuffle_partitions(n, cores, waves=2)
+    parts = _shuffle_partitions(n, cores, waves=2, shuffle_write_gb=shuffle_gb)
     # IO-Opt maxPartitionBytes: scale by size (not input_gb which is tiny for fan-out)
     io_mpb = {"S": "128m", "M": "128m", "L": "128m", "XL": "256m"}.get(size, "128m")
     drv_cores, drv_mem = _driver_sizing(cores)
