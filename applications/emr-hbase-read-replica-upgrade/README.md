@@ -1,24 +1,36 @@
-# EMR HBase StoreFileTracker Migration
+# EMR HBase Upgrade Using Read Replica Pre-Warm
 
-Migrate Amazon EMR HBase on S3 from EMR's proprietary persistent HFile tracking (`hbase:storefile`) to the Apache HBase FILE-based store file tracker — without taking your production cluster offline.
+Upgrade Amazon EMR HBase on S3 to the latest EMR release using a Read Replica pre-warm strategy — enabling zero-downtime preparation and minimal cutover windows.
 
 ## Overview
 
-EMR 6.x uses a custom `hbase:storefile` table to track HFiles stored in S3. Starting with HBase 2.5+ (EMR 7.x), Apache HBase provides a native FILE-based store file tracker that stores `.filelist` manifest files alongside each store directory in S3. This migration uses the `generateStoreFileList` tool (integrated into HBCK2) to create those manifests on a Read Replica, enabling a zero-downtime cutover to the new tracker.
+This toolkit provides a Read Replica-based upgrade path for EMR HBase clusters running on S3. A Read Replica is launched on the target EMR version pointing to the same S3 root directory, pre-warmed and validated, then promoted to become the new active cluster.
+
+### Upgrade Paths
+
+| Source | Target | StoreFileTracker Migration Required? |
+|--------|--------|--------------------------------------|
+| EMR 6.x (`hbase:storefile`) | EMR 7.12+ | **Yes** — must migrate from `hbase:storefile` to FILE tracker |
+| EMR 7.x (already on FILE tracker) | EMR 7.12+ | **No** — straightforward Read Replica promotion |
+
+**With StoreFileTracker migration:** EMR 6.x uses a proprietary `hbase:storefile` table to track HFiles in S3. EMR 7.x uses the Apache HBase FILE-based tracker (`.filelist` manifests). This toolkit includes the `generateStoreFileList` tool (integrated into HBCK2) to create those manifests on the Read Replica, enabling a seamless transition.
+
+**Without StoreFileTracker migration:** If your cluster is already on a FILE-compatible tracker, skip Steps 7–8 in Phase 1. The rest of the process (pre-warm, validate, cutover, promote) applies identically.
 
 ## Key Benefits
 
 - **Zero Downtime Preparation**: The primary cluster remains fully operational during all preparation steps
 - **Minimal Cutover Window**: Only a brief downtime for flush → terminate → promote
 - **Safe Rollback**: Snapshots taken before cutover allow rollback if needed
-- **Version Jump**: Migrate directly from EMR 6.x to EMR 7.12+ in one operation
+- **Version Jump**: Upgrade directly from EMR 6.x to 7.12+ in one operation
+- **Pre-Warm Validation**: Read Replica lets you verify data visibility and region health before committing to cutover
 
 ## Prerequisites
 
-- Primary cluster running EMR 6.x with HBase on S3 (`hbase.emr.storageMode=s3`)
+- Primary cluster running EMR HBase on S3 (`hbase.emr.storageMode=s3`)
 - Target: EMR 7.12 or later
 - S3 bucket accessible by both primary and Read Replica clusters
-- Bootstrap action artifacts uploaded to S3 (see `bootstrap-actions/`)
+- Bootstrap action artifacts uploaded to S3 (see `bootstrap-actions/`) — required only for StoreFileTracker migration path
 
 ## Directory Structure
 
@@ -84,7 +96,7 @@ aws emr create-cluster \
   --log-uri s3://<your-bucket>/emr-logs/
 ```
 
-> **Important:** The Read Replica must use `DefaultStoreFileTracker` initially — this allows it to read data tracked by the `hbase:storefile` table from the primary.
+> **Important:** If migrating from EMR 6.x (StoreFileTracker path), the Read Replica must use `DefaultStoreFileTracker` initially — this allows it to read data tracked by the `hbase:storefile` table from the primary. If upgrading between 7.x versions (already on FILE tracker), omit the `hbase.store.file-tracker.impl` property.
 
 **Step 5.** Refresh meta on the Read Replica:
 
@@ -94,7 +106,7 @@ echo "refresh_meta" | hbase shell
 
 **Step 6.** Validate the Read Replica — verify regions show OPEN status in the HBase Master UI and run sample reads to confirm data visibility.
 
-**Step 7.** Run the `generateStoreFileList` tool on the Read Replica to create `.filelist` manifests for all tables:
+**Step 7.** *(StoreFileTracker migration only — skip if already on FILE tracker)* Run the `generateStoreFileList` tool on the Read Replica to create `.filelist` manifests for all tables:
 
 ```bash
 # For a single table:
@@ -114,7 +126,7 @@ The tool is idempotent — re-running skips stores that already have manifests.
 aws s3 ls s3://<your-bucket>/<hbase-root>/data/default/<table>/<region-hash>/<column-family>/ | grep ".filelist"
 ```
 
-**Step 8.** Switch the store file tracker on the Read Replica:
+**Step 8.** *(StoreFileTracker migration only — skip if already on FILE tracker)* Switch the store file tracker on the Read Replica:
 
 ```bash
 # For a single table:
