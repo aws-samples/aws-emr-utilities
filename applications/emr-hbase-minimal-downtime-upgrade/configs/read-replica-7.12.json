@@ -1,0 +1,16 @@
+[
+  {
+    "Classification": "hbase",
+    "Properties": {
+      "hbase.emr.readreplica.enabled.v2": "true",
+      "hbase.emr.storageMode": "s3"
+    }
+  },
+  {
+    "Classification": "hbase-site",
+    "Properties": {
+      "hbase.rootdir": "s3://<your-bucket>/<your-hbase-root>/",
+      "hbase.store.file-tracker.impl": "org.apache.hadoop.hbase.regionserver.storefiletracker.DefaultStoreFileTracker"
+    }
+  }
+]
