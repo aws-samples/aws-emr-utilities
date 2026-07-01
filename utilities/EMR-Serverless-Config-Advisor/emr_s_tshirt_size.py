@@ -198,9 +198,13 @@ def _shuffle_partitions(n: int, cores: int, waves: int = 1,
         # (shuffle wire bytes include serialization overhead, hash headers,
         #  and are typically 3-5× the deserialized in-memory size)
         by_size = max(200, int(math.ceil(shuffle_write_gb / 5.0)))
-        # Use the larger of parallelism floor and size-based
+        # Parallelism floor: 1 wave (not 2) when shuffle is known — AQE coalesces
+        # down anyway, and extra partitions create more blocks (worse IOPS).
+        # Validated: Veeva 294×16c at 5280 parts (1.1 waves) = 3.7 min;
+        #            at 9408 parts (2 waves) = 6.5 min (regression).
+        parallelism_floor = n * cores
         # Minimum 1000 — EMR Serverless default + AQE coalesces down from here
-        return max(1000, max(parallelism, by_size))
+        return max(1000, max(parallelism_floor, by_size))
     else:
         # Fallback: parallelism-based, capped at 10K
         return max(1000, min(parallelism, 10000))
