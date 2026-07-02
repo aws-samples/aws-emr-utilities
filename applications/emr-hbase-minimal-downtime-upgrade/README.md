@@ -193,8 +193,17 @@ echo "flush 'hbase:namespace'" | hbase shell
 
 4. **Promote the Read Replica** to active (read-write) mode:
 
+For the readonly_swith, besides the first parameter, it also includes some other optional parameter, like including flush, refresh meta and refresh hfile. By default all is true, but we can choose to disable some/all of them.
+
+```
+readonly_switch <readonly>,<force_flush>,<force_refresh_meta>,<force_refresh_hfile>
+```
+
+For Read Replica promotion, execute with parameters set to `false`, since `refresh_meta` and `RefreshHFilesClient` were already completed in Step 8.
+
+
 ```bash
-echo "readonly_switch false" | hbase shell
+echo "readonly_switch false, false, false, false" | hbase shell
 echo "readonly_state" | hbase shell   # Verify: should return "ACTIVE"
 ```
 
