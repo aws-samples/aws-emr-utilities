@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% block title %}Compare Runs — EMR Serverless Advisor{% endblock %}
+{% block topbar_crumb %}Config Advisor{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="/static/advisor.css?v={{ asset_v('advisor.css') }}">
+<style>
+  .cmp-table { width: 100%; border-collapse: collapse; font-size: 13px; background: #fff; }
+  .cmp-table th, .cmp-table td { padding: 8px 12px; border-bottom: 1px solid #EAEEF2; text-align: right; }
+  .cmp-table th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: #7A8B9A; border-bottom: 2px solid #EAEEF2; }
+  .cmp-table td:first-child, .cmp-table th:first-child { text-align: left; color: #7A8B9A; }
+  .cmp-table td.num { font-family: 'SF Mono', Menlo, monospace; }
+  .cmp-table td.win { font-weight: 700; color: #5CB85C; }
+  .delta-up { color: #E87461; font-family: 'SF Mono', Menlo, monospace; }
+  .delta-down { color: #5CB85C; font-family: 'SF Mono', Menlo, monospace; }
+  .delta-flat { color: #7A8B9A; font-family: 'SF Mono', Menlo, monospace; }
+  .run-head { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 18px; }
+  .run-card { background: #fff; border: 1px solid #EAEEF2; border-radius: 10px; padding: 14px 18px; }
+  .run-card .tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 10px; margin-bottom: 6px; }
+  .run-card.a .tag { background: #EDF6FC; color: #4DA3D4; }
+  .run-card.b .tag { background: #F4F2FB; color: #9B8FD4; }
+  .run-card .fname { font-family: 'SF Mono', Menlo, monospace; font-size: 12px; color: #7A8B9A; word-break: break-all; }
+  .diff-table td { text-align: left !important; font-family: 'SF Mono', Menlo, monospace; font-size: 12px; word-break: break-all; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="breadcrumbs">
+  <a href="/">EMR Serverless Advisor</a><span class="sep">&rsaquo;</span><a href="/config-advisor">Config Advisor</a><span class="sep">&rsaquo;</span><span class="current">Compare</span>
+</div>
+
+<a href="/config-advisor" class="back-link">&larr; New Analysis</a>
+<h1 class="page-title">{{ 'EC2 → Serverless Migration' if migration_mode else 'Run Comparison' }}</h1>
+<p class="page-subtitle">Delta % is B relative to A &middot; green value = better side where the metric has a direction</p>
+
+{% if migration_mode %}
+<div class="flash" style="background:#EDF6FC;border:1px solid #4DA3D4;color:#2F6E96;">
+  <b>Migration mode:</b> Run A = EC2 baseline, Run B = Serverless. The EC2 cost shown is
+  <i>hypothetical Serverless pricing of its resource-hours</i> (EC2 bills instance-hours —
+  compare against your actual EC2 bill separately). Use the stage-level table to find where
+  the Serverless run diverges; the Ask-AI panel has both runs and the migration context.
+</div>
+{% if a.slot_mismatch or b.slot_mismatch %}
+<div class="flash" style="background:#FFF6EA;border:1px solid #FFAD4A;color:#8A5A1F;">
+  <b>Check your uploads:</b>
+  {% if a.slot_mismatch %}the EC2 slot received what looks like a Serverless log.{% endif %}
+  {% if b.slot_mismatch %}the Serverless slot received what looks like an EC2 log.{% endif %}
+</div>
+{% endif %}
+{% endif %}
+
+<div class="run-head">
+  <div class="run-card a">
+    <span class="tag">RUN A</span>
+    <div class="fname">{{ a.source_filename }}</div>
+    <div style="margin-top:8px">
+      <span class="bottleneck-badge {{ a.bottleneck.primary|lower|replace(' ', '-') }}">{{ a.bottleneck.primary }}</span>
+      <span class="bottleneck-score">{{ a.bottleneck.primary_score }}/100</span>
+    </div>
+  </div>
+  <div class="run-card b">
+    <span class="tag">RUN B</span>
+    <div class="fname">{{ b.source_filename }}</div>
+    <div style="margin-top:8px">
+      <span class="bottleneck-badge {{ b.bottleneck.primary|lower|replace(' ', '-') }}">{{ b.bottleneck.primary }}</span>
+      <span class="bottleneck-score">{{ b.bottleneck.primary_score }}/100</span>
+    </div>
+  </div>
+</div>
+
+{% if a.run_cost and b.run_cost and (a.run_cost.source != 'billed' or b.run_cost.source != 'billed') %}
+<div class="flash" style="background:#FFF6EA;border:1px solid #FFAD4A;color:#8A5A1F;">
+  <b>Cost is an estimate.</b>
+  {% if a.run_cost.source != 'billed' %}Run A{% endif %}{% if a.run_cost.source != 'billed' and b.run_cost.source != 'billed' %} and {% endif %}{% if b.run_cost.source != 'billed' %}Run B{% endif %}
+  {{ 'were' if (a.run_cost.source != 'billed' and b.run_cost.source != 'billed') else 'was' }} not run in this AWS account, so billed utilization isn't available.
+  Estimates come from event-log executor lifetimes and typically run <b>2–20% below</b> the actual bill
+  (billing includes worker provisioning time invisible to the event log). Use the AWS console's
+  billed resource utilization for exact figures.
+</div>
+{% endif %}
+
+<section class="section">
+  <h2>Metrics side by side</h2>
+  <table class="cmp-table">
+    <thead><tr><th>Metric</th><th>Run A</th><th>Run B</th><th>Δ B vs A</th></tr></thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <td>{{ r.label }}</td>
+        <td class="num {{ 'win' if r.better == 'a' }}">{{ r.a }} {{ r.unit }}</td>
+        <td class="num {{ 'win' if r.better == 'b' }}">{{ r.b }} {{ r.unit }}</td>
+        <td>
+          {% if r.delta_pct is not none %}
+            <span class="{{ 'delta-flat' if r.delta_pct == 0 else ('delta-up' if r.delta_pct > 0 else 'delta-down') }}">
+              {{ '%+.1f'|format(r.delta_pct) }}%</span>
+          {% else %}<span class="delta-flat">—</span>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+{% if stage_cmp.stages %}
+<section class="section">
+  <h2>Stage-level analysis (matched stages, CPU per GB)</h2>
+  <p class="page-subtitle" style="margin-bottom:10px">
+    Stages matched by name + data volume across runs. CPU/GB inflation on identical
+    data localizes contention, GC pressure, or write-path changes — the stage where
+    compute burn actually changed.
+  </p>
+  {% if stage_cmp.verdict %}
+  <div class="flash" style="background:#EDF6FC;border:1px solid #4DA3D4;color:#2F6E96;">
+    {{ stage_cmp.verdict }}
+  </div>
+  {% endif %}
+  <table class="cmp-table">
+    <thead><tr>
+      <th>Stage</th><th>Data</th><th>Tasks A/B</th>
+      <th>CPU-h A</th><th>CPU-h B</th>
+      <th>CPU s/GB A</th><th>CPU s/GB B</th><th>Δ CPU/GB</th>
+      <th>Spill A/B</th>
+    </tr></thead>
+    <tbody>
+      {% for s in stage_cmp.stages %}
+      <tr>
+        <td style="text-align:left">{{ s.name[:48] }}</td>
+        <td class="num">{{ "%.0f"|format(s.data_gb) }}G</td>
+        <td class="num">{{ s.tasks_a }}/{{ s.tasks_b }}</td>
+        <td class="num">{{ s.cpu_hours_a }}</td>
+        <td class="num">{{ s.cpu_hours_b }}</td>
+        <td class="num">{{ s.cpu_per_gb_a }}</td>
+        <td class="num">{{ s.cpu_per_gb_b }}</td>
+        <td>
+          {% if s.inflation_pct is not none %}
+          <span class="{{ 'delta-flat' if -10 <= s.inflation_pct <= 10 else ('delta-up' if s.inflation_pct > 10 else 'delta-down') }}">
+            {{ '%+.0f'|format(s.inflation_pct) }}%</span>
+          {% else %}—{% endif %}
+        </td>
+        <td class="num">{{ s.spill_gb_a }}/{{ s.spill_gb_b }}G</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endif %}
+
+<section class="section">
+  <h2>Config differences ({{ config_diff|length }})</h2>
+  {% if config_diff %}
+  <table class="cmp-table diff-table">
+    <thead><tr><th>Property</th><th>Run A</th><th>Run B</th></tr></thead>
+    <tbody>
+      {% for d in config_diff %}
+      <tr><td>{{ d.key }}</td><td>{{ d.a }}</td><td>{{ d.b }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="page-subtitle">No meaningful Spark config differences detected.</p>
+  {% endif %}
+</section>
+
+<section class="section">
+  <h2>Bottleneck scores</h2>
+  <table class="cmp-table">
+    <thead><tr><th>Dimension</th><th>Run A</th><th>Run B</th></tr></thead>
+    <tbody>
+      {% for name, score_a in a.bottleneck.scores.items() %}
+      <tr>
+        <td>{{ name }}</td>
+        <td class="num">{{ score_a }}</td>
+        <td class="num">{{ b.bottleneck.scores.get(name, 0) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<script>
+  // Ask-AI grounding: both analyses + config diff + stage-level comparison
+  window.aiPageContext = () => ({
+    page: {{ '"ec2-serverless-migration"' if migration_mode else '"config-advisor-compare"' }},
+    run_a: {{ a | tojson }},
+    run_b: {{ b | tojson }},
+    config_diff: {{ config_diff | tojson }},
+    stage_comparison: {{ stage_cmp | tojson }},
+  });
+</script>
+{% endblock %}

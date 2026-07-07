@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EMR Serverless Config Advisor</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>EMR Serverless Config Advisor</h1>
+            <p class="subtitle">Upload an extracted event log JSON to get bottleneck analysis and worker sizing recommendations</p>
+        </header>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-messages">
+            {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <div class="upload-section">
+            <form action="{{ url_for('analyze') }}" method="post" enctype="multipart/form-data" id="upload-form">
+                <div class="drop-zone" id="drop-zone">
+                    <div class="drop-zone-content">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="17,8 12,3 7,8"/>
+                            <line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                        <p class="drop-text">Drop your <code>task_stage_summary</code> JSON here</p>
+                        <p class="drop-hint">or click to browse</p>
+                        <p class="file-name" id="file-name"></p>
+                    </div>
+                    <input type="file" name="file" id="file-input" accept=".json" required>
+                </div>
+                <button type="submit" class="btn-analyze" id="btn-submit" disabled>
+                    <span class="btn-text">Analyze</span>
+                    <span class="btn-loading" style="display:none;">Analyzing...</span>
+                </button>
+            </form>
+        </div>
+
+        <div class="info-section">
+            <h3>What this tool does</h3>
+            <div class="info-grid">
+                <div class="info-card">
+                    <h4>Bottleneck Detection</h4>
+                    <p>Classifies your workload as IOPS bound, disk throughput bound, memory constrained, CPU constrained, or network bound.</p>
+                </div>
+                <div class="info-card">
+                    <h4>Worker Sizing</h4>
+                    <p>Recommends optimal worker type (4c, 8c, or 16c) with memory sizing based on workload profile.</p>
+                </div>
+                <div class="info-card">
+                    <h4>Spark Configs</h4>
+                    <p>Generates tuned Spark configurations including shuffle partitions, dynamic allocation, and disk sizing.</p>
+                </div>
+                <div class="info-card">
+                    <h4>Cost vs Performance</h4>
+                    <p>Provides both cost-optimized and performance-optimized recommendations with trade-off analysis.</p>
+                </div>
+            </div>
+
+            <h3>How to get the input file</h3>
+            <pre><code># Run the spark extractor on your event logs:
+python3 spark_extractor.py \
+    --input s3://bucket/emr-serverless-logs/applications/app-id/jobs/job-id/sparklogs/ \
+    --output /tmp/extracted/ \
+    --limit 1
+
+# Upload the file from: /tmp/extracted/task_stage_summary/*.json</code></pre>
+        </div>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const fileName = document.getElementById('file-name');
+        const btnSubmit = document.getElementById('btn-submit');
+        const form = document.getElementById('upload-form');
+
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('drag-over');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            if (e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files;
+                updateFileName(e.dataTransfer.files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                updateFileName(fileInput.files[0]);
+            }
+        });
+
+        function updateFileName(file) {
+            fileName.textContent = file.name + ' (' + formatBytes(file.size) + ')';
+            btnSubmit.disabled = false;
+            dropZone.classList.add('has-file');
+        }
+
+        function formatBytes(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        form.addEventListener('submit', () => {
+            btnSubmit.querySelector('.btn-text').style.display = 'none';
+            btnSubmit.querySelector('.btn-loading').style.display = 'inline';
+            btnSubmit.disabled = true;
+        });
+    </script>
+</body>
+</html>
