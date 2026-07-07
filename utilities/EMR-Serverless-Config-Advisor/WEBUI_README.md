@@ -34,5 +34,7 @@ python3 app.py                                       # http://localhost:5000
 Or `MONITORING_INSTANCE=i-xxxx ./start_advisor.sh` to run with a self-healing
 SSM port-forward tunnel to a Prometheus host that isn't directly reachable.
 
-All components are permissively licensed: FastAPI (MIT), Prometheus +
-graphite_exporter (Apache-2.0), Chart.js (MIT).
+This tool vendors no third-party code. Dependencies (FastAPI, uvicorn,
+Jinja2, boto3) are installed via pip; Chart.js is loaded from CDN at runtime;
+the optional Observability backend connects to a user-operated Prometheus
+over HTTP. Consult each project's license for your own compliance needs.
