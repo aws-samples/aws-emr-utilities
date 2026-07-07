@@ -11,6 +11,32 @@ Right-size your Spark jobs on EMR Serverless. Two tools, one goal: optimal confi
 
 Use the T-shirt sizer when you want configs fast. Use the Fine Tuner when you want configs tuned to your exact workload.
 
+## Web UI
+
+Both tools (and more) are available through a local web UI — see
+[WEBUI_README.md](WEBUI_README.md) for setup. It adds:
+
+- **Config Advisor page**: drag-and-drop raw Spark event logs (EMR Serverless
+  or EMR on EC2; single files or zipped rolling directories) — extraction
+  runs server-side. Results include bottleneck classification, cost/perf
+  recommendations, run cost, Spark-UI-style query plans with per-operator
+  failure attribution, and a recommended-vs-submitted config audit.
+- **EC2 → Serverless migration**: EC2 logs are auto-detected and translated;
+  upload an EC2 baseline plus a Serverless attempt for a migration-mode
+  comparison.
+- **Compare two runs**: metric deltas, config diff, and per-stage CPU-per-GB
+  analysis to localize regressions.
+- **Observability**: live driver/executor dashboards (heap, RSS, CPU, GC,
+  disk, tasks) for metrics-enabled job runs, backed by a self-hosted
+  Prometheus.
+- **Ask AI** (optional): an embedded assistant that grounds its answers in
+  the analyses, the EMR Serverless API, and live metrics.
+
+```bash
+pip install fastapi 'uvicorn[standard]' python-multipart jinja2 boto3
+python3 app.py    # http://localhost:5000
+```
+
 ---
 
 ## T-Shirt Sizing
