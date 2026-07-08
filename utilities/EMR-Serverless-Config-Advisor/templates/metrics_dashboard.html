@@ -1,0 +1,363 @@
+{% extends "base.html" %}
+{% block title %}Observability — EMR Serverless Advisor{% endblock %}
+{% block topbar_crumb %}Observability{% endblock %}
+
+{% block extra_head %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <style>
+    .dash-controls { display: flex; gap: 12px; align-items: center; margin: 16px 0; flex-wrap: wrap; }
+    .section { margin: 22px 0; }
+    .section-header { padding: 8px 14px; border-radius: 8px 8px 0 0; font-weight: 600; color: #fff; font-size: 15px; }
+    .section-header.overview { background: #9B8FD4; }
+    .section-header.driver { background: #FFAD4A; }
+    .section-header.executor { background: #4DA3D4; }
+    .section-header.jobs { background: #5CB85C; }
+    .section-body { border: 1px solid #EAEEF2; border-top: none; border-radius: 0 0 8px 8px; padding: 14px; background: #FAFBFC; }
+    .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .stat-card { background: #fff; border: 1px solid #EAEEF2; border-radius: 8px; padding: 14px; text-align: center; }
+    .stat-card .value { font-size: 44px; font-weight: 700; line-height: 1.1; }
+    .stat-card .label { color: #666; font-size: 13px; margin-top: 4px; }
+    .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .panel { background: #fff; border: 1px solid #EAEEF2; border-radius: 8px; padding: 12px; }
+    .panel h4 { margin: 0 0 4px; font-size: 14px; }
+    .panel .hint { color: #888; font-size: 11px; margin: 0 0 6px; }
+    .live-dot { display:inline-block; width:10px; height:10px; border-radius:50%; background:#5CB85C; margin-right:6px; }
+    .live-dot.paused { background:#aaa; }
+    canvas { max-height: 210px; }
+    .hint { color: #888; font-size: 12px; }
+  </style>
+{% endblock %}
+
+{% block content %}
+    <div class="breadcrumbs">
+      <a href="/">EMR Serverless Advisor</a><span class="sep">&rsaquo;</span><span class="current">Observability</span>
+    </div>
+    <h1 class="page-title">Observability</h1>
+    <p class="page-subtitle">Live driver and executor resources for metrics-enabled job runs</p>
+
+    <div class="dash-controls">
+      <label>Application:
+        <select id="emrAppSelect"><option value="">loading…</option></select>
+      </label>
+      <label>Job run:
+        <select id="appSelect"><option value="">loading…</option></select>
+      </label>
+      <label>Window:
+        <select id="windowSelect">
+          <option value="900">last 15 min</option>
+          <option value="3600" selected>last 1 h</option>
+          <option value="21600">last 6 h</option>
+          <option value="86400">last 24 h</option>
+        </select>
+      </label>
+      <label><input type="checkbox" id="liveToggle" checked> <span class="live-dot" id="liveDot"></span>live (30s)</label>
+      <span id="status" class="hint"></span>
+    </div>
+
+    <!-- ===== Resource overview (stat cards) ===== -->
+    <div class="section">
+      <div class="section-header overview">Resource overview</div>
+      <div class="section-body">
+        <div class="stat-grid">
+          <div class="stat-card"><div class="value" id="statJobs">–</div><div class="label">Jobs running</div></div>
+          <div class="stat-card"><div class="value" id="statStages">–</div><div class="label">Stages running</div></div>
+          <div class="stat-card"><div class="value" id="statTasks">–</div><div class="label">Tasks running</div></div>
+          <div class="stat-card"><div class="value" id="statExecutors">–</div><div class="label">Executors</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Driver resources ===== -->
+    <div class="section">
+      <div class="section-header driver">Driver resources</div>
+      <div class="section-body">
+        <div class="chart-grid">
+          <div class="panel">
+            <h4>Driver heap used (GB)</h4>
+            <p class="hint">dotted line = heap max — the gap is your OOM headroom</p>
+            <canvas id="drvHeap"></canvas>
+          </div>
+          <div class="panel">
+            <h4>Driver process RSS (GB)</h4>
+            <p class="hint">JVM + Python + other — what the container OOM-killer (137) sees</p>
+            <canvas id="drvRss"></canvas>
+          </div>
+          <div class="panel">
+            <h4>Driver CPU (cores)</h4>
+            <canvas id="drvCpu"></canvas>
+          </div>
+          <div class="panel">
+            <h4>Driver GC (ms/s)</h4>
+            <p class="hint">sustained &gt;100 ms/s = heap pressure (GC thrash)</p>
+            <canvas id="drvGc"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Executor resources ===== -->
+    <div class="section">
+      <div class="section-header executor">Executor resources</div>
+      <div class="section-body">
+        <div class="chart-grid">
+          <div class="panel">
+            <h4>Executor heap used (GB)</h4>
+            <canvas id="exeHeap"></canvas>
+          </div>
+          <div class="panel">
+            <h4>Executor process RSS (GB)</h4>
+            <canvas id="exeRss"></canvas>
+          </div>
+          <div class="panel">
+            <h4>Executor CPU (cores)</h4>
+            <canvas id="exeCpu"></canvas>
+          </div>
+          <div class="panel">
+            <h4>Executor GC (ms/s)</h4>
+            <canvas id="exeGc"></canvas>
+          </div>
+          <div class="panel">
+            <h4>Executor disk used (GB)</h4>
+            <p class="hint">BlockManager disk (shuffle + spill + cached blocks)</p>
+            <canvas id="exeDisk"></canvas>
+          </div>
+          <div class="panel">
+            <h4>Active tasks per executor</h4>
+            <p class="hint">flat at cores = fully utilized; 0 while others work = skew</p>
+            <canvas id="exeTasks"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Spark job status ===== -->
+    <div class="section">
+      <div class="section-header jobs">Spark job status</div>
+      <div class="section-body">
+        <div class="chart-grid">
+          <div class="panel">
+            <h4>Jobs by status</h4>
+            <p class="hint">needs spark.metrics.appStatusSource.enabled=true</p>
+            <canvas id="jobStatus"></canvas>
+          </div>
+          <div class="panel">
+            <h4>Stages by status</h4>
+            <canvas id="stageStatus"></canvas>
+          </div>
+          <div class="panel">
+            <h4>Tasks completed (cumulative)</h4>
+            <canvas id="taskDone"></canvas>
+          </div>
+          <div class="panel">
+            <h4>Task failures</h4>
+            <canvas id="taskFail"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<script>
+const GB = 1024 ** 3;
+const DRIVER = 'exec_id="driver"';
+const EXEC = 'exec_id!="driver"';
+
+const PANELS = [
+  // Driver
+  { canvas: "drvHeap", scale: 1/GB, query: `spark_jvm_heap_used{app_id="{app}",${DRIVER}}`,
+    overlay: { query: `spark_jvm_heap_max{app_id="{app}",${DRIVER}}`, label: "heap max", dash: [6,4] } },
+  { canvas: "drvRss", scale: 1/GB,
+    query: `sum by (exec_id) ({__name__=~"spark_executor_metrics_ProcessTree(JVM|Python|Other)RSSMemory", app_id="{app}", ${DRIVER}})` },
+  { canvas: "drvCpu", scale: 1, query: `rate(spark_jvm_cpu_time_ns{app_id="{app}",${DRIVER}}[1m]) / 1e9` },
+  { canvas: "drvGc", scale: 1, query: `sum by (exec_id) (rate(spark_executor_metrics_TotalGCTime{app_id="{app}",${DRIVER}}[1m]))` },
+  // Executors
+  { canvas: "exeHeap", scale: 1/GB, query: `spark_jvm_heap_used{app_id="{app}",${EXEC}}`,
+    overlay: { query: `max(spark_jvm_heap_max{app_id="{app}",${EXEC}})`, label: "heap max", dash: [6,4] } },
+  { canvas: "exeRss", scale: 1/GB,
+    query: `sum by (exec_id) ({__name__=~"spark_executor_metrics_ProcessTree(JVM|Python|Other)RSSMemory", app_id="{app}", ${EXEC}})` },
+  { canvas: "exeCpu", scale: 1, query: `rate(spark_jvm_cpu_time_ns{app_id="{app}",${EXEC}}[1m]) / 1e9` },
+  { canvas: "exeGc", scale: 1, query: `sum by (exec_id) (rate(spark_executor_metrics_TotalGCTime{app_id="{app}",${EXEC}}[1m]))` },
+  { canvas: "exeDisk", scale: 1/GB, query: `spark_blockmanager_disk_diskSpaceUsed_MB{app_id="{app}"} * 1024 * 1024` },
+  { canvas: "exeTasks", scale: 1, query: `spark_executor_threadpool_activeTasks{app_id="{app}",${EXEC}}` },
+  // Job status — running/active gauges come from DAGScheduler; cumulative
+  // counters from appStatus (spark.metrics.appStatusSource.enabled=true)
+  { canvas: "jobStatus", scale: 1, labelBy: "status", query:
+    `label_replace(spark_dagscheduler_job_activeJobs{app_id="{app}",${DRIVER}}, "status","active","","")
+      or label_replace(spark_app_jobs_succeededJobs{app_id="{app}",${DRIVER}}, "status","succeeded","","")
+      or label_replace(spark_app_jobs_failedJobs{app_id="{app}",${DRIVER}}, "status","failed","","")` },
+  { canvas: "stageStatus", scale: 1, labelBy: "status", query:
+    `label_replace(spark_dagscheduler_stage_runningStages{app_id="{app}",${DRIVER}}, "status","running","","")
+      or label_replace(spark_dagscheduler_stage_waitingStages{app_id="{app}",${DRIVER}}, "status","waiting","","")
+      or label_replace(spark_app_stages_completedStages{app_id="{app}",${DRIVER}}, "status","completed","","")
+      or label_replace(spark_app_stages_failedStages{app_id="{app}",${DRIVER}}, "status","failed","","")
+      or label_replace(spark_app_stages_skippedStages{app_id="{app}",${DRIVER}}, "status","skipped","","")` },
+  { canvas: "taskDone", scale: 1, query: `spark_app_tasks_completedTasks{app_id="{app}",${DRIVER}}` },
+  { canvas: "taskFail", scale: 1, query: `spark_app_tasks_failedTasks{app_id="{app}",${DRIVER}}` },
+];
+
+// Stat cards: instant queries evaluated at "now" (or end of window)
+const STATS = [
+  { el: "statJobs", query: `spark_dagscheduler_job_activeJobs{app_id="{app}"}` },
+  { el: "statStages", query: `spark_dagscheduler_stage_runningStages{app_id="{app}"}` },
+  { el: "statTasks", query: `sum(spark_executor_threadpool_activeTasks{app_id="{app}",${EXEC}})` },
+  { el: "statExecutors", query: `count(count by (exec_id) (spark_jvm_heap_used{app_id="{app}",${EXEC}}))` },
+];
+
+const COLORS = ["#E87461","#3498db","#5CB85C","#9B8FD4","#FFAD4A","#1abc9c","#34495e","#FFAD4A","#D65A47","#4DA3D4"];
+const charts = {};
+
+function mkChart(id) {
+  return new Chart(document.getElementById(id), {
+    type: "line",
+    data: { datasets: [] },
+    options: {
+      animation: false, responsive: true,
+      scales: { x: { type: "linear", ticks: { callback: v => new Date(v*1000).toLocaleTimeString() } },
+                y: { beginAtZero: true } },
+      plugins: { legend: { labels: { boxWidth: 12, font: { size: 10 } } } },
+      elements: { point: { radius: 0 } },
+    },
+  });
+}
+
+async function q(query, appId, start, end, step) {
+  const u = `/api/metrics/query_range?query=${encodeURIComponent(query.replaceAll("{app}", appId))}&start=${start}&end=${end}&step=${step}`;
+  const r = await fetch(u);
+  const j = await r.json();
+  if (j.status !== "success") throw new Error(j.error || "query failed");
+  return j.data.result;
+}
+
+function seriesLabel(metric, labelBy) {
+  if (labelBy && metric[labelBy]) return metric[labelBy];
+  const e = metric.exec_id || "?";
+  return e === "driver" ? "driver" : `executor ${e}`;
+}
+
+async function refresh() {
+  const appId = document.getElementById("appSelect").value;
+  if (!appId) return;
+  const winSec = parseInt(document.getElementById("windowSelect").value);
+  const end = Math.floor(Date.now() / 1000);
+  const start = end - winSec;
+  const step = Math.max(15, Math.floor(winSec / 200)) + "s";
+  document.getElementById("status").textContent = "refreshing…";
+
+  await Promise.all(PANELS.map(async p => {
+    try {
+      const results = await q(p.query, appId, start, end, step);
+      const ch = charts[p.canvas];
+      const ds = results.map((r, i) => ({
+        label: seriesLabel(r.metric, p.labelBy),
+        data: r.values.map(([t, v]) => ({ x: +t, y: +v * p.scale })),
+        borderColor: COLORS[i % COLORS.length],
+        borderWidth: 1.5, fill: false,
+      }));
+      if (p.overlay) {
+        try {
+          const ov = await q(p.overlay.query, appId, start, end, step);
+          if (ov.length) ds.push({
+            label: p.overlay.label,
+            data: ov[0].values.map(([t, v]) => ({ x: +t, y: +v * p.scale })),
+            borderColor: "#555", borderDash: p.overlay.dash, borderWidth: 1.5, fill: false,
+          });
+        } catch (e) { /* overlay optional */ }
+      }
+      ch.data.datasets = ds;
+      ch.update();
+    } catch (e) { console.error(p.canvas, e); }
+  }));
+
+  // stat cards — use last value in window so finished jobs still show
+  await Promise.all(STATS.map(async s => {
+    try {
+      const results = await q(s.query, appId, start, end, step);
+      let v = "–";
+      if (results.length) {
+        const vals = results[0].values;
+        v = Math.round(+vals[vals.length - 1][1]);
+      }
+      document.getElementById(s.el).textContent = v;
+    } catch (e) { document.getElementById(s.el).textContent = "–"; }
+  }));
+
+  document.getElementById("status").textContent = "updated " + new Date().toLocaleTimeString();
+}
+
+// Selector model: Application = EMR Serverless application id,
+// Job run = EMR Serverless job run id (which IS the Spark app id that
+// Prometheus stores in the app_id label).
+const LOOKBACK_HOURS = 48;
+const PRESELECT_JOB = "{{ app_id }}";
+
+function fillSelect(sel, items, valueKey, labelFn) {
+  sel.innerHTML = "";
+  items.forEach(it => {
+    const o = document.createElement("option");
+    o.value = valueKey ? it[valueKey] : it;
+    o.textContent = labelFn ? labelFn(it) : it;
+    sel.appendChild(o);
+  });
+}
+
+async function loadJobsForApp(emrAppId) {
+  const jobSel = document.getElementById("appSelect");
+  jobSel.innerHTML = "<option value=''>loading…</option>";
+  const r = await fetch(`/api/emr/jobs?application_id=${encodeURIComponent(emrAppId)}&hours=${LOOKBACK_HOURS}`);
+  const j = await r.json();
+  const jobs = j.jobs || [];
+  fillSelect(jobSel, jobs, "id",
+    jb => `${jb.name || jb.id} (${jb.id}, ${jb.state})`);
+  if (PRESELECT_JOB) jobSel.value = PRESELECT_JOB;
+  if (!jobSel.value && jobSel.options.length) jobSel.selectedIndex = 0;
+  refresh();
+}
+
+async function loadFallbackJobList() {
+  // No EMR API access — flat list of job run ids straight from Prometheus
+  const r = await fetch(`/api/metrics/apps?hours=${LOOKBACK_HOURS}`);
+  const j = await r.json();
+  const jobSel = document.getElementById("appSelect");
+  fillSelect(jobSel, j.apps || []);
+  if (PRESELECT_JOB) jobSel.value = PRESELECT_JOB;
+  if (!jobSel.value && jobSel.options.length) jobSel.selectedIndex = jobSel.options.length - 1;
+  refresh();
+}
+
+async function loadApps() {
+  const appSel = document.getElementById("emrAppSelect");
+  try {
+    const r = await fetch(`/api/emr/applications?hours=${LOOKBACK_HOURS}`);
+    const j = await r.json();
+    const apps = j.applications || [];
+    if (!apps.length) throw new Error(j.error || "no applications");
+    fillSelect(appSel, apps, "id",
+      a => `${a.name} (${a.id}, ${a.metricJobCount} jobs)`);
+    appSel.addEventListener("change", () => loadJobsForApp(appSel.value));
+    await loadJobsForApp(appSel.value);
+  } catch (e) {
+    console.warn("EMR application list unavailable, falling back:", e);
+    fillSelect(appSel, []);
+    appSel.innerHTML = "<option value=''>unavailable</option>";
+    await loadFallbackJobList();
+  }
+}
+
+// Ask-AI grounding: what's currently selected on this page
+window.aiPageContext = () => ({
+  page: "observability",
+  application_id: document.getElementById("emrAppSelect").value || undefined,
+  job_run_id: document.getElementById("appSelect").value || undefined,
+  window_seconds: parseInt(document.getElementById("windowSelect").value),
+});
+
+PANELS.forEach(p => charts[p.canvas] = mkChart(p.canvas));
+document.getElementById("appSelect").addEventListener("change", refresh);
+document.getElementById("windowSelect").addEventListener("change", refresh);
+setInterval(() => {
+  const live = document.getElementById("liveToggle").checked;
+  document.getElementById("liveDot").classList.toggle("paused", !live);
+  if (live) refresh();
+}, 30000);
+loadApps();
+</script>
+{% endblock %}

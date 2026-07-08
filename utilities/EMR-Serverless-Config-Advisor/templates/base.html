@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}EMR Serverless Advisor{% endblock %}</title>
+    <link rel="stylesheet" href="/static/console.css?v={{ asset_v('console.css') }}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="console">
+    <div class="topbar">
+        <span class="hamburger"><span></span><span></span><span></span></span>
+        <span class="emr-badge">EMR</span>
+        <a class="crumb" href="/">EMR Serverless Advisor</a>
+        <span class="crumb-sep">&rsaquo;</span>
+        <span class="crumb muted">{% block topbar_crumb %}Home{% endblock %}</span>
+        <div class="topbar-right">
+            <span>us-east-1</span>
+            <span class="top-icon">?</span>
+        </div>
+    </div>
+
+    <div class="shell">
+        <nav class="sidebar">
+            <div class="sidebar-title">EMR Serverless Advisor</div>
+            <a class="nav-item {{ 'active' if active == 'home' }}" href="/">Home</a>
+            <div class="nav-group-label">Tools</div>
+            <a class="nav-item {{ 'active' if active == 'config-advisor' }}" href="/config-advisor">Config Advisor</a>
+            <a class="nav-item {{ 'active' if active == 'observability' }}" href="/metrics-dashboard">Observability</a>
+            <div class="nav-group-label">Developers</div>
+            <a class="nav-item" href="/docs">API reference</a>
+            <div class="sidebar-foot">OSS stack: FastAPI &middot; Prometheus &middot; Chart.js</div>
+        </nav>
+
+        <main class="main {% block main_class %}{% endblock %}">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- ===== Ask AI chat widget ===== -->
+    <button id="aiFab" title="Ask AI">✦ Ask AI</button>
+    <div id="aiPanel" hidden>
+        <div class="ai-head">
+            <span>✦ Advisor AI</span>
+            <span class="ai-hint" id="aiCtxHint"></span>
+            <button id="aiClose" aria-label="close">×</button>
+        </div>
+        <div class="ai-msgs" id="aiMsgs">
+            <div class="ai-msg assistant">Ask me about this job's metrics or configs —
+            I can pull the submitted Spark confs, live Prometheus metrics, and
+            Config Advisor recommendations to give a grounded opinion.</div>
+        </div>
+        <form id="aiForm">
+            <input id="aiInput" placeholder="e.g. is the driver memory sized right for this run?" autocomplete="off">
+            <button type="submit" id="aiSend">Send</button>
+        </form>
+    </div>
+
+    <script>
+    (function () {
+        const fab = document.getElementById("aiFab");
+        const panel = document.getElementById("aiPanel");
+        const msgs = document.getElementById("aiMsgs");
+        const form = document.getElementById("aiForm");
+        const input = document.getElementById("aiInput");
+        const send = document.getElementById("aiSend");
+        const history = [];
+
+        fab.addEventListener("click", () => {
+            panel.hidden = !panel.hidden;
+            if (!panel.hidden) {
+                const ctx = window.aiPageContext ? window.aiPageContext() : {};
+                document.getElementById("aiCtxHint").textContent =
+                    ctx.job_run_id ? `context: ${ctx.job_run_id}` :
+                    ctx.application_id ? `context: ${ctx.application_id}` : "";
+                input.focus();
+            }
+        });
+        document.getElementById("aiClose").addEventListener("click", () => panel.hidden = true);
+
+        function addMsg(cls, text) {
+            const d = document.createElement("div");
+            d.className = "ai-msg " + cls;
+            d.textContent = text;
+            msgs.appendChild(d);
+            msgs.scrollTop = msgs.scrollHeight;
+            return d;
+        }
+
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const q = input.value.trim();
+            if (!q || send.disabled) return;
+            input.value = "";
+            send.disabled = true;
+            addMsg("user", q);
+            history.push({ role: "user", content: q });
+
+            const thinking = addMsg("status", "thinking…");
+            let answer = null, answerText = "";
+            try {
+                // Pages define window.aiPageContext() to describe what's on screen
+                const ctx = window.aiPageContext ? window.aiPageContext() : {};
+                const r = await fetch("/api/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ messages: history, page_context: ctx }),
+                });
+                if (!r.ok) throw new Error("chat backend " + r.status);
+                const reader = r.body.getReader();
+                const dec = new TextDecoder();
+                let buf = "";
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    buf += dec.decode(value, { stream: true });
+                    const lines = buf.split("\n");
+                    buf = lines.pop();
+                    for (const line of lines) {
+                        if (!line.trim()) continue;
+                        const ev = JSON.parse(line);
+                        if (ev.type === "tool") {
+                            thinking.textContent = `⚙ ${ev.name}(${JSON.stringify(ev.input).slice(0, 80)})`;
+                        } else if (ev.type === "text") {
+                            if (!answer) { thinking.remove(); answer = addMsg("assistant", ""); }
+                            answerText += ev.text;
+                            answer.textContent = answerText;
+                            msgs.scrollTop = msgs.scrollHeight;
+                        }
+                    }
+                }
+                if (!answer) { thinking.textContent = "(no answer)"; }
+                else history.push({ role: "assistant", content: answerText });
+            } catch (err) {
+                thinking.textContent = "error: " + err.message;
+            } finally {
+                send.disabled = false;
+                input.focus();
+            }
+        });
+    })();
+    </script>
+</body>
+</html>

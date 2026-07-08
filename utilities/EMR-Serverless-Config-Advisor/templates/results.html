@@ -1,0 +1,383 @@
+{% extends "base.html" %}
+{% block title %}Analysis Results — EMR Serverless Advisor{% endblock %}
+{% block topbar_crumb %}Config Advisor{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/advisor.css?v={{ asset_v('advisor.css') }}">{% endblock %}
+
+{% block content %}
+<div class="breadcrumbs">
+    <a href="/">EMR Serverless Advisor</a><span class="sep">&rsaquo;</span><a href="/config-advisor">Config Advisor</a><span class="sep">&rsaquo;</span><span class="current">Results</span>
+</div>
+
+<a href="/config-advisor" class="back-link">&larr; New Analysis</a>
+<h1 class="page-title">Analysis Results</h1>
+<p class="page-subtitle">{{ result.application_name }} <span class="app-id">({{ result.application_id }})</span></p>
+
+{% if result.source_platform == 'emr-ec2' %}
+<div class="flash" style="background:#EDF6FC;border:1px solid #4DA3D4;color:#2F6E96;">
+  <b>EMR on EC2 source detected</b> — recommendations below are the
+  <b>EC2 &rarr; Serverless migration</b> translation: instance-based sizing mapped to
+  Serverless workers, fleet sized with the Serverless efficiency gain, worker memory
+  at tier maximum (EC2 peak metrics undercount Serverless needs).
+</div>
+{% endif %}
+{% if result.metrics_summary.failed_tasks or result.metrics_summary.dead_executors %}
+<div class="flash" style="background:#FFF6EA;border:1px solid #FFAD4A;color:#8A5A1F;">
+  <b>Run health:</b> {{ result.metrics_summary.failed_tasks }} failed /
+  {{ result.metrics_summary.killed_tasks }} killed tasks of
+  {{ "{:,}".format(result.metrics_summary.total_tasks) }},
+  {{ result.metrics_summary.dead_executors }} executors lost
+  {%- if result.metrics_summary.dead_executor_reasons %}
+    ({{ result.metrics_summary.dead_executor_reasons.items() | map('join', ': ') | join(', ') }})
+  {%- endif %}.
+</div>
+{% endif %}
+
+        <!-- Summary Cards -->
+        <div class="summary-grid">
+            <div class="summary-card">
+                <div class="summary-value">{{ "%.1f"|format(result.duration_hours or 0) }}h</div>
+                <div class="summary-label">Duration</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-value">{{ "{:,}".format(result.metrics_summary.total_tasks) }}</div>
+                <div class="summary-label">Total Tasks</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-value">{{ "%.1f"|format(result.bottleneck.avg_task_time_sec) }}s</div>
+                <div class="summary-label">Avg Task Time</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-value">{{ result.metrics_summary.total_executors }}</div>
+                <div class="summary-label">Executors</div>
+            </div>
+            {% if result.run_cost %}
+            <div class="summary-card">
+                <div class="summary-value">${{ "%.4f"|format(result.run_cost.cost_usd) }}</div>
+                <div class="summary-label">Run cost ({{ result.run_cost.source }})</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-value">{{ "%.2f"|format(result.run_cost.vcpu_hours) }} / {{ "%.1f"|format(result.run_cost.memory_gb_hours) }}</div>
+                <div class="summary-label">vCPU-h / GB-h</div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Bottleneck Classification -->
+        <section class="section bottleneck-section">
+            <h2>Bottleneck Classification</h2>
+            <div class="bottleneck-primary">
+                <span class="bottleneck-badge {{ result.bottleneck.primary|lower|replace(' ', '-') }}">
+                    {{ result.bottleneck.primary }}
+                </span>
+                <span class="bottleneck-score">Score: {{ result.bottleneck.primary_score }}/100</span>
+            </div>
+            <p class="bottleneck-explanation">{{ result.bottleneck.explanation }}</p>
+
+            <div class="bottleneck-bars">
+                {% for name, score in result.bottleneck.scores.items() %}
+                <div class="bar-row">
+                    <span class="bar-label">{{ name }}</span>
+                    <div class="bar-track">
+                        <div class="bar-fill {{ 'bar-high' if score >= 60 else ('bar-med' if score >= 30 else 'bar-low') }}"
+                             style="width: {{ score }}%"></div>
+                    </div>
+                    <span class="bar-value">{{ score }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- IO Metrics -->
+        <section class="section">
+            <h2>I/O Profile</h2>
+            <div class="metrics-grid">
+                <div class="metric">
+                    <span class="metric-value">{{ "%.1f"|format(result.metrics_summary.total_input_gb) }} GB</span>
+                    <span class="metric-label">Input</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-value">{{ "%.1f"|format(result.metrics_summary.total_shuffle_read_gb) }} GB</span>
+                    <span class="metric-label">Shuffle Read</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-value">{{ "%.1f"|format(result.metrics_summary.total_shuffle_write_gb) }} GB</span>
+                    <span class="metric-label">Shuffle Write</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-value">{{ "%.1f"|format(result.metrics_summary.total_memory_spill_gb) }} GB</span>
+                    <span class="metric-label">Mem Spill</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-value">{{ "%.1f"|format(result.metrics_summary.total_disk_spill_gb) }} GB</span>
+                    <span class="metric-label">Disk Spill</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-value">{{ "%.0f"|format(result.metrics_summary.avg_cpu_util_pct) }}%</span>
+                    <span class="metric-label">Avg CPU</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-value">{{ "%.0f"|format(result.metrics_summary.avg_memory_util_pct) }}%</span>
+                    <span class="metric-label">Avg Memory</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-value">{{ "%.0f"|format(result.metrics_summary.idle_core_pct) }}%</span>
+                    <span class="metric-label">Idle Cores</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recommendations Side by Side -->
+        <section class="section">
+            <h2>Worker Recommendations</h2>
+            <div class="rec-grid">
+                <!-- Cost Optimized -->
+                <div class="rec-card">
+                    <h3 class="rec-title cost">Cost Optimized</h3>
+                    {% if result.cost_recommendation.worker %}
+                    <div class="worker-spec">
+                        <div class="worker-type">{{ result.cost_recommendation.worker.type }}</div>
+                        <div class="worker-details">
+                            {{ result.cost_recommendation.worker.vcpu }}c / {{ result.cost_recommendation.worker.memory_gb }}G
+                        </div>
+                    </div>
+                    <table class="rec-table">
+                        <tr><td>Max Executors</td><td>{{ result.cost_recommendation.worker.max_executors }}</td></tr>
+                        <tr><td>Min Executors</td><td>{{ result.cost_recommendation.worker.min_executors }}</td></tr>
+                        <tr><td>Total vCPU</td><td>{{ result.cost_recommendation.worker.total_vcpu_capacity }}</td></tr>
+                        <tr><td>Total Memory</td><td>{{ result.cost_recommendation.worker.total_memory_capacity }} GB</td></tr>
+                        {% if result.cost_recommendation.shuffle_tuned %}
+                        <tr><td>Partitions</td><td>{{ result.cost_recommendation.shuffle_tuned.partitions }}</td></tr>
+                        {% endif %}
+                    </table>
+                    {% endif %}
+                </div>
+
+                <!-- Performance Optimized -->
+                <div class="rec-card">
+                    <h3 class="rec-title perf">Performance Optimized</h3>
+                    {% if result.perf_recommendation.worker %}
+                    <div class="worker-spec">
+                        <div class="worker-type">{{ result.perf_recommendation.worker.type }}</div>
+                        <div class="worker-details">
+                            {{ result.perf_recommendation.worker.vcpu }}c / {{ result.perf_recommendation.worker.memory_gb }}G
+                        </div>
+                    </div>
+                    <table class="rec-table">
+                        <tr><td>Max Executors</td><td>{{ result.perf_recommendation.worker.max_executors }}</td></tr>
+                        <tr><td>Min Executors</td><td>{{ result.perf_recommendation.worker.min_executors }}</td></tr>
+                        <tr><td>Total vCPU</td><td>{{ result.perf_recommendation.worker.total_vcpu_capacity }}</td></tr>
+                        <tr><td>Total Memory</td><td>{{ result.perf_recommendation.worker.total_memory_capacity }} GB</td></tr>
+                        {% if result.perf_recommendation.shuffle_tuned %}
+                        <tr><td>Partitions</td><td>{{ result.perf_recommendation.shuffle_tuned.partitions }}</td></tr>
+                        {% endif %}
+                    </table>
+                    {% endif %}
+                </div>
+            </div>
+        </section>
+
+        <!-- Bottleneck Warnings -->
+        {% if result.cost_recommendation.get('bottleneck_warnings') %}
+        <section class="section">
+            <h2>Bottleneck Warnings</h2>
+            {% for warning in result.cost_recommendation.bottleneck_warnings %}
+            <div class="warning-card {{ warning.severity|lower }}">
+                <div class="warning-header">
+                    <span class="warning-severity">{{ warning.severity }}</span>
+                    <span class="warning-type">{{ warning.type }}</span>
+                </div>
+                <p class="warning-message">{{ warning.message }}</p>
+                {% if warning.recommendation %}
+                <code class="warning-rec">{{ warning.recommendation }}</code>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </section>
+        {% endif %}
+
+        <!-- Spark Configs -->
+        <section class="section">
+            <h2>Recommended Spark Configs (Cost)</h2>
+            {% if result.cost_recommendation.spark_configs %}
+            <div class="config-block">
+                <button class="copy-btn" onclick="copyConfigs('cost-configs')">Copy</button>
+                <pre id="cost-configs"><code>{% for key, value in result.cost_recommendation.spark_configs.items()|sort %}--conf {{ key }}={{ value }}
+{% endfor %}</code></pre>
+            </div>
+            {% endif %}
+        </section>
+
+        <section class="section">
+            <h2>Recommended Spark Configs (Performance)</h2>
+            {% if result.perf_recommendation.spark_configs %}
+            <div class="config-block">
+                <button class="copy-btn" onclick="copyConfigs('perf-configs')">Copy</button>
+                <pre id="perf-configs"><code>{% for key, value in result.perf_recommendation.spark_configs.items()|sort %}--conf {{ key }}={{ value }}
+{% endfor %}</code></pre>
+            </div>
+            {% endif %}
+        </section>
+
+        <!-- Query plans (Spark-UI-style, from event log sparkPlanInfo) -->
+        {% if result.query_plans %}
+        <section class="section">
+            <h2>Query plans</h2>
+            <p class="page-subtitle" style="margin-bottom:10px">
+                Physical operator trees per SQL execution with metrics from the event log —
+                like the Spark UI's SQL tab. Expand an execution; 🔥 marks the operators
+                doing the most work (rows/bytes/spill).
+            </p>
+            <div id="qp-root"></div>
+        </section>
+        <style>
+            .qp-exec { border: 1px solid var(--card-border); border-radius: 8px; margin-bottom: 8px; background: #FAFBFC; }
+            .qp-exec > summary { cursor: pointer; padding: 10px 14px; font-size: 0.88rem; font-weight: 600; color: var(--ink); }
+            .qp-exec > summary .qp-dur { color: var(--ink-muted); font-weight: 400; font-family: monospace; margin-left: 8px; }
+            .qp-tree { padding: 4px 14px 12px; overflow-x: auto; }
+            .qp-node { font-family: 'SF Mono', Menlo, monospace; font-size: 0.76rem; line-height: 1.9; white-space: nowrap; }
+            .qp-node .op { color: var(--ink); font-weight: 600; }
+            .qp-node .op.hot { color: var(--red); }
+            .qp-node .met { color: var(--blue); }
+            .qp-node .det { color: var(--ink-muted); }
+            .qp-toggle { cursor: pointer; user-select: none; color: var(--ink-muted); }
+        </style>
+        <script>
+        (function () {
+            const plans = {{ result.query_plans | tojson }};
+            const fmt = (name, v) => {
+                const n = name.toLowerCase();
+                if (n.includes("size") || n.includes("bytes") || n.includes("memory") || n.includes("spill")) {
+                    if (v >= 1024**4) return (v/1024**4).toFixed(1) + " TiB";
+                    if (v >= 1024**3) return (v/1024**3).toFixed(1) + " GiB";
+                    if (v >= 1024**2) return (v/1024**2).toFixed(1) + " MiB";
+                    if (v >= 1024) return (v/1024).toFixed(1) + " KiB";
+                    return v + " B";
+                }
+                if (n.includes("time") || n.includes("duration")) {
+                    if (v >= 3600000) return (v/3600000).toFixed(1) + " h";
+                    if (v >= 60000) return (v/60000).toFixed(1) + " m";
+                    if (v >= 1000) return (v/1000).toFixed(1) + " s";
+                    return v + " ms";
+                }
+                return v.toLocaleString();
+            };
+            const KEY_METRICS = ["number of output rows", "spill size", "shuffle bytes written",
+                "shuffle records written", "data size", "peak memory", "files read",
+                "bytes read", "records read", "time in aggregation build",
+                "sort time", "number of partitions", "written output"];
+            function maxWork(node) {
+                let w = 0;
+                for (const [k, v] of Object.entries(node.metrics || {}))
+                    if (k.includes("rows") || k.includes("bytes") || k.includes("size")) w = Math.max(w, v);
+                return Math.max(w, ...(node.children || []).map(maxWork), 0);
+            }
+            function render(node, depth, hotThreshold) {
+                const div = document.createElement("div");
+                div.className = "qp-node";
+                div.style.paddingLeft = (depth * 18) + "px";
+                let own = 0;
+                for (const [k, v] of Object.entries(node.metrics || {}))
+                    if (k.includes("rows") || k.includes("bytes") || k.includes("size")) own = Math.max(own, v);
+                const hot = hotThreshold > 0 && own >= hotThreshold;
+                const mets = Object.entries(node.metrics || {})
+                    .filter(([k]) => KEY_METRICS.some(km => k.toLowerCase().includes(km)))
+                    .sort((a, b) => b[1] - a[1]).slice(0, 4)
+                    .map(([k, v]) => `${k}: ${fmt(k, v)}`).join(" · ");
+                div.innerHTML = `${depth ? '<span class="qp-toggle">└─ </span>' : ""}` +
+                    `<span class="op${hot ? " hot" : ""}">${hot ? "🔥 " : ""}${node.name}</span>` +
+                    (mets ? ` <span class="met">[${mets}]</span>` : "") +
+                    (node.detail && depth < 2 ? `<br><span class="det" style="padding-left:${depth*18+22}px">${node.detail.slice(0, 130)}</span>` : "");
+                const frag = document.createDocumentFragment();
+                frag.appendChild(div);
+                (node.children || []).forEach(c => frag.appendChild(render(c, depth + 1, hotThreshold)));
+                return frag;
+            }
+            const root = document.getElementById("qp-root");
+            plans.forEach(p => {
+                const det = document.createElement("details");
+                det.className = "qp-exec";
+                const dur = p.duration_ms ? (p.duration_ms >= 60000 ?
+                    (p.duration_ms/60000).toFixed(1) + " min" : (p.duration_ms/1000).toFixed(1) + " s") : "";
+                det.innerHTML = `<summary>#${p.execution_id} ${p.description || "(unnamed)"}<span class="qp-dur">${dur}</span></summary>`;
+                const tree = document.createElement("div");
+                tree.className = "qp-tree";
+                det.appendChild(tree);
+                let rendered = false;
+                det.addEventListener("toggle", () => {
+                    if (det.open && !rendered) {
+                        rendered = true;
+                        tree.appendChild(render(p.plan, 0, maxWork(p.plan) * 0.5));
+                    }
+                });
+                root.appendChild(det);
+            });
+            // auto-open the longest execution
+            if (plans.length) {
+                let hottest = plans.reduce((a, b) => (b.duration_ms || 0) > (a.duration_ms || 0) ? b : a);
+                const idx = plans.indexOf(hottest);
+                root.children[idx] && (root.children[idx].open = true);
+            }
+        })();
+        </script>
+        {% endif %}
+
+        <!-- Config audit: recommended vs submitted, computed server-side -->
+        {% if result.config_audit %}
+        <section class="section">
+            <h2>Config audit — recommended vs submitted</h2>
+            <p class="page-subtitle" style="margin-bottom:8px">
+                Computed deterministically from the event log. "not captured" = submit-only
+                parameters (e.g. executor disk) that event logs never carry — check your
+                actual submit parameters for those.
+            </p>
+            <table class="rec-table">
+                <tr><th style="text-align:left">Property</th><th style="text-align:left">Recommended</th><th style="text-align:left">Submitted</th><th style="text-align:left">Status</th></tr>
+                {% for r in result.config_audit %}
+                {% if r.status != 'match' %}
+                <tr>
+                    <td style="font-family:monospace;font-size:0.78rem">{{ r.key }}</td>
+                    <td style="font-family:monospace;font-size:0.78rem">{{ r.recommended }}</td>
+                    <td style="font-family:monospace;font-size:0.78rem">{{ r.submitted }}</td>
+                    <td>{% if r.status == 'differs' %}<span style="color:var(--orange);font-weight:600">differs</span>
+                        {% elif r.status == 'absent' %}<span style="color:var(--red);font-weight:600">absent</span>
+                        {% else %}<span style="color:var(--ink-muted)">not captured in event log</span>{% endif %}</td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+            </table>
+            <p class="page-subtitle" style="margin-top:8px">
+                {{ result.config_audit | selectattr('status', 'equalto', 'match') | list | length }} of
+                {{ result.config_audit | length }} recommended properties already match.
+            </p>
+        </section>
+        {% endif %}
+
+        <!-- Source Config -->
+        <section class="section">
+            <h2>Source Spark Config</h2>
+            {% if result.spark_config_source %}
+            <div class="config-block source-config">
+                <pre><code>{% for key, value in result.spark_config_source.items()|sort %}{{ key }} = {{ value }}
+{% endfor %}</code></pre>
+            </div>
+            {% endif %}
+        </section>
+
+<script>
+    // Ask-AI grounding: the full analysis shown on this page
+    window.aiPageContext = () => ({
+        page: "config-advisor-results",
+        analysis: {{ result | tojson }},
+    });
+
+    function copyConfigs(elementId) {
+        const el = document.getElementById(elementId);
+        const text = el.textContent;
+        navigator.clipboard.writeText(text).then(() => {
+            const btn = el.parentElement.querySelector('.copy-btn');
+            btn.textContent = 'Copied!';
+            setTimeout(() => btn.textContent = 'Copy', 2000);
+        });
+    }
+</script>
+{% endblock %}

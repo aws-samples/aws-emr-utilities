@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% block title %}EMR Serverless Advisor{% endblock %}
+{% block topbar_crumb %}Home{% endblock %}
+
+{% block content %}
+<h1 class="page-title">EMR Serverless Advisor</h1>
+<p class="page-subtitle">Analyze Spark workloads, right-size workers, and watch live worker metrics — all from one place.</p>
+
+<div class="landing-info">
+    <div class="info-item">
+        <div class="k">Region</div>
+        <div class="v">us-east-1</div>
+    </div>
+    <div class="info-item">
+        <div class="k">Prometheus</div>
+        <div class="v" id="promStatus"><span class="status-dot"></span>checking…</div>
+    </div>
+    <div class="info-item">
+        <div class="k">Apps with metrics (48h)</div>
+        <div class="v" id="appCount">–</div>
+    </div>
+</div>
+
+<!-- ===== Applications & recent job runs ===== -->
+<div class="jobs-panel">
+    <div class="jobs-panel-head">
+        <h2>Applications &amp; recent job runs</h2>
+        <button class="act-btn" id="newJobBtn" title="T-shirt size a brand-new job with no run history">＋ Size a new job</button>
+        <span class="hint" id="jobsHint">last 72h · latest release <b id="latestRel">–</b></span>
+    </div>
+    <div id="jobsTables"><p class="jobs-loading">loading applications…</p></div>
+</div>
+
+<div class="landing-grid">
+    <div class="landing-card">
+        <h2>Config Advisor</h2>
+        <p class="desc">Upload an extracted event log to diagnose your workload and get sizing recommendations.</p>
+        <ul>
+            <li>Bottleneck classification — IOPS, disk throughput, memory, CPU, network</li>
+            <li>Worker sizing (4c / 8c / 16c) with memory and disk recommendations</li>
+            <li>Cost-optimized and performance-optimized Spark configs, ready to copy</li>
+        </ul>
+        <div class="card-actions">
+            <a class="btn-pill primary" href="/config-advisor">Open Config Advisor</a>
+        </div>
+        <div class="status-line">Input: task_stage_summary JSON from spark_extractor.py</div>
+    </div>
+
+    <div class="landing-card">
+        <h2>Observability</h2>
+        <p class="desc">Live and replay dashboards for driver and executor resources during a job run.</p>
+        <ul>
+            <li>Separate driver / executor views — heap, RSS, CPU, GC</li>
+            <li>Shuffle disk usage and active tasks per executor</li>
+            <li>Spark job status — jobs, stages, task completions and failures</li>
+        </ul>
+        <div class="card-actions">
+            <a class="btn-pill primary" href="/metrics-dashboard">Open Observability</a>
+        </div>
+        <div class="status-line">Source: GraphiteSink &rarr; Prometheus (metrics-enabled job runs)</div>
+    </div>
+</div>
+
+<script>
+fetch("/api/metrics/apps?hours=48").then(r => r.json()).then(j => {
+    const st = document.getElementById("promStatus");
+    if (j.apps) {
+        st.innerHTML = '<span class="status-dot ok"></span>connected';
+        document.getElementById("appCount").textContent = j.apps.length;
+    } else {
+        st.innerHTML = '<span class="status-dot bad"></span>unreachable';
+    }
+}).catch(() => {
+    document.getElementById("promStatus").innerHTML = '<span class="status-dot bad"></span>unreachable';
+});
+
+// ===== Applications & job runs table with Optimize / Troubleshoot / Upgrade =====
+const FAILED_STATES = ["FAILED", "CANCELLED", "CANCELLING"];
+
+// Home page context for the Ask-AI panel (set when an action button is clicked)
+let aiCtx = { page: "home" };
+window.aiPageContext = () => aiCtx;
+
+function askAgent(prompt, ctx) {
+    aiCtx = Object.assign({ page: "home" }, ctx);
+    const panel = document.getElementById("aiPanel");
+    if (panel.hidden) document.getElementById("aiFab").click();
+    const input = document.getElementById("aiInput");
+    input.value = prompt;
+    document.getElementById("aiForm").requestSubmit();
+}
+
+function stateBadge(state) {
+    const cls = state === "SUCCESS" ? "ok" :
+        FAILED_STATES.includes(state) ? "bad" :
+        state === "RUNNING" ? "run" : "other";
+    return `<span class="job-state ${cls}">${state}</span>`;
+}
+
+function renderOverview(data) {
+    const root = document.getElementById("jobsTables");
+    document.getElementById("latestRel").textContent = data.latestRelease;
+    if (!data.applications.length) {
+        root.innerHTML = `<p class="jobs-loading">${data.error ? "EMR API unavailable: " + data.error : "no applications active in the last 72h"}</p>`;
+        return;
+    }
+    root.innerHTML = "";
+    data.applications.forEach(app => {
+        const upg = app.upgradeAvailable;
+        const section = document.createElement("div");
+        section.className = "app-section";
+        section.innerHTML = `
+            <div class="app-row">
+                <span class="app-name">${app.name}</span>
+                <span class="app-meta">${app.id} · ${app.releaseLabel || "?"} · ${app.state}</span>
+                <button class="act-btn upgrade" ${upg ? "" : "disabled"}
+                    title="${upg ? "Plan upgrade to " + data.latestRelease : "Already on latest (" + data.latestRelease + ")"}"
+                    data-app="${app.id}" data-rel="${app.releaseLabel}">Upgrade</button>
+            </div>`;
+        const upgBtn = section.querySelector(".act-btn.upgrade");
+        if (upg) upgBtn.addEventListener("click", () =>
+            askAgent(`Plan an upgrade of application ${app.id} (${app.name}) from ${app.releaseLabel} to ${data.latestRelease}. Use get_application_details, then give a migration checklist: Spark/Java version changes, config/API breakages to check in our jobs, and a validation plan.`,
+                     { application_id: app.id }));
+
+        if (app.jobs.length) {
+            const tbl = document.createElement("table");
+            tbl.className = "jobs-table";
+            tbl.innerHTML = `<thead><tr>
+                <th>Job run</th><th>ID</th><th>Status</th><th>Started</th><th class="th-actions">Actions</th>
+            </tr></thead>`;
+            const tb = document.createElement("tbody");
+            app.jobs.forEach(job => {
+                const failed = FAILED_STATES.includes(job.state);
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td class="job-name">${job.name}${job.hasMetrics ? ` <a class="mlink" href="/metrics-dashboard?app_id=${job.id}" title="open in Observability">📈</a>` : ""}</td>
+                    <td class="mono">${job.id}</td>
+                    <td>${stateBadge(job.state)}</td>
+                    <td class="mono">${job.createdAt.slice(0, 16).replace("T", " ")}</td>
+                    <td class="td-actions">
+                        <button class="act-btn optimize">Optimize</button>
+                        <button class="act-btn troubleshoot" ${failed ? "" : "disabled"}
+                            title="${failed ? "Diagnose this failed run" : "Enabled for failed/cancelled runs"}">Troubleshoot</button>
+                    </td>`;
+                tr.querySelector(".optimize").addEventListener("click", () =>
+                    askAgent(`Optimize job run ${job.id} (${job.name}). Run run_config_advisor on it${job.hasMetrics ? " and cross-check with get_metrics_snapshot" : ""}, then give me the recommended worker sizing and Spark configs with the reasoning, cost vs performance.`,
+                             { application_id: app.id, job_run_id: job.id }));
+                tr.querySelector(".troubleshoot").addEventListener("click", () =>
+                    askAgent(`Troubleshoot job run ${job.id} (${job.name}) which is ${job.state}. Use troubleshoot_job, identify the root cause from the state details and driver stderr, and give the fix.`,
+                             { application_id: app.id, job_run_id: job.id }));
+                tb.appendChild(tr);
+            });
+            tbl.appendChild(tb);
+            section.appendChild(tbl);
+        } else {
+            section.insertAdjacentHTML("beforeend",
+                `<p class="jobs-loading">no job runs in window</p>`);
+        }
+        root.appendChild(section);
+    });
+}
+
+document.getElementById("newJobBtn").addEventListener("click", () =>
+    askAgent("I have a brand-new Spark job with no run history. Interview me briefly (input size GB, workload type, joins and largest table, expected shuffle, SLA, file count — whatever I know), then use tshirt_sizing to bucket it and give me the worker type and full spark-submit configs.",
+             { intent: "new-job-sizing" }));
+
+fetch("/api/home/overview?hours=72")
+    .then(r => r.json()).then(renderOverview)
+    .catch(e => {
+        document.getElementById("jobsTables").innerHTML =
+            `<p class="jobs-loading">failed to load: ${e.message}</p>`;
+    });
+</script>
+{% endblock %}
