@@ -240,6 +240,13 @@
             .qp-node .met { color: var(--blue); }
             .qp-node .det { color: var(--ink-muted); }
             .qp-toggle { cursor: pointer; user-select: none; color: var(--ink-muted); }
+            .qp-fail {
+                display: inline-block; background: #FDF1EF; color: var(--red);
+                border: 1px solid var(--red); border-radius: 10px;
+                font-size: 0.68rem; font-weight: 700; padding: 0 8px; margin-left: 6px;
+            }
+            .qp-fail.origin { background: var(--red); color: #fff; }
+            .qp-exec > summary .qp-fail { vertical-align: 1px; }
         </style>
         <script>
         (function () {
@@ -271,6 +278,19 @@
                     if (k.includes("rows") || k.includes("bytes") || k.includes("size")) w = Math.max(w, v);
                 return Math.max(w, ...(node.children || []).map(maxWork), 0);
             }
+            // A failure is the ORIGIN when an executor died there (exit code /
+            // ExecutorLost); FetchFailed/Resubmitted elsewhere are casualties.
+            const isOrigin = f => Object.keys(f.reasons || {}).some(r =>
+                r.includes("ExecutorLost")) || /exit|137|signal/i.test(f.sample || "");
+            function failBadge(node) {
+                if (!node.failures || !node.failures.length) return "";
+                const f = node.failures.reduce((a, b) => b.failed_tasks > a.failed_tasks ? b : a);
+                const origin = node.failures.some(isOrigin);
+                const reasons = Object.keys(f.reasons || {}).join("/");
+                const tip = (f.sample || "").replace(/"/g, "&quot;").slice(0, 220);
+                return ` <span class="qp-fail${origin ? " origin" : ""}" title="stage ${f.stage_id}: ${tip}">` +
+                    `${origin ? "💥 " : "⚠ "}stage ${f.stage_id}: ${f.failed_tasks} failed (${reasons})</span>`;
+            }
             function render(node, depth, hotThreshold) {
                 const div = document.createElement("div");
                 div.className = "qp-node";
@@ -285,6 +305,7 @@
                     .map(([k, v]) => `${k}: ${fmt(k, v)}`).join(" · ");
                 div.innerHTML = `${depth ? '<span class="qp-toggle">└─ </span>' : ""}` +
                     `<span class="op${hot ? " hot" : ""}">${hot ? "🔥 " : ""}${node.name}</span>` +
+                    failBadge(node) +
                     (mets ? ` <span class="met">[${mets}]</span>` : "") +
                     (node.detail && depth < 2 ? `<br><span class="det" style="padding-left:${depth*18+22}px">${node.detail.slice(0, 130)}</span>` : "");
                 const frag = document.createDocumentFragment();
@@ -292,13 +313,21 @@
                 (node.children || []).forEach(c => frag.appendChild(render(c, depth + 1, hotThreshold)));
                 return frag;
             }
+            function collectFailures(node, out) {
+                (node.failures || []).forEach(f => out.set(f.stage_id, f));
+                (node.children || []).forEach(c => collectFailures(c, out));
+                return out;
+            }
             const root = document.getElementById("qp-root");
             plans.forEach(p => {
                 const det = document.createElement("details");
                 det.className = "qp-exec";
                 const dur = p.duration_ms ? (p.duration_ms >= 60000 ?
                     (p.duration_ms/60000).toFixed(1) + " min" : (p.duration_ms/1000).toFixed(1) + " s") : "";
-                det.innerHTML = `<summary>#${p.execution_id} ${p.description || "(unnamed)"}<span class="qp-dur">${dur}</span></summary>`;
+                const fails = collectFailures(p.plan, new Map());
+                const failSum = fails.size
+                    ? ` <span class="qp-fail">⚠ failures in ${fails.size} stage${fails.size > 1 ? "s" : ""}</span>` : "";
+                det.innerHTML = `<summary>#${p.execution_id} ${p.description || "(unnamed)"}${failSum}<span class="qp-dur">${dur}</span></summary>`;
                 const tree = document.createElement("div");
                 tree.className = "qp-tree";
                 det.appendChild(tree);
