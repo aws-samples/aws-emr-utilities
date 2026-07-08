@@ -213,7 +213,13 @@ def _bedrock():
     global _bedrock_client
     if _bedrock_client is None:
         import boto3
-        _bedrock_client = boto3.client("bedrock-runtime", region_name=AWS_REGION)
+        from botocore.config import Config
+        # Long-context Converse calls can exceed botocore's default 60s read
+        # timeout; adaptive retries also absorb transient 503/throttling.
+        _bedrock_client = boto3.client(
+            "bedrock-runtime", region_name=AWS_REGION,
+            config=Config(connect_timeout=10, read_timeout=300,
+                          retries={"max_attempts": 3, "mode": "adaptive"}))
     return _bedrock_client
 
 
@@ -1716,13 +1722,23 @@ async def api_chat(request: Request):
     def agent_loop():
         convo = list(messages)
         for _turn in range(8):  # tool-use iteration cap
-            resp = _bedrock().converse(
-                modelId=MODEL_ID,
-                system=system,
-                messages=convo,
-                toolConfig={"tools": CHAT_TOOLS},
-                inferenceConfig={"maxTokens": 4000},
-            )
+            try:
+                resp = _bedrock().converse(
+                    modelId=MODEL_ID,
+                    system=system,
+                    messages=convo,
+                    toolConfig={"tools": CHAT_TOOLS},
+                    inferenceConfig={"maxTokens": 4000},
+                )
+            except Exception as e:
+                # Surface model-call failures as a chat message instead of
+                # letting the exception kill the stream mid-response.
+                yield json.dumps({"type": "text",
+                                  "text": f"⚠ The AI backend is unavailable "
+                                          f"({type(e).__name__}). Please retry "
+                                          f"in a moment."}) + "\n"
+                yield json.dumps({"type": "done"}) + "\n"
+                return
             out_msg = resp["output"]["message"]
             convo.append(out_msg)
 

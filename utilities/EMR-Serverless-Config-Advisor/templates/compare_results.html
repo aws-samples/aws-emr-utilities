@@ -144,6 +144,35 @@
 </section>
 {% endif %}
 
+{% if a.query_plans or b.query_plans %}
+<section class="section">
+  <h2>Query plans</h2>
+  <p class="page-subtitle" style="margin-bottom:10px">
+    Physical operator trees per SQL execution, side by side — like the Spark UI's
+    SQL tab. Expand matching executions in both runs to see where the plans (or
+    their operator metrics) diverge; 🔥 marks the heaviest operators, 💥/⚠ mark
+    failure origin vs casualties.
+  </p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start">
+    <div>
+      <span class="tag" style="display:inline-block;font-size:11px;font-weight:700;padding:2px 10px;border-radius:10px;background:#EDF6FC;color:#4DA3D4;margin-bottom:8px">RUN A{{ ' (EC2)' if migration_mode }}</span>
+      <div id="qp-root-a"></div>
+      {% if not a.query_plans %}<p class="page-subtitle">No SQL executions in this event log.</p>{% endif %}
+    </div>
+    <div>
+      <span class="tag" style="display:inline-block;font-size:11px;font-weight:700;padding:2px 10px;border-radius:10px;background:#F4F2FB;color:#9B8FD4;margin-bottom:8px">RUN B{{ ' (Serverless)' if migration_mode }}</span>
+      <div id="qp-root-b"></div>
+      {% if not b.query_plans %}<p class="page-subtitle">No SQL executions in this event log.</p>{% endif %}
+    </div>
+  </div>
+</section>
+{% include "_qp_viewer.html" %}
+<script>
+  renderQueryPlans("qp-root-a", {{ a.query_plans | tojson }});
+  renderQueryPlans("qp-root-b", {{ b.query_plans | tojson }});
+</script>
+{% endif %}
+
 <section class="section">
   <h2>Config differences ({{ config_diff|length }})</h2>
   {% if config_diff %}
