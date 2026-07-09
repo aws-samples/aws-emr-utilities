@@ -29,7 +29,7 @@ import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TOOL_DIR = os.path.dirname(HERE)
-RECOMMENDER = os.path.join(TOOL_DIR, "emr_recommender.py")
+RECOMMENDER = os.path.join(TOOL_DIR, "emr_s_fine_tuner.py")
 FIXTURES = [os.path.join(HERE, "fixtures", "b12"), os.path.join(HERE, "fixtures", "ec2_migration")]
 GOLDEN = os.path.join(HERE, "golden_baseline.json")
 

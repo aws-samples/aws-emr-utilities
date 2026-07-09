@@ -217,15 +217,30 @@ def _max_partition_bytes(input_gb: float) -> str:
     return "512m"
 
 
-def _executor_disk(shuffle_gb: float, max_exec: int) -> str:
+def _executor_disk(shuffle_gb: float, max_exec: int, worker_cores: int = 16) -> str:
     """Right-size disk: shuffle per executor × 3 safety margin (accounts for
     multi-stage accumulation, spill, and skew). Min 200G, max 2000G.
-    Minimum 500G when shuffle is significant (>100GB)."""
+    Minimum 500G when shuffle is significant (>100GB) on 16c+ workers.
+
+    Worker-size cap: the IOPS/throughput ladder (500 MiB/s at 1000G, 16K
+    IOPS at 2000G) only materializes on 16c+ workers. On 4c/8c, oversize
+    disk buys little per worker AND divides the application's disk
+    maximumCapacity into a hard worker ceiling shared by all jobs (e.g. a
+    1000G conf on a 100,000 GB app caps the app at ~100 workers), so cap
+    at 400G there and let executor count carry capacity."""
     if shuffle_gb <= 0 or max_exec <= 0:
         return "200G"
     per_exec = shuffle_gb / max_exec * 3
-    min_disk = 500 if shuffle_gb > 100 else 200
-    disk = max(min_disk, min(2000, int(math.ceil(per_exec / 20) * 20)))
+    if worker_cores >= 8:
+        # 8c/16c: disk tiers are empirically real (vrbo isolated regression
+        # 2026-06-29 on 8c: 500G=12.2min, 1000G=8.8min, 2000G=6.7min)
+        min_disk = 500 if shuffle_gb > 100 else 200
+        disk = max(min_disk, min(2000, int(math.ceil(per_exec / 20) * 20)))
+    else:
+        # 4c: no IOPS ladder; large fleets multiply per-worker disk against
+        # the app's disk maximumCapacity (a 1000G conf on a 100,000 GB app
+        # caps the whole app at ~100 workers) — keep lean
+        disk = max(200, min(400, int(math.ceil(per_exec / 20) * 20)))
     return f"{disk}G"
 
 
@@ -332,12 +347,12 @@ def _optimized(size: str, intent: WorkloadIntent) -> BucketResult:
         n = math.ceil(n * 4 / w["cores"])
     # Disk capacity floor: shuffle per executor must fit in 70% of disk
     shuffle_gb = intent.shuffle_write_gb or 0
-    disk = _executor_disk(shuffle_gb, n)
+    disk = _executor_disk(shuffle_gb, n, w["cores"])
     disk_val = int(disk.replace("G", ""))
     if shuffle_gb > 0:
         capacity_floor = math.ceil(shuffle_gb / (disk_val * 0.7))
         n = max(n, capacity_floor)
-        disk = _executor_disk(shuffle_gb, n)  # recalc after floor bump
+        disk = _executor_disk(shuffle_gb, n, w["cores"])  # recalc after floor bump
     parts = _shuffle_partitions(n, w["cores"], waves=2, shuffle_write_gb=shuffle_gb)
     drv_cores, drv_mem = _driver_sizing(w["cores"])
     configs = {
@@ -378,12 +393,12 @@ def _io_optimized(size: str, intent: WorkloadIntent) -> BucketResult:
         n = n * 2
     # Disk capacity floor
     shuffle_gb = intent.shuffle_write_gb or 0
-    disk = _executor_disk(shuffle_gb, n)
+    disk = _executor_disk(shuffle_gb, n, cores)
     disk_val = int(disk.replace("G", ""))
     if shuffle_gb > 0:
         capacity_floor = math.ceil(shuffle_gb / (disk_val * 0.7))
         n = max(n, capacity_floor)
-        disk = _executor_disk(shuffle_gb, n)
+        disk = _executor_disk(shuffle_gb, n, cores)
     parts = _shuffle_partitions(n, cores, waves=2, shuffle_write_gb=shuffle_gb)
     # IO-Opt maxPartitionBytes: scale by size (not input_gb which is tiny for fan-out)
     io_mpb = {"S": "128m", "M": "128m", "L": "128m", "XL": "256m"}.get(size, "128m")

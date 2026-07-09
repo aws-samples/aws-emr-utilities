@@ -1063,6 +1063,41 @@ def analyze_uploaded_file(json_path: str) -> dict:
     except Exception:
         result["config_audit"] = []
 
+    # Aggregate-disk feasibility of the SUBMITTED config: per-worker disk x
+    # maxExecutors is an app-level demand against maximumCapacity's disk
+    # dimension; when it's large, the app's disk cap (not vCPU) may be the
+    # real fleet ceiling — shared by all concurrent jobs. (Root cause of a
+    # production 3.4x slowdown: 440 x 1000G on a 100,000 GB app -> ~100
+    # worker ceiling.) Only newer EMR-S releases log executor.disk; skip
+    # silently when absent.
+    try:
+        _sub = result.get("spark_config_source") or {}
+        _disk_s = str(_sub.get("spark.emr-serverless.executor.disk") or "").rstrip("Gg")
+        _mx_s = _sub.get("spark.dynamicAllocation.maxExecutors")
+        if _disk_s.isdigit() and _mx_s and str(_mx_s).isdigit():
+            _agg = int(_disk_s) * int(_mx_s) + 20
+            if _agg >= 50_000:
+                warn = {
+                    "type": "app_disk_capacity_submitted",
+                    "severity": "MEDIUM",
+                    "message": (
+                        f"The submitted config needs ~{_agg:,} GB of application disk "
+                        f"capacity at full scale ({_mx_s} executors x {_disk_s}G). If the "
+                        f"application's maximumCapacity disk is lower, the DISK dimension "
+                        f"caps the fleet at cap/{_disk_s}G workers (shared across all jobs "
+                        f"on the app) and the job runs far below maxExecutors."),
+                    "recommendation": (
+                        f"Verify app disk capacity >= {_agg:,} GB "
+                        f"(aws emr-serverless get-application) or lower "
+                        f"spark.emr-serverless.executor.disk."),
+                }
+                for _r in (result.get("cost_recommendation"),
+                           result.get("perf_recommendation")):
+                    if isinstance(_r, dict):
+                        _r.setdefault("bottleneck_warnings", []).append(warn)
+    except Exception:
+        pass
+
     # Query profiles (Spark-UI-style operator trees with metrics)
     result["query_plans"] = data.get("query_plans", [])
 

@@ -7,6 +7,42 @@
   {
    "changed_lines": 0,
    "reason": "Initial baseline: two-constraint sizing model + WGL proactive exclusion"
+  },
+  {
+   "changed_lines": 30,
+   "changes": [
+    "b12/eventlog_v2_00g5r690ovjblo0b [cost] spark_configs.spark.emr-serverless.executor.disk: golden='660G' current='1000G'",
+    "b12/eventlog_v2_00g5r690ovjblo0b [performance] spark_configs.spark.emr-serverless.executor.disk: golden='460G' current='1000G'",
+    "b12/eventlog_v2_00g5r6914vjq700b [cost] spark_configs.spark.emr-serverless.executor.disk: golden='660G' current='1000G'",
+    "b12/eventlog_v2_00g5r6914vjq700b [performance] spark_configs.spark.emr-serverless.executor.disk: golden='500G' current='1000G'",
+    "b12/eventlog_v2_00g5r691f5lfu80b [cost] spark_configs.spark.emr-serverless.executor.disk: golden='460G' current='2000G'",
+    "b12/eventlog_v2_00g5r691f5lfu80b [performance] spark_configs.spark.emr-serverless.executor.disk: golden='460G' current='2000G'",
+    "b12/eventlog_v2_00g5r693b4lmlg0b [cost] spark_configs.spark.emr-serverless.executor.disk: golden='200G' current='2000G'",
+    "b12/eventlog_v2_00g5r693b4lmlg0b [performance] spark_configs.spark.emr-serverless.executor.disk: golden='200G' current='2000G'",
+    "b12/eventlog_v2_00g5sksata2gmo0b [cost] spark_configs.spark.emr-serverless.executor.disk: golden='200G' current='1000G'",
+    "b12/eventlog_v2_00g5sksata2gmo0b [performance] spark_configs.spark.emr-serverless.executor.disk: golden='200G' current='1000G'",
+    "b12/eventlog_v2_00g5sksdfuho180b [cost] spark_configs.spark.emr-serverless.executor.disk: golden='200G' current='1000G'",
+    "b12/eventlog_v2_00g5sksdfuho180b [performance] spark_configs.spark.emr-serverless.executor.disk: golden='200G' current='1000G'",
+    "b12/eventlog_v2_00g5sksdvdleo80b [cost] spark_configs.spark.emr-serverless.executor.disk: golden='400G' current='1000G'",
+    "b12/eventlog_v2_00g5sksdvdleo80b [performance] spark_configs.spark.emr-serverless.executor.disk: golden='420G' current='1000G'",
+    "ec2_migration/application_1780882631787_0001 [cost] spark_configs.spark.emr-serverless.executor.disk: golden='200G' current='2000G'",
+    "ec2_migration/application_1780882631787_0001 [performance] spark_configs.spark.emr-serverless.executor.disk: golden='200G' current='2000G'",
+    "ec2_migration/application_1780907816475_0003 [cost] spark_configs.spark.emr-serverless.executor.disk: golden='360G' current='2000G'",
+    "ec2_migration/application_1780907816475_0003 [cost] spark_configs.spark.sql.shuffle.partitions: golden='1852' current='1000'",
+    "ec2_migration/application_1780907816475_0003 [performance] spark_configs.spark.emr-serverless.executor.disk: golden='200G' current='2000G'",
+    "ec2_migration/application_1780907816475_0003 [performance] spark_configs.spark.sql.shuffle.partitions: golden='1852' current='1000'",
+    "ec2_migration/eventlog_v2_00g6a2fp048ffg0b [cost] spark_configs.spark.emr-serverless.executor.disk: golden='320G' current='2000G'",
+    "ec2_migration/eventlog_v2_00g6a2fp048ffg0b [performance] spark_configs.spark.emr-serverless.executor.disk: golden='320G' current='2000G'",
+    "ec2_migration/eventlog_v2_00g6asko6orfro0b [cost] spark_configs.spark.emr-serverless.executor.disk: golden='200G' current='2000G'",
+    "ec2_migration/eventlog_v2_00g6asko6orfro0b [performance] spark_configs.spark.emr-serverless.executor.disk: golden='200G' current='2000G'",
+    "ec2_migration/eventlog_v2_00g6avf7opopio0b [cost] spark_configs.spark.emr-serverless.executor.disk: golden='200G' current='2000G'",
+    "ec2_migration/eventlog_v2_00g6avf7opopio0b [cost] spark_configs.spark.sql.shuffle.partitions: golden='2208' current='4100'",
+    "ec2_migration/eventlog_v2_00g6avf7opopio0b [performance] spark_configs.spark.emr-serverless.executor.disk: golden='200G' current='2000G'",
+    "ec2_migration/eventlog_v2_00g6avf7opopio0b [performance] spark_configs.spark.sql.shuffle.partitions: golden='3312' current='4100'",
+    "ec2_migration/eventlog_v2_00g6bunn7pe8do0b [cost] spark_configs.spark.emr-serverless.executor.disk: golden='200G' current='2000G'",
+    "ec2_migration/eventlog_v2_00g6bunn7pe8do0b [performance] spark_configs.spark.emr-serverless.executor.disk: golden='200G' current='2000G'"
+   ],
+   "reason": "June disk-tier work was never baselined (30 lines: IOPS-tier bumps + 1 partition change); plus disk-cap feasibility fixes: 4c workers capped at 400G (never 1000G+ \u2014 app disk-budget protection, run-C root cause), 8c/16c ladder unchanged per vrbo empirical regression. New app_disk_capacity warning when aggregate demand >=50TB."
   }
  ],
  "snapshot": {
@@ -15,7 +51,7 @@
     "cost": {
      "spark_configs.spark.dynamicAllocation.maxExecutors": "15",
      "spark_configs.spark.dynamicAllocation.minExecutors": "5",
-     "spark_configs.spark.emr-serverless.executor.disk": "660G",
+     "spark_configs.spark.emr-serverless.executor.disk": "1000G",
      "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
      "spark_configs.spark.sql.shuffle.partitions": "1000",
      "worker.max_executors": 11,
@@ -27,7 +63,7 @@
     "performance": {
      "spark_configs.spark.dynamicAllocation.maxExecutors": "16",
      "spark_configs.spark.dynamicAllocation.minExecutors": "5",
-     "spark_configs.spark.emr-serverless.executor.disk": "460G",
+     "spark_configs.spark.emr-serverless.executor.disk": "1000G",
      "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
      "spark_configs.spark.sql.shuffle.partitions": "1000",
      "worker.max_executors": 16,
@@ -41,7 +77,7 @@
     "cost": {
      "spark_configs.spark.dynamicAllocation.maxExecutors": "15",
      "spark_configs.spark.dynamicAllocation.minExecutors": "5",
-     "spark_configs.spark.emr-serverless.executor.disk": "660G",
+     "spark_configs.spark.emr-serverless.executor.disk": "1000G",
      "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
      "spark_configs.spark.sql.shuffle.partitions": "1000",
      "worker.max_executors": 12,
@@ -53,7 +89,7 @@
     "performance": {
      "spark_configs.spark.dynamicAllocation.maxExecutors": "16",
      "spark_configs.spark.dynamicAllocation.minExecutors": "5",
-     "spark_configs.spark.emr-serverless.executor.disk": "500G",
+     "spark_configs.spark.emr-serverless.executor.disk": "1000G",
      "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
      "spark_configs.spark.sql.shuffle.partitions": "1000",
      "worker.max_executors": 16,
@@ -67,7 +103,7 @@
     "cost": {
      "spark_configs.spark.dynamicAllocation.maxExecutors": "24",
      "spark_configs.spark.dynamicAllocation.minExecutors": "8",
-     "spark_configs.spark.emr-serverless.executor.disk": "460G",
+     "spark_configs.spark.emr-serverless.executor.disk": "2000G",
      "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
      "spark_configs.spark.sql.optimizer.excludedRules": "org.apache.spark.sql.catalyst.optimizer.InferWindowGroupLimit",
      "spark_configs.spark.sql.shuffle.partitions": "1574",
@@ -80,7 +116,7 @@
     "performance": {
      "spark_configs.spark.dynamicAllocation.maxExecutors": "24",
      "spark_configs.spark.dynamicAllocation.minExecutors": "8",
-     "spark_configs.spark.emr-serverless.executor.disk": "460G",
+     "spark_configs.spark.emr-serverless.executor.disk": "2000G",
      "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
      "spark_configs.spark.sql.optimizer.excludedRules": "org.apache.spark.sql.catalyst.optimizer.InferWindowGroupLimit",
      "spark_configs.spark.sql.shuffle.partitions": "1574",
@@ -147,7 +183,7 @@
     "cost": {
      "spark_configs.spark.dynamicAllocation.maxExecutors": "69",
      "spark_configs.spark.dynamicAllocation.minExecutors": "23",
-     "spark_configs.spark.emr-serverless.executor.disk": "200G",
+     "spark_configs.spark.emr-serverless.executor.disk": "2000G",
      "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
      "spark_configs.spark.sql.shuffle.partitions": "1000",
      "worker.max_executors": 69,
@@ -159,7 +195,7 @@
     "performance": {
      "spark_configs.spark.dynamicAllocation.maxExecutors": "69",
      "spark_configs.spark.dynamicAllocation.minExecutors": "23",
-     "spark_configs.spark.emr-serverless.executor.disk": "200G",
+     "spark_configs.spark.emr-serverless.executor.disk": "2000G",
      "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
      "spark_configs.spark.sql.shuffle.partitions": "1000",
      "worker.max_executors": 69,
@@ -173,7 +209,7 @@
     "cost": {
      "spark_configs.spark.dynamicAllocation.maxExecutors": "50",
      "spark_configs.spark.dynamicAllocation.minExecutors": "16",
-     "spark_configs.spark.emr-serverless.executor.disk": "200G",
+     "spark_configs.spark.emr-serverless.executor.disk": "1000G",
      "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
      "spark_configs.spark.io.compression.codec": "zstd",
      "spark_configs.spark.sql.shuffle.partitions": "1000",
@@ -186,7 +222,7 @@
     "performance": {
      "spark_configs.spark.dynamicAllocation.maxExecutors": "75",
      "spark_configs.spark.dynamicAllocation.minExecutors": "25",
-     "spark_configs.spark.emr-serverless.executor.disk": "200G",
+     "spark_configs.spark.emr-serverless.executor.disk": "1000G",
      "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
      "spark_configs.spark.io.compression.codec": "zstd",
      "spark_configs.spark.sql.shuffle.partitions": "1000",
@@ -279,7 +315,7 @@
     "cost": {
      "spark_configs.spark.dynamicAllocation.maxExecutors": "15",
      "spark_configs.spark.dynamicAllocation.minExecutors": "5",
-     "spark_configs.spark.emr-serverless.executor.disk": "200G",
+     "spark_configs.spark.emr-serverless.executor.disk": "1000G",
      "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
      "spark_configs.spark.sql.shuffle.partitions": "1000",
      "worker.max_executors": 11,
@@ -291,7 +327,7 @@
     "performance": {
      "spark_configs.spark.dynamicAllocation.maxExecutors": "16",
      "spark_configs.spark.dynamicAllocation.minExecutors": "5",
-     "spark_configs.spark.emr-serverless.executor.disk": "200G",
+     "spark_configs.spark.emr-serverless.executor.disk": "1000G",
      "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
      "spark_configs.spark.sql.shuffle.partitions": "1000",
      "worker.max_executors": 16,
@@ -305,7 +341,7 @@
     "cost": {
      "spark_configs.spark.dynamicAllocation.maxExecutors": "20",
      "spark_configs.spark.dynamicAllocation.minExecutors": "6",
-     "spark_configs.spark.emr-serverless.executor.disk": "400G",
+     "spark_configs.spark.emr-serverless.executor.disk": "1000G",
      "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
      "spark_configs.spark.sql.shuffle.partitions": "1210",
      "worker.max_executors": 20,
@@ -317,7 +353,7 @@
     "performance": {
      "spark_configs.spark.dynamicAllocation.maxExecutors": "19",
      "spark_configs.spark.dynamicAllocation.minExecutors": "6",
-     "spark_configs.spark.emr-serverless.executor.disk": "420G",
+     "spark_configs.spark.emr-serverless.executor.disk": "1000G",
      "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
      "spark_configs.spark.sql.shuffle.partitions": "1210",
      "worker.max_executors": 19,
@@ -333,7 +369,7 @@
     "cost": {
      "spark_configs.spark.dynamicAllocation.maxExecutors": "71",
      "spark_configs.spark.dynamicAllocation.minExecutors": "23",
-     "spark_configs.spark.emr-serverless.executor.disk": "200G",
+     "spark_configs.spark.emr-serverless.executor.disk": "2000G",
      "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
      "spark_configs.spark.sql.optimizer.excludedRules": "org.apache.spark.sql.catalyst.optimizer.InferWindowGroupLimit",
      "spark_configs.spark.sql.shuffle.partitions": "1000",
@@ -346,7 +382,7 @@
     "performance": {
      "spark_configs.spark.dynamicAllocation.maxExecutors": "134",
      "spark_configs.spark.dynamicAllocation.minExecutors": "44",
-     "spark_configs.spark.emr-serverless.executor.disk": "200G",
+     "spark_configs.spark.emr-serverless.executor.disk": "2000G",
      "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
      "spark_configs.spark.sql.optimizer.excludedRules": "org.apache.spark.sql.catalyst.optimizer.InferWindowGroupLimit",
      "spark_configs.spark.sql.shuffle.partitions": "1000",
@@ -361,10 +397,10 @@
     "cost": {
      "spark_configs.spark.dynamicAllocation.maxExecutors": "76",
      "spark_configs.spark.dynamicAllocation.minExecutors": "25",
-     "spark_configs.spark.emr-serverless.executor.disk": "360G",
+     "spark_configs.spark.emr-serverless.executor.disk": "2000G",
      "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
      "spark_configs.spark.sql.optimizer.excludedRules": "org.apache.spark.sql.catalyst.optimizer.InferWindowGroupLimit",
-     "spark_configs.spark.sql.shuffle.partitions": "1852",
+     "spark_configs.spark.sql.shuffle.partitions": "1000",
      "worker.max_executors": 76,
      "worker.memory_gb": 108,
      "worker.min_executors": 25,
@@ -374,10 +410,10 @@
     "performance": {
      "spark_configs.spark.dynamicAllocation.maxExecutors": "306",
      "spark_configs.spark.dynamicAllocation.minExecutors": "102",
-     "spark_configs.spark.emr-serverless.executor.disk": "200G",
+     "spark_configs.spark.emr-serverless.executor.disk": "2000G",
      "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
      "spark_configs.spark.sql.optimizer.excludedRules": "org.apache.spark.sql.catalyst.optimizer.InferWindowGroupLimit",
-     "spark_configs.spark.sql.shuffle.partitions": "1852",
+     "spark_configs.spark.sql.shuffle.partitions": "1000",
      "worker.max_executors": 306,
      "worker.memory_gb": 108,
      "worker.min_executors": 102,
@@ -389,7 +425,7 @@
     "cost": {
      "spark_configs.spark.dynamicAllocation.maxExecutors": "43",
      "spark_configs.spark.dynamicAllocation.minExecutors": "14",
-     "spark_configs.spark.emr-serverless.executor.disk": "320G",
+     "spark_configs.spark.emr-serverless.executor.disk": "2000G",
      "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
      "spark_configs.spark.sql.shuffle.partitions": "1478",
      "worker.max_executors": 43,
@@ -401,7 +437,7 @@
     "performance": {
      "spark_configs.spark.dynamicAllocation.maxExecutors": "43",
      "spark_configs.spark.dynamicAllocation.minExecutors": "14",
-     "spark_configs.spark.emr-serverless.executor.disk": "320G",
+     "spark_configs.spark.emr-serverless.executor.disk": "2000G",
      "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
      "spark_configs.spark.sql.shuffle.partitions": "1478",
      "worker.max_executors": 43,
@@ -415,7 +451,7 @@
     "cost": {
      "spark_configs.spark.dynamicAllocation.maxExecutors": "46",
      "spark_configs.spark.dynamicAllocation.minExecutors": "15",
-     "spark_configs.spark.emr-serverless.executor.disk": "200G",
+     "spark_configs.spark.emr-serverless.executor.disk": "2000G",
      "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
      "spark_configs.spark.sql.shuffle.partitions": "1340",
      "worker.max_executors": 46,
@@ -427,7 +463,7 @@
     "performance": {
      "spark_configs.spark.dynamicAllocation.maxExecutors": "66",
      "spark_configs.spark.dynamicAllocation.minExecutors": "22",
-     "spark_configs.spark.emr-serverless.executor.disk": "200G",
+     "spark_configs.spark.emr-serverless.executor.disk": "2000G",
      "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
      "spark_configs.spark.sql.shuffle.partitions": "1340",
      "worker.max_executors": 66,
@@ -441,10 +477,10 @@
     "cost": {
      "spark_configs.spark.dynamicAllocation.maxExecutors": "552",
      "spark_configs.spark.dynamicAllocation.minExecutors": "184",
-     "spark_configs.spark.emr-serverless.executor.disk": "200G",
+     "spark_configs.spark.emr-serverless.executor.disk": "2000G",
      "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
      "spark_configs.spark.sql.optimizer.excludedRules": "org.apache.spark.sql.catalyst.optimizer.InferWindowGroupLimit",
-     "spark_configs.spark.sql.shuffle.partitions": "2208",
+     "spark_configs.spark.sql.shuffle.partitions": "4100",
      "worker.max_executors": 552,
      "worker.memory_gb": 27,
      "worker.min_executors": 184,
@@ -454,9 +490,9 @@
     "performance": {
      "spark_configs.spark.dynamicAllocation.maxExecutors": "552",
      "spark_configs.spark.dynamicAllocation.minExecutors": "276",
-     "spark_configs.spark.emr-serverless.executor.disk": "200G",
+     "spark_configs.spark.emr-serverless.executor.disk": "2000G",
      "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
-     "spark_configs.spark.sql.shuffle.partitions": "3312",
+     "spark_configs.spark.sql.shuffle.partitions": "4100",
      "worker.max_executors": 552,
      "worker.memory_gb": 54,
      "worker.min_executors": 276,
@@ -468,7 +504,7 @@
     "cost": {
      "spark_configs.spark.dynamicAllocation.maxExecutors": "330",
      "spark_configs.spark.dynamicAllocation.minExecutors": "110",
-     "spark_configs.spark.emr-serverless.executor.disk": "200G",
+     "spark_configs.spark.emr-serverless.executor.disk": "2000G",
      "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
      "spark_configs.spark.sql.shuffle.partitions": "5622",
      "worker.max_executors": 330,
@@ -480,7 +516,7 @@
     "performance": {
      "spark_configs.spark.dynamicAllocation.maxExecutors": "495",
      "spark_configs.spark.dynamicAllocation.minExecutors": "165",
-     "spark_configs.spark.emr-serverless.executor.disk": "200G",
+     "spark_configs.spark.emr-serverless.executor.disk": "2000G",
      "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
      "spark_configs.spark.sql.shuffle.partitions": "5622",
      "worker.max_executors": 495,

@@ -316,38 +316,102 @@ def _compute_exec_limits(input_gb: float, vcpu: int, partitions: int = 0,
 
 
 def _calculate_executor_disk(shuffle_write_gb: float, disk_spill_gb: float,
-                             memory_spill_gb: float, max_executors: int) -> str:
+                             memory_spill_gb: float, max_executors: int,
+                             worker_vcpu: int = 16) -> str:
     """Attach shuffle_optimized disk for shuffle-intensive jobs.
     Shuffle-optimized disks provide higher IOPS and faster disk access,
     benefiting jobs with significant shuffle operations or disk spill.
     For non-shuffle workloads, default disk avoids unnecessary cost.
-    
-    Disk tier selection also considers IOPS/throughput needs:
-      - 200G + 16c: 250 MiB/s, 3,000 IOPS (small shuffle)
-      - 1000G + 16c: 500 MiB/s, 6,000 IOPS (medium shuffle)
-      - 2000G + 16c: 500 MiB/s, 16,000 IOPS (large shuffle, IOPS-bound)
-    
-    For massive shuffle (>10 TB), the IOPS tier matters more than capacity.
+
+    Disk tier selection considers IOPS/throughput per worker size:
+      - 4c/8c:  250 MiB/s at any size; IOPS 3,000 -> 4,750 at >=1000G
+      - 16c+:   >=1000G: 500 MiB/s, 6,000 IOPS; >=2000G: 16,000 IOPS
+    The big IOPS/throughput tiers only materialize on 16c+ workers — on
+    4c/8c, capacity beyond need buys almost nothing per worker AND divides
+    the application's disk maximumCapacity into a hard worker ceiling
+    (app disk cap / per-worker disk = max concurrent workers, all jobs).
+    A 1000G conf on a 100,000 GB app caps the whole app at ~100 workers —
+    the root cause of a real customer's 3.4x slowdown. Small workers mean
+    large fleets, so per-worker disk must stay lean.
     """
     total_shuffle_and_spill = shuffle_write_gb + disk_spill_gb + memory_spill_gb
     if total_shuffle_and_spill < 20:
         return ""  # Minimal shuffle — default disk sufficient
-    
-    # IOPS-tier selection: for large shuffle, bump to 2000G for 16K IOPS
-    # regardless of per-executor capacity needs.
-    # Rationale: shuffle blocks are typically 16-200 KB; serving them is
-    # IOPS-bound, not throughput-bound. 2000G gives 16K IOPS vs 3K at 200G.
-    if shuffle_write_gb > 10000:
-        return "2000G"  # Massive shuffle: need 16K IOPS tier
-    if shuffle_write_gb > 2000:
-        return "2000G"  # Large shuffle: 16K IOPS helps significantly
-    if shuffle_write_gb > 500:
-        return "1000G"  # Medium shuffle: 6K IOPS tier
-    
-    # Small-to-moderate shuffle: size by capacity
+
+    # Capacity actually needed per executor (1.5x headroom for concurrent
+    # shuffle generations + spill transients)
     per_exec = total_shuffle_and_spill / max(max_executors, 1)
-    disk_gb = max(200, min(2000, int(per_exec * 1.5 / 20) * 20 + 20))
-    return f"{disk_gb}G"
+    need_gb = max(200, int(per_exec * 1.5 / 20) * 20 + 20)
+
+    if worker_vcpu >= 16:
+        # IOPS-tier selection: for large shuffle, bump to 2000G for 16K IOPS
+        # regardless of per-executor capacity needs.
+        # Rationale: shuffle blocks are typically 16-200 KB; serving them is
+        # IOPS-bound, not throughput-bound. 2000G gives 16K IOPS vs 3K at 200G.
+        if shuffle_write_gb > 2000:
+            return "2000G"  # Large/massive shuffle: 16K IOPS tier
+        if shuffle_write_gb > 500:
+            return "1000G"  # Medium shuffle: 6K IOPS tier
+        return f"{min(2000, need_gb)}G"
+
+    if worker_vcpu >= 8:
+        # 8c: the disk ladder is empirically real (vrbo isolated regression
+        # 2026-06-29 on 8c: 500G=12.2min, 1000G=8.8min, 2000G=6.7min) even
+        # though the published tier table only shows an IOPS bump at 1000G.
+        # Trust the measurement — same thresholds as 16c, but capacity
+        # sizing tops at 1000G when shuffle doesn't demand the big tiers.
+        if shuffle_write_gb > 2000:
+            return "2000G"
+        if shuffle_write_gb > 500:
+            return "1000G"
+        return f"{min(1000, need_gb)}G"
+
+    # 4c workers: no IOPS/throughput ladder at all — size by capacity only,
+    # capped at 400G to protect the app-level worker budget (4c means large
+    # fleets; per-worker disk multiplies across hundreds of workers, and
+    # oversizing here is what capped a production app at ~100 workers).
+    # Full-scale replication of that customer workload ran the disk-heaviest
+    # stage on 200G/worker without exhaustion; 400G doubles that ceiling.
+    return f"{min(400, need_gb)}G"
+
+
+def _app_disk_feasibility(executor_disk: str, max_executors: int,
+                          driver_disk_gb: int = 20) -> dict:
+    """Aggregate-disk demand check: per-worker disk is also an APP-level
+    budget. maximumCapacity has three dimensions (CPU, memory, disk) and a
+    worker launches only if it fits under all three — whichever fills first
+    silently becomes the app's worker ceiling, shared by ALL concurrent
+    jobs. Returns a bottleneck_warnings entry when the config's aggregate
+    demand is large enough that common app caps would bind (observed in
+    production: 1000G x 440 requested on a 100,000 GB app -> hard ~100
+    worker ceiling -> 3.4x slowdown)."""
+    if not executor_disk:
+        return {}
+    try:
+        per_worker = int(str(executor_disk).rstrip("Gg"))
+    except ValueError:
+        return {}
+    aggregate = per_worker * max_executors + driver_disk_gb
+    # The docs' own sizing example provisions disk at 10x vCPU; flag when
+    # this config needs more than that proportion would supply.
+    if aggregate < 50_000:
+        return {}
+    return {
+        "type": "app_disk_capacity",
+        "severity": "MEDIUM",
+        "message": (
+            f"This recommendation needs ~{aggregate:,} GB of application disk "
+            f"capacity at full scale ({max_executors} executors x {per_worker}G "
+            f"+ driver). If the application's maximumCapacity disk is lower, "
+            f"the DISK dimension (not vCPU) caps the fleet at "
+            f"cap/{per_worker}G workers — shared across all concurrent jobs "
+            f"on the app — and the job will crawl far below maxExecutors."),
+        "recommendation": (
+            f"Verify the EMR Serverless application's maximumCapacity disk is "
+            f">= {aggregate:,} GB (aws emr-serverless get-application), or "
+            f"lower spark.emr-serverless.executor.disk. Idle applications "
+            f"cost nothing — a dedicated app avoids cross-job contention."),
+    }
 
 
 def _max_partition_bytes(input_gb: float, advisory_bytes: int = 0) -> str:
@@ -858,7 +922,8 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         # and AQE reduces spill, but not to zero. Use 10% of observed spill as safety floor.
         _eff_disk_spill = disk_spill_gb * 0.1
         _eff_mem_spill = spill_gb * 0.1
-        executor_disk_cost = _calculate_executor_disk(s_out_gb, _eff_disk_spill, _eff_mem_spill, max_exec_cost)
+        executor_disk_cost = _calculate_executor_disk(s_out_gb, _eff_disk_spill, _eff_mem_spill, max_exec_cost,
+                                                      worker_vcpu=worker_cfg["vcpu"])
         # Performance-optimized
         max_exec_perf_init, min_exec_perf = _compute_exec_limits(
             i_in_gb, worker_cfg["vcpu"], 0, mem_pct, cpu_pct, idle_pct, spill_gb, mode="performance",
@@ -900,7 +965,8 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                 if _new_max_p != max_exec_perf:
                     max_exec_perf = _new_max_p
                     min_exec_perf = max(1, min(max_exec_perf - 2, max(5, max_exec_perf // 3)))
-        executor_disk_perf = _calculate_executor_disk(s_out_gb, _eff_disk_spill, _eff_mem_spill, max_exec_perf)
+        executor_disk_perf = _calculate_executor_disk(s_out_gb, _eff_disk_spill, _eff_mem_spill, max_exec_perf,
+                                                      worker_vcpu=worker_cfg["vcpu"])
         
         # Build base metrics
         base_metrics = {
@@ -1187,6 +1253,15 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             rules = f'{existing},{excluded_rule}' if existing else excluded_rule
             cost_rec['spark_configs']['spark.sql.optimizer.excludedRules'] = rules
             perf_rec['spark_configs']['spark.sql.optimizer.excludedRules'] = rules
+
+        # App-level disk feasibility: per-worker disk x fleet must fit the
+        # application's maximumCapacity disk dimension or the fleet is
+        # silently capped (see _app_disk_feasibility)
+        for _rec, _disk, _mx in ((cost_rec, executor_disk_cost, max_exec_cost),
+                                 (perf_rec, executor_disk_perf, max_exec_perf)):
+            _dw = _app_disk_feasibility(_disk, _mx)
+            if _dw:
+                _rec.setdefault('bottleneck_warnings', []).append(_dw)
 
         cost_recs.append(cost_rec)
         perf_recs.append(perf_rec)
