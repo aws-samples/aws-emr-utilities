@@ -12,6 +12,13 @@ FastAPI web UI for the Config Advisor with an EMR-console-style shell.
   (Spark-UI-SQL-tab-style operator trees with metrics and per-operator
   failure attribution), and a deterministic recommended-vs-submitted config
   audit.
+  Optionally attach a .zip of driver/executor stderr (driver log plus the
+  stderr of any failed executors — EMR Serverless `SPARK_DRIVER`/
+  `SPARK_EXECUTOR` and YARN `container_*` layouts are auto-detected): a
+  curated signature scan adds the *why* the event log can't show — heap OOM
+  vs container RSS kill vs disk full vs S3 throttling vs execution-memory
+  contention — with excerpts, and corroboration notes on the bottleneck
+  verdict.
 - **EC2 → Serverless migration**: EC2 event logs are auto-detected and get
   migration-translated configs; upload the EC2 baseline and a Serverless
   attempt together for a migration-mode comparison.

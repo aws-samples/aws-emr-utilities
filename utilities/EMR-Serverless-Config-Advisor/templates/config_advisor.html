@@ -30,6 +30,16 @@
             </div>
             <input type="file" name="file" id="file-input" accept=".json,.zip,.gz,.lz4,.zstd,.inprogress" required>
         </div>
+        <label class="cmp-slot" style="margin-top:10px">
+            <span class="cmp-tag a">LOGS &middot; OPTIONAL</span>
+            <input type="file" name="logs_file" id="logs-input" accept=".zip">
+        </label>
+        <p class="drop-hint" style="margin:6px 0 0">
+            Optional: a .zip of the driver log plus the stderr of any failed
+            executors (not the whole fleet). Adds root-cause evidence — heap
+            OOM vs container kill vs disk full vs S3 throttling — that the
+            event log alone can't show.
+        </p>
         <button type="submit" class="btn-analyze" id="btn-submit" disabled>
             <span class="btn-text">Analyze</span>
             <span class="btn-loading" style="display:none;">Analyzing... (raw event logs can take a minute)</span>

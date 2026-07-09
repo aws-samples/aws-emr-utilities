@@ -87,6 +87,51 @@
             </div>
         </section>
 
+        <!-- Log evidence: driver/executor stderr signatures (optional upload) -->
+        {% if result.log_evidence_error %}
+        <div class="flash" style="background:#FFF6EA;border:1px solid #FFAD4A;color:#8A5A1F;">
+            <b>Driver/executor logs:</b> {{ result.log_evidence_error }}
+        </div>
+        {% endif %}
+        {% if result.log_evidence %}
+        <section class="section">
+            <h2>Log evidence — driver/executor stderr</h2>
+            <p class="drop-hint" style="margin-bottom:12px">
+                {{ result.log_evidence.files_scanned }} log file(s) scanned
+                ({{ result.log_evidence.sources.driver }} driver,
+                {{ result.log_evidence.sources.executor }} executor).
+                Signatures below explain <i>why</i> — the event-log verdict
+                above says <i>what</i>.
+            </p>
+            {% for note in result.log_evidence.notes %}
+            <div class="flash" style="background:#EDF6EC;border:1px solid #7AC58F;color:#1D5A2C;margin-bottom:8px;">
+                {{ note }}
+            </div>
+            {% endfor %}
+            {% if not result.log_evidence.signatures %}
+            <p class="drop-hint">No known failure signatures found — the logs
+                look clean. Slowness is likely explained by the event-log
+                analysis alone.</p>
+            {% endif %}
+            {% for sig in result.log_evidence.signatures %}
+            <details class="log-sig" style="border:1px solid var(--card-border);border-radius:8px;padding:10px 14px;margin-bottom:8px;">
+                <summary style="cursor:pointer;">
+                    <b>{{ sig.title }}</b>
+                    <span class="bottleneck-score" style="margin-left:8px">{{ "{:,}".format(sig.count) }}&times;</span>
+                    <span class="drop-hint" style="margin-left:8px">
+                        {%- for src, n in sig.sources.items() %}{{ src }} ({{ n }}){{ ", " if not loop.last }}{% endfor -%}
+                    </span>
+                </summary>
+                <p style="margin:8px 0">{{ sig.meaning }}</p>
+                {% for ex in sig.excerpts %}
+                <pre style="background:#F7F8FA;border:1px solid var(--card-border);border-radius:6px;padding:8px 10px;font-size:0.72rem;overflow-x:auto;white-space:pre-wrap;"><b>{{ ex.source }} — {{ ex.file }}</b>
+{{ ex.text }}</pre>
+                {% endfor %}
+            </details>
+            {% endfor %}
+        </section>
+        {% endif %}
+
         <!-- IO Metrics -->
         <section class="section">
             <h2>I/O Profile</h2>
