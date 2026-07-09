@@ -43,6 +43,41 @@
     "ec2_migration/eventlog_v2_00g6bunn7pe8do0b [performance] spark_configs.spark.emr-serverless.executor.disk: golden='200G' current='2000G'"
    ],
    "reason": "June disk-tier work was never baselined (30 lines: IOPS-tier bumps + 1 partition change); plus disk-cap feasibility fixes: 4c workers capped at 400G (never 1000G+ \u2014 app disk-budget protection, run-C root cause), 8c/16c ladder unchanged per vrbo empirical regression. New app_disk_capacity warning when aggregate demand >=50TB."
+  },
+  {
+   "changed_lines": 29,
+   "changes": [
+    "b12/eventlog_v2_00g5r692ie8h980b [cost] spark_configs.spark.dynamicAllocation.maxExecutors: golden='22' current='45'",
+    "b12/eventlog_v2_00g5r692ie8h980b [cost] spark_configs.spark.dynamicAllocation.minExecutors: golden='7' current='15'",
+    "b12/eventlog_v2_00g5r692ie8h980b [cost] worker.max_executors: golden=22 current=45",
+    "b12/eventlog_v2_00g5r692ie8h980b [cost] worker.memory_gb: golden=52 current=27",
+    "b12/eventlog_v2_00g5r692ie8h980b [cost] worker.min_executors: golden=7 current=15",
+    "b12/eventlog_v2_00g5r692ie8h980b [cost] worker.type: golden='Medium' current='Small'",
+    "b12/eventlog_v2_00g5r692ie8h980b [cost] worker.vcpu: golden=8 current=4",
+    "b12/eventlog_v2_00g5r692ie8h980b [performance] spark_configs.spark.dynamicAllocation.maxExecutors: golden='33' current='67'",
+    "b12/eventlog_v2_00g5r692ie8h980b [performance] spark_configs.spark.dynamicAllocation.minExecutors: golden='11' current='22'",
+    "b12/eventlog_v2_00g5r692ie8h980b [performance] worker.max_executors: golden=33 current=67",
+    "b12/eventlog_v2_00g5r692ie8h980b [performance] worker.memory_gb: golden=52 current=27",
+    "b12/eventlog_v2_00g5r692ie8h980b [performance] worker.min_executors: golden=11 current=22",
+    "b12/eventlog_v2_00g5r692ie8h980b [performance] worker.type: golden='Medium' current='Small'",
+    "b12/eventlog_v2_00g5r692ie8h980b [performance] worker.vcpu: golden=8 current=4",
+    "b12/eventlog_v2_00g5sksdfuho180b [cost] spark_configs.spark.dynamicAllocation.maxExecutors: golden='15' current='31'",
+    "b12/eventlog_v2_00g5sksdfuho180b [cost] spark_configs.spark.dynamicAllocation.minExecutors: golden='5' current='10'",
+    "b12/eventlog_v2_00g5sksdfuho180b [cost] worker.max_executors: golden=11 current=23",
+    "b12/eventlog_v2_00g5sksdfuho180b [cost] worker.memory_gb: golden=108 current=54",
+    "b12/eventlog_v2_00g5sksdfuho180b [cost] worker.min_executors: golden=3 current=7",
+    "b12/eventlog_v2_00g5sksdfuho180b [cost] worker.type: golden='Large' current='Medium'",
+    "b12/eventlog_v2_00g5sksdfuho180b [cost] worker.vcpu: golden=16 current=8",
+    "b12/eventlog_v2_00g5sksdfuho180b [performance] spark_configs.spark.dynamicAllocation.maxExecutors: golden='16' current='34'",
+    "b12/eventlog_v2_00g5sksdfuho180b [performance] spark_configs.spark.dynamicAllocation.minExecutors: golden='5' current='11'",
+    "b12/eventlog_v2_00g5sksdfuho180b [performance] worker.max_executors: golden=16 current=34",
+    "b12/eventlog_v2_00g5sksdfuho180b [performance] worker.memory_gb: golden=108 current=54",
+    "b12/eventlog_v2_00g5sksdfuho180b [performance] worker.min_executors: golden=5 current=11",
+    "b12/eventlog_v2_00g5sksdfuho180b [performance] worker.type: golden='Large' current='Medium'",
+    "b12/eventlog_v2_00g5sksdfuho180b [performance] worker.vcpu: golden=16 current=8",
+    "ec2_migration/eventlog_v2_00g6avf7opopio0b [cost] spark_configs.spark.sql.shuffle.partitions: golden='4100' current='4432'"
+   ],
+   "reason": "Memory-per-core inflation rule (eg-marketing 3-run evidence): Serverless-source worker promotion now uses spill/data-moved RATIO (>20% Large, >5% Medium) instead of absolute spill; heap occupancy >90% requires spill corroboration; Small-tier peak-memory multiplier 2.0->1.4 when spill is trace (keeps mem/core <=5G). Protected: search-health class (600-1400% frac) and ump-email (29%) stay Large. Changed: 2 apps with zero/trace spill promoted only by occupancy -> now Small/Medium."
   }
  ],
  "snapshot": {
@@ -155,28 +190,28 @@
    },
    "eventlog_v2_00g5r692ie8h980b": {
     "cost": {
-     "spark_configs.spark.dynamicAllocation.maxExecutors": "22",
-     "spark_configs.spark.dynamicAllocation.minExecutors": "7",
+     "spark_configs.spark.dynamicAllocation.maxExecutors": "45",
+     "spark_configs.spark.dynamicAllocation.minExecutors": "15",
      "spark_configs.spark.emr-serverless.executor.disk": "200G",
      "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
      "spark_configs.spark.sql.shuffle.partitions": "1000",
-     "worker.max_executors": 22,
-     "worker.memory_gb": 52,
-     "worker.min_executors": 7,
-     "worker.type": "Medium",
-     "worker.vcpu": 8
+     "worker.max_executors": 45,
+     "worker.memory_gb": 27,
+     "worker.min_executors": 15,
+     "worker.type": "Small",
+     "worker.vcpu": 4
     },
     "performance": {
-     "spark_configs.spark.dynamicAllocation.maxExecutors": "33",
-     "spark_configs.spark.dynamicAllocation.minExecutors": "11",
+     "spark_configs.spark.dynamicAllocation.maxExecutors": "67",
+     "spark_configs.spark.dynamicAllocation.minExecutors": "22",
      "spark_configs.spark.emr-serverless.executor.disk": "200G",
      "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
      "spark_configs.spark.sql.shuffle.partitions": "1000",
-     "worker.max_executors": 33,
-     "worker.memory_gb": 52,
-     "worker.min_executors": 11,
-     "worker.type": "Medium",
-     "worker.vcpu": 8
+     "worker.max_executors": 67,
+     "worker.memory_gb": 27,
+     "worker.min_executors": 22,
+     "worker.type": "Small",
+     "worker.vcpu": 4
     }
    },
    "eventlog_v2_00g5r693b4lmlg0b": {
@@ -313,28 +348,28 @@
    },
    "eventlog_v2_00g5sksdfuho180b": {
     "cost": {
-     "spark_configs.spark.dynamicAllocation.maxExecutors": "15",
-     "spark_configs.spark.dynamicAllocation.minExecutors": "5",
+     "spark_configs.spark.dynamicAllocation.maxExecutors": "31",
+     "spark_configs.spark.dynamicAllocation.minExecutors": "10",
      "spark_configs.spark.emr-serverless.executor.disk": "1000G",
      "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
      "spark_configs.spark.sql.shuffle.partitions": "1000",
-     "worker.max_executors": 11,
-     "worker.memory_gb": 108,
-     "worker.min_executors": 3,
-     "worker.type": "Large",
-     "worker.vcpu": 16
+     "worker.max_executors": 23,
+     "worker.memory_gb": 54,
+     "worker.min_executors": 7,
+     "worker.type": "Medium",
+     "worker.vcpu": 8
     },
     "performance": {
-     "spark_configs.spark.dynamicAllocation.maxExecutors": "16",
-     "spark_configs.spark.dynamicAllocation.minExecutors": "5",
+     "spark_configs.spark.dynamicAllocation.maxExecutors": "34",
+     "spark_configs.spark.dynamicAllocation.minExecutors": "11",
      "spark_configs.spark.emr-serverless.executor.disk": "1000G",
      "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
      "spark_configs.spark.sql.shuffle.partitions": "1000",
-     "worker.max_executors": 16,
-     "worker.memory_gb": 108,
-     "worker.min_executors": 5,
-     "worker.type": "Large",
-     "worker.vcpu": 16
+     "worker.max_executors": 34,
+     "worker.memory_gb": 54,
+     "worker.min_executors": 11,
+     "worker.type": "Medium",
+     "worker.vcpu": 8
     }
    },
    "eventlog_v2_00g5sksdvdleo80b": {
@@ -480,7 +515,7 @@
      "spark_configs.spark.emr-serverless.executor.disk": "2000G",
      "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
      "spark_configs.spark.sql.optimizer.excludedRules": "org.apache.spark.sql.catalyst.optimizer.InferWindowGroupLimit",
-     "spark_configs.spark.sql.shuffle.partitions": "4100",
+     "spark_configs.spark.sql.shuffle.partitions": "4432",
      "worker.max_executors": 552,
      "worker.memory_gb": 27,
      "worker.min_executors": 184,

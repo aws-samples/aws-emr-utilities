@@ -145,7 +145,8 @@ def _select_worker_type(input_gb: float, shuffle_ratio: float,
                         cpu_pct: float = 50.0, orig_mem_mb: int = 0,
                         max_peak_mem_gb: float = 0, orig_cores: int = 0,
                         max_shuffle_write_per_task_gb: float = 0,
-                        peak_mem_pct: float = 0, is_ec2: bool = False) -> Tuple[str, Dict]:
+                        peak_mem_pct: float = 0, is_ec2: bool = False,
+                        data_moved_gb: float = 0.0) -> Tuple[str, Dict]:
     # EMR Serverless memory ranges per vCPU size
     WORKER_RANGES = {
         "Small":  {"vcpu": 4,  "min_mem": 8,  "max_mem": 27, "mem_step": 1},
@@ -173,12 +174,32 @@ def _select_worker_type(input_gb: float, shuffle_ratio: float,
             # Worker bump logic later promotes to Medium when executor count > 60
             size = "Small"
     else:
-        if spill_gb > 100:
+        # Serverless source: promote workers on RELATIVE memory pressure,
+        # not absolute spill or heap occupancy alone.
+        # Two production-proven traps (eg-marketing 3-run analysis 2026-07):
+        #   1. Absolute spill thresholds misfire at scale — 121G of spill on
+        #      a 6TB-movement job is ~2% (essentially free re-reads); the
+        #      "cost-optimized" 16c/108G promotion it triggered inflated
+        #      write-stage CPU/GB 168->447 s/GB (+63% cost). Memory-per-core
+        #      above ~4-5 GB makes sort runs cache-hostile.
+        #   2. G1 heap occupancy fills toward whatever ceiling it's given —
+        #      >90% utilization is not memory demand unless corroborated by
+        #      spill or task failure.
+        # Meanwhile genuinely memory-bound jobs (search-health class: spill
+        # 6-14x the data moved) DO win on bigger workers — keep those.
+        spill_frac = spill_gb / data_moved_gb if data_moved_gb > 0 else (
+            1.0 if spill_gb > 100 else 0.0)  # no denominator -> old behavior
+        if spill_frac > 0.20 and spill_gb > 100:
+            # Spill is a substantial fraction of data movement: genuinely
+            # memory-bound (search-health class runs 600-1400%; ump-email
+            # 29% — June isolated benchmarks confirm big workers win there)
             size = "Large"
-        elif spill_gb > 10 or mem_pct > 90:
-            size = "Medium"
+        elif spill_frac > 0.05 and spill_gb > 10:
+            size = "Medium"     # material spill (>5% of movement)
+        elif mem_pct > 90 and spill_frac > 0.01:
+            size = "Medium"     # high occupancy corroborated by some spill
         else:
-            size = "Small"
+            size = "Small"      # occupancy alone (or trace spill) is not demand
 
     r = WORKER_RANGES[size]
 
@@ -191,13 +212,21 @@ def _select_worker_type(input_gb: float, shuffle_ratio: float,
     if is_ec2:
         mem = r["max_mem"]
     elif size == "Small":
+        # Safety multiplier over peak: 2.0x only when spill corroborates
+        # real memory pressure. With trace spill, "peak" is mostly G1
+        # occupancy (heap fills toward its ceiling), and doubling it pushes
+        # memory-per-core into cache-hostile territory — 6.75 GB/core
+        # measured +107% write-stage CPU/GB vs 3.5 GB/core on the same job
+        # (eg-marketing runs A/C). Target <=4.5-5 GB/core when spill is trace.
+        _spill_frac_s = (spill_gb / data_moved_gb) if data_moved_gb > 0 else 0.0
+        _mult = 2.0 if _spill_frac_s > 0.05 else 1.4
         if max_peak_mem_gb > 0 and peak_mem_pct > 0:
-            needed_mem = max_peak_mem_gb * 2.0
+            needed_mem = max_peak_mem_gb * _mult
             needed_mem = max(needed_mem, 8)
             mem = min(r["max_mem"], max(r["min_mem"], int(needed_mem + 0.99)))
         elif mem_pct > 0 and orig_mem_mb > 0:
             used_gb = (orig_mem_mb / 1024) * (mem_pct / 100)
-            needed_mem = used_gb * 2.0
+            needed_mem = used_gb * _mult
             mem = min(r["max_mem"], max(r["min_mem"], int(needed_mem + 0.99)))
         else:
             mem = r["max_mem"]
@@ -647,7 +676,8 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         worker_type, worker_cfg = _select_worker_type(i_in_gb, sh_ratio, mem_pct, spill_gb, cpu_pct,
                                                       max_peak_mem_gb=max_peak_mem_gb, orig_cores=orig_cores, orig_mem_mb=int(orig_executor_mem_gb * 1024),
                                                       max_shuffle_write_per_task_gb=max_shuffle_write_per_task_gb,
-                                                      peak_mem_pct=peak_mem_pct, is_ec2=is_ec2)
+                                                      peak_mem_pct=peak_mem_pct, is_ec2=is_ec2,
+                                                      data_moved_gb=i_in_gb + s_in_gb + s_out_gb)
 
         # Large advisory (>=500MB) means large partitions — need 8c for memory headroom
         _src_adv = str(_spark_config_raw.get('spark.sql.adaptive.advisoryPartitionSizeInBytes', ''))
