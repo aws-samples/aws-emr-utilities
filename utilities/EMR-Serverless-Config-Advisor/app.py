@@ -37,6 +37,7 @@ from fastapi.templating import Jinja2Templates
 
 # Import the fine tuner for recommendations
 from emr_s_fine_tuner import generate_dual_recommendations
+from log_evidence import corroboration_notes, extract_log_evidence
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -282,7 +283,10 @@ You have tools. USE THEM before answering — do not guess:
 - query_prometheus: any PromQL range query for drill-down (metric names use
   labels app_id=<job_run_id>, exec_id=driver|1|2|…)
 - get_recent_analyses: Config Advisor results analyzed this session
-  (bottleneck scores, recommended cost/perf configs)
+  (bottleneck scores, recommended cost/perf configs, log-evidence summaries)
+- get_log_evidence: full stderr excerpts/stack traces when the user attached
+  the optional driver/executor logs zip to an analysis — quote the actual
+  error instead of inferring failure causes from metrics
 - run_config_advisor: full pipeline on a job run's event log — bottleneck
   classification + cost/perf recommendations (slow, 30-120s; use for
   "optimize this job")
@@ -762,6 +766,15 @@ CHAT_TOOLS = [
         "inputSchema": {"json": {"type": "object", "properties": {}}},
     }},
     {"toolSpec": {
+        "name": "get_log_evidence",
+        "description": "Full driver/executor stderr signature evidence — error excerpts and stack traces — for an analysis where the user attached the optional logs zip. Use to quote the ACTUAL error (heap OOM vs container RSS kill vs disk full vs S3 throttle) instead of inferring failure causes from event-log metrics.",
+        "inputSchema": {"json": {
+            "type": "object",
+            "properties": {"application_id": {"type": "string", "description": "application_id from get_recent_analyses"}},
+            "required": ["application_id"],
+        }},
+    }},
+    {"toolSpec": {
         "name": "run_config_advisor",
         "description": "Run the FULL Config Advisor pipeline on a finished job run: downloads its Spark event log from S3, extracts metrics, and returns bottleneck classification plus cost- and performance-optimized worker/config recommendations. Takes 30-120s. Use for 'optimize this job' requests.",
         "inputSchema": {"json": {
@@ -808,6 +821,44 @@ CHAT_TOOLS = [
 ]
 
 
+def _analyses_without_excerpts() -> list:
+    """Recent analyses with log-evidence excerpts elided — signature titles,
+    counts, and notes stay; the full stack traces live behind
+    get_log_evidence so every get_recent_analyses call isn't paying for
+    them."""
+    out = []
+    for a in _RECENT_ANALYSES:
+        ev = a.get("log_evidence")
+        if not ev:
+            out.append(a)
+            continue
+        a = dict(a)
+        a["log_evidence"] = {
+            **{k: v for k, v in ev.items() if k != "signatures"},
+            "signatures": [{k: v for k, v in s.items() if k != "excerpts"}
+                           for s in ev["signatures"]],
+            "excerpts_available": "call get_log_evidence for stack traces",
+        }
+        out.append(a)
+    return out
+
+
+def _tool_get_log_evidence(application_id: str) -> dict:
+    """Full log-signature evidence (incl. excerpts/stack traces) for an
+    analysis run this session with a driver/executor logs upload."""
+    for a in _RECENT_ANALYSES:
+        if a.get("application_id") == application_id:
+            ev = a.get("log_evidence")
+            if ev:
+                return {"application_id": application_id, "log_evidence": ev}
+            return {"error": f"analysis for {application_id} has no log "
+                    "evidence — the user did not attach a driver/executor "
+                    "logs zip. Ask them to re-run Analyze with the optional "
+                    "logs upload."}
+    return {"error": f"no analysis for {application_id} this session — "
+            "check get_recent_analyses for available ids"}
+
+
 def _run_chat_tool(name: str, tool_input: dict):
     if name == "get_job_config":
         return _tool_get_job_config(tool_input["job_run_id"])
@@ -818,8 +869,10 @@ def _run_chat_tool(name: str, tool_input: dict):
         return _tool_query_prometheus(tool_input["query"],
                                       int(tool_input.get("hours", 6)))
     if name == "get_recent_analyses":
-        return {"analyses": _RECENT_ANALYSES or
+        return {"analyses": _analyses_without_excerpts() or
                 "none this session — ask the user to run one in Config Advisor"}
+    if name == "get_log_evidence":
+        return _tool_get_log_evidence(tool_input["application_id"])
     if name == "run_config_advisor":
         return _tool_run_config_advisor(tool_input["job_run_id"])
     if name == "troubleshoot_job":
@@ -1269,8 +1322,35 @@ def _prepare_analysis_input(upload_path: Path) -> Path:
     return _extract_raw_event_log(upload_path)
 
 
+async def _attach_log_evidence(result: dict, logs_file) -> None:
+    """Scan an optional driver/executor-logs zip and attach the evidence.
+
+    Additive only: a bad or empty logs upload never fails the event-log
+    analysis — it degrades to a note on the result. Corroboration notes
+    refine the bottleneck verdict; they never re-score it.
+    """
+    logs_path = None
+    try:
+        logs_path = await _save_upload(logs_file)
+        evidence = extract_log_evidence(logs_path)
+        if not evidence["files_scanned"]:
+            result["log_evidence_error"] = (
+                "No driver/executor log files found in the logs zip — "
+                "expected SPARK_DRIVER/stderr.gz, SPARK_EXECUTOR/<id>/"
+                "stderr.gz, YARN container_*/ dirs, or *.log files")
+            return
+        evidence["notes"] = corroboration_notes(evidence, result.get("bottleneck"))
+        result["log_evidence"] = evidence
+    except Exception as e:
+        result["log_evidence_error"] = f"Log scan failed: {e}"
+    finally:
+        if logs_path:
+            logs_path.unlink(missing_ok=True)
+
+
 @app.post("/analyze")
-async def analyze(request: Request, file: UploadFile = File(...)):
+async def analyze(request: Request, file: UploadFile = File(...),
+                  logs_file: UploadFile = File(None)):
     if not file.filename:
         return _redirect_with_error("No file selected")
     if not Path(file.filename).suffix.lower() in ANALYZE_EXTS:
@@ -1278,6 +1358,11 @@ async def analyze(request: Request, file: UploadFile = File(...)):
             "Upload a task_stage_summary JSON, or a raw Spark event log "
             "(plain / .gz / rolling events_* file, or .zip of an "
             "eventlog_v2 directory)")
+    if logs_file is not None and logs_file.filename and \
+            not logs_file.filename.lower().endswith(".zip"):
+        return _redirect_with_error(
+            "Driver/executor logs must be a .zip (driver stderr plus the "
+            "stderr of any failed executors)")
 
     try:
         upload_path = await _save_upload(file)
@@ -1295,6 +1380,9 @@ async def analyze(request: Request, file: UploadFile = File(...)):
 
     if "error" in result:
         return _redirect_with_error(result["error"])
+
+    if logs_file is not None and logs_file.filename:
+        await _attach_log_evidence(result, logs_file)
 
     result.pop("_stages", None)
     return templates.TemplateResponse(
@@ -1812,11 +1900,14 @@ async def api_chat(request: Request):
 
 
 @app.post("/api/analyze")
-async def api_analyze(file: UploadFile = File(...)):
+async def api_analyze(file: UploadFile = File(...),
+                      logs_file: UploadFile = File(None)):
     """JSON API endpoint for programmatic access.
 
     Accepts a task_stage_summary JSON or a raw Spark event log
     (plain / .gz / rolling / .zip) — raw logs are extracted server-side.
+    Optional `logs_file`: a .zip of driver/executor stderr for log-signature
+    evidence (adds `log_evidence` to the response).
     """
     if not file.filename or Path(file.filename).suffix.lower() not in ANALYZE_EXTS:
         return JSONResponse(
@@ -1836,6 +1927,9 @@ async def api_analyze(file: UploadFile = File(...)):
         return JSONResponse({"error": str(e)}, status_code=500)
     finally:
         upload_path.unlink(missing_ok=True)
+
+    if logs_file is not None and logs_file.filename:
+        await _attach_log_evidence(result, logs_file)
 
     return JSONResponse(result)
 
