@@ -1,0 +1,137 @@
+# EMR Serverless benchmark workload registry.
+# Each entry is a replicated production workload with measured baselines.
+# Baselines are from isolated runs (concurrent submissions invalidate results
+# — the runner enforces sequential execution for this reason).
+#
+# All jobs run in account 633458367150, us-east-1.
+# Synthetic data is REUSED across runs (never regenerate as part of a bench).
+
+defaults:
+  execution_role: arn:aws:iam::633458367150:role/EMRServerlessJobExecutionRole
+  log_uri: s3://suthan-event-logs/serverless-logs/benchpipe/
+  region: us-east-1
+  # Sequential-only; poll every 60s; hard cancel to cap spend
+  timeout_minutes: 75
+
+workloads:
+
+  emc-window-matcher:
+    description: >-
+      Full-scale customer replica (eg-marketing-entry-clicks): 5.83B-row
+      clickstream scan, 10 iterative match/dedup localCheckpoint rounds,
+      window-over-view_id write execution with full-width rows (3.7TB through
+      the write). Exercises: iterative checkpointing, window+sort, wide-row
+      shuffle, Iceberg MoR write, 35% null hot key.
+    script: s3://suthan-event-logs/scripts/emc_repro_job.py
+    args: ["--warehouse", "s3://suthan-event-logs/synthetic/emc-repro-full/warehouse",
+           "--rounds", "10"]
+    spark_conf:
+      spark.executor.cores: "4"
+      spark.executor.memory: "14g"
+      spark.driver.cores: "8"
+      spark.driver.memory: "32g"
+      spark.emr-serverless.executor.disk: "100G"
+      spark.emr-serverless.executor.disk.type: "shuffle_optimized"
+      spark.dynamicAllocation.minExecutors: "36"
+      spark.dynamicAllocation.initialExecutors: "36"
+      spark.dynamicAllocation.maxExecutors: "400"
+      spark.sql.files.maxPartitionBytes: "268435456"
+      spark.jars: "file:///usr/share/aws/iceberg/lib/iceberg-spark-runtime-3.5_2.12-1.10.0-amzn-0.jar"
+    baseline:  # v7c 2026-07-11, emr-7.12.0 app 00g74rtavbh56g09
+      release: emr-7.12.0
+      duration_min: 31.8
+      vcpu_hours: 799.6
+      memory_gb_hours: 3200.7
+      storage_gb_hours: 19884.4
+      write_stage_cpu_per_gb: 8
+      failed_tasks: 0
+
+  veeva-massive-agg:
+    description: >-
+      Single massive aggregation over 4.4TB (veeva-crossix replica): one
+      giant GROUP BY, 45M+ small shuffle blocks — IOPS-bound shuffle serving.
+      The 16c-vs-32c discriminator workload (16c wins 2.6x).
+    script: s3://suthan-event-logs/synthetic/veeva-crossix/scripts/veeva_crossix_query.py
+    args: ["--input", "s3://suthan-event-logs/synthetic/veeva-crossix/input-v5/",
+           "--output", "s3://suthan-event-logs/synthetic/veeva-crossix/output-benchpipe/"]
+    spark_conf:
+      spark.executor.cores: "16"
+      spark.executor.memory: "108g"
+      spark.driver.cores: "8"
+      spark.driver.memory: "54G"
+      spark.emr-serverless.executor.disk: "2000G"
+      spark.emr-serverless.executor.disk.type: "shuffle_optimized"
+      spark.dynamicAllocation.maxExecutors: "147"
+      spark.dynamicAllocation.initialExecutors: "49"
+      spark.sql.shuffle.partitions: "5280"
+    baseline:  # isolated 2026-06-30, warm app
+      release: emr-7.13.0
+      duration_min: 5.3
+      vcpu_hours: null       # billed not captured on that run — fill on next run
+      cost_usd: 13.31
+      failed_tasks: 0
+
+  ump-email-multijoin:
+    description: >-
+      43-ShuffledHashJoin enrichment pipeline, 424GB input (ump-email
+      replica): many exchanges, large shuffle blocks, small fleet — the
+      throughput-bound workload where 32c workers win (23% faster/19%
+      cheaper than 16c).
+    script: s3://suthan-event-logs/synthetic/regression-suite/ump-email-clickstream/scripts/query_iceberg.py
+    args: ["--output", "s3://suthan-event-logs/synthetic/regression-suite/ump-email-clickstream/output-benchpipe/"]
+    spark_conf:
+      spark.executor.cores: "16"
+      spark.executor.memory: "108g"
+      spark.driver.cores: "8"
+      spark.driver.memory: "54G"
+      spark.emr-serverless.executor.disk: "2000G"
+      spark.emr-serverless.executor.disk.type: "shuffle_optimized"
+      spark.dynamicAllocation.maxExecutors: "25"
+      spark.dynamicAllocation.initialExecutors: "8"
+      spark.sql.shuffle.partitions: "5280"
+      spark.sql.adaptive.coalescePartitions.parallelismFirst: "false"
+    baseline:  # isolated 2026-06-30
+      release: emr-7.13.0
+      duration_min: 3.9
+      cost_usd: 1.78
+      failed_tasks: 0
+
+  vrbo-moderate-join:
+    description: >-
+      Moderate shuffle-join (vrbo-new-property replica): 2.5TB input, 256GB
+      shuffle, mid-scale fleet. The disk-tier discriminator workload
+      (8c: 500G=12.2min / 1000G=8.8min / 2000G=6.7min).
+    script: s3://suthan-event-logs/synthetic/regression-suite/vrbo_new_property/scripts/query_iceberg.py
+    args: ["--output", "s3://suthan-event-logs/synthetic/regression-suite/vrbo_new_property/output-benchpipe/"]
+    spark_conf:
+      spark.executor.cores: "8"
+      spark.executor.memory: "54g"
+      spark.driver.cores: "8"
+      spark.driver.memory: "54G"
+      spark.emr-serverless.executor.disk: "2000G"
+      spark.emr-serverless.executor.disk.type: "shuffle_optimized"
+      spark.dynamicAllocation.maxExecutors: "67"
+      spark.sql.shuffle.partitions: "1348"
+    baseline:  # isolated 2026-06-29
+      release: emr-7.13.0
+      duration_min: 6.7
+      cost_usd: 4.84
+      failed_tasks: 0
+
+  # Placeholders — replicated workloads with data ready but no clean isolated
+  # baseline yet; first benchpipe run against them becomes the baseline.
+  search-health-skewed-agg:
+    description: >-
+      3TB input, 1.5TB shuffle, hot-key skew (search-health replica) —
+      execution-memory-contention discriminator (8-core spill regression).
+    script: s3://suthan-event-logs/synthetic/search-health/scripts/query.py
+    args: ["--input", "s3://suthan-event-logs/synthetic/search-health/data-5hotkeys/",
+           "--output", "s3://suthan-event-logs/synthetic/search-health/output-benchpipe/"]
+    spark_conf:
+      spark.executor.cores: "4"
+      spark.executor.memory: "27g"
+      spark.driver.cores: "8"
+      spark.driver.memory: "54G"
+      spark.dynamicAllocation.maxExecutors: "117"
+      spark.sql.shuffle.partitions: "1301"
+    baseline: null
