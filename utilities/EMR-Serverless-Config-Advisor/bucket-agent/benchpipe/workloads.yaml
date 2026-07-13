@@ -17,11 +17,15 @@ workloads:
 
   emc-window-matcher:
     description: >-
-      Full-scale customer replica (eg-marketing-entry-clicks): 5.83B-row
-      clickstream scan, 10 iterative match/dedup localCheckpoint rounds,
-      window-over-view_id write execution with full-width rows (3.7TB through
-      the write). Exercises: iterative checkpointing, window+sort, wide-row
-      shuffle, Iceberg MoR write, 35% null hot key.
+      CPU-FAITHFUL customer replica (eg-marketing-entry-clicks, certified
+      2026-07-13: 209 task-CPU-h vs customer ~240h): 5.83B-row clickstream
+      (URL-shaped payloads, 2GB snappy files), 10 match/dedup checkpoint
+      rounds, scan-time URL-cleansing chain (double URLDecoder via reflect
+      — non-codegen, mirrors customer decodeUDF), window-over-view_id write
+      with full-width rows. Exercises: iterative checkpointing, window+sort,
+      non-codegen per-row UDF, wide-row shuffle, Iceberg MoR write, 35%
+      null hot key. THE flagship: densest workload in the registry.
+      Requires emr-7.12+ app (uses bundled amzn Iceberg jar path).
     script: s3://suthan-event-logs/scripts/emc_repro_job.py
     args: ["--warehouse", "s3://suthan-event-logs/synthetic/emc-repro-full/warehouse",
            "--rounds", "10"]
@@ -36,14 +40,16 @@ workloads:
       spark.dynamicAllocation.initialExecutors: "36"
       spark.dynamicAllocation.maxExecutors: "400"
       spark.sql.files.maxPartitionBytes: "268435456"
+      spark.sql.mapKeyDedupPolicy: "LAST_WIN"
       spark.jars: "file:///usr/share/aws/iceberg/lib/iceberg-spark-runtime-3.5_2.12-1.10.0-amzn-0.jar"
-    baseline:  # v7c 2026-07-11, emr-7.12.0 app 00g74rtavbh56g09
+    baseline:  # v9 certified 2026-07-13, run 00g762hamh6q7g0b, emr-7.12.0
       release: emr-7.12.0
-      duration_min: 31.8
-      vcpu_hours: 799.6
-      memory_gb_hours: 3200.7
-      storage_gb_hours: 19884.4
-      write_stage_cpu_per_gb: 8
+      duration_min: 46.0
+      vcpu_hours: 1131.8
+      memory_gb_hours: 4530.0
+      storage_gb_hours: 28147.0
+      cost_usd: 88.86
+      total_task_cpu_hours: 209
       failed_tasks: 0
 
   veeva-massive-agg:
