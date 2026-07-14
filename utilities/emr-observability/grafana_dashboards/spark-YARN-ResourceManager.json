@@ -99,7 +99,7 @@
           "calcs": [
             "lastNotNull"
           ],
-          "fields": "/^{job=\"hbase_hmaster\"}$/",
+          "fields": "/^{job=\"hadoop_yarn_resourcemanager\"}$/",
           "values": false
         },
         "textMode": "auto"
@@ -179,7 +179,7 @@
           "calcs": [
             "lastNotNull"
           ],
-          "fields": "/^{job=\"hbase_hmaster\"}$/",
+          "fields": "/^{job=\"hadoop_yarn_resourcemanager\"}$/",
           "values": false
         },
         "textMode": "auto"
@@ -529,7 +529,7 @@
           "calcs": [
             "lastNotNull"
           ],
-          "fields": "/^{job=\"hbase_hmaster\"}$/",
+          "fields": "/^{job=\"hadoop_yarn_resourcemanager\"}$/",
           "values": false
         },
         "textMode": "auto"
@@ -4167,8 +4167,8 @@
       {
         "current": {
           "selected": false,
-          "text": "hbase_hmaster",
-          "value": "hbase_hmaster"
+          "text": "hadoop_yarn_resourcemanager",
+          "value": "hadoop_yarn_resourcemanager"
         },
         "datasource": {
           "type": "prometheus"

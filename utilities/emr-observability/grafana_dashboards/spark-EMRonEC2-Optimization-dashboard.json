@@ -177,7 +177,7 @@
           "calcs": [
             "lastNotNull"
           ],
-          "fields": "/^{job=\"hbase_hmaster\"}$/",
+          "fields": "/^{job=\"hadoop_yarn_resourcemanager\"}$/",
           "values": false
         },
         "textMode": "auto"
@@ -189,7 +189,7 @@
             "type": "prometheus"
           },
           "exemplar": false,
-          "expr": "sum by (job) (yarn_resourcemanager_clustermetrics_num_active_nms {job=\"hbase_hmaster\", cluster_id=~'$cluster', instance=~'$instance'} )",
+          "expr": "sum by (job) (yarn_resourcemanager_clustermetrics_num_active_nms {job=\"hadoop_yarn_resourcemanager\", cluster_id=~'$cluster', instance=~'$instance'} )",
           "interval": "",
           "legendFormat": "{{instance}}",
           "refId": "A"
@@ -346,7 +346,7 @@
             "type": "prometheus"
           },
           "exemplar": false,
-          "expr": "max(sum by(job, cluster, instance) (yarn_resourcemanager_queue_max_capacity_mb {job=\"hbase_hmaster\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''}))",
+          "expr": "max(sum by(job, cluster, instance) (yarn_resourcemanager_queue_max_capacity_mb {job=\"hadoop_yarn_resourcemanager\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''}))",
           "interval": "",
           "legendFormat": "{{cluster_id}}",
           "refId": "A"
@@ -491,7 +491,7 @@
           "calcs": [
             "lastNotNull"
           ],
-          "fields": "/^{job=\"hbase_hmaster\"}$/",
+          "fields": "/^{job=\"hadoop_yarn_resourcemanager\"}$/",
           "values": false
         },
         "textMode": "auto"
@@ -503,7 +503,7 @@
             "type": "prometheus"
           },
           "exemplar": true,
-          "expr": "sum by (job) (yarn_resourcemanager_queue_allocated_vcores {job=\"hbase_hmaster\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''} +  yarn_resourcemanager_queue_available_vcores {job=\"hbase_hmaster\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''}+  yarn_resourcemanager_queue_reserved_vcores {job=\"hbase_hmaster\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})",
+          "expr": "sum by (job) (yarn_resourcemanager_queue_allocated_vcores {job=\"hadoop_yarn_resourcemanager\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''} +  yarn_resourcemanager_queue_available_vcores {job=\"hadoop_yarn_resourcemanager\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''}+  yarn_resourcemanager_queue_reserved_vcores {job=\"hadoop_yarn_resourcemanager\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})",
           "interval": "",
           "legendFormat": "{{instance}}",
           "refId": "A"
@@ -1029,7 +1029,7 @@
             "type": "prometheus"
           },
           "exemplar": false,
-          "expr": "1-(sum by (job, cluster_id, instance) (yarn_resourcemanager_queue_available_mb {job=\"hbase_hmaster\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})/sum by (job, cluster_id, instance) (yarn_resourcemanager_queue_max_capacity_mb {job=\"hbase_hmaster\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''}))",
+          "expr": "1-(sum by (job, cluster_id, instance) (yarn_resourcemanager_queue_available_mb {job=\"hadoop_yarn_resourcemanager\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})/sum by (job, cluster_id, instance) (yarn_resourcemanager_queue_max_capacity_mb {job=\"hadoop_yarn_resourcemanager\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''}))",
           "interval": "",
           "legendFormat": "{{cluster_id}}",
           "refId": "A"
@@ -1236,7 +1236,7 @@
             "type": "prometheus"
           },
           "exemplar": true,
-          "expr": "1-sum by (job, cluster_id, instance) (yarn_resourcemanager_queue_available_vcores {job=\"hbase_hmaster\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})/sum by (job, cluster_id, instance) (yarn_resourcemanager_queue_allocated_vcores {job=\"hbase_hmaster\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''} + yarn_resourcemanager_queue_available_vcores {job=\"hbase_hmaster\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''} + yarn_resourcemanager_queue_pending_vcores {job=\"hbase_hmaster\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''} + yarn_resourcemanager_queue_reserved_vcores {job=\"hbase_hmaster\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})",
+          "expr": "1-sum by (job, cluster_id, instance) (yarn_resourcemanager_queue_available_vcores {job=\"hadoop_yarn_resourcemanager\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})/sum by (job, cluster_id, instance) (yarn_resourcemanager_queue_allocated_vcores {job=\"hadoop_yarn_resourcemanager\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''} + yarn_resourcemanager_queue_available_vcores {job=\"hadoop_yarn_resourcemanager\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''} + yarn_resourcemanager_queue_pending_vcores {job=\"hadoop_yarn_resourcemanager\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''} + yarn_resourcemanager_queue_reserved_vcores {job=\"hadoop_yarn_resourcemanager\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})",
           "interval": "",
           "legendFormat": "{{cluster_id}}",
           "refId": "A"
@@ -1427,7 +1427,7 @@
             "type": "prometheus"
           },
           "exemplar": true,
-          "expr": "sum by(job, cluster_id, instance) (yarn_resourcemanager_queue_available_vcores {job=\"hbase_hmaster\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})",
+          "expr": "sum by(job, cluster_id, instance) (yarn_resourcemanager_queue_available_vcores {job=\"hadoop_yarn_resourcemanager\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})",
           "interval": "",
           "legendFormat": "{{cluster_id}}",
           "refId": "A"
@@ -1524,7 +1524,7 @@
             "type": "prometheus"
           },
           "exemplar": true,
-          "expr": "sum by(job, cluster_id, instance) (yarn_resourcemanager_queue_allocated_vcores {job=\"hbase_hmaster\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})",
+          "expr": "sum by(job, cluster_id, instance) (yarn_resourcemanager_queue_allocated_vcores {job=\"hadoop_yarn_resourcemanager\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})",
           "interval": "",
           "legendFormat": "{{cluster_id}}",
           "refId": "A"

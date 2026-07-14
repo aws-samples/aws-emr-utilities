@@ -1,7 +1,7 @@
 #!/bin/bash -xe
 
 # This script installs and configures Prometheus on the master nodes to collect node level and application level
-# (Hadoop and HBase) metrics from all cluster nodes. It can also configured to export metrics to
+# (Hadoop and Spark) metrics from all cluster nodes. It can also configured to export metrics to
 # your AWS Prometheus workspace via the remote_write endpoint. AWS Prometheus workspace id is an optional argument,
 # that, if passed, configures the on-cluster Prometheus instance to export metrics to AWS Prometheus
 # Usage in BA: --bootstrap-actions '[{"Path":"s3://<s3_path>/install_prometheus.sh","Args":["ws-537c7364-f10f-4210-a0fa-deedd3ea1935"]
@@ -64,39 +64,6 @@ function setup_jmx_hadoop() {
     sudo cp hdfs_jmx_config_datanode.yaml ${HADOOP_CONF}
     sudo cp yarn_jmx_config_resource_manager.yaml ${HADOOP_CONF}
     sudo cp yarn_jmx_config_node_manager.yaml ${HADOOP_CONF}
-}
-
-# configure the jmx_exporter for hbase
-function setup_jmx_hbase() {
-  cat >hbase_jmx_config.yaml <<EOF
-lowercaseOutputName: true
-lowercaseOutputLabelNames: true
-rules:
-  - pattern: '.*'
-EOF
-
-  # we have to manually load the hbase-env changes to allow the jmx_exporter to push on multiple ports
-  cat >hbase-env-master.sh <<"EOF"
-export HBASE_OPTS="$HBASE_OPTS -javaagent:/etc/prometheus/jmx_prometheus_javaagent-0.17.2.jar=7005:/etc/hbase/conf/hbase_jmx_config.yaml"
-EOF
-
-  cat >hbase-env-thrift.sh <<"EOF"
-export HBASE_OPTS="$HBASE_OPTS -javaagent:/etc/prometheus/jmx_prometheus_javaagent-0.17.2.jar=7007:/etc/hbase/conf/hbase_jmx_config.yaml"
-EOF
-
-  cat >hbase-env-rest.sh <<"EOF"
-export HBASE_OPTS="$HBASE_OPTS -javaagent:/etc/prometheus/jmx_prometheus_javaagent-0.17.2.jar=7008:/etc/hbase/conf/hbase_jmx_config.yaml"
-EOF
-
-  cat >hbase-env-regionserver.sh <<"EOF"
-export HBASE_OPTS="$HBASE_OPTS -javaagent:/etc/prometheus/jmx_prometheus_javaagent-0.17.2.jar=7006:/etc/hbase/conf/hbase_jmx_config.yaml"
-EOF
-  sudo mkdir -p /etc/hbase/conf
-  sudo cp hbase_jmx_config.yaml /etc/hbase/conf
-  sudo cp hbase-env-master.sh /etc/hbase/conf
-  sudo cp hbase-env-thrift.sh /etc/hbase/conf
-  sudo cp hbase-env-rest.sh /etc/hbase/conf
-  sudo cp hbase-env-regionserver.sh /etc/hbase/conf
 }
 
 function setup_jmx_spark() {
@@ -288,87 +255,6 @@ scrape_configs:
     - source_labels: [__meta_ec2_tag_aws_elasticmapreduce_instance_group_role]
       target_label: node_type
 
-      - job_name: 'hbase_regionserver'
-    ec2_sd_configs:
-    - region: ${REGION}
-      profile: EMR_EC2_DefaultRole
-      port: 7006
-      filters:
-      - name: tag:aws:elasticmapreduce:job-flow-id
-        values:
-        - ${JOBFLOWID}
-      - name: tag:aws:elasticmapreduce:instance-group-role
-        values:
-        - CORE
-        - TASK
-    relabel_configs:
-    - source_labels: [__meta_ec2_instance_id]
-      target_label: instance
-    - source_labels: [__meta_ec2_tag_aws_elasticmapreduce_job_flow_id]
-      target_label: cluster_id
-    - source_labels: [__meta_ec2_tag_aws_elasticmapreduce_instance_group_role]
-      target_label: node_type
-
-  - job_name: 'hbase_hmaster'
-    ec2_sd_configs:
-    - region: ${REGION}
-      profile: EMR_EC2_DefaultRole
-      port: 7005
-      filters:
-      - name: tag:aws:elasticmapreduce:job-flow-id
-        values:
-        - ${JOBFLOWID}
-      - name: tag:aws:elasticmapreduce:instance-group-role
-        values:
-        - MASTER
-    relabel_configs:
-    - source_labels: [__meta_ec2_instance_id]
-      target_label: instance
-    - source_labels: [__meta_ec2_tag_aws_elasticmapreduce_job_flow_id]
-      target_label: cluster_id
-    - source_labels: [__meta_ec2_tag_aws_elasticmapreduce_instance_group_role]
-      target_label: node_type
-
-  - job_name: 'hbase_rest'
-    ec2_sd_configs:
-    - region: ${REGION}
-      profile: EMR_EC2_DefaultRole
-      port: 7008
-      filters:
-      - name: tag:aws:elasticmapreduce:job-flow-id
-        values:
-        - ${JOBFLOWID}
-      - name: tag:aws:elasticmapreduce:instance-group-role
-        values:
-        - MASTER
-    relabel_configs:
-    - source_labels: [__meta_ec2_instance_id]
-      target_label: instance
-    - source_labels: [__meta_ec2_tag_aws_elasticmapreduce_job_flow_id]
-      target_label: cluster_id
-    - source_labels: [__meta_ec2_tag_aws_elasticmapreduce_instance_group_role]
-      target_label: node_type
-
-  - job_name: 'hbase_thrift'
-    ec2_sd_configs:
-    - region: ${REGION}
-      profile: EMR_EC2_DefaultRole
-      port: 7007
-      filters:
-      - name: tag:aws:elasticmapreduce:job-flow-id
-        values:
-        - ${JOBFLOWID}
-      - name: tag:aws:elasticmapreduce:instance-group-role
-        values:
-        - MASTER
-    relabel_configs:
-    - source_labels: [__meta_ec2_instance_id]
-      target_label: instance
-    - source_labels: [__meta_ec2_tag_aws_elasticmapreduce_job_flow_id]
-      target_label: cluster_id
-    - source_labels: [__meta_ec2_tag_aws_elasticmapreduce_instance_group_role]
-      target_label: node_type
-
 remote_write:
   - url: https://aps-workspaces.${AWS_REGION}.amazonaws.com/workspaces/${WORKSPACE_ID}/api/v1/remote_write
     queue_config:
@@ -424,7 +310,4 @@ install_node_exporter
 install_jmx_exporter
 
 setup_jmx_hadoop
-
-if echo $COMPONENTS | grep -q hbase; then
-  setup_jmx_hbase
-fi
+setup_jmx_spark
