@@ -10,14 +10,22 @@ import glob
 from pathlib import Path
 from typing import List, Dict, Tuple
 import pandas as pd
-import logging
 
-# Setup logging
-logging.basicConfig(
-    format="%(asctime)s %(levelname)-5s [%(name)s]  %(message)s",
-    level=logging.INFO,
-)
-log = logging.getLogger("dual-mode-recommender")
+# Import centralized logging configuration
+try:
+    from logging_config import setup_logging
+    log = setup_logging(name="dual-mode-recommender")
+except ImportError:
+    # Fallback to basic logging if logging_config not available
+    import logging
+    import time
+    logging.basicConfig(
+        format="%(asctime)s UTC %(levelname)-5s [%(name)s]  %(message)s",
+        datefmt='%Y-%m-%d %H:%M:%S',
+        level=logging.INFO,
+    )
+    logging.Formatter.converter = time.gmtime  # Force UTC
+    log = logging.getLogger("dual-mode-recommender")
 
 # Try to import S3 support
 try:
@@ -33,57 +41,51 @@ def is_s3_path(path: str) -> bool:
     return path.startswith('s3://')
 
 
-def load_json_files(path: str, limit: int = 100) -> List[Dict]:
-    """Load JSON files from S3 or local filesystem."""
+def load_json_files(path: str, limit: int = None) -> List[Dict]:
+    """Load JSON files from S3 or local filesystem. Limit parameter is ignored - all files are processed."""
     all_data = []
-    
+
     if is_s3_path(path):
         if not S3_AVAILABLE:
             raise RuntimeError("boto3 required for S3 paths. Install: pip install boto3")
-        
+
         # S3 path
         bucket, prefix = path.replace('s3://', '').split('/', 1)
         prefix = prefix.rstrip('/') + '/task_stage_summary/'
-        
+
         s3_client = boto3.client('s3')
         log.info("Loading from S3: s3://%s/%s", bucket, prefix)
-        
+
         paginator = s3_client.get_paginator('list_objects_v2')
         for page in paginator.paginate(Bucket=bucket, Prefix=prefix):
             if 'Contents' not in page:
                 continue
-            
+
             for obj in page['Contents']:
                 key = obj['Key']
                 if not key.endswith('.json'):
                     continue
-                
+
                 try:
                     response = s3_client.get_object(Bucket=bucket, Key=key)
                     data = json.loads(response['Body'].read())
                     all_data.append(data)
-                    
-                    if len(all_data) >= limit:
-                        break
                 except Exception as e:
                     log.debug("Skipping %s: %s", key, e)
-            
-            if len(all_data) >= limit:
-                break
     else:
         # Local filesystem
         search_path = Path(path) / 'task_stage_summary' / '*.json'
         log.info("Loading from local: %s", search_path)
-        
+
         json_files = glob.glob(str(search_path))
-        for json_file in json_files[:limit]:
+        for json_file in json_files:
             try:
                 with open(json_file) as f:
                     data = json.load(f)
                     all_data.append(data)
             except Exception as e:
                 log.debug("Skipping %s: %s", json_file, e)
-    
+
     log.info("Loaded %d JSON files", len(all_data))
     return all_data
 
@@ -224,36 +226,17 @@ def _get_timeout_configs(input_gb: float, duration_hours: float) -> Dict[str, st
     duration_factor = int(duration_hours) * 120 if duration_hours else 0
     shuffle_timeout = min(max(base_timeout + data_factor + duration_factor, 600), 1800)
     network_timeout = shuffle_timeout * 2
-    
+
     return {
         "spark.network.timeout": f"{network_timeout}s",
         "spark.shuffle.io.connectionTimeout": f"{shuffle_timeout}s",
     }
 
 
-def _get_s3_retry_configs(input_gb: float, output_gb: float = 0) -> Dict[str, str]:
-    if input_gb < 100:
-        retries = "5"
-    elif input_gb < 1000:
-        retries = "10"
-    else:
-        retries = "15"
-    
-    s3_io_gb = input_gb + output_gb
-    if s3_io_gb > 1000:
-        attempts_maximum = "15"
-    elif s3_io_gb > 100:
-        attempts_maximum = "10"
-    else:
-        attempts_maximum = None  # use Hadoop default (5)
-    
-    configs = {
-        "spark.hadoop.fs.s3a.retry.limit": retries,
-        "spark.hadoop.fs.s3a.connection.ssl.enabled": "true",
+def _get_s3_retry_configs() -> Dict[str, str]:
+    return {
+        "spark.hadoop.fs.s3a.attempts.maximum": "15",
     }
-    if attempts_maximum:
-        configs["spark.hadoop.fs.s3a.attempts.maximum"] = attempts_maximum
-    return configs
 
 
 def _get_iceberg_configs() -> Dict[str, str]:
@@ -264,71 +247,22 @@ def _get_iceberg_configs() -> Dict[str, str]:
     }
 
 
-
-def _detect_window_group_limit_skew(stages, duration_min):
-    """Detect WindowGroupLimit-induced skew: few tasks, long duration, high spill/skew."""
-    findings = []
-    for s in stages:
-        num_tasks = s.get('num_tasks', 0)
-        duration_sec = s.get('duration_sec', 0) or 0
-        total_task_time = s.get('total_task_time_sec', 0) or 0
-        mem_spill_gb = s.get('mem_spill_gb', 0) or 0
-        if num_tasks == 0 or duration_sec == 0 or total_task_time == 0:
-            continue
-        avg_task_time = total_task_time / num_tasks
-        skew_ratio = duration_sec / avg_task_time if avg_task_time > 0 else 0
-        is_few_tasks = num_tasks < 50
-        is_long = duration_sec > 1800
-        is_skewed = skew_ratio > 5.0
-        has_spill = mem_spill_gb > 100
-        if is_few_tasks and is_long and (is_skewed or has_spill):
-            pct_of_job = (duration_sec / 60) / duration_min * 100 if duration_min > 0 else 0
-            findings.append({
-                'stage_id': s.get('stage_id'),
-                'num_tasks': num_tasks,
-                'duration_min': round(duration_sec / 60, 1),
-                'skew_ratio': round(skew_ratio, 1),
-                'mem_spill_gb': round(mem_spill_gb, 1),
-                'pct_of_job': round(pct_of_job, 1),
-            })
-    return findings
+def _get_openlineage_configs() -> Dict[str, str]:
+    return {
+        "spark.openlineage.parentRunId": "",
+        "spark.openlineage.parentJobName": "",
+        "spark.openlineage.parentJobNamespace": "",
+    }
 
 
-
-def _detect_window_group_limit_coalesce_regression(stages, sql_executions, executor_summary):
-    """Detect WindowGroupLimit regression from AQE coalescing imbalance."""
-    has_window = any('Window ' in (sq.get('physical_plan_description', '') or '') or
-                     'Window[' in (sq.get('physical_plan_description', '') or '')
-                     for sq in sql_executions)
-    if not has_window:
-        return False
-    small_coalesced = [s for s in stages if 1 < s.get('num_tasks', 0) < 100]
-    if len(small_coalesced) <= 10:
-        return False
-    fetch_failed_large = [s for s in stages
-                          if s.get('failure_reason')
-                          and 'FetchFailed' in (s.get('failure_reason') or '')
-                          and s.get('num_tasks', 0) > 500]
-    if not fetch_failed_large:
-        return False
-    nearby = sum(1 for sm in small_coalesced for fl in fetch_failed_large
-                 if abs(sm['stage_id'] - fl['stage_id']) <= 30)
-    if nearby <= 5:
-        return False
-    dead = executor_summary.get('dead_executors', 0)
-    total = executor_summary.get('total_executors', 1)
-    if total > 0 and dead / total >= 0.10:
-        return False
-    return True
-
-def generate_dual_recommendations(input_path: str, limit: int = 100,
+def generate_dual_recommendations(input_path: str, limit: int = None,
                                   target_partition_size_mib: int = 1024,
                                   serverless_storage: bool = False) -> Tuple[List[Dict], List[Dict]]:
-    """Generate cost, performance, and IO-optimized recommendations."""
-    
-    # Load metrics
+    """Generate cost, performance, and IO-optimized recommendations. Limit parameter is ignored - all applications are processed."""
+
+    # Load metrics (limit parameter kept for backward compatibility but ignored)
     all_data = load_json_files(input_path, limit)
-    
+
     # Convert to DataFrame
     flattened = []
     for data in all_data:
@@ -337,14 +271,13 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         io_data = data.get('io', data.get('io_summary', {}).get('application_level', {}))
         util_data = data.get('utilization', data.get('executor_summary', {}))
         spill_data = data.get('spill_summary', {})
-        
+
         flat = {
             'application_id': data.get('application_id', app_info.get('app_id')),
             'application_name': data.get('application_name', app_info.get('application_name')),
             'job_id': app_info.get('job_id'),
             'total_run_duration_hours': data.get('total_run_duration_hours', app_info.get('total_run_duration_hours')),
             'io_total_input_gb': io_data.get('total_input_gb'),
-            'io_total_output_gb': io_data.get('total_output_gb', 0),
             'io_total_shuffle_read_gb': io_data.get('total_shuffle_read_gb'),
             'io_total_shuffle_write_gb': io_data.get('total_shuffle_write_gb'),
             'avg_memory_utilization_percent': util_data.get('avg_memory_utilization_percent'),
@@ -353,34 +286,66 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             'total_memory_spilled_gb': spill_data.get('total_memory_spilled_gb'),
             'total_disk_spilled_gb': spill_data.get('total_disk_spilled_gb'),
             'max_stage_tasks': max((s.get('num_tasks', 0) for s in data.get('stage_summary', {}).get('stages', [])), default=0),
-            'total_tasks': data.get('task_summary', {}).get('total_tasks', 0),
             'max_peak_memory_gb': util_data.get('max_peak_memory_gb', 0),
             'orig_executor_cores': int(data.get('spark_config', {}).get('spark.executor.cores', 0) or 0),
             'orig_total_executors': int(util_data.get('total_executors', 0) or 0),
             'total_task_execution_hours': util_data.get('total_task_execution_hours', 0),
             'max_stage_shuffle_write_gb': data.get('shuffle_data_summary', {}).get('max_stage_shuffle_write_gb', 0),
             'shuffle_fetch_wait_percent': io_data.get('shuffle_fetch_wait_percent', 0),
-            '_stages_raw': data.get('stage_summary', {}).get('stages', []),
-            '_sql_executions_raw': data.get('sql_executions', []),
-            '_executor_summary_raw': data.get('executor_summary', {}),
         }
         flattened.append(flat)
-    
+
+    # Check if we have any data
+    if not flattened:
+        log.error("No data found in input path. Please check the path and data format.")
+        return [], []
+
+    # Debug: Log first record structure
+    if flattened and log.isEnabledFor(logging.DEBUG):
+        log.debug("Sample flattened record keys: %s", list(flattened[0].keys()))
+        log.debug("Sample flattened record: %s", flattened[0])
+
     df = pd.DataFrame(flattened)
-    
+
+    # Define required columns with defaults
+    required_columns = {
+        'io_total_input_gb': 0.0,
+        'io_total_shuffle_read_gb': 0.0,
+        'io_total_shuffle_write_gb': 0.0,
+        'avg_memory_utilization_percent': 60.0,
+        'avg_cpu_utilization_percent': 50.0,
+        'idle_core_percentage': 50.0,
+        'total_memory_spilled_gb': 0.0,
+        'total_disk_spilled_gb': 0.0,
+        'max_stage_tasks': 0,
+        'max_peak_memory_gb': 0.0,
+        'orig_executor_cores': 0,
+        'orig_total_executors': 0,
+        'total_task_execution_hours': 0.0,
+        'max_stage_shuffle_write_gb': 0.0,
+        'shuffle_fetch_wait_percent': 0.0,
+        'total_run_duration_hours': 0.0,
+    }
+
+    # Ensure all required columns exist
+    for col, default_val in required_columns.items():
+        if col not in df.columns:
+            log.warning("Column '%s' not found in data, using default value: %s", col, default_val)
+            df[col] = default_val
+
     # Sanitize NaN values - replace with 0 for numeric columns
     df = df.fillna(0)
-    
+
     # Separate apps with and without data (include shuffle-only workloads as "with data")
     has_data = (df['io_total_input_gb'] > 0) | (df['io_total_shuffle_read_gb'] > 0) | (df['io_total_shuffle_write_gb'] > 0)
-    df_with_data = df[has_data].sort_values('io_total_input_gb', ascending=False).head(limit)
-    df_no_data = df[~has_data].head(limit)
-    
+    df_with_data = df[has_data].sort_values('io_total_input_gb', ascending=False)
+    df_no_data = df[~has_data]
+
     log.info("Processing %d applications with data, %d with no input data", len(df_with_data), len(df_no_data))
-    
+
     cost_recs = []
     perf_recs = []
-    
+
     # Process applications with input data
     for _, row in df_with_data.iterrows():
         app_id = row.get('application_id', 'N/A')
@@ -388,10 +353,9 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         job_id = row.get('job_id')
         duration = float(row.get('total_run_duration_hours', 0) or 0)
         i_in_gb = float(row.get('io_total_input_gb', 0) or 0)
-        i_out_gb = float(row.get('io_total_output_gb', 0) or 0)
         s_in_gb = float(row.get('io_total_shuffle_read_gb', 0) or 0)
         s_out_gb = float(row.get('io_total_shuffle_write_gb', 0) or 0)
-        
+
         mem_pct = float(row.get('avg_memory_utilization_percent', 60.0) or 60.0)
         cpu_pct = float(row.get('avg_cpu_utilization_percent', 50.0) or 50.0)
         idle_pct = float(row.get('idle_core_percentage', 50.0) or 50.0)
@@ -404,15 +368,15 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         total_task_exec_hours = float(row.get('total_task_execution_hours', 0) or 0)
         max_stage_shuf_write = float(row.get('max_stage_shuffle_write_gb', 0) or 0)
         shuffle_fetch_wait_pct = float(row.get('shuffle_fetch_wait_percent', 0) or 0)
-        
+
         sh_ratio = _calculate_shuffle_ratio(i_in_gb, s_in_gb, s_out_gb)
         worker_type, worker_cfg = _select_worker_type(i_in_gb, sh_ratio, mem_pct, spill_gb, cpu_pct,
                                                       max_peak_mem_gb=max_peak_mem_gb, orig_cores=orig_cores)
-        
+
         shuffle_data_gb = max(s_in_gb, s_out_gb)
         shuffle_bytes = shuffle_data_gb * 1024 * 1024 * 1024
         has_shuffle = shuffle_data_gb > 0
-        
+
         # Custom partition calculation
         def auto_tune_custom(shuffle_bytes, max_executors):
             target_mib = target_partition_size_mib
@@ -424,27 +388,6 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             if partitions % 2 != 0:
                 partitions += 1
             return partitions, target_mib
-
-        def cap_partitions(partitions, max_executors):
-            """Cap partitions based on executor IO concurrency, with a
-            data volume floor to prevent oversized partitions."""
-            io_ceiling = max(200, max_executors * 8)
-            # Data floor: ensure partitions don't exceed 3x memory per core
-            mem_per_core = worker_cfg["memory"] / worker_cfg["vcpu"]
-            max_gb_per_part = mem_per_core * 3
-            data_floor = max(2, int((s_in_gb + s_out_gb) / max_gb_per_part)) if max_gb_per_part > 0 else 200
-            # Apply: at least the data floor, at most the IO ceiling
-            partitions = max(data_floor, min(partitions, io_ceiling))
-            if partitions % 2 != 0:
-                partitions += 1
-            return partitions
-        
-        # --- WindowGroupLimit skew detection ---
-        stages_raw = row.get('_stages_raw', [])
-        duration_min_raw = duration * 60
-        window_skew_findings = _detect_window_group_limit_skew(stages_raw, duration_min_raw)
-        window_coalesce_regression = _detect_window_group_limit_coalesce_regression(
-            stages_raw, row.get('_sql_executions_raw', []), row.get('_executor_summary_raw', {}))
 
         # Cost-optimized
         max_exec_cost_init, min_exec_cost = _compute_exec_limits(
@@ -458,9 +401,8 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             orig_executors=orig_executors, orig_cores=orig_cores,
             total_task_exec_hours=total_task_exec_hours, duration_hours=duration,
         )
-        sp_cost = cap_partitions(sp_cost, max_exec_cost)
         executor_disk_cost = _calculate_executor_disk(s_out_gb, disk_spill_gb, spill_gb, max_exec_cost)
-        
+
         # Performance-optimized
         max_exec_perf_init, min_exec_perf = _compute_exec_limits(
             i_in_gb, worker_cfg["vcpu"], 0, mem_pct, cpu_pct, idle_pct, spill_gb, mode="performance",
@@ -473,9 +415,8 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             orig_executors=orig_executors, orig_cores=orig_cores,
             total_task_exec_hours=total_task_exec_hours, duration_hours=duration,
         )
-        sp_perf = cap_partitions(sp_perf, max_exec_perf)
         executor_disk_perf = _calculate_executor_disk(s_out_gb, disk_spill_gb, spill_gb, max_exec_perf)
-        
+
         # Build base metrics
         base_metrics = {
             "input_gb": round(i_in_gb, 2),
@@ -490,7 +431,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             "idle_core_percentage": round(idle_pct, 2),
             "total_memory_spilled_gb": round(spill_gb, 2),
         }
-        
+
         # Build Spark configs
         def _driver_sizing(partitions, max_exec, shuffle_gb):
             """Scale driver based on coordination overhead."""
@@ -503,20 +444,8 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             else:
                 return 4, 14
 
-        def _driver_disk_sizing(total_tasks):
-            """Scale driver disk based on total task count to prevent event log disk pressure."""
-            if total_tasks > 500000:
-                return "100G"
-            elif total_tasks > 100000:
-                return "50G"
-            else:
-                return None
-
-        total_tasks = int(row.get('total_tasks', 0) or 0)
-
         def build_spark_cfg(max_exec, min_exec, sp, executor_disk, vcpu_override=None, mem_override=None):
             d_cores, d_mem = _driver_sizing(sp, max_exec, s_in_gb + s_out_gb)
-            driver_disk = _driver_disk_sizing(total_tasks)
             vcpu = vcpu_override or worker_cfg["vcpu"]
             mem = mem_override or worker_cfg["memory"]
             cfg = {
@@ -534,11 +463,10 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                 "spark.dynamicAllocation.minExecutors": str(min_exec),
                 "spark.dynamicAllocation.initialExecutors": str(min_exec),
             }
-            if driver_disk:
-                cfg["spark.emr-serverless.driver.disk"] = driver_disk
             cfg.update(_get_timeout_configs(i_in_gb, duration))
-            cfg.update(_get_s3_retry_configs(i_in_gb, i_out_gb))
+            cfg.update(_get_s3_retry_configs())
             cfg.update(_get_iceberg_configs())
+            cfg.update(_get_openlineage_configs())
             if sh_ratio > 30:
                 cfg.update({"spark.shuffle.compress": "true", "spark.shuffle.spill.compress": "true"})
             # Serverless storage: only when explicitly enabled and disk pressure is safe
@@ -549,7 +477,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                     cfg.pop("spark.emr-serverless.executor.disk", None)
                     cfg.pop("spark.emr-serverless.executor.disk.type", None)
             return cfg
-        
+
         # Cost recommendation
         cost_rec = {
             "application_id": app_id,
@@ -576,7 +504,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                 "auto_tuned": True,
             },
         })
-        
+
         # Performance recommendation
         perf_rec = {
             "application_id": app_id,
@@ -603,31 +531,6 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                 "auto_tuned": True,
             },
         })
-        
-        # Inject WindowGroupLimit recommendation if detected
-        if window_skew_findings or window_coalesce_regression:
-            excluded_rule = 'org.apache.spark.sql.catalyst.optimizer.InferWindowGroupLimit'
-            wgl_type = 'window_group_limit_skew' if window_skew_findings else 'window_group_limit_coalesce_regression'
-            wgl_msg = (f'Stage(s) with extreme skew from InferWindowGroupLimit optimizer rule. '
-                       f'{len(window_skew_findings)} stage(s) affected, '
-                       f'worst: stage {window_skew_findings[0]["stage_id"]} '
-                       f'({window_skew_findings[0]["pct_of_job"]}% of job time, '
-                       f'{window_skew_findings[0]["skew_ratio"]}x skew ratio).') if window_skew_findings else (
-                       'InferWindowGroupLimit causing AQE coalescing imbalance with window functions. '
-                       'Small coalesced stages near failed shuffle stages indicate uneven partition distributions.')
-            cost_rec['bottleneck_warnings'] = [{
-                'type': wgl_type,
-                'severity': 'HIGH',
-                'message': wgl_msg,
-                'recommendation': f'spark.sql.optimizer.excludedRules={excluded_rule}',
-                'affected_stages': window_skew_findings if window_skew_findings else [],
-            }]
-            perf_rec['bottleneck_warnings'] = cost_rec['bottleneck_warnings']
-            # Add to spark_configs
-            existing = cost_rec['spark_configs'].get('spark.sql.optimizer.excludedRules', '')
-            rules = f'{existing},{excluded_rule}' if existing else excluded_rule
-            cost_rec['spark_configs']['spark.sql.optimizer.excludedRules'] = rules
-            perf_rec['spark_configs']['spark.sql.optimizer.excludedRules'] = rules
 
         cost_recs.append(cost_rec)
         perf_recs.append(perf_rec)
@@ -711,26 +614,20 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             })
             worker_cfg, worker_type = saved_cfg, saved_type
             # For IO-bound jobs, the IO config IS the cost-efficient config
-            saved_warnings = cost_recs[-1].get('bottleneck_warnings')
             cost_recs[-1] = dict(io_rec)
             cost_recs[-1]["optimization_mode"] = "cost"
-            if saved_warnings:
-                cost_recs[-1]['bottleneck_warnings'] = saved_warnings
-                excluded = saved_warnings[0].get('recommendation', '')
-                if excluded:
-                    cost_recs[-1]['spark_configs'][excluded.split('=')[0]] = excluded.split('=', 1)[1]
             # Perf mode: keep large workers if they already have enough disks.
             # Otherwise, find the smallest worker type that meets the disk target
             # while preserving total core count — smaller workers are cheaper.
             if max_exec_perf < io_max:
-                perf_orig_cores = max_exec_perf * worker_cfg["vcpu"]
+                perf_orig_cores = max_exec_perf * saved_cfg["vcpu"]
                 best = None
                 for try_type in ["Small", "Medium", "Large"]:
                     tr = WORKER_RANGES_IO[try_type]
                     need_exec = io_max  # must match cost disk count
                     total_cores = need_exec * tr["vcpu"]
                     if total_cores >= perf_orig_cores:
-                        per_task_mem = worker_cfg["memory"] / worker_cfg["vcpu"]
+                        per_task_mem = saved_cfg["memory"] / saved_cfg["vcpu"]
                         tmem = int(per_task_mem * tr["vcpu"])
                         tmem = max(tr["min_mem"], min(tr["max_mem"], tmem))
                         tmem = tmem - (tmem - tr["min_mem"]) % tr["mem_step"] if tmem < tr["max_mem"] else tr["max_mem"]
@@ -754,19 +651,19 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                     min_exec_perf = max(1, max_exec_perf // 2)
                     perf_recs[-1]["worker"]["max_executors"] = max_exec_perf
                     perf_recs[-1]["worker"]["min_executors"] = min_exec_perf
-                    perf_recs[-1]["worker"]["total_vcpu_capacity"] = max_exec_perf * worker_cfg["vcpu"]
-                    perf_recs[-1]["worker"]["total_memory_capacity"] = max_exec_perf * worker_cfg["memory"]
+                    perf_recs[-1]["worker"]["total_vcpu_capacity"] = max_exec_perf * saved_cfg["vcpu"]
+                    perf_recs[-1]["worker"]["total_memory_capacity"] = max_exec_perf * saved_cfg["memory"]
                     perf_recs[-1]["spark_configs"] = build_spark_cfg(max_exec_perf, min_exec_perf, sp_perf, executor_disk_perf)
         # No IO rec for non-IO-bound jobs or already-Small workers
-    
+
     # Process applications with no input data - recommend minimal config
     for _, row in df_no_data.iterrows():
         app_id = row.get('application_id', 'N/A')
         name = row.get('application_name', 'N/A')
-        
+
         max_exec_minimal = 2
         min_exec_minimal = 1
-        
+
         minimal_rec = {
             "application_id": app_id,
             "application_name": name,
@@ -801,22 +698,379 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                 "spark.sql.extensions": "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions",
             }
         }
-        
+
         cost_recs.append(minimal_rec)
         perf_recs.append(minimal_rec)
-    
+
     log.info("Generated %d cost, %d performance recommendations",
+             len(cost_recs), len(perf_recs))
+    return cost_recs, perf_recs
+
+
+def generate_dual_recommendations_from_data(metrics_data: List[Dict], limit: int = None,
+                                             target_partition_size_mib: int = 1024,
+                                             serverless_storage: bool = False) -> Tuple[List[Dict], List[Dict]]:
+    """
+    Generate cost and performance recommendations from metrics data (list of dictionaries).
+    This is a wrapper around generate_dual_recommendations that accepts pre-loaded metrics data
+    instead of requiring a file path. Used for reading from Iceberg tables.
+
+    Args:
+        metrics_data: List of metric dictionaries (same format as load_json_files output)
+        limit: Ignored - all applications are processed (kept for backward compatibility)
+        target_partition_size_mib: Target shuffle partition size in MiB (default: 1024)
+        serverless_storage: Enable serverless storage recommendations
+
+    Returns:
+        Tuple of (cost_recommendations, perf_recommendations)
+    """
+
+    # Use the same logic as generate_dual_recommendations but with pre-loaded data
+    all_data = metrics_data
+
+    # Convert to DataFrame
+    flattened = []
+    for data in all_data:
+        # Handle both old format (io/utilization) and new format (io_summary/executor_summary)
+        app_info = data.get('application_info', {})
+        io_data = data.get('io', data.get('io_summary', {}).get('application_level', {}))
+        util_data = data.get('utilization', data.get('executor_summary', {}))
+        spill_data = data.get('spill_summary', {})
+
+        flat = {
+            'application_id': data.get('application_id', app_info.get('app_id')),
+            'application_name': data.get('application_name', app_info.get('application_name')),
+            'job_id': app_info.get('job_id'),
+            'total_run_duration_hours': data.get('total_run_duration_hours', app_info.get('total_run_duration_hours')),
+            'io_total_input_gb': io_data.get('total_input_gb'),
+            'io_total_shuffle_read_gb': io_data.get('total_shuffle_read_gb'),
+            'io_total_shuffle_write_gb': io_data.get('total_shuffle_write_gb'),
+            'avg_memory_utilization_percent': util_data.get('avg_memory_utilization_percent'),
+            'avg_cpu_utilization_percent': util_data.get('avg_cpu_utilization_percent'),
+            'idle_core_percentage': util_data.get('idle_core_percentage'),
+            'total_memory_spilled_gb': spill_data.get('total_memory_spilled_gb'),
+            'total_disk_spilled_gb': spill_data.get('total_disk_spilled_gb'),
+            'max_stage_tasks': max((s.get('num_tasks', 0) for s in data.get('stage_summary', {}).get('stages', [])), default=0),
+            'max_peak_memory_gb': util_data.get('max_peak_memory_gb', 0),
+            'orig_executor_cores': int(data.get('spark_config', {}).get('spark.executor.cores', 0) or 0),
+            'orig_total_executors': int(util_data.get('total_executors', 0) or 0),
+            'total_task_execution_hours': util_data.get('total_task_execution_hours', 0),
+            'max_stage_shuffle_write_gb': data.get('shuffle_data_summary', {}).get('max_stage_shuffle_write_gb', 0),
+            'shuffle_fetch_wait_percent': io_data.get('shuffle_fetch_wait_percent', 0),
+        }
+        flattened.append(flat)
+
+    # Check if we have any data
+    if not flattened:
+        log.error("No data found in metrics. Please check the input data format.")
+        return [], []
+
+    # Debug: Log first record structure
+    if flattened and log.isEnabledFor(logging.DEBUG):
+        log.debug("Sample flattened record keys: %s", list(flattened[0].keys()))
+        log.debug("Sample flattened record: %s", flattened[0])
+
+    df = pd.DataFrame(flattened)
+
+    # Define required columns with defaults
+    required_columns = {
+        'io_total_input_gb': 0.0,
+        'io_total_shuffle_read_gb': 0.0,
+        'io_total_shuffle_write_gb': 0.0,
+        'avg_memory_utilization_percent': 60.0,
+        'avg_cpu_utilization_percent': 50.0,
+        'idle_core_percentage': 50.0,
+        'total_memory_spilled_gb': 0.0,
+        'total_disk_spilled_gb': 0.0,
+        'max_stage_tasks': 0,
+        'max_peak_memory_gb': 0.0,
+        'orig_executor_cores': 0,
+        'orig_total_executors': 0,
+        'total_task_execution_hours': 0.0,
+        'max_stage_shuffle_write_gb': 0.0,
+        'shuffle_fetch_wait_percent': 0.0,
+        'total_run_duration_hours': 0.0,
+    }
+
+    # Ensure all required columns exist
+    for col, default_val in required_columns.items():
+        if col not in df.columns:
+            log.warning("Column '%s' not found in data, using default value: %s", col, default_val)
+            df[col] = default_val
+
+    # Sanitize NaN values - replace with 0 for numeric columns
+    df = df.fillna(0)
+
+    # Separate apps with and without data (include shuffle-only workloads as "with data")
+    has_data = (df['io_total_input_gb'] > 0) | (df['io_total_shuffle_read_gb'] > 0) | (df['io_total_shuffle_write_gb'] > 0)
+    df_with_data = df[has_data].sort_values('io_total_input_gb', ascending=False)
+    df_no_data = df[~has_data]
+
+    log.info("Processing %d applications with data, %d with no input data", len(df_with_data), len(df_no_data))
+
+    # Call the internal recommendation logic - reuse from generate_dual_recommendations
+    # by creating a temporary module context
+    import types
+    temp_module = types.ModuleType('temp')
+    temp_module.log = log
+    temp_module._gb_to_gib = _gb_to_gib
+    temp_module._calculate_shuffle_ratio = _calculate_shuffle_ratio
+    temp_module._select_worker_type = _select_worker_type
+    temp_module._compute_exec_limits = _compute_exec_limits
+    temp_module._calculate_executor_disk = _calculate_executor_disk
+    temp_module._max_partition_bytes = _max_partition_bytes
+    temp_module._get_timeout_configs = _get_timeout_configs
+    temp_module._get_s3_retry_configs = _get_s3_retry_configs
+    temp_module._get_iceberg_configs = _get_iceberg_configs
+    temp_module.target_partition_size_mib = target_partition_size_mib
+    temp_module.serverless_storage = serverless_storage
+
+    # Reuse the recommendation generation logic by directly calling it
+    # We'll inline the core logic here instead of refactoring
+    cost_recs = []
+    perf_recs = []
+
+    # Process applications with input data
+    for _, row in df_with_data.iterrows():
+        app_id = row.get('application_id', 'N/A')
+        name = row.get('application_name', 'N/A')
+        job_id = row.get('job_id')
+        duration = float(row.get('total_run_duration_hours', 0) or 0)
+        i_in_gb = float(row.get('io_total_input_gb', 0) or 0)
+        s_in_gb = float(row.get('io_total_shuffle_read_gb', 0) or 0)
+        s_out_gb = float(row.get('io_total_shuffle_write_gb', 0) or 0)
+
+        mem_pct = float(row.get('avg_memory_utilization_percent', 60.0) or 60.0)
+        cpu_pct = float(row.get('avg_cpu_utilization_percent', 50.0) or 50.0)
+        idle_pct = float(row.get('idle_core_percentage', 50.0) or 50.0)
+        spill_gb = float(row.get('total_memory_spilled_gb', 0.0) or 0.0)
+        disk_spill_gb = float(row.get('total_disk_spilled_gb', 0.0) or 0.0)
+        max_stage_tasks = int(row.get('max_stage_tasks', 0) or 0)
+        max_peak_mem_gb = float(row.get('max_peak_memory_gb', 0) or 0)
+        orig_cores = int(row.get('orig_executor_cores', 0) or 0)
+        orig_executors = int(row.get('orig_total_executors', 0) or 0)
+        total_task_exec_hours = float(row.get('total_task_execution_hours', 0) or 0)
+        max_stage_shuf_write = float(row.get('max_stage_shuffle_write_gb', 0) or 0)
+        shuffle_fetch_wait_pct = float(row.get('shuffle_fetch_wait_percent', 0) or 0)
+
+        sh_ratio = _calculate_shuffle_ratio(i_in_gb, s_in_gb, s_out_gb)
+        worker_type, worker_cfg = _select_worker_type(i_in_gb, sh_ratio, mem_pct, spill_gb, cpu_pct,
+                                                      max_peak_mem_gb=max_peak_mem_gb, orig_cores=orig_cores)
+
+        shuffle_data_gb = max(s_in_gb, s_out_gb)
+        shuffle_bytes = shuffle_data_gb * 1024 * 1024 * 1024
+        has_shuffle = shuffle_data_gb > 0
+
+        # Custom partition calculation
+        def auto_tune_custom(shuffle_bytes, max_executors):
+            target_mib = target_partition_size_mib
+            if shuffle_bytes > 0:
+                partitions = max(2, int((shuffle_bytes / (target_mib * 1024 * 1024)) + 0.5))
+            else:
+                # Scale by input size (128MB per partition) instead of flat 200
+                partitions = max(2, min(200, int(i_in_gb / 0.128)))
+            if partitions % 2 != 0:
+                partitions += 1
+            return partitions, target_mib
+
+        # Cost-optimized
+        max_exec_cost_init, min_exec_cost = _compute_exec_limits(
+            i_in_gb, worker_cfg["vcpu"], 0, mem_pct, cpu_pct, idle_pct, spill_gb, mode="cost",
+            orig_executors=orig_executors, orig_cores=orig_cores,
+            total_task_exec_hours=total_task_exec_hours, duration_hours=duration,
+        )
+        sp_cost, target_mib_cost = auto_tune_custom(shuffle_bytes, max_exec_cost_init)
+        max_exec_cost, min_exec_cost = _compute_exec_limits(
+            i_in_gb, worker_cfg["vcpu"], sp_cost, mem_pct, cpu_pct, idle_pct, spill_gb, mode="cost",
+            orig_executors=orig_executors, orig_cores=orig_cores,
+            total_task_exec_hours=total_task_exec_hours, duration_hours=duration,
+        )
+        executor_disk_cost = _calculate_executor_disk(s_out_gb, disk_spill_gb, spill_gb, max_exec_cost)
+
+        # Performance-optimized
+        max_exec_perf_init, min_exec_perf = _compute_exec_limits(
+            i_in_gb, worker_cfg["vcpu"], 0, mem_pct, cpu_pct, idle_pct, spill_gb, mode="performance",
+            orig_executors=orig_executors, orig_cores=orig_cores,
+            total_task_exec_hours=total_task_exec_hours, duration_hours=duration,
+        )
+        sp_perf, target_mib_perf = auto_tune_custom(shuffle_bytes, max_exec_perf_init)
+        max_exec_perf, min_exec_perf = _compute_exec_limits(
+            i_in_gb, worker_cfg["vcpu"], sp_perf, mem_pct, cpu_pct, idle_pct, spill_gb, mode="performance",
+            orig_executors=orig_executors, orig_cores=orig_cores,
+            total_task_exec_hours=total_task_exec_hours, duration_hours=duration,
+        )
+        executor_disk_perf = _calculate_executor_disk(s_out_gb, disk_spill_gb, spill_gb, max_exec_perf)
+
+        # Build base metrics
+        base_metrics = {
+            "input_gb": round(i_in_gb, 2),
+            "input_gib": _gb_to_gib(i_in_gb),
+            "shuffle_read_gb": round(s_in_gb, 2),
+            "shuffle_write_gb": round(s_out_gb, 2),
+            "shuffle_total_gb": round(s_in_gb + s_out_gb, 2),
+            "shuffle_ratio_percent": sh_ratio,
+            "duration_hours": round(duration, 2),
+            "avg_memory_utilization_percent": round(mem_pct, 2),
+            "avg_cpu_utilization_percent": round(cpu_pct, 2),
+            "idle_core_percentage": round(idle_pct, 2),
+            "total_memory_spilled_gb": round(spill_gb, 2),
+        }
+
+        # Build Spark configs using the same logic as generate_dual_recommendations
+        def _driver_sizing(partitions, max_exec, shuffle_gb):
+            """Scale driver based on coordination overhead."""
+            if partitions > 10000 or max_exec > 500 or shuffle_gb > 10000:
+                return 16, 108
+            elif partitions > 2000 or max_exec > 100 or shuffle_gb > 2000:
+                return 8, 54
+            elif partitions > 500 or max_exec > 50 or shuffle_gb > 500:
+                return 4, 27
+            else:
+                return 4, 14
+
+        def build_spark_cfg(max_exec, min_exec, sp, executor_disk, vcpu_override=None, mem_override=None):
+            d_cores, d_mem = _driver_sizing(sp, max_exec, s_in_gb + s_out_gb)
+            vcpu = vcpu_override or worker_cfg["vcpu"]
+            mem = mem_override or worker_cfg["memory"]
+            cfg = {
+                "spark.driver.cores": str(d_cores),
+                "spark.driver.memory": f"{d_mem}G",
+                "spark.executor.cores": str(vcpu),
+                "spark.executor.memory": f"{mem}g",
+                "spark.dynamicAllocation.enabled": "true",
+                "spark.sql.adaptive.enabled": "true",
+                "spark.sql.files.maxPartitionBytes": _max_partition_bytes(i_in_gb),
+                "spark.emr-serverless.executor.disk": executor_disk,
+                "spark.emr-serverless.executor.disk.type": "shuffle_optimized",
+                "spark.sql.shuffle.partitions": str(sp),
+                "spark.dynamicAllocation.maxExecutors": str(max_exec),
+                "spark.dynamicAllocation.minExecutors": str(min_exec),
+                "spark.dynamicAllocation.initialExecutors": str(min_exec),
+            }
+            cfg.update(_get_timeout_configs(i_in_gb, duration))
+            cfg.update(_get_s3_retry_configs())
+            cfg.update(_get_iceberg_configs())
+            cfg.update(_get_openlineage_configs())
+            if sh_ratio > 30:
+                cfg.update({"spark.shuffle.compress": "true", "spark.shuffle.spill.compress": "true"})
+            # Serverless storage: only when explicitly enabled and disk pressure is safe
+            if serverless_storage:
+                disk_spill_per_exec = (disk_spill_gb + spill_gb) / max(max_exec, 1)
+                if disk_spill_gb == 0 and max_stage_shuf_write <= 150 and disk_spill_per_exec <= 15:
+                    cfg["spark.aws.serverlessStorage.enabled"] = "true"
+                    cfg.pop("spark.emr-serverless.executor.disk", None)
+                    cfg.pop("spark.emr-serverless.executor.disk.type", None)
+            return cfg
+
+        # Cost-optimized recommendation
+        rec_cost = {
+            "application_id": app_id,
+            "application_name": name,
+            "job_id": job_id,
+            "optimization_mode": "cost",
+            "metrics": base_metrics,
+            "worker": {
+                "type": worker_type,
+                "vcpu": worker_cfg["vcpu"],
+                "memory_gb": worker_cfg["memory"],
+                "max_executors": max_exec_cost,
+                "min_executors": min_exec_cost,
+                "total_vcpu_capacity": max_exec_cost * worker_cfg["vcpu"],
+            },
+            "configuration": {
+                "shuffle_partitions": sp_cost,
+                "executor_disk": executor_disk_cost,
+            },
+            "spark_config": build_spark_cfg(max_exec_cost, min_exec_cost, sp_cost, executor_disk_cost),
+        }
+        cost_recs.append(rec_cost)
+
+        # Performance-optimized recommendation
+        rec_perf = {
+            "application_id": app_id,
+            "application_name": name,
+            "job_id": job_id,
+            "optimization_mode": "performance",
+            "metrics": base_metrics,
+            "worker": {
+                "type": worker_type,
+                "vcpu": worker_cfg["vcpu"],
+                "memory_gb": worker_cfg["memory"],
+                "max_executors": max_exec_perf,
+                "min_executors": min_exec_perf,
+                "total_vcpu_capacity": max_exec_perf * worker_cfg["vcpu"],
+            },
+            "configuration": {
+                "shuffle_partitions": sp_perf,
+                "executor_disk": executor_disk_perf,
+            },
+            "spark_config": build_spark_cfg(max_exec_perf, min_exec_perf, sp_perf, executor_disk_perf),
+        }
+        perf_recs.append(rec_perf)
+
+    # Process apps with no data
+    for _, row in df_no_data.iterrows():
+        app_id = row.get('application_id', 'N/A')
+        name = row.get('application_name', 'N/A')
+        job_id = row.get('job_id')
+
+        minimal_rec = {
+            "application_id": app_id,
+            "application_name": name,
+            "job_id": job_id,
+            "optimization_mode": "default",
+            "metrics": {
+                "input_gb": 0,
+                "shuffle_read_gb": 0,
+                "shuffle_write_gb": 0,
+                "shuffle_total_gb": 0,
+                "shuffle_ratio_percent": 0.0,
+                "duration_hours": 0,
+                "avg_memory_utilization_percent": 0,
+                "avg_cpu_utilization_percent": 0,
+                "idle_core_percentage": 0,
+                "total_memory_spilled_gb": 0,
+            },
+            "worker": {
+                "type": "G.2X",
+                "vcpu": 8,
+                "memory_gb": 32,
+                "max_executors": 10,
+                "min_executors": 1,
+                "total_vcpu_capacity": 80,
+            },
+            "configuration": {
+                "shuffle_partitions": 200,
+                "executor_disk": "20GB",
+            },
+            "spark_config": {
+                "spark.driver.cores": "4",
+                "spark.driver.memory": "14G",
+                "spark.executor.cores": "8",
+                "spark.executor.memory": "32g",
+                "spark.dynamicAllocation.enabled": "true",
+                "spark.dynamicAllocation.maxExecutors": "10",
+                "spark.dynamicAllocation.minExecutors": "1",
+                "spark.dynamicAllocation.initialExecutors": "1",
+                "spark.sql.shuffle.partitions": "200",
+            }
+        }
+
+        cost_recs.append(minimal_rec)
+        perf_recs.append(minimal_rec)
+
+    log.info("Generated %d cost, %d performance recommendations from metrics data",
              len(cost_recs), len(perf_recs))
     return cost_recs, perf_recs
 
 
 if __name__ == "__main__":
     import argparse
-    
+
     parser = argparse.ArgumentParser(description="Dual-mode EMR Serverless recommender (S3 or Local)")
     parser.add_argument("--input-path", required=True, help="S3 path (s3://bucket/prefix) or local path")
     parser.add_argument("--region", default="us-east-1", help="AWS region (for S3 only)")
-    parser.add_argument("--limit", type=int, default=100, help="Max applications")
+    parser.add_argument("--limit", type=int, default=None, help="(Deprecated) Max applications - no longer enforced, all apps are processed")
     parser.add_argument("--target-partition-size", type=int, default=1024,
                         help="Target shuffle partition size in MiB (default: 1024 = 1GB)")
     parser.add_argument("--output-cost", default="recommendations_cost_optimized.json", help="Cost output file")
@@ -833,9 +1087,9 @@ if __name__ == "__main__":
                         help="Enable serverless storage recommendations (disabled by default)")
     parser.add_argument("--write-to-iceberg-table",
                         help="Write recommendations to Iceberg table (catalog.database.table)")
-    
+
     args = parser.parse_args()
-    
+
     # Generate recommendations
     cost_recs, perf_recs = generate_dual_recommendations(
         args.input_path,
@@ -843,17 +1097,30 @@ if __name__ == "__main__":
         args.target_partition_size,
         serverless_storage=args.serverless_storage
     )
-    
+
+    # Check if we have any recommendations
+    if not cost_recs and not perf_recs:
+        log.warning("No recommendations generated - input data may be empty or have no applications with metrics")
+        # Write empty recommendation files to avoid downstream errors
+        with open(args.output_cost, 'w') as f:
+            json.dump([], f)
+        log.info(f"Empty recommendations written to {args.output_cost}")
+        if args.output_perf and args.output_perf != args.output_cost:
+            with open(args.output_perf, 'w') as f:
+                json.dump([], f)
+            log.info(f"Empty recommendations written to {args.output_perf}")
+        sys.exit(0)
+
     # Determine which recommendations to generate
     generate_cost = not args.performance_optimized  # Generate cost unless perf-only
     generate_perf = not args.cost_optimized  # Generate perf unless cost-only
-    
+
     # Write recommendations
     if generate_cost:
         if args.format_job_config:
             from format_to_job_config import format_to_job_config
             cost_jobs = [format_to_job_config(rec) for rec in cost_recs]
-            
+
             if args.individual_files:
                 # Write individual files
                 output_dir = Path(args.output_cost).parent
@@ -872,12 +1139,12 @@ if __name__ == "__main__":
         else:
             Path(args.output_cost).write_text(json.dumps(cost_recs, indent=2))
             log.info("Cost-optimized recommendations written to %s", args.output_cost)
-    
+
     if generate_perf:
         if args.format_job_config:
             from format_to_job_config import format_to_job_config
             perf_jobs = [format_to_job_config(rec) for rec in perf_recs]
-            
+
             if args.individual_files:
                 # Write individual files
                 output_dir = Path(args.output_perf).parent
@@ -906,7 +1173,7 @@ if __name__ == "__main__":
         if generate_perf:
             recs_to_write.extend(perf_recs)
         write_to_iceberg(recs_to_write, args.write_to_iceberg_table, args.region)
-    
+
     # Print comparison (only if both modes generated)
     if generate_cost and generate_perf:
         print("\n" + "="*80)

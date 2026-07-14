@@ -127,6 +127,7 @@ CONFIG_KEYS = [
     "spark.resourceManager.cleanupExpiredHost",
     "spark.scheduler.mode",
     "spark.shuffle.service.enabled",
+    "spark.sql.autoBroadcastJoinThreshold",
     "spark.sql.adaptive.advisoryPartitionSizeInBytes",
     "spark.sql.adaptive.coalescePartitions.enabled",
     "spark.sql.adaptive.coalescePartitions.minPartitionSize",
@@ -243,6 +244,17 @@ def decompress_content(content: bytes, filename: str) -> bytes:
             return gzip.decompress(content)
         elif filename.endswith('.bz2'):
             return bz2.decompress(content)
+        # Try zstd if content starts with magic bytes — handles extensionless v2 event logs
+        if len(content) > 4 and content[:4] == b"\x28\xb5\x2f\xfd":
+            dctx = zstd.ZstdDecompressor()
+            chunks = []
+            with dctx.stream_reader(BytesIO(content)) as reader:
+                while True:
+                    chunk = reader.read(1024*1024)
+                    if not chunk:
+                        break
+                    chunks.append(chunk)
+            return b"".join(chunks)
         return content
     except Exception as e:
         print(f"Error decompressing {filename}: {e}", file=sys.stderr)
@@ -1526,6 +1538,124 @@ def extract_sql_metrics(events):
 
 
 
+def extract_query_plans(events, max_executions=30, max_nodes=400):
+    """Query profiles (Spark-UI SQL-tab style): per-execution operator trees from
+    sparkPlanInfo with metric accumulators resolved to values.
+
+    Values come from two sources, max-merged: SparkListenerDriverAccumUpdates
+    (driver-side metrics like file counts) and TaskEnd accumulables
+    (executor-side: rows, spill, shuffle bytes). AQE re-emits plans via
+    SQLAdaptiveExecutionUpdate — the LAST plan per execution wins (final
+    adaptive plan)."""
+    plans = {}        # execution_id -> {meta, plan_info}
+    acc_values = {}   # accumulator id -> max observed value
+    stage_accs = {}   # stage_id -> set of accumulator ids its tasks updated
+    stage_failures = {}  # stage_id -> {failed, reasons: {reason: count}, sample}
+
+    for event in events:
+        et = event.get("Event", "")
+        if et.endswith("SparkListenerSQLExecutionStart"):
+            eid = event.get("executionId")
+            plans[eid] = {
+                "execution_id": eid,
+                "description": (event.get("description") or "")[:200],
+                "submission_time": datetime.fromtimestamp(
+                    event["time"] / 1000).isoformat() if event.get("time") else None,
+                "duration_ms": None,
+                "_start_ms": event.get("time", 0),
+                "plan_info": event.get("sparkPlanInfo"),
+            }
+        elif et.endswith("SparkListenerSQLAdaptiveExecutionUpdate"):
+            eid = event.get("executionId")
+            if eid in plans and event.get("sparkPlanInfo"):
+                plans[eid]["plan_info"] = event["sparkPlanInfo"]
+        elif et.endswith("SparkListenerSQLExecutionEnd"):
+            eid = event.get("executionId")
+            if eid in plans and event.get("time") and plans[eid]["_start_ms"]:
+                plans[eid]["duration_ms"] = event["time"] - plans[eid]["_start_ms"]
+        elif et.endswith("SparkListenerDriverAccumUpdates"):
+            for aid, v in event.get("accumUpdates", []):
+                if isinstance(v, (int, float)):
+                    acc_values[aid] = max(acc_values.get(aid, 0), int(v))
+        elif et == "SparkListenerTaskEnd":
+            sid = event.get("Stage ID")
+            saccs = stage_accs.setdefault(sid, set())
+            for acc in (event.get("Task Info") or {}).get("Accumulables", []):
+                aid, v = acc.get("ID"), acc.get("Value")
+                saccs.add(aid)
+                if isinstance(v, (int, float)):
+                    acc_values[aid] = max(acc_values.get(aid, 0), int(v))
+                elif isinstance(v, str) and v.replace("-", "").isdigit():
+                    acc_values[aid] = max(acc_values.get(aid, 0), int(v))
+            # failure attribution: record non-Success task end reasons
+            ter = event.get("Task End Reason") or {}
+            reason = ter.get("Reason", "Success")
+            if reason != "Success":
+                sf = stage_failures.setdefault(
+                    sid, {"failed": 0, "reasons": {}, "sample": ""})
+                sf["failed"] += 1
+                sf["reasons"][reason] = sf["reasons"].get(reason, 0) + 1
+                if not sf["sample"]:
+                    sf["sample"] = str(
+                        ter.get("Error Message") or ter.get("Message")
+                        or ter.get("Loss Reason") or reason)[:300]
+
+    # operator -> stage attribution: a stage's tasks update the accumulators
+    # of exactly the operators pipelined into that stage
+    failed_stage_accs = {sid: stage_accs.get(sid, set())
+                         for sid in stage_failures}
+
+    def build(node, depth=0, counter=None):
+        if counter is None:
+            counter = [0]
+        if counter[0] >= max_nodes or node is None:
+            return None
+        counter[0] += 1
+        metrics = {}
+        node_acc_ids = set()
+        for m in node.get("metrics", []):
+            aid = m.get("accumulatorId")
+            node_acc_ids.add(aid)
+            val = acc_values.get(aid)
+            if val:
+                metrics[m.get("name", "?")] = val
+        # failure attribution: which failed stages ran this operator
+        failures = []
+        for sid, saccs in failed_stage_accs.items():
+            if node_acc_ids & saccs:
+                sf = stage_failures[sid]
+                failures.append({"stage_id": sid, "failed_tasks": sf["failed"],
+                                 "reasons": sf["reasons"], "sample": sf["sample"]})
+        children = [c for c in (build(ch, depth + 1, counter)
+                                for ch in node.get("children", [])) if c]
+        out = {
+            "name": node.get("nodeName", "?"),
+            "detail": (node.get("simpleString") or "")[:250],
+            "metrics": metrics,
+            "children": children,
+        }
+        if failures:
+            out["failures"] = failures
+        return out
+
+    out = []
+    # keep the longest executions (they carry the cost)
+    ranked = sorted(plans.values(),
+                    key=lambda p: -(p["duration_ms"] or 0))[:max_executions]
+    for p in sorted(ranked, key=lambda p: p["execution_id"]):
+        tree = build(p.get("plan_info"))
+        if not tree:
+            continue
+        out.append({
+            "execution_id": p["execution_id"],
+            "description": p["description"],
+            "submission_time": p["submission_time"],
+            "duration_ms": p["duration_ms"],
+            "plan": tree,
+        })
+    return out
+
+
 def extract_sql_execution_plans(events):
     """Extract SQL execution plans from Spark SQL events"""
     execution_plans = {}
@@ -1878,13 +2008,20 @@ def extract_driver_metrics(events):
             # Driver has executor ID "driver"
             if executor_id == "driver":
                 executor_metrics = event.get("Executor Metrics Updated", [])
-                
-                for stage_id, metrics_list in executor_metrics:
+
+                # Entries are (stage_id, metrics_list) pairs on older Spark,
+                # (stage_id, attempt_id, metrics) triples on newer Spark
+                for entry in executor_metrics:
+                    if not isinstance(entry, (list, tuple)) or len(entry) < 2:
+                        continue
+                    metrics_list = entry[-1]
+                    if isinstance(metrics_list, dict):
+                        metrics_list = [metrics_list]
                     for metrics in metrics_list:
                         if isinstance(metrics, dict):
                             jvm_heap = metrics.get("JVMHeapMemory", 0)
                             jvm_off_heap = metrics.get("JVMOffHeapMemory", 0)
-                            
+
                             if jvm_heap > 0:
                                 driver_heap_memory_samples.append(jvm_heap)
                             if jvm_off_heap > 0:
@@ -4034,6 +4171,21 @@ def extract_spark_config(events: List[Dict]) -> Dict[str, Any]:
                         config[key] = value
                 else:
                     config[key] = value
+
+            # Also capture every other spark.* property present at submit —
+            # the fixed allowlist silently dropped confs like
+            # spark.network.timeout and dynamicAllocation.minExecutors,
+            # making them look "unset" downstream. Skip only bulky/noisy keys.
+            _skip = ("extraClassPath", "extraLibraryPath", "extraJavaOptions",
+                     "defaultJavaOptions", "spark.yarn.dist", "spark.jars",
+                     "spark.files", "spark.repl", "spark.driver.host",
+                     "spark.driver.port", "spark.ui.proxy")
+            for key, value in spark_props.items():
+                if key in config or not key.startswith("spark."):
+                    continue
+                if any(s in key for s in _skip):
+                    continue
+                config[key] = value
             break
     return config
 
@@ -4103,6 +4255,7 @@ def process_application(args_tuple: Tuple[str, List[str], str]) -> Tuple[str, Di
         a["mem_spill"] += s.get("memory_bytes_spilled", 0)
         a["disk_spill"] += s.get("disk_bytes_spilled", 0)
         a["run_time"] += s.get("executor_run_time_ms", 0)
+        a["cpu_time"] = a.get("cpu_time", 0) + s.get("executor_cpu_time_ms", 0)
         a["tasks"] += s.get("actual_task_count", 0)
     GB = 1024 ** 3
     stage_summary["stages"] = [{
@@ -4118,6 +4271,8 @@ def process_application(args_tuple: Tuple[str, List[str], str]) -> Tuple[str, Di
         "mem_spill_gb": round(stage_io_agg[s["stage_id"]]["mem_spill"] / GB, 2),
         "disk_spill_gb": round(stage_io_agg[s["stage_id"]]["disk_spill"] / GB, 2),
         "total_task_time_sec": round(stage_io_agg[s["stage_id"]]["run_time"] / 1000, 1),
+        # "Executor CPU Time" in event logs is NANOSECONDS despite the _ms field name
+        "total_cpu_time_sec": round(stage_io_agg[s["stage_id"]].get("cpu_time", 0) / 1e9, 1),
         "failure_reason": s.get("failure_reason"),
     } for s in stages_list]
 
@@ -4179,6 +4334,7 @@ def process_application(args_tuple: Tuple[str, List[str], str]) -> Tuple[str, Di
         "sql_metrics": sql_metrics,
         "executor_timeline": executor_timeline,
         "sql_executions": sql_metrics.get("sql_executions", []),
+        "query_plans": extract_query_plans(all_events),
         "spark_config": spark_config,
     }
     

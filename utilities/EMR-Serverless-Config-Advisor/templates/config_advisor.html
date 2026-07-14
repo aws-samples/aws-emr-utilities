@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% block title %}Config Advisor — EMR Serverless Advisor{% endblock %}
+{% block topbar_crumb %}Config Advisor{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/advisor.css?v={{ asset_v('advisor.css') }}">{% endblock %}
+
+{% block content %}
+<div class="breadcrumbs">
+    <a href="/">EMR Serverless Advisor</a><span class="sep">&rsaquo;</span><span class="current">Config Advisor</span>
+</div>
+
+<h1 class="page-title">Config Advisor</h1>
+<p class="page-subtitle">Upload an extracted event log JSON to get bottleneck analysis and worker sizing recommendations</p>
+
+{% if error %}
+<div class="flash error">{{ error }}</div>
+{% endif %}
+
+<div class="upload-section">
+    <form action="/analyze" method="post" enctype="multipart/form-data" id="upload-form">
+        <div class="drop-zone" id="drop-zone">
+            <div class="drop-zone-content">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17,8 12,3 7,8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                <p class="drop-text">Drop a raw <code>Spark event log</code> or extracted <code>task_stage_summary</code> JSON here</p>
+                <p class="drop-hint">raw logs (plain, .gz, rolling events_*, or .zip of an eventlog_v2 folder) are extracted on the server — or click to browse</p>
+                <p class="file-name" id="file-name"></p>
+            </div>
+            <input type="file" name="file" id="file-input" accept=".json,.zip,.gz,.lz4,.zstd,.inprogress" required>
+        </div>
+        <label class="cmp-slot" style="margin-top:10px">
+            <span class="cmp-tag a">LOGS &middot; OPTIONAL</span>
+            <input type="file" name="logs_file" id="logs-input" accept=".zip">
+        </label>
+        <p class="drop-hint" style="margin:6px 0 0">
+            Optional: a .zip of the driver log plus the stderr of any failed
+            executors (not the whole fleet). Adds root-cause evidence — heap
+            OOM vs container kill vs disk full vs S3 throttling — that the
+            event log alone can't show.
+        </p>
+        <button type="submit" class="btn-analyze" id="btn-submit" disabled>
+            <span class="btn-text">Analyze</span>
+            <span class="btn-loading" style="display:none;">Analyzing... (raw event logs can take a minute)</span>
+        </button>
+    </form>
+</div>
+
+<div class="upload-section compare-section">
+    <h3 style="margin-bottom:10px">EC2 &rarr; EMR Serverless migration</h3>
+    <p class="drop-hint" style="margin-bottom:10px">
+        Migrating a job from EMR on EC2? Upload what you have — one or both.
+        EC2 log alone: get the translated Serverless config to start from.
+        Both logs: side-by-side comparison with per-stage analysis to troubleshoot
+        when the Serverless run's performance or cost isn't acceptable, plus a
+        hypothetical-Serverless cost for the EC2 run.
+    </p>
+    <form action="/analyze-migration" method="post" enctype="multipart/form-data" id="migration-form">
+        <div class="compare-grid">
+            <label class="cmp-slot">
+                <span class="cmp-tag a">EC2 RUN</span>
+                <input type="file" name="file_ec2" accept=".json,.zip,.gz,.lz4,.zstd,.inprogress">
+            </label>
+            <label class="cmp-slot">
+                <span class="cmp-tag b">SERVERLESS RUN</span>
+                <input type="file" name="file_sls" accept=".json,.zip,.gz,.lz4,.zstd,.inprogress">
+            </label>
+        </div>
+        <button type="submit" class="btn-analyze" id="btn-migrate">
+            <span class="btn-text">Analyze migration</span>
+            <span class="btn-loading" style="display:none;">Analyzing... (raw event logs can take a minute)</span>
+        </button>
+    </form>
+</div>
+
+<div class="upload-section compare-section">
+    <h3 style="margin-bottom:10px">Compare two runs</h3>
+    <p class="drop-hint" style="margin-bottom:10px">Two event logs of the same job (e.g. before / after a config change) — get metrics deltas, config diff, and both bottleneck profiles side by side.</p>
+    <form action="/analyze-compare" method="post" enctype="multipart/form-data" id="compare-form">
+        <div class="compare-grid">
+            <label class="cmp-slot">
+                <span class="cmp-tag a">RUN A</span>
+                <input type="file" name="file_a" accept=".json,.zip,.gz,.lz4,.zstd,.inprogress" required>
+            </label>
+            <label class="cmp-slot">
+                <span class="cmp-tag b">RUN B</span>
+                <input type="file" name="file_b" accept=".json,.zip,.gz,.lz4,.zstd,.inprogress" required>
+            </label>
+        </div>
+        <button type="submit" class="btn-analyze" id="btn-compare">
+            <span class="btn-text">Compare</span>
+            <span class="btn-loading" style="display:none;">Comparing... (raw event logs can take a minute)</span>
+        </button>
+    </form>
+</div>
+
+<div class="info-section">
+    <h3>What this tool does</h3>
+    <div class="info-grid">
+        <div class="info-card">
+            <h4>Bottleneck Detection</h4>
+            <p>Classifies your workload as IOPS bound, disk throughput bound, memory constrained, CPU constrained, or network bound.</p>
+        </div>
+        <div class="info-card">
+            <h4>Worker Sizing</h4>
+            <p>Recommends optimal worker type (4c, 8c, or 16c) with memory sizing based on workload profile.</p>
+        </div>
+        <div class="info-card">
+            <h4>Spark Configs</h4>
+            <p>Generates tuned Spark configurations including shuffle partitions, dynamic allocation, and disk sizing.</p>
+        </div>
+        <div class="info-card">
+            <h4>Cost vs Performance</h4>
+            <p>Provides both cost-optimized and performance-optimized recommendations with trade-off analysis.</p>
+        </div>
+    </div>
+
+    <h3>How to get the input file</h3>
+    <pre><code># Option A — upload the raw event log directly (extraction happens here):
+aws s3 cp s3://bucket/emr-serverless-logs/applications/app-id/jobs/job-id/sparklogs/eventlog_v2_app-id/events_1_app-id .
+#   single file: upload as-is (plain or .gz)
+#   rolling directory: zip it first ->  zip -r eventlog.zip eventlog_v2_app-id/
+
+# Option B — pre-extract locally, upload the summary JSON:
+python3 python_extractor.py \
+    --input /path/to/eventlog_v2_app-id \
+    --output /tmp/extracted/ --single-app
+# Upload the file from: /tmp/extracted/task_stage_summary/*.json</code></pre>
+</div>
+
+<script>
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const fileName = document.getElementById('file-name');
+    const btnSubmit = document.getElementById('btn-submit');
+    const form = document.getElementById('upload-form');
+
+    dropZone.addEventListener('click', () => fileInput.click());
+
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('drag-over');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('drag-over');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+        if (e.dataTransfer.files.length > 0) {
+            fileInput.files = e.dataTransfer.files;
+            updateFileName(e.dataTransfer.files[0]);
+        }
+    });
+
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files.length > 0) {
+            updateFileName(fileInput.files[0]);
+        }
+    });
+
+    function updateFileName(file) {
+        fileName.textContent = file.name + ' (' + formatBytes(file.size) + ')';
+        btnSubmit.disabled = false;
+        dropZone.classList.add('has-file');
+    }
+
+    function formatBytes(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    form.addEventListener('submit', () => {
+        btnSubmit.querySelector('.btn-text').style.display = 'none';
+        btnSubmit.querySelector('.btn-loading').style.display = 'inline';
+        btnSubmit.disabled = true;
+    });
+
+    document.getElementById('compare-form').addEventListener('submit', (e) => {
+        const btn = document.getElementById('btn-compare');
+        btn.querySelector('.btn-text').style.display = 'none';
+        btn.querySelector('.btn-loading').style.display = 'inline';
+        btn.disabled = true;
+    });
+
+    document.getElementById('migration-form').addEventListener('submit', (e) => {
+        const f = e.target;
+        if (!f.file_ec2.files.length && !f.file_sls.files.length) {
+            e.preventDefault();
+            alert('Upload at least one event log (EC2 or Serverless).');
+            return;
+        }
+        const btn = document.getElementById('btn-migrate');
+        btn.querySelector('.btn-text').style.display = 'none';
+        btn.querySelector('.btn-loading').style.display = 'inline';
+        btn.disabled = true;
+    });
+</script>
+{% endblock %}

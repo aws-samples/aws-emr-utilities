@@ -158,6 +158,11 @@ def _discover_apps(input_path):
         name = p.rstrip("/").split("/")[-1]
         if name.startswith("eventlog_v2_") or name.startswith("application_"):
             apps.append(f"{bucket}/{p}")
+    # Also check for v1 single-file event logs
+    for obj in resp.get("Contents", []):
+        name = obj["Key"].split("/")[-1]
+        if name.startswith("application_") and obj.get("Size", 0) > 0:
+            apps.append(f"{bucket}/{obj['Key']}")
     return apps
 
 
