@@ -1,4 +1,53 @@
 {
+  "__inputs": [
+    {
+      "name": "DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12",
+      "label": "Prometheus ws-8865d501-f1ec-4d87-821f-3d434e2f3c12",
+      "description": "",
+      "type": "datasource",
+      "pluginId": "prometheus",
+      "pluginName": "Prometheus"
+    }
+  ],
+  "__elements": [],
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "8.4.7"
+    },
+    {
+      "type": "panel",
+      "id": "graph",
+      "name": "Graph (old)",
+      "version": ""
+    },
+    {
+      "type": "datasource",
+      "id": "prometheus",
+      "name": "Prometheus",
+      "version": "1.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "stat",
+      "name": "Stat",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "table-old",
+      "name": "Table (old)",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "timeseries",
+      "name": "Time series",
+      "version": ""
+    }
+  ],
   "annotations": {
     "list": [
       {
@@ -23,7 +72,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 20,
+  "id": null,
   "iteration": 1675194481802,
   "links": [],
   "liveNow": false,
@@ -43,7 +92,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
       },
       "fieldConfig": {
         "defaults": {
@@ -108,9 +158,6 @@
       "pluginVersion": "8.4.7",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus"
-          },
           "expr": "count(up {job=\"$job\", cluster_id=~'$cluster', instance=~\"$instance\"})",
           "refId": "A"
         }
@@ -120,7 +167,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
       },
       "fieldConfig": {
         "defaults": {
@@ -177,7 +225,7 @@
           "calcs": [
             "lastNotNull"
           ],
-          "fields": "/^{job=\"hbase_hmaster\"}$/",
+          "fields": "/^{job=\"hadoop_yarn_resourcemanager\"}$/",
           "values": false
         },
         "textMode": "auto"
@@ -186,12 +234,13 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
           },
           "exemplar": false,
-          "expr": "sum by (job) (yarn_resourcemanager_clustermetrics_num_active_nms {job=\"hbase_hmaster\", cluster_id=~'$cluster', instance=~'$instance'} )",
+          "expr": "sum by (job) (yarn_resourcemanager_clustermetrics_num_active_nms {job=\"hadoop_yarn_resourcemanager\", cluster_id=~'$cluster', instance=~'$instance'} )",
           "interval": "",
-          "legendFormat": "{{instance}}",
+          "legendFormat": "",
           "refId": "A"
         }
       ],
@@ -200,7 +249,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
       },
       "fieldConfig": {
         "defaults": {
@@ -265,9 +315,6 @@
       "pluginVersion": "8.4.7",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus"
-          },
           "expr": "sum(node_memory_MemTotal_bytes{job=\"$job\", cluster_id=~'$cluster',  instance=~\"$instance\"})",
           "refId": "A"
         }
@@ -277,7 +324,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
       },
       "fieldConfig": {
         "defaults": {
@@ -343,10 +391,11 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
           },
           "exemplar": false,
-          "expr": "max(sum by(job, cluster, instance) (yarn_resourcemanager_queue_max_capacity_mb {job=\"hbase_hmaster\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''}))",
+          "expr": "max(sum by(job, cluster, instance) (yarn_resourcemanager_queue_max_capacity_mb {job=\"hadoop_yarn_resourcemanager\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''}))",
           "interval": "",
           "legendFormat": "{{cluster_id}}",
           "refId": "A"
@@ -357,7 +406,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
       },
       "fieldConfig": {
         "defaults": {
@@ -422,9 +472,6 @@
       "pluginVersion": "8.4.7",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus"
-          },
           "expr": "sum(count(node_cpu_seconds_total{job=\"$job\", cluster_id=~'$cluster', instance=~\"$instance\", mode='system'}) by (cpu))",
           "refId": "A"
         }
@@ -434,7 +481,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
       },
       "fieldConfig": {
         "defaults": {
@@ -491,7 +539,7 @@
           "calcs": [
             "lastNotNull"
           ],
-          "fields": "/^{job=\"hbase_hmaster\"}$/",
+          "fields": "/^{job=\"hadoop_yarn_resourcemanager\"}$/",
           "values": false
         },
         "textMode": "auto"
@@ -500,12 +548,13 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
           },
           "exemplar": true,
-          "expr": "sum by (job) (yarn_resourcemanager_queue_allocated_vcores {job=\"hbase_hmaster\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''} +  yarn_resourcemanager_queue_available_vcores {job=\"hbase_hmaster\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''}+  yarn_resourcemanager_queue_reserved_vcores {job=\"hbase_hmaster\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})",
+          "expr": "sum by (job) (yarn_resourcemanager_queue_allocated_vcores {job=\"hadoop_yarn_resourcemanager\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''} +  yarn_resourcemanager_queue_available_vcores {job=\"hadoop_yarn_resourcemanager\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''}+  yarn_resourcemanager_queue_reserved_vcores {job=\"hadoop_yarn_resourcemanager\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})",
           "interval": "",
-          "legendFormat": "{{instance}}",
+          "legendFormat": "",
           "refId": "A"
         }
       ],
@@ -514,7 +563,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
       },
       "fieldConfig": {
         "defaults": {
@@ -580,12 +630,13 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
           },
           "exemplar": false,
           "expr": "sum(node_filesystem_size_bytes {job=\"$job\", cluster_id=~'$cluster', instance=~\"$instance\", fstype!=\"tmpfs\"})",
           "interval": "",
-          "legendFormat": "{{instance}}",
+          "legendFormat": "",
           "refId": "A"
         }
       ],
@@ -594,7 +645,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
       },
       "fieldConfig": {
         "defaults": {
@@ -661,12 +713,13 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
           },
           "exemplar": true,
           "expr": "sum(hdfs_namenode_capacity_total {job=\"hadoop_hdfs_namenode\", cluster_id=~'$cluster', instance=~'$instance', role=\"NameNode\", kind=\"FSNamesystem\"})",
           "interval": "",
-          "legendFormat": "{{instance}}",
+          "legendFormat": "",
           "refId": "A"
         }
       ],
@@ -692,7 +745,8 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -739,7 +793,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
           },
           "exemplar": true,
           "expr": "1-(sum(node_memory_MemAvailable_bytes {job=\"$job\", cluster_id=~'$cluster'}) by (cluster_id)) / (sum(node_memory_MemTotal_bytes {job=\"$job\", cluster_id=~'$cluster'}) by (cluster_id))",
@@ -756,7 +811,7 @@
         "sort": 1,
         "value_type": "individual"
       },
-      "type": "timeseries",
+      "type": "graph",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -787,7 +842,8 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -836,7 +892,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
           },
           "exemplar": false,
           "expr": "yarn_nodemanager_metrics_available_gb {job=\"hadoop_yarn_nodemanager\", cluster_id=~'$cluster', instance=~'$instance'}",
@@ -853,7 +910,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "timeseries",
+      "type": "graph",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -884,7 +941,8 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -930,9 +988,6 @@
       "steppedLine": false,
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus"
-          },
           "expr": "1-(sum(node_memory_MemAvailable_bytes {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'}) by (cluster_id, instance)) / (sum(node_memory_MemTotal_bytes {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'}) by (cluster_id, instance))",
           "legendFormat": "{{instance}}",
           "refId": "A"
@@ -946,7 +1001,7 @@
         "sort": 1,
         "value_type": "individual"
       },
-      "type": "timeseries",
+      "type": "graph",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -977,7 +1032,8 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -1026,10 +1082,11 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
           },
           "exemplar": false,
-          "expr": "1-(sum by (job, cluster_id, instance) (yarn_resourcemanager_queue_available_mb {job=\"hbase_hmaster\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})/sum by (job, cluster_id, instance) (yarn_resourcemanager_queue_max_capacity_mb {job=\"hbase_hmaster\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''}))",
+          "expr": "1-(sum by (job, cluster_id, instance) (yarn_resourcemanager_queue_available_mb {job=\"hadoop_yarn_resourcemanager\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})/sum by (job, cluster_id, instance) (yarn_resourcemanager_queue_max_capacity_mb {job=\"hadoop_yarn_resourcemanager\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''}))",
           "interval": "",
           "legendFormat": "{{cluster_id}}",
           "refId": "A"
@@ -1043,7 +1100,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "timeseries",
+      "type": "graph",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -1074,7 +1131,8 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -1123,7 +1181,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
           },
           "exemplar": false,
           "expr": "yarn_nodemanager_metrics_allocated_gb {job=\"hadoop_yarn_nodemanager\", cluster_id=~'$cluster', instance=~'$instance'}",
@@ -1140,7 +1199,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "timeseries",
+      "type": "graph",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -1184,7 +1243,8 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -1233,10 +1293,11 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
           },
           "exemplar": true,
-          "expr": "1-sum by (job, cluster_id, instance) (yarn_resourcemanager_queue_available_vcores {job=\"hbase_hmaster\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})/sum by (job, cluster_id, instance) (yarn_resourcemanager_queue_allocated_vcores {job=\"hbase_hmaster\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''} + yarn_resourcemanager_queue_available_vcores {job=\"hbase_hmaster\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''} + yarn_resourcemanager_queue_pending_vcores {job=\"hbase_hmaster\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''} + yarn_resourcemanager_queue_reserved_vcores {job=\"hbase_hmaster\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})",
+          "expr": "1-sum by (job, cluster_id, instance) (yarn_resourcemanager_queue_available_vcores {job=\"hadoop_yarn_resourcemanager\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})/sum by (job, cluster_id, instance) (yarn_resourcemanager_queue_allocated_vcores {job=\"hadoop_yarn_resourcemanager\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''} + yarn_resourcemanager_queue_available_vcores {job=\"hadoop_yarn_resourcemanager\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''} + yarn_resourcemanager_queue_pending_vcores {job=\"hadoop_yarn_resourcemanager\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''} + yarn_resourcemanager_queue_reserved_vcores {job=\"hadoop_yarn_resourcemanager\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})",
           "interval": "",
           "legendFormat": "{{cluster_id}}",
           "refId": "A"
@@ -1250,7 +1311,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "timeseries",
+      "type": "graph",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -1281,7 +1342,8 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -1329,9 +1391,6 @@
       "steppedLine": false,
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus"
-          },
           "expr": "1 - (avg by (cluster_id, instance) (irate(node_cpu_seconds_total{job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', mode=\"idle\"}[1m])))",
           "legendFormat": "{{instance}}",
           "refId": "A"
@@ -1345,7 +1404,7 @@
         "sort": 1,
         "value_type": "individual"
       },
-      "type": "timeseries",
+      "type": "graph",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -1375,7 +1434,8 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -1424,10 +1484,11 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
           },
           "exemplar": true,
-          "expr": "sum by(job, cluster_id, instance) (yarn_resourcemanager_queue_available_vcores {job=\"hbase_hmaster\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})",
+          "expr": "sum by(job, cluster_id, instance) (yarn_resourcemanager_queue_available_vcores {job=\"hadoop_yarn_resourcemanager\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})",
           "interval": "",
           "legendFormat": "{{cluster_id}}",
           "refId": "A"
@@ -1441,7 +1502,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "timeseries",
+      "type": "graph",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -1472,7 +1533,8 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -1521,10 +1583,11 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
           },
           "exemplar": true,
-          "expr": "sum by(job, cluster_id, instance) (yarn_resourcemanager_queue_allocated_vcores {job=\"hbase_hmaster\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})",
+          "expr": "sum by(job, cluster_id, instance) (yarn_resourcemanager_queue_allocated_vcores {job=\"hadoop_yarn_resourcemanager\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})",
           "interval": "",
           "legendFormat": "{{cluster_id}}",
           "refId": "A"
@@ -1538,7 +1601,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "timeseries",
+      "type": "graph",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -1582,7 +1645,8 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -1628,9 +1692,6 @@
       "steppedLine": false,
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus"
-          },
           "expr": "rate(node_network_transmit_bytes_total{device=~\"eth.\", job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'}[$interval])",
           "legendFormat": "{{instance}}",
           "refId": "A"
@@ -1644,7 +1705,7 @@
         "sort": 1,
         "value_type": "individual"
       },
-      "type": "timeseries",
+      "type": "graph",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -1675,7 +1736,8 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -1721,9 +1783,6 @@
       "steppedLine": false,
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus"
-          },
           "expr": "rate(node_network_receive_bytes_total{device=~\"eth.\", job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'}[$interval])",
           "legendFormat": "{{instance}}",
           "refId": "A"
@@ -1737,7 +1796,7 @@
         "sort": 1,
         "value_type": "individual"
       },
-      "type": "timeseries",
+      "type": "graph",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -1776,7 +1835,8 @@
     {
       "columns": [],
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
       },
       "fontSize": "100%",
       "gridPos": {
@@ -1889,7 +1949,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
           },
           "exemplar": false,
           "expr": "node_filesystem_size_bytes {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', fstype!='tmpfs'}",
@@ -1901,7 +1962,8 @@
         },
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
           },
           "exemplar": false,
           "expr": "node_filesystem_avail_bytes {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance',fstype!=\"tmpfs\"}-0",
@@ -1913,7 +1975,8 @@
         },
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
           },
           "exemplar": false,
           "expr": "1- (node_filesystem_avail_bytes{job=\"$job\", cluster_id=~'$cluster', instance=~'$instance',fstype!=\"tmpfs\"} / node_filesystem_size_bytes{job=\"$job\", cluster_id=~'$cluster', instance=~'$instance',fstype!=\"tmpfs\"})",
@@ -1934,7 +1997,8 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -1980,9 +2044,6 @@
       "steppedLine": false,
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus"
-          },
           "expr": "rate(node_network_transmit_packets_total{device=~\"eth.\",job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'}[$interval])",
           "legendFormat": "{{instance}}",
           "refId": "A"
@@ -1996,7 +2057,7 @@
         "sort": 1,
         "value_type": "individual"
       },
-      "type": "timeseries",
+      "type": "graph",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -2025,7 +2086,8 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -2071,9 +2133,6 @@
       "steppedLine": false,
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus"
-          },
           "expr": "sum by (job, cluster_id, instance)(rate(node_disk_writes_completed_total {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'} [$interval]))",
           "legendFormat": "{{instance}}",
           "refId": "A"
@@ -2087,7 +2146,7 @@
         "sort": 1,
         "value_type": "individual"
       },
-      "type": "timeseries",
+      "type": "graph",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -2116,7 +2175,8 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -2163,7 +2223,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
           },
           "exemplar": false,
           "expr": "sum by (job, cluster_id, instance) (rate(node_disk_io_time_seconds_total {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'} [$interval]))",
@@ -2180,7 +2241,7 @@
         "sort": 1,
         "value_type": "individual"
       },
-      "type": "timeseries",
+      "type": "graph",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -2211,7 +2272,8 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -2257,9 +2319,6 @@
       "steppedLine": false,
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus"
-          },
           "expr": "rate(node_network_receive_packets_total{device=~\"eth.\",job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'}[$interval])",
           "legendFormat": "{{instance}}",
           "refId": "A"
@@ -2273,7 +2332,7 @@
         "sort": 1,
         "value_type": "individual"
       },
-      "type": "timeseries",
+      "type": "graph",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -2302,7 +2361,8 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -2348,9 +2408,6 @@
       "steppedLine": false,
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus"
-          },
           "expr": "sum by (job, cluster_id, instance)(rate(node_disk_reads_completed_total {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'} [$interval]))",
           "legendFormat": "{{instance}}",
           "refId": "A"
@@ -2364,7 +2421,7 @@
         "sort": 1,
         "value_type": "individual"
       },
-      "type": "timeseries",
+      "type": "graph",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -2402,7 +2459,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
       },
       "description": "",
       "fieldConfig": {
@@ -2477,7 +2535,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
           },
           "exemplar": true,
           "expr": "hdfs_datanode_remaining {job=\"hadoop_hdfs_datanode\", cluster_id=~'$cluster', instance=~'$instance', kind=\"FSDatasetState\", fsdatasetid=''}",
@@ -2491,7 +2550,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
       },
       "fieldConfig": {
         "defaults": {
@@ -2565,7 +2625,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
           },
           "exemplar": true,
           "expr": "1-hdfs_datanode_remaining {job=\"hadoop_hdfs_datanode\", cluster_id=~'$cluster', instance=~'$instance', kind=\"FSDatasetState\", fsdatasetid=''}/ hdfs_datanode_capacity {job=\"hadoop_hdfs_datanode\", cluster_id=~'$cluster', instance=~'$instance', kind=\"FSDatasetState\", fsdatasetid=''}",
@@ -2661,7 +2722,8 @@
       {
         "current": {},
         "datasource": {
-          "type": "prometheus"
+          "type": "prometheus",
+          "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
         },
         "definition": "label_values(node_uname_info, job)",
         "hide": 0,
@@ -2686,7 +2748,8 @@
       {
         "current": {},
         "datasource": {
-          "type": "prometheus"
+          "type": "prometheus",
+          "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
         },
         "definition": "label_values(node_uname_info{job=~\"$job\"}, cluster_id) ",
         "hide": 0,
@@ -2711,7 +2774,8 @@
       {
         "current": {},
         "datasource": {
-          "type": "prometheus"
+          "type": "prometheus",
+          "uid": "${DS_PROMETHEUS_WS-8865D501-F1EC-4D87-821F-3D434E2F3C12}"
         },
         "definition": "label_values(node_uname_info{job=~\"$job\", cluster_id=~'$cluster'}, instance) ",
         "hide": 0,
@@ -2756,6 +2820,6 @@
   "timezone": "browser",
   "title": "EMRonEC2-Optimization-dashboard",
   "uid": "W1a5B_oVz",
-  "version": 1,
+  "version": 32,
   "weekStart": ""
 }
