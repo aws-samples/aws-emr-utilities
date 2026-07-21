@@ -267,11 +267,23 @@ def _compute_exec_limits(input_gb: float, vcpu: int, partitions: int = 0,
         else:
             cores = base_cores
     else:
-        # --- Serverless source: use actual configuration directly ---
-        # The source already ran on Serverless — match its configured capacity.
-        # orig_vcpu = what was set as maxExecutors × cores (the proven config).
-        # Add 10% headroom for variability between runs.
-        cores = max(work * 1.1, orig_vcpu * 1.1) if orig_vcpu > 0 else work * 1.1
+        # --- Serverless source ---
+        # Healthy source: match its proven capacity (+10% headroom).
+        # orig_vcpu here is the OBSERVED DRA peak (extractor total_executors ×
+        # cores), not the configured cap — so an over-provisioned source must
+        # not be used as the anchor.
+        # Rule 3: Cap for over-provisioned Serverless sources (uncapped-DRA
+        # pattern). When the source ran mostly idle (low task efficiency AND
+        # high idle share) at meaningful scale, size from measured work like
+        # EC2 Rule 2 instead of reproducing the waste. Field-validated:
+        # 454-exec/80%-idle source (eff 0.20) — old anchor recommended 499
+        # execs/$29; work-based sizing gives ~116, matching the manually
+        # right-sized 90-exec run that held runtime parity at $7.29.
+        if orig_vcpu >= 200 and eff < 0.40 and idle_pct > 40:
+            mult = max(1.1, 1.8 - eff * 3)          # same curve as Rule 2
+            cores = min(work * mult + 30, orig_vcpu * 1.1)
+        else:
+            cores = max(work * 1.1, orig_vcpu * 1.1) if orig_vcpu > 0 else work * 1.1
 
     max_exec = max(4, int(cores / vcpu))  # EMR Serverless minimum is 4
 
