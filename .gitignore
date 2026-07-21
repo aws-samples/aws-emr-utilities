@@ -10,5 +10,6 @@ target/
 *.tar.gz
 *.rar
 .DS_Store
+.vscode/
 utilities/EMR-Serverless-Config-Advisor/whitepaper.md
 utilities/EMR-Serverless-Config-Advisor/bucket-agent/run_3arm_test.py

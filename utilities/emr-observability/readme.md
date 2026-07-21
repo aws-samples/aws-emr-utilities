@@ -45,8 +45,8 @@ Refer this doc for AMG pricing - https://aws.amazon.com/grafana/pricing/
 ### Option - 1
 #### How to use
 1)Install Prometheus and Grafana on EC2 instance or a single node EMR cluster using the below scripts preferably in same VPC to simplify network access - Network access to inbound TCP ports 22 (SSH), Grafana (3000) and Prometheus UI (9090) needs to be opened
-*install_prometheus_on_EC2.sh*
-*install_grafana_on_EC2.sh*
+*scripts/install_prometheus_on_EC2.sh*
+*scripts/install_grafana_on_EC2.sh*
 
 2)Configure prometheus endpoint 'Endpoint - remote write URL' in remote_write url in script - install_prometheus_v2.sh
 
@@ -66,33 +66,49 @@ b)Use the below EMR configuration classification json
 ### Option - 2
 #### How to use
 
-1)Create workspace in AMP - https://docs.aws.amazon.com/prometheus/latest/userguide/AMP-onboard-create-workspace.html (You can igore this if you already have a workspace in AMP)
+1) Create workspace in AMP - https://docs.aws.amazon.com/prometheus/latest/userguide/AMP-onboard-create-workspace.html (You can igore this if you already have a workspace in AMP)
 
-2)Get 'Workspace ID' from AMP console. 
+2) Get 'Workspace ID' from AMP console. 
 
-3)Add policy "AmazonPrometheusRemoteWriteAccess" to EC2 instance profile(Service role for EMR cluster EC2 instances) to provide permission to remote write metrics into all Amazon Managed Service for Prometheus workspaces in the account
+3) Add policy "AmazonPrometheusRemoteWriteAccess" to EC2 instance profile(Service role for EMR cluster EC2 instances) to provide permission to remote write metrics into all Amazon Managed Service for Prometheus workspaces in the account
 
-4)When initiating the launch of EMR clusters, 
-a)Ensure metric export setup by using the provided bootstrap action script "install_prometheus_v2.sh" and adding the AWS Prometheus workspace ID as an argument.
-```
---bootstrap-actions '[{"Path":"s3://<s3_path>/install_prometheus_v2.sh","Args":["ws-537c7364-f10f-4210-a0fa-deedd3ea1935"]}]'
-```
-b)Use the below EMR configuration classification json
-```
-./conf_files/configuration.json
-```
-5)You can now start visualizing the metrics in AMG
+4) When initiating the launch of EMR clusters, 
+   1) Ensure metric export setup by using the provided bootstrap action script "install_prometheus_v2.sh" and adding the AWS Prometheus workspace ID as an argument.
+        ```
+        --bootstrap-actions '[{"Path":"s3://<s3_path>/install_prometheus_v2.sh","Args":["ws-537c7364-f10f-4210-a0fa-deedd3ea1935"]}]'
+        ```
+    1) Use the below EMR configuration classification json
+        ```
+        ./conf_files/emr-application-configuration.json
+        ```
+5) You can now start visualizing the metrics in AMG
 
-### Setting up Ganglia Dashboards
+### Setting up Grafana Dashboards
 #### Yarn and OS level metrics Dashboards
-Import the dashboards from utilities/emr-observability/grafana_dashboards
+Import the dashboards from `grafana_dashboards/`:
+* `EMRonEC2-Optimization-dashboard.json`
+* `OS_Level_Metrics.json`
+* `YARN-ResourceManager.json`
+* `YARN-NodeManager.json`
+* `HDFS-NameNode.json`
+
 #### Hbase
 Use this ID "12243" for importing the dashboard into Grafana
+
 #### Spark
-In Progress
+Import the Spark-specific dashboards from `grafana_dashboards/`:
+* `Spark-Application-Monitoring.json` - Spark application-level monitoring
+* `Spark-Metrics-by-Components.json` - Spark metrics broken down by component
+* `spark-EMRonEC2-Optimization-dashboard.json` - Optimization dashboard with Spark metrics
+* `spark-OS_Level_Metrics.json` - OS metrics tailored for Spark workloads
+* `spark-YARN-ResourceManager.json` - YARN ResourceManager metrics for Spark
+* `spark-YARN-NodeManager.json` - YARN NodeManager metrics for Spark
+* `spark-HDFS-NameNode.json` - HDFS NameNode metrics for Spark
+
+For Spark-specific Prometheus setup, use `spark-install_prometheus.sh` as the bootstrap action instead of `install_prometheus_v2.sh`.
+Alternatively, use `install-telegraf-bootstrap.sh` for Telegraf-based metric collection.
 
 ## Work in progress
-* Spark metrics support
 * Setup Alerts
 
 ## Limitations
@@ -110,7 +126,7 @@ In Progress
 ![Alt text](images/HbaseGrafana-1.png?raw=true "Hbase Dashboard")
 
 ### Dashboard examples - SparkDashboard
-In Progress
+
 
 ###  Recommended Actions
 In the **EMRonEC2OptimizationDashboard**

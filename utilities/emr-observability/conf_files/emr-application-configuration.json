@@ -1,0 +1,43 @@
+[
+  {
+    "Classification": "yarn-env",
+    "Configurations": [
+      {
+        "Classification": "export",
+        "Properties": {
+          "YARN_NODEMANAGER_OPTS": "\"${YARN_NODEMANAGER_OPTS} -javaagent:/etc/prometheus/jmx_prometheus_javaagent-0.17.2.jar=7005:/etc/hadoop/conf/yarn_jmx_config_node_manager.yaml -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.port=50111\"",
+          "YARN_RESOURCEMANAGER_OPTS": "\"${YARN_RESOURCEMANAGER_OPTS} -javaagent:/etc/prometheus/jmx_prometheus_javaagent-0.17.2.jar=7005:/etc/hadoop/conf/yarn_jmx_config_resource_manager.yaml -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.port=50111\""
+        }
+      }
+    ],
+    "Properties": {}
+  },
+  {
+    "Classification": "hdfs-env",
+    "Configurations": [
+      {
+        "Classification": "export",
+        "Properties": {
+          "HADOOP_DATANODE_OPTS": "\"${HADOOP_DATANODE_OPTS} -javaagent:/etc/prometheus/jmx_prometheus_javaagent-0.17.2.jar=7001:/etc/hadoop/conf/hdfs_jmx_config_datanode.yaml -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.port=50103\"",
+          "HADOOP_NAMENODE_OPTS": "\"${HADOOP_NAMENODE_OPTS} -javaagent:/etc/prometheus/jmx_prometheus_javaagent-0.17.2.jar=7001:/etc/hadoop/conf/hdfs_jmx_config_namenode.yaml -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.port=50103\""
+        }
+      }
+    ],
+    "Properties": {}
+  },
+   {
+    "Classification": "spark-metrics",
+    "Properties": {
+      "*.sink.graphite.class": "org.apache.spark.metrics.sink.GraphiteSink",
+      "*.sink.graphite.host": "localhost",
+      "*.sink.graphite.period": "10",
+      "*.sink.graphite.port": "2003",
+      "*.sink.graphite.prefix": "my",
+      "*.sink.graphite.unit": "seconds",
+      "driver.source.jvm.class": "org.apache.spark.metrics.source.JvmSource",
+      "executor.source.jvm.class": "org.apache.spark.metrics.source.JvmSource",
+      "master.source.jvm.class": "org.apache.spark.metrics.source.JvmSource",
+      "worker.source.jvm.class": "org.apache.spark.metrics.source.JvmSource"
+    }
+  }
+]
