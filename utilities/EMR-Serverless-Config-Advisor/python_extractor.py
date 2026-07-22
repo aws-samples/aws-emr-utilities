@@ -2044,9 +2044,11 @@ def extract_driver_metrics(events):
     # Extract result size from completed tasks
     for event in events:
         if event.get("Event") == "SparkListenerTaskEnd":
-            task_info = event.get("Task Info", {})
-            # Result bytes are sent back to driver
-            result_size = task_info.get("Result Size", 0)
+            # "Result Size" lives in Task Metrics (Task Info has no such
+            # field, so this always summed 0 and driver sizing was blind to
+            # collect-heavy jobs)
+            result_size = (event.get("Task Metrics") or {}).get("Result Size", 0) \
+                or (event.get("Task Info") or {}).get("Result Size", 0)
             if result_size > 0:
                 driver_metrics["total_result_bytes_received"] += result_size
 
@@ -4258,12 +4260,33 @@ def process_application(args_tuple: Tuple[str, List[str], str]) -> Tuple[str, Di
         a["cpu_time"] = a.get("cpu_time", 0) + s.get("executor_cpu_time_ms", 0)
         a["tasks"] += s.get("actual_task_count", 0)
     GB = 1024 ** 3
+    # One row per stage_id, not per attempt: each row already carries the
+    # cross-attempt aggregate, so emitting a row per attempt multiplies every
+    # downstream sum() by the retry count (a 4x-retried spilling stage
+    # reported 4x its real spill and skewed worker sizing).
+    by_stage = {}
+    for s in stages_list:
+        prev = by_stage.get(s["stage_id"])
+        if prev is None:
+            by_stage[s["stage_id"]] = dict(s, _attempts=1, _duration_ms_sum=s.get("duration_ms") or 0,
+                                           _failure=s.get("failure_reason"),
+                                           _num_tasks=s.get("num_tasks", 0))
+        else:
+            prev["_attempts"] += 1
+            prev["_duration_ms_sum"] += s.get("duration_ms") or 0
+            prev["_failure"] = prev["_failure"] or s.get("failure_reason")
+            prev["_num_tasks"] = max(prev["_num_tasks"], s.get("num_tasks", 0))
+            if (s.get("attempt_id") or 0) >= (prev.get("attempt_id") or 0):
+                keep = {k: prev[k] for k in ("_attempts", "_duration_ms_sum", "_failure", "_num_tasks")}
+                prev.update(s)
+                prev.update(keep)
     stage_summary["stages"] = [{
         "stage_id": s["stage_id"],
         "name": (s.get("stage_name") or "")[:100],
-        "num_tasks": s.get("num_tasks", 0),
+        "num_tasks": s["_num_tasks"],
+        "attempts": s["_attempts"],
         "tasks_completed": stage_io_agg[s["stage_id"]]["tasks"],
-        "duration_sec": round((s.get("duration_ms") or 0) / 1000, 1),
+        "duration_sec": round(s["_duration_ms_sum"] / 1000, 1),
         "input_gb": round(stage_io_agg[s["stage_id"]]["input"] / GB, 2),
         "output_gb": 0,
         "shuffle_read_gb": round(stage_io_agg[s["stage_id"]]["shuffle_read"] / GB, 2),
@@ -4273,8 +4296,10 @@ def process_application(args_tuple: Tuple[str, List[str], str]) -> Tuple[str, Di
         "total_task_time_sec": round(stage_io_agg[s["stage_id"]]["run_time"] / 1000, 1),
         # "Executor CPU Time" in event logs is NANOSECONDS despite the _ms field name
         "total_cpu_time_sec": round(stage_io_agg[s["stage_id"]].get("cpu_time", 0) / 1e9, 1),
-        "failure_reason": s.get("failure_reason"),
-    } for s in stages_list]
+        # First failure across attempts: retry evidence survives even though
+        # the final attempt succeeded (WGL/broadcast detection reads this)
+        "failure_reason": s["_failure"],
+    } for s in by_stage.values()]
 
     # Build executor_timeline (match Spark output format)
     executor_timeline = []
