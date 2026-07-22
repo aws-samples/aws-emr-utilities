@@ -7,12 +7,12 @@ name: Config Advisor regression gate
 on:
   pull_request:
     paths:
-      - 'utilities/EMR-Serverless-Config-Advisor/emr_recommender.py'
+      - 'utilities/EMR-Serverless-Config-Advisor/emr_s_fine_tuner.py'
       - 'utilities/EMR-Serverless-Config-Advisor/tests/**'
   push:
     branches: [main]
     paths:
-      - 'utilities/EMR-Serverless-Config-Advisor/emr_recommender.py'
+      - 'utilities/EMR-Serverless-Config-Advisor/emr_s_fine_tuner.py'
       - 'utilities/EMR-Serverless-Config-Advisor/tests/**'
 
 jobs:
@@ -29,3 +29,6 @@ jobs:
       - name: Run golden-fixture regression suite
         working-directory: utilities/EMR-Serverless-Config-Advisor
         run: python3 tests/test_recommender_golden.py
+      - name: Run Rule 3 unit tests
+        working-directory: utilities/EMR-Serverless-Config-Advisor
+        run: python3 tests/test_exec_limits_rule3.py
