@@ -37,6 +37,11 @@ def _parse_size_to_mb(val):
     b = _parse_size_to_bytes(val)
     return b // (1024 * 1024) if b else 0
 
+def _parse_size_to_gb(val):
+    """Parse size string to gigabytes (float)."""
+    b = _parse_size_to_bytes(val)
+    return b / (1024 ** 3) if b else 0.0
+
 # Setup logging
 logging.basicConfig(
     format="%(asctime)s %(levelname)-5s [%(name)s]  %(message)s",
@@ -506,6 +511,30 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         io_data = data.get('io', data.get('io_summary', {}).get('application_level', {}))
         util_data = data.get('utilization', data.get('executor_summary', {}))
         spill_data = data.get('spill_summary', {})
+
+        # Extracts prior to the attempt-dedupe fix emit one stage row per
+        # retry attempt, each carrying the full cross-attempt aggregate —
+        # summing them multiplies spill/shuffle by the retry count. Keep one
+        # row per stage_id and record the duplicate count as attempts so
+        # per-attempt math (spill-aware partition sizing) stays correct on
+        # both old and new extracts.
+        _stages_in = data.get('stage_summary', {}).get('stages', [])
+        _stages_dedup = {}
+        for _s in _stages_in:
+            if not isinstance(_s, dict):
+                continue
+            _sid = _s.get('stage_id')
+            if _sid in _stages_dedup:
+                _prev = _stages_dedup[_sid]
+                _prev['attempts'] = max(_prev.get('attempts', 1), 1) + 1
+                if _s.get('failure_reason') and not _prev.get('failure_reason'):
+                    _prev['failure_reason'] = _s['failure_reason']
+            else:
+                _stages_dedup[_sid] = dict(_s)
+                _stages_dedup[_sid].setdefault('attempts', 1)
+        _stages_deduped = list(_stages_dedup.values())
+        if 'stage_summary' in data:
+            data = dict(data, stage_summary=dict(data['stage_summary'], stages=_stages_deduped))
         
         flat = {
             'application_id': data.get('application_id', app_info.get('app_id')),
@@ -531,6 +560,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             'total_task_execution_hours': util_data.get('total_task_execution_hours', 0),
             'max_stage_shuffle_write_gb': data.get('shuffle_data_summary', {}).get('max_stage_shuffle_write_gb', 0),
             'shuffle_fetch_wait_percent': io_data.get('shuffle_fetch_wait_percent', 0),
+            'driver_result_gb': float(data.get('driver_metrics', {}).get('total_result_bytes_received_gb', 0) or 0),
             '_stages_raw': data.get('stage_summary', {}).get('stages', []),
             '_sql_executions_raw': data.get('sql_executions', []),
             '_executor_summary_raw': data.get('executor_summary', {}),
@@ -752,11 +782,38 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
 
             # Partition sizing: target zero spill (partition fits in per-task memory)
             # Use 70% of per-task memory for build side hash table headroom
+            # Size from the full sort footprint: what spilled PLUS what fit in
+            # memory (spill alone undercounts; shuffle bytes alone ignore the
+            # decompression/sort expansion that causes the spill — a window
+            # sort reading 94G/attempt spilled 8.5T at 1000 partitions, and
+            # shuffle-based sizing said 1000 was fine).
+            # parts = p0 + spill_per_attempt/(per_task_mem*0.7) — i.e. current
+            # partitions handle the in-memory share, spill needs extra ones.
+            # Field-validated: 8.5T-spill window stage on 8c/54G → 4016 ≈ the
+            # proven 4000-partition fix (30min, no fetch-fail retries).
             _serverless_spill_override = False
+            _spill_extra_parts = 0
+            # Spill boost requires evidence of HARM, not just volume: only
+            # stages that spilled AND failed (fetch-fail/executor-death
+            # retry loops) get their sort footprint sized into partitions.
+            # Steady-state spill on succeeding stages is the workload's
+            # proven operating point (search-health class spills 6-14x data
+            # moved and wins on big workers) — boosting those inflated proven
+            # 1000-partition configs to 8-11k.
+            # Memory spill is the uncompressed sort footprint; disk spill is
+            # the same bytes after compression — use mem, fall back to disk
+            # only when mem wasn't reported.
+            _spill_per_attempt = max(
+                (((s.get("mem_spill_gb") or s.get("memory_spill_gb") or 0)
+                  or (s.get("disk_spill_gb", 0) or 0))
+                 / max(s.get("attempts", 1) or 1, 1)
+                 for s in stages_raw if s.get("failure_reason")),
+                default=0)
             if spill_gb > _peak_shuf and _peak_shuf > 100:
-                _target_partitions = int(math.ceil(_peak_shuf / (_per_task_mem_gb * 0.7)))
-                if _target_partitions > sp_cost:
-                    sp_cost = _target_partitions
+                _spill_extra_parts = int(math.ceil(
+                    _spill_per_attempt / (_per_task_mem_gb * 0.7)))
+                if _spill_extra_parts > 0:
+                    sp_cost = sp_cost + _spill_extra_parts
                     _serverless_spill_override = True
 
             # Executor floor: disk throughput must deliver peak stage IO in 15 min
@@ -886,6 +943,10 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         sp_perf = cap_partitions(sp_perf, max_exec_perf)
         # EMR Serverless: never reduce partitions below 1000 (target is always Serverless)
         sp_perf = max(1000, sp_perf)
+        # Spill-aware partition sizing applies to perf mode too — the sort
+        # footprint is a property of the data, not the optimization goal.
+        if not is_ec2 and stages_raw and _serverless_spill_override:
+            sp_perf = sp_perf + _spill_extra_parts
         # Stage-level efficiency for perf mode: no stage > 30min
         if is_ec2 and stages_raw:
             max_stage_p = max(stages_raw, key=lambda s: s.get('total_task_time_sec', 0) or 0)
@@ -930,16 +991,30 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         }
         
         # Build Spark configs
+        driver_result_gb = float(row.get('driver_result_gb', 0) or 0)
+
         def _driver_sizing(partitions, max_exec, shuffle_gb):
-            """Scale driver based on coordination overhead."""
-            if partitions > 10000 or max_exec > 500 or shuffle_gb > 10000:
-                return 16, 108
-            elif partitions > 2000 or max_exec > 100 or shuffle_gb > 2000:
-                return 8, 54
-            elif partitions > 500 or max_exec > 50 or shuffle_gb > 500:
-                return 4, 27
+            """Scale driver based on coordination overhead and collect volume."""
+            # Collect-heavy jobs OOM the driver regardless of cluster-side
+            # coordination signals: results accumulate in the driver heap
+            # (replicated: 15 parallel toPandas/collect killed a 14G driver;
+            # 54G peaked at 34.9G on the same job). Size the driver so
+            # aggregate collected results fit within ~25% of heap. The
+            # source's proven driver is the floor — never recommend below a
+            # driver tier that already worked.
+            if partitions > 10000 or max_exec > 500 or shuffle_gb > 10000 or driver_result_gb > 13:
+                cores, mem = 16, 108
+            elif partitions > 2000 or max_exec > 100 or shuffle_gb > 2000 or driver_result_gb > 2:
+                cores, mem = 8, 54
+            elif partitions > 500 or max_exec > 50 or shuffle_gb > 500 or driver_result_gb > 0.5:
+                cores, mem = 4, 27
             else:
-                return 4, 14
+                cores, mem = 4, 14
+            _src_dmem = _parse_size_to_gb(_spark_config_raw.get('spark.driver.memory', '0'))
+            if _src_dmem > mem and not is_ec2:
+                _src_dcores = int(_spark_config_raw.get('spark.driver.cores', 0) or 0)
+                cores, mem = max(cores, _src_dcores), int(_src_dmem)
+            return cores, mem
 
         def _driver_disk_sizing(total_tasks):
             """Scale driver disk based on total task count to prevent event log disk pressure."""
@@ -1050,14 +1125,21 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             # executor time in fetch-wait, 301min vs 25min for the same job).
             if spill_ratio > 0.05 and not is_ec2:
                 # Zero-spill target: peak_shuffle / (per_task_mem * 0.7)
+                # Floor, never ceiling: the caller's sp may already be larger
+                # (spill-aware sizing upstream); overwriting it here silently
+                # reverted the 4000-partition fix for an 8.5T-spill window
+                # sort back to 1000.
                 peak_shuffle_gb = max(s_in_gb, s_out_gb)
                 zero_spill_parts = int(peak_shuffle_gb / (per_task_mem_gb * 0.7))
-                zero_spill_parts = max(1000, zero_spill_parts)
-                sp = zero_spill_parts
+                sp = max(sp, 1000, zero_spill_parts)
                 cfg['spark.sql.shuffle.partitions'] = str(sp)
-                # MaxExecutors: size for 2-3 waves (avoid 4-6 waves of waiting)
+                # MaxExecutors: size for 2-3 waves (avoid 4-6 waves of waiting).
+                # Waves are sized from SHUFFLE-based partitions only: partitions
+                # added for sort-footprint (spill) make tasks smaller, not the
+                # fleet bigger — coupling executors to spill-inflated sp turned
+                # a 12-exec cost rec into 130 on a mostly-idle source.
                 target_waves = 4
-                needed_exec = int(sp / (worker_cfg["vcpu"] * target_waves))
+                needed_exec = int(max(1000, zero_spill_parts) / (worker_cfg["vcpu"] * target_waves))
                 needed_exec = max(needed_exec, max_exec)  # don't reduce below existing
                 if needed_exec > max_exec:
                     cfg['spark.dynamicAllocation.maxExecutors'] = str(needed_exec)
@@ -1378,6 +1460,25 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         cost_recs.append(minimal_rec)
         perf_recs.append(minimal_rec)
     
+    # The worker section and the dynamicAllocation confs are two views of one
+    # decision — build_spark_cfg may raise the confs after the worker section
+    # is frozen (zero-spill executor bump), which shipped contradictory
+    # recommendations (worker.max_executors=12 vs conf 15). The confs are what
+    # the job actually runs with, so they win.
+    for _recs in (cost_recs, perf_recs):
+        for _r in _recs:
+            _w, _c = _r.get("worker"), _r.get("spark_configs", {})
+            if not _w:
+                continue
+            _cmax = int(_c.get("spark.dynamicAllocation.maxExecutors", 0) or 0)
+            _cmin = int(_c.get("spark.dynamicAllocation.minExecutors", 0) or 0)
+            if _cmax and _cmax != _w["max_executors"]:
+                _w["max_executors"] = _cmax
+                _w["total_vcpu_capacity"] = _cmax * _w["vcpu"]
+                _w["total_memory_capacity"] = _cmax * _w["memory_gb"]
+            if _cmin and _cmin != _w["min_executors"]:
+                _w["min_executors"] = _cmin
+
     log.info("Generated %d cost, %d performance recommendations",
              len(cost_recs), len(perf_recs))
     return cost_recs, perf_recs

@@ -1,0 +1,2635 @@
+{
+ "application_id": "windowsort_fetchfail_00g72m8n01eb1g0b",
+ "extraction_timestamp": "2026-07-21T17:47:29.554594",
+ "extraction_engine": "python",
+ "event_count": 28103,
+ "file_count": 8,
+ "src_event_log_location": "/tmp/field-fixes/geeth-raw/eventlog_v2_00g72m8n01eb1g0b/",
+ "application_info": {
+  "job_id": "a7d8747e-4ffa-4c6c-b6e5-3ef006b2d0d6",
+  "cluster_id": "N/A",
+  "application_name": "pysql-executor-custom",
+  "app_id": "windowsort_fetchfail_00g72m8n01eb1g0b",
+  "application_start_time": "2026-07-08T18:21:12.049000",
+  "application_end_time": "2026-07-08T18:56:43.943000",
+  "total_run_duration_minutes": 35.53,
+  "total_run_duration_hours": 0.59
+ },
+ "application_start_time": "2026-07-08T18:21:12.049000",
+ "application_end_time": "2026-07-08T18:56:43.943000",
+ "total_run_duration_minutes": 35.53,
+ "total_run_duration_hours": 0.59,
+ "task_summary": {
+  "total_tasks": 13816,
+  "completed_tasks": 13775,
+  "failed_tasks": 41,
+  "killed_tasks": 0,
+  "success_rate_percent": 99.7
+ },
+ "stage_summary": {
+  "total_stages": 14,
+  "completed_stages": 9,
+  "failed_stages": 5,
+  "skipped_stages": 0,
+  "success_rate_percent": 64.29,
+  "stages": [
+   {
+    "stage_id": 5,
+    "name": "sql at NativeMethodAccessorImpl.java:0",
+    "num_tasks": 1000,
+    "attempts": 4,
+    "tasks_completed": 901,
+    "duration_sec": 1246.2,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 377.55,
+    "shuffle_write_gb": 12.75,
+    "mem_spill_gb": 34198.27,
+    "disk_spill_gb": 6768.67,
+    "total_task_time_sec": 450474.6,
+    "total_cpu_time_sec": 111542.7,
+    "failure_reason": "org.apache.spark.shuffle.FetchFailedException\n\tat org.apache.spark.errors.SparkCoreErrors$.fetchFailedError(SparkCoreErrors.scala:438)\n\tat org.apache.spark.storage.ShuffleBlockFetcherIterator.throwFetchFailedException(ShuffleBlockFetcherIterator.scala:1253)\n\tat org.apache.spark.storage.ShuffleBlockFetcherIterator.next(ShuffleBlockFetcherIterator.scala:981)\n\tat org.apache.spark.io.ConditionalConcatInputStream.getNextInputStream(ConcatBlockIterationStream.scala:251)\n\tat org.apache.spark.io.ConcatInputStream.advance(ConcatInputStream.scala:67)\n\tat org.apache.spark.io.ConcatInputStream.read(ConcatInputStream.scala:110)\n\tat net.jpountz.lz4.LZ4BlockInputStream.tryReadFully(LZ4BlockInputStream.java:271)\n\tat net.jpountz.lz4.LZ4BlockInputStream.refill(LZ4BlockInputStream.java:192)\n\tat net.jpountz.lz4.LZ4BlockInputStream.refill(LZ4BlockInputStream.java:228)\n\tat net.jpountz.lz4.LZ4BlockInputStream.read(LZ4BlockInputStream.java:159)\n\tat org.apache.spark.io.ConcatBlockIterationStream.$anonfun$read$2(ConcatBlockIterationStream.scala:187)\n\tat scala.runtime.java8.JFunction0$mcI$sp.apply(JFunction0$mcI$sp.java:23)\n\tat org.apache.spark.io.ConcatBlockIterationStream.tryOrFetchFailedException(ConcatBlockIterationStream.scala:209)\n\tat org.apache.spark.io.ConcatBlockIterationStream.read(ConcatBlockIterationStream.scala:187)\n\tat org.apache.spark.io.BufferedInputStreamReader.read(BufferedInputStreamReader.java:231)\n\tat org.apache.spark.io.BufferedInputStreamReader.read(BufferedInputStreamReader.java:133)\n\tat org.apache.spark.sql.execution.VariableSizeUnsafeRowShuffleDeserializationStream.readNext(UnsafeRowSerializer.scala:201)\n\tat org.apache.spark.sql.execution.UnsafeRowShuffleDeserializationStream$$anon$1.hasNext(UnsafeRowSerializer.scala:153)\n\tat org.apache.spark.InterruptibleIterator.hasNext(InterruptibleIterator.scala:37)\n\tat scala.collection.Iterator$$anon$10.hasNext(Iterator.scala:460)\n\tat org.apache.spark.sql.catalyst.expressions.GeneratedClass$GeneratedIteratorForCodegenStage5.sort_addToSorter_0$(Unknown Source)\n\tat org.apache.spark.sql.catalyst.expressions.GeneratedClass$GeneratedIteratorForCodegenStage5.sort_doSort_0$(Unknown Source)\n\tat org.apache.spark.sql.catalyst.expressions.GeneratedClass$GeneratedIteratorForCodegenStage5.processNext(Unknown Source)\n\tat org.apache.spark.sql.execution.BufferedRowIterator.hasNext(BufferedRowIterator.java:35)\n\tat org.apache.spark.sql.catalyst.expressions.GeneratedClass$GeneratedIteratorForCodegenStage5.hasNext(Unknown Source)\n\tat org.apache.spark.sql.execution.WholeStageCodegenEvaluatorFactory$WholeStageCodegenPartitionEvaluator$$anon$1.hasNext(WholeStageCodegenEvaluatorFactory.scala:43)\n\tat org.apache.spark.sql.execution.window.AbstractWindowExec$$anon$1.fetchNextRow(WindowExec.scala:237)\n\tat org.apache.spark.sql.execution.window.AbstractWindowExec$$anon$1.<init>(WindowExec.scala:246)\n\tat org.apache.spark.sql.execution.window.AbstractWindowExec.$anonfun$doExecute$3(WindowExec.scala:226)\n\tat org.apache.spark.rdd.RDD.$anonfun$mapPartitions$2(RDD.scala:930)\n\tat org.apache.spark.rdd.RDD.$anonfun$mapPartitions$2$adapted(RDD.scala:930)\n\tat org.apache.spark.rdd.MapPartitionsRDD.compute(MapPartitionsRDD.scala:61)\n\tat org.apache.spark.rdd.RDD.computeOrReadCheckpoint(RDD.scala:434)\n\tat org.apache.spark.rdd.RDD.iterator(RDD.scala:389)\n\tat org.apache.spark.rdd.MapPartitionsRDD.compute(MapPartitionsRDD.scala:61)\n\tat org.apache.spark.rdd.RDD.computeOrReadCheckpoint(RDD.scala:434)\n\tat org.apache.spark.rdd.RDD.iterator(RDD.scala:389)\n\tat org.apache.spark.rdd.MapPartitionsRDD.compute(MapPartitionsRDD.scala:61)\n\tat org.apache.spark.rdd.RDD.computeOrReadCheckpoint(RDD.scala:434)\n\tat org.apache.spark.rdd.RDD.iterator(RDD.scala:389)\n\tat org.apache.spark.rdd.MapPartitionsRDD.compute(MapPartitionsRDD.scala:61)\n\tat org.apache.spark.rdd.RDD.computeOrReadCheckpoint(RDD.scala:434)\n\tat org.apache.spark.rdd.RDD.iterator(RDD.scala:389)\n\tat org.apache.spark.rdd.MapPartitionsRDD.compute(MapPartitionsRDD.scala:61)\n\tat org.apache.spark.rdd.RDD.computeOrReadCheckpoint(RDD.scala:434)\n\tat org.apache.spark.rdd.RDD.iterator(RDD.scala:389)\n\tat org.apache.spark.rdd.MapPartitionsRDD.compute(MapPartitionsRDD.scala:61)\n\tat org.apache.spark.rdd.RDD.computeOrReadCheckpoint(RDD.scala:434)\n\tat org.apache.spark.rdd.RDD.iterator(RDD.scala:389)\n\tat org.apache.spark.rdd.MapPartitionsRDD.compute(MapPartitionsRDD.scala:61)\n\tat org.apache.spark.rdd.RDD.computeOrReadCheckpoint(RDD.scala:434)\n\tat org.apache.spark.rdd.RDD.iterator(RDD.scala:389)\n\tat org.apache.spark.rdd.MapPartitionsRDD.compute(MapPartitionsRDD.scala:61)\n\tat org.apache.spark.rdd.RDD.computeOrReadCheckpoint(RDD.scala:434)\n\tat org.apache.spark.rdd.RDD.iterator(RDD.scala:389)\n\tat org.apache.spark.rdd.MapPartitionsRDD.compute(MapPartitionsRDD.scala:61)\n\tat org.apache.spark.rdd.RDD.computeOrReadCheckpoint(RDD.scala:434)\n\tat org.apache.spark.rdd.RDD.iterator(RDD.scala:389)\n\tat org.apache.spark.rdd.MapPartitionsRDD.compute(MapPartitionsRDD.scala:61)\n\tat org.apache.spark.rdd.RDD.computeOrReadCheckpoint(RDD.scala:434)\n\tat org.apache.spark.rdd.RDD.iterator(RDD.scala:389)\n\tat org.apache.spark.shuffle.DirectShuffleWriteProcessor.doWrite(DirectShuffleWriteProcessor.scala:44)\n\tat org.apache.spark.shuffle.ShuffleWriteProcessor.write(ShuffleWriteProcessor.scala:69)\n\tat org.apache.spark.scheduler.ShuffleMapTask.runTask(ShuffleMapTask.scala:124)\n\tat org.apache.spark.scheduler.ShuffleMapTask.runTask(ShuffleMapTask.scala:54)\n\tat org.apache.spark.TaskContext.runTaskWithListeners(TaskContext.scala:204)\n\tat org.apache.spark.scheduler.Task.run(Task.scala:161)\n\tat org.apache.spark.executor.Executor$TaskRunner.$anonfun$run$4(Executor.scala:634)\n\tat org.apache.spark.util.SparkErrorUtils.tryWithSafeFinally(SparkErrorUtils.scala:64)\n\tat org.apache.spark.util.SparkErrorUtils.tryWithSafeFinally$(SparkErrorUtils.scala:61)\n\tat org.apache.spark.util.Utils$.tryWithSafeFinally(Utils.scala:96)\n\tat org.apache.spark.executor.Executor$TaskRunner.run(Executor.scala:637)\n\tat java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136)\n\tat java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)\n\tat java.base/java.lang.Thread.run(Thread.java:840)\nCaused by: org.apache.spark.ExecutorDeadException: [INTERNAL_ERROR_NETWORK] The relative remote executor(Id: 5), which maintains the block data to fetch is dead.\n\tat org.apache.spark.network.netty.NettyBlockTransferService$$anon$2.createAndStart(NettyBlockTransferService.scala:145)\n\tat org.apache.spark.network.shuffle.RetryingBlockTransferor.transferAllOutstanding(RetryingBlockTransferor.java:173)\n\tat org.apache.spark.network.shuffle.RetryingBlockTransferor.start(RetryingBlockTransferor.java:152)\n\tat org.apache.spark.network.netty.NettyBlockTransferService.fetchBlocks(NettyBlockTransferService.scala:155)\n\tat org.apache.spark.storage.ShuffleBlockFetcherIterator.sendRequest(ShuffleBlockFetcherIterator.scala:384)\n\tat org.apache.spark.storage.ShuffleBlockFetcherIterator.send$1(ShuffleBlockFetcherIterator.scala:1223)\n\tat org.apache.spark.storage.ShuffleBlockFetcherIterator.fetchUpToMaxBytes(ShuffleBlockFetcherIterator.scala:1215)\n\tat org.apache.spark.storage.ShuffleBlockFetcherIterator.next(ShuffleBlockFetcherIterator.scala:1081)\n\t... 72 more\n"
+   },
+   {
+    "stage_id": 4,
+    "name": "sql at NativeMethodAccessorImpl.java:0",
+    "num_tasks": 146,
+    "attempts": 4,
+    "tasks_completed": 567,
+    "duration_sec": 347.5,
+    "input_gb": 28.5,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.0,
+    "shuffle_write_gb": 44.62,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 3244.3,
+    "total_cpu_time_sec": 981.6,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 0,
+    "name": "sql at NativeMethodAccessorImpl.java:0",
+    "num_tasks": 5568,
+    "attempts": 1,
+    "tasks_completed": 5568,
+    "duration_sec": 0.0,
+    "input_gb": 302.63,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.0,
+    "shuffle_write_gb": 483.72,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 24967.7,
+    "total_cpu_time_sec": 10068.5,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 1,
+    "name": "sql at NativeMethodAccessorImpl.java:0",
+    "num_tasks": 5568,
+    "attempts": 1,
+    "tasks_completed": 5568,
+    "duration_sec": 223.0,
+    "input_gb": 281.29,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.0,
+    "shuffle_write_gb": 443.27,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 23362.5,
+    "total_cpu_time_sec": 9490.6,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 3,
+    "name": "sql at NativeMethodAccessorImpl.java:0",
+    "num_tasks": 1000,
+    "attempts": 2,
+    "tasks_completed": 1042,
+    "duration_sec": 1052.5,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 503.34,
+    "shuffle_write_gb": 0.74,
+    "mem_spill_gb": 64.58,
+    "disk_spill_gb": 10.63,
+    "total_task_time_sec": 48596.4,
+    "total_cpu_time_sec": 2762.2,
+    "failure_reason": "org.apache.spark.shuffle.FetchFailedException\n\tat org.apache.spark.errors.SparkCoreErrors$.fetchFailedError(SparkCoreErrors.scala:438)\n\tat org.apache.spark.storage.ShuffleBlockFetcherIterator.throwFetchFailedException(ShuffleBlockFetcherIterator.scala:1253)\n\tat org.apache.spark.storage.ShuffleBlockFetcherIterator.next(ShuffleBlockFetcherIterator.scala:981)\n\tat org.apache.spark.io.ConditionalConcatInputStream.getNextInputStream(ConcatBlockIterationStream.scala:251)\n\tat org.apache.spark.io.ConcatInputStream.advance(ConcatInputStream.scala:67)\n\tat org.apache.spark.io.ConcatInputStream.read(ConcatInputStream.scala:110)\n\tat net.jpountz.lz4.LZ4BlockInputStream.tryReadFully(LZ4BlockInputStream.java:271)\n\tat net.jpountz.lz4.LZ4BlockInputStream.refill(LZ4BlockInputStream.java:192)\n\tat net.jpountz.lz4.LZ4BlockInputStream.refill(LZ4BlockInputStream.java:228)\n\tat net.jpountz.lz4.LZ4BlockInputStream.read(LZ4BlockInputStream.java:159)\n\tat org.apache.spark.io.ConcatBlockIterationStream.$anonfun$read$2(ConcatBlockIterationStream.scala:187)\n\tat scala.runtime.java8.JFunction0$mcI$sp.apply(JFunction0$mcI$sp.java:23)\n\tat org.apache.spark.io.ConcatBlockIterationStream.tryOrFetchFailedException(ConcatBlockIterationStream.scala:209)\n\tat org.apache.spark.io.ConcatBlockIterationStream.read(ConcatBlockIterationStream.scala:187)\n\tat org.apache.spark.io.BufferedInputStreamReader.read(BufferedInputStreamReader.java:231)\n\tat org.apache.spark.io.BufferedInputStreamReader.read(BufferedInputStreamReader.java:133)\n\tat org.apache.spark.sql.execution.VariableSizeUnsafeRowShuffleDeserializationStream.readNext(UnsafeRowSerializer.scala:201)\n\tat org.apache.spark.sql.execution.UnsafeRowShuffleDeserializationStream$$anon$1.hasNext(UnsafeRowSerializer.scala:153)\n\tat org.apache.spark.InterruptibleIterator.hasNext(InterruptibleIterator.scala:37)\n\tat scala.collection.Iterator$$anon$10.hasNext(Iterator.scala:460)\n\tat org.apache.spark.sql.catalyst.expressions.GeneratedClass$GeneratedIteratorForCodegenStage3.sort_addToSorter_0$(Unknown Source)\n\tat org.apache.spark.sql.catalyst.expressions.GeneratedClass$GeneratedIteratorForCodegenStage3.sort_doSort_0$(Unknown Source)\n\tat org.apache.spark.sql.catalyst.expressions.GeneratedClass$GeneratedIteratorForCodegenStage3.processNext(Unknown Source)\n\tat org.apache.spark.sql.execution.BufferedRowIterator.hasNext(BufferedRowIterator.java:35)\n\tat org.apache.spark.sql.catalyst.expressions.GeneratedClass$GeneratedIteratorForCodegenStage3.hasNext(Unknown Source)\n\tat org.apache.spark.sql.execution.WholeStageCodegenEvaluatorFactory$WholeStageCodegenPartitionEvaluator$$anon$1.hasNext(WholeStageCodegenEvaluatorFactory.scala:43)\n\tat org.apache.spark.sql.execution.window.AbstractWindowExec$$anon$1.fetchNextRow(WindowExec.scala:237)\n\tat org.apache.spark.sql.execution.window.AbstractWindowExec$$anon$1.<init>(WindowExec.scala:246)\n\tat org.apache.spark.sql.execution.window.AbstractWindowExec.$anonfun$doExecute$3(WindowExec.scala:226)\n\tat org.apache.spark.rdd.RDD.$anonfun$mapPartitions$2(RDD.scala:930)\n\tat org.apache.spark.rdd.RDD.$anonfun$mapPartitions$2$adapted(RDD.scala:930)\n\tat org.apache.spark.rdd.MapPartitionsRDD.compute(MapPartitionsRDD.scala:61)\n\tat org.apache.spark.rdd.RDD.computeOrReadCheckpoint(RDD.scala:434)\n\tat org.apache.spark.rdd.RDD.iterator(RDD.scala:389)\n\tat org.apache.spark.rdd.MapPartitionsRDD.compute(MapPartitionsRDD.scala:61)\n\tat org.apache.spark.rdd.RDD.computeOrReadCheckpoint(RDD.scala:434)\n\tat org.apache.spark.rdd.RDD.iterator(RDD.scala:389)\n\tat org.apache.spark.rdd.MapPartitionsRDD.compute(MapPartitionsRDD.scala:61)\n\tat org.apache.spark.rdd.RDD.computeOrReadCheckpoint(RDD.scala:434)\n\tat org.apache.spark.rdd.RDD.iterator(RDD.scala:389)\n\tat org.apache.spark.shuffle.DirectShuffleWriteProcessor.doWrite(DirectShuffleWriteProcessor.scala:44)\n\tat org.apache.spark.shuffle.ShuffleWriteProcessor.write(ShuffleWriteProcessor.scala:69)\n\tat org.apache.spark.scheduler.ShuffleMapTask.runTask(ShuffleMapTask.scala:124)\n\tat org.apache.spark.scheduler.ShuffleMapTask.runTask(ShuffleMapTask.scala:54)\n\tat org.apache.spark.TaskContext.runTaskWithListeners(TaskContext.scala:204)\n\tat org.apache.spark.scheduler.Task.run(Task.scala:161)\n\tat org.apache.spark.executor.Executor$TaskRunner.$anonfun$run$4(Executor.scala:634)\n\tat org.apache.spark.util.SparkErrorUtils.tryWithSafeFinally(SparkErrorUtils.scala:64)\n\tat org.apache.spark.util.SparkErrorUtils.tryWithSafeFinally$(SparkErrorUtils.scala:61)\n\tat org.apache.spark.util.Utils$.tryWithSafeFinally(Utils.scala:96)\n\tat org.apache.spark.executor.Executor$TaskRunner.run(Executor.scala:637)\n\tat java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136)\n\tat java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)\n\tat java.base/java.lang.Thread.run(Thread.java:840)\nCaused by: org.apache.spark.ExecutorDeadException: [INTERNAL_ERROR_NETWORK] The relative remote executor(Id: 19), which maintains the block data to fetch is dead.\n\tat org.apache.spark.network.netty.NettyBlockTransferService$$anon$2.createAndStart(NettyBlockTransferService.scala:145)\n\tat org.apache.spark.network.shuffle.RetryingBlockTransferor.transferAllOutstanding(RetryingBlockTransferor.java:173)\n\tat org.apache.spark.network.shuffle.RetryingBlockTransferor.start(RetryingBlockTransferor.java:152)\n\tat org.apache.spark.network.netty.NettyBlockTransferService.fetchBlocks(NettyBlockTransferService.scala:155)\n\tat org.apache.spark.storage.ShuffleBlockFetcherIterator.sendRequest(ShuffleBlockFetcherIterator.scala:384)\n\tat org.apache.spark.storage.ShuffleBlockFetcherIterator.send$1(ShuffleBlockFetcherIterator.scala:1223)\n\tat org.apache.spark.storage.ShuffleBlockFetcherIterator.fetchUpToMaxBytes(ShuffleBlockFetcherIterator.scala:1215)\n\tat org.apache.spark.storage.ShuffleBlockFetcherIterator.next(ShuffleBlockFetcherIterator.scala:1081)\n\t... 51 more\n"
+   },
+   {
+    "stage_id": 2,
+    "name": "sql at NativeMethodAccessorImpl.java:0",
+    "num_tasks": 87,
+    "attempts": 2,
+    "tasks_completed": 170,
+    "duration_sec": 179.5,
+    "input_gb": 6.89,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.0,
+    "shuffle_write_gb": 15.88,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 857.3,
+    "total_cpu_time_sec": 331.5,
+    "failure_reason": null
+   }
+  ]
+ },
+ "executor_summary": {
+  "total_executors": 44,
+  "active_executors": 40,
+  "dead_executors": 4,
+  "total_cores": 352,
+  "total_uptime_hours": 22.68,
+  "max_peak_memory_gb": 49.13,
+  "avg_peak_memory_gb": 44.28,
+  "avg_memory_utilization_percent": 85.9,
+  "min_memory_utilization_percent": 61.19,
+  "max_memory_utilization_percent": 90.98,
+  "median_memory_utilization_percent": 86.72,
+  "avg_cpu_utilization_percent": 84.43,
+  "min_cpu_utilization_percent": 61.53,
+  "max_cpu_utilization_percent": 91.13,
+  "median_cpu_utilization_percent": 84.88,
+  "total_cost_factor": 15.1956,
+  "total_task_execution_hours": 153.2,
+  "total_available_core_hours": 181.44,
+  "idle_core_percentage": 15.57,
+  "memory_calculation_method": {
+   "approach": "jvm_heap_memory",
+   "formula": "(peak_jvm_heap_mb / executor_memory_mb) * 100",
+   "data_source": "Task Executor Metrics -> JVMHeapMemory",
+   "executor_memory_mb": 55296,
+   "note": "Uses actual JVM heap usage from Task Executor Metrics in TaskEnd events"
+  },
+  "cost_calculation_params": {
+   "executor_memory_gb": 54.0,
+   "executor_cores": 8,
+   "cost_per_core_hour": 0.05,
+   "cost_per_gb_hour": 0.005
+  },
+  "dead_executor_reasons": {
+   "N/A": 4
+  },
+  "executor_details": [
+   {
+    "executor_id": "43",
+    "host": "[2600:1f18:2c09:c902:b661:e181:59b6:a594]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:49:49.462000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.12,
+    "total_input_bytes": 0,
+    "total_shuffle_read": 0,
+    "total_shuffle_write": 0,
+    "peak_memory_gb": 0.0,
+    "total_tasks": 0,
+    "total_stages": 0,
+    "total_input_gb": 0.0,
+    "total_shuffle_read_gb": 0.0,
+    "total_shuffle_write_gb": 0.0,
+    "memory_utilization_percent": 0.0,
+    "cpu_utilization_percent": 0.0,
+    "executor_cost_factor": 0.0804
+   },
+   {
+    "executor_id": "26",
+    "host": "[2600:1f18:2c09:c902:eb7a:fa4e:8938:1ae6]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:23:21.812000",
+    "remove_time": "2026-07-08T18:54:46.008000",
+    "remove_reason": "N/A",
+    "status": "dead",
+    "uptime_hours": 0.52,
+    "total_input_bytes": 10833363394,
+    "total_shuffle_read": 23757134334,
+    "total_shuffle_write": 20314760029,
+    "peak_memory_gb": 47.36,
+    "total_tasks": 281,
+    "total_stages": 4,
+    "total_input_gb": 10.09,
+    "total_shuffle_read_gb": 22.13,
+    "total_shuffle_write_gb": 18.92,
+    "memory_utilization_percent": 87.71,
+    "cpu_utilization_percent": 84.56,
+    "executor_cost_factor": 0.3484
+   },
+   {
+    "executor_id": "44",
+    "host": "[2600:1f18:2c09:c902:e337:fa8b:2d0:9376]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:55:59.875000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.01,
+    "total_input_bytes": 0,
+    "total_shuffle_read": 0,
+    "total_shuffle_write": 0,
+    "peak_memory_gb": 0.0,
+    "total_tasks": 0,
+    "total_stages": 0,
+    "total_input_gb": 0.0,
+    "total_shuffle_read_gb": 0.0,
+    "total_shuffle_write_gb": 0.0,
+    "memory_utilization_percent": 0.0,
+    "cpu_utilization_percent": 0.0,
+    "executor_cost_factor": 0.0067
+   },
+   {
+    "executor_id": "19",
+    "host": "[2600:1f18:2c09:c902:ab4d:88b9:b0d9:e9e9]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:23:16.617000",
+    "remove_time": "2026-07-08T18:29:14.175000",
+    "remove_reason": "N/A",
+    "status": "dead",
+    "uptime_hours": 0.1,
+    "total_input_bytes": 11703157164,
+    "total_shuffle_read": 12322900742,
+    "total_shuffle_write": 20796041334,
+    "peak_memory_gb": 40.66,
+    "total_tasks": 261,
+    "total_stages": 4,
+    "total_input_gb": 10.9,
+    "total_shuffle_read_gb": 11.48,
+    "total_shuffle_write_gb": 19.37,
+    "memory_utilization_percent": 75.3,
+    "cpu_utilization_percent": 70.64,
+    "executor_cost_factor": 0.067
+   },
+   {
+    "executor_id": "34",
+    "host": "[2600:1f18:2c09:c902:efa0:c2cd:4f60:66c3]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:23:18.658000",
+    "remove_time": "2026-07-08T18:30:14.297000",
+    "remove_reason": "N/A",
+    "status": "dead",
+    "uptime_hours": 0.12,
+    "total_input_bytes": 11206725711,
+    "total_shuffle_read": 8739698685,
+    "total_shuffle_write": 20225230901,
+    "peak_memory_gb": 33.04,
+    "total_tasks": 250,
+    "total_stages": 4,
+    "total_input_gb": 10.44,
+    "total_shuffle_read_gb": 8.14,
+    "total_shuffle_write_gb": 18.84,
+    "memory_utilization_percent": 61.19,
+    "cpu_utilization_percent": 61.53,
+    "executor_cost_factor": 0.0804
+   },
+   {
+    "executor_id": "41",
+    "host": "[2600:1f18:2c09:c902:471c:9dfd:747a:f6d8]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:30:42.999000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.43,
+    "total_input_bytes": 9940798129,
+    "total_shuffle_read": 14209311819,
+    "total_shuffle_write": 19612087455,
+    "peak_memory_gb": 49.13,
+    "total_tasks": 230,
+    "total_stages": 4,
+    "total_input_gb": 9.26,
+    "total_shuffle_read_gb": 13.23,
+    "total_shuffle_write_gb": 18.27,
+    "memory_utilization_percent": 90.98,
+    "cpu_utilization_percent": 80.51,
+    "executor_cost_factor": 0.2881
+   },
+   {
+    "executor_id": "42",
+    "host": "[2600:1f18:2c09:c902:6b48:99d7:7c38:f588]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:31:43.397000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.42,
+    "total_input_bytes": 5382363701,
+    "total_shuffle_read": 18933351741,
+    "total_shuffle_write": 10309631382,
+    "peak_memory_gb": 47.75,
+    "total_tasks": 146,
+    "total_stages": 4,
+    "total_input_gb": 5.01,
+    "total_shuffle_read_gb": 17.63,
+    "total_shuffle_write_gb": 9.6,
+    "memory_utilization_percent": 88.42,
+    "cpu_utilization_percent": 82.37,
+    "executor_cost_factor": 0.2814
+   },
+   {
+    "executor_id": "5",
+    "host": "[2600:1f18:2c09:c902:7f9:83bd:8f23:f5fd]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:21:19.549000",
+    "remove_time": "2026-07-08T18:48:15.790000",
+    "remove_reason": "N/A",
+    "status": "dead",
+    "uptime_hours": 0.45,
+    "total_input_bytes": 23617526208,
+    "total_shuffle_read": 19398720908,
+    "total_shuffle_write": 33152429603,
+    "peak_memory_gb": 46.19,
+    "total_tasks": 424,
+    "total_stages": 4,
+    "total_input_gb": 22.0,
+    "total_shuffle_read_gb": 18.07,
+    "total_shuffle_write_gb": 30.88,
+    "memory_utilization_percent": 85.53,
+    "cpu_utilization_percent": 81.32,
+    "executor_cost_factor": 0.3015
+   },
+   {
+    "executor_id": "23",
+    "host": "[2600:1f18:2c09:c902:ec00:8dc3:fbe5:bc70]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:23:16.923000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.56,
+    "total_input_bytes": 12744512909,
+    "total_shuffle_read": 22214303197,
+    "total_shuffle_write": 22579170491,
+    "peak_memory_gb": 48.28,
+    "total_tasks": 299,
+    "total_stages": 5,
+    "total_input_gb": 11.87,
+    "total_shuffle_read_gb": 20.69,
+    "total_shuffle_write_gb": 21.03,
+    "memory_utilization_percent": 89.4,
+    "cpu_utilization_percent": 91.13,
+    "executor_cost_factor": 0.3752
+   },
+   {
+    "executor_id": "21",
+    "host": "[2600:1f18:2c09:c902:fdc1:55a6:5e5b:b5a5]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:23:18.037000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.56,
+    "total_input_bytes": 10733185348,
+    "total_shuffle_read": 26788259779,
+    "total_shuffle_write": 19987280593,
+    "peak_memory_gb": 47.65,
+    "total_tasks": 270,
+    "total_stages": 5,
+    "total_input_gb": 10.0,
+    "total_shuffle_read_gb": 24.95,
+    "total_shuffle_write_gb": 18.61,
+    "memory_utilization_percent": 88.24,
+    "cpu_utilization_percent": 85.45,
+    "executor_cost_factor": 0.3752
+   },
+   {
+    "executor_id": "29",
+    "host": "[2600:1f18:2c09:c902:8f64:3cff:db16:2409]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:23:18.502000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.56,
+    "total_input_bytes": 11524912674,
+    "total_shuffle_read": 24311107953,
+    "total_shuffle_write": 22144096483,
+    "peak_memory_gb": 48.17,
+    "total_tasks": 289,
+    "total_stages": 5,
+    "total_input_gb": 10.73,
+    "total_shuffle_read_gb": 22.64,
+    "total_shuffle_write_gb": 20.62,
+    "memory_utilization_percent": 89.2,
+    "cpu_utilization_percent": 83.43,
+    "executor_cost_factor": 0.3752
+   },
+   {
+    "executor_id": "33",
+    "host": "[2600:1f18:2c09:c902:9f55:670e:abbe:bdc4]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:23:18.504000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.56,
+    "total_input_bytes": 10550496333,
+    "total_shuffle_read": 18109559674,
+    "total_shuffle_write": 19740015178,
+    "peak_memory_gb": 44.55,
+    "total_tasks": 253,
+    "total_stages": 5,
+    "total_input_gb": 9.83,
+    "total_shuffle_read_gb": 16.87,
+    "total_shuffle_write_gb": 18.38,
+    "memory_utilization_percent": 82.5,
+    "cpu_utilization_percent": 81.33,
+    "executor_cost_factor": 0.3752
+   },
+   {
+    "executor_id": "39",
+    "host": "[2600:1f18:2c09:c902:3a9:784a:19b7:5986]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:23:18.624000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.56,
+    "total_input_bytes": 11218041310,
+    "total_shuffle_read": 23160847711,
+    "total_shuffle_write": 21165571638,
+    "peak_memory_gb": 47.72,
+    "total_tasks": 270,
+    "total_stages": 5,
+    "total_input_gb": 10.45,
+    "total_shuffle_read_gb": 21.57,
+    "total_shuffle_write_gb": 19.71,
+    "memory_utilization_percent": 88.37,
+    "cpu_utilization_percent": 89.47,
+    "executor_cost_factor": 0.3752
+   },
+   {
+    "executor_id": "28",
+    "host": "[2600:1f18:2c09:c902:1a1a:e951:394f:a906]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:23:18.780000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.56,
+    "total_input_bytes": 10936852812,
+    "total_shuffle_read": 26235603125,
+    "total_shuffle_write": 21094501110,
+    "peak_memory_gb": 48.8,
+    "total_tasks": 275,
+    "total_stages": 5,
+    "total_input_gb": 10.19,
+    "total_shuffle_read_gb": 24.43,
+    "total_shuffle_write_gb": 19.65,
+    "memory_utilization_percent": 90.37,
+    "cpu_utilization_percent": 83.41,
+    "executor_cost_factor": 0.3752
+   },
+   {
+    "executor_id": "35",
+    "host": "[2600:1f18:2c09:c902:351e:66c9:141b:5fe3]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:23:18.919000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.56,
+    "total_input_bytes": 11488590939,
+    "total_shuffle_read": 23157910070,
+    "total_shuffle_write": 20824978907,
+    "peak_memory_gb": 45.45,
+    "total_tasks": 273,
+    "total_stages": 5,
+    "total_input_gb": 10.7,
+    "total_shuffle_read_gb": 21.57,
+    "total_shuffle_write_gb": 19.39,
+    "memory_utilization_percent": 84.17,
+    "cpu_utilization_percent": 88.49,
+    "executor_cost_factor": 0.3752
+   },
+   {
+    "executor_id": "18",
+    "host": "[2600:1f18:2c09:c902:4673:6d4:43a4:24a2]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:23:19.007000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.56,
+    "total_input_bytes": 12159874831,
+    "total_shuffle_read": 22693005782,
+    "total_shuffle_write": 21913276768,
+    "peak_memory_gb": 48.26,
+    "total_tasks": 279,
+    "total_stages": 5,
+    "total_input_gb": 11.32,
+    "total_shuffle_read_gb": 21.13,
+    "total_shuffle_write_gb": 20.41,
+    "memory_utilization_percent": 89.37,
+    "cpu_utilization_percent": 82.27,
+    "executor_cost_factor": 0.3752
+   },
+   {
+    "executor_id": "30",
+    "host": "[2600:1f18:2c09:c902:a2d:3f3f:411c:d12b]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:23:19.056000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.56,
+    "total_input_bytes": 12486030489,
+    "total_shuffle_read": 25297444729,
+    "total_shuffle_write": 22362256454,
+    "peak_memory_gb": 45.08,
+    "total_tasks": 295,
+    "total_stages": 5,
+    "total_input_gb": 11.63,
+    "total_shuffle_read_gb": 23.56,
+    "total_shuffle_write_gb": 20.83,
+    "memory_utilization_percent": 83.48,
+    "cpu_utilization_percent": 83.45,
+    "executor_cost_factor": 0.3752
+   },
+   {
+    "executor_id": "40",
+    "host": "[2600:1f18:2c09:c902:1e32:37cb:9640:3203]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:23:19.110000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.56,
+    "total_input_bytes": 10673692677,
+    "total_shuffle_read": 25169537271,
+    "total_shuffle_write": 19964016792,
+    "peak_memory_gb": 46.15,
+    "total_tasks": 271,
+    "total_stages": 5,
+    "total_input_gb": 9.94,
+    "total_shuffle_read_gb": 23.44,
+    "total_shuffle_write_gb": 18.59,
+    "memory_utilization_percent": 85.47,
+    "cpu_utilization_percent": 85.05,
+    "executor_cost_factor": 0.3752
+   },
+   {
+    "executor_id": "38",
+    "host": "[2600:1f18:2c09:c902:b3dd:a0fb:d122:aa6e]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:23:19.207000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.56,
+    "total_input_bytes": 11118641127,
+    "total_shuffle_read": 24739830648,
+    "total_shuffle_write": 21306394410,
+    "peak_memory_gb": 47.75,
+    "total_tasks": 271,
+    "total_stages": 5,
+    "total_input_gb": 10.36,
+    "total_shuffle_read_gb": 23.04,
+    "total_shuffle_write_gb": 19.84,
+    "memory_utilization_percent": 88.42,
+    "cpu_utilization_percent": 84.97,
+    "executor_cost_factor": 0.3752
+   },
+   {
+    "executor_id": "37",
+    "host": "[2600:1f18:2c09:c902:b73e:1eb7:66b6:fbde]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:23:19.264000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.56,
+    "total_input_bytes": 12125352678,
+    "total_shuffle_read": 23757148541,
+    "total_shuffle_write": 21804764778,
+    "peak_memory_gb": 45.78,
+    "total_tasks": 276,
+    "total_stages": 6,
+    "total_input_gb": 11.29,
+    "total_shuffle_read_gb": 22.13,
+    "total_shuffle_write_gb": 20.31,
+    "memory_utilization_percent": 84.78,
+    "cpu_utilization_percent": 81.41,
+    "executor_cost_factor": 0.3752
+   },
+   {
+    "executor_id": "25",
+    "host": "[2600:1f18:2c09:c902:902b:c95c:97da:25f7]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:23:19.958000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.56,
+    "total_input_bytes": 13674690094,
+    "total_shuffle_read": 25768670151,
+    "total_shuffle_write": 23420023198,
+    "peak_memory_gb": 46.46,
+    "total_tasks": 313,
+    "total_stages": 6,
+    "total_input_gb": 12.74,
+    "total_shuffle_read_gb": 24.0,
+    "total_shuffle_write_gb": 21.81,
+    "memory_utilization_percent": 86.05,
+    "cpu_utilization_percent": 87.35,
+    "executor_cost_factor": 0.3752
+   },
+   {
+    "executor_id": "31",
+    "host": "[2600:1f18:2c09:c902:f102:3ca:8cbf:2405]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:23:22.949000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.56,
+    "total_input_bytes": 10939498936,
+    "total_shuffle_read": 21748775061,
+    "total_shuffle_write": 19759564575,
+    "peak_memory_gb": 47.98,
+    "total_tasks": 260,
+    "total_stages": 5,
+    "total_input_gb": 10.19,
+    "total_shuffle_read_gb": 20.26,
+    "total_shuffle_write_gb": 18.4,
+    "memory_utilization_percent": 88.84,
+    "cpu_utilization_percent": 83.49,
+    "executor_cost_factor": 0.3752
+   },
+   {
+    "executor_id": "32",
+    "host": "[2600:1f18:2c09:c902:a7fe:1c4:576a:a1d5]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:23:23.083000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.56,
+    "total_input_bytes": 11443164104,
+    "total_shuffle_read": 18622954944,
+    "total_shuffle_write": 20376129760,
+    "peak_memory_gb": 46.78,
+    "total_tasks": 268,
+    "total_stages": 5,
+    "total_input_gb": 10.66,
+    "total_shuffle_read_gb": 17.34,
+    "total_shuffle_write_gb": 18.98,
+    "memory_utilization_percent": 86.63,
+    "cpu_utilization_percent": 82.91,
+    "executor_cost_factor": 0.3752
+   },
+   {
+    "executor_id": "27",
+    "host": "[2600:1f18:2c09:c902:e329:cf1f:e2c3:e44e]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:23:26.257000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.55,
+    "total_input_bytes": 11043786643,
+    "total_shuffle_read": 21611262682,
+    "total_shuffle_write": 21399931389,
+    "peak_memory_gb": 47.62,
+    "total_tasks": 272,
+    "total_stages": 6,
+    "total_input_gb": 10.29,
+    "total_shuffle_read_gb": 20.13,
+    "total_shuffle_write_gb": 19.93,
+    "memory_utilization_percent": 88.18,
+    "cpu_utilization_percent": 89.36,
+    "executor_cost_factor": 0.3685
+   },
+   {
+    "executor_id": "6",
+    "host": "[2600:1f18:2c09:c902:41fa:bcc3:dc2a:53dc]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:21:24.903000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.59,
+    "total_input_bytes": 26101251130,
+    "total_shuffle_read": 19045481780,
+    "total_shuffle_write": 37385522053,
+    "peak_memory_gb": 46.88,
+    "total_tasks": 460,
+    "total_stages": 5,
+    "total_input_gb": 24.31,
+    "total_shuffle_read_gb": 17.74,
+    "total_shuffle_write_gb": 34.82,
+    "memory_utilization_percent": 86.82,
+    "cpu_utilization_percent": 85.7,
+    "executor_cost_factor": 0.3953
+   },
+   {
+    "executor_id": "10",
+    "host": "[2600:1f18:2c09:c902:76e0:c6ac:90bc:e44b]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:21:25.880000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.59,
+    "total_input_bytes": 24475866073,
+    "total_shuffle_read": 21660545838,
+    "total_shuffle_write": 35329051711,
+    "peak_memory_gb": 46.95,
+    "total_tasks": 453,
+    "total_stages": 4,
+    "total_input_gb": 22.79,
+    "total_shuffle_read_gb": 20.17,
+    "total_shuffle_write_gb": 32.9,
+    "memory_utilization_percent": 86.94,
+    "cpu_utilization_percent": 88.2,
+    "executor_cost_factor": 0.3953
+   },
+   {
+    "executor_id": "7",
+    "host": "[2600:1f18:2c09:c902:8100:a061:a381:2100]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:21:26.872000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.59,
+    "total_input_bytes": 26318167823,
+    "total_shuffle_read": 23629980028,
+    "total_shuffle_write": 36527389289,
+    "peak_memory_gb": 46.15,
+    "total_tasks": 459,
+    "total_stages": 5,
+    "total_input_gb": 24.51,
+    "total_shuffle_read_gb": 22.01,
+    "total_shuffle_write_gb": 34.02,
+    "memory_utilization_percent": 85.47,
+    "cpu_utilization_percent": 89.35,
+    "executor_cost_factor": 0.3953
+   },
+   {
+    "executor_id": "12",
+    "host": "[2600:1f18:2c09:c902:1d39:75b3:8ae2:b337]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:21:27.340000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.59,
+    "total_input_bytes": 25276225891,
+    "total_shuffle_read": 19689957788,
+    "total_shuffle_write": 35471005797,
+    "peak_memory_gb": 46.75,
+    "total_tasks": 449,
+    "total_stages": 5,
+    "total_input_gb": 23.54,
+    "total_shuffle_read_gb": 18.34,
+    "total_shuffle_write_gb": 33.03,
+    "memory_utilization_percent": 86.58,
+    "cpu_utilization_percent": 82.94,
+    "executor_cost_factor": 0.3953
+   },
+   {
+    "executor_id": "9",
+    "host": "[2600:1f18:2c09:c902:aa0b:e3f:2b4c:794]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:21:27.488000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.59,
+    "total_input_bytes": 25225812480,
+    "total_shuffle_read": 22216638866,
+    "total_shuffle_write": 35775823170,
+    "peak_memory_gb": 44.55,
+    "total_tasks": 455,
+    "total_stages": 4,
+    "total_input_gb": 23.49,
+    "total_shuffle_read_gb": 20.69,
+    "total_shuffle_write_gb": 33.32,
+    "memory_utilization_percent": 82.51,
+    "cpu_utilization_percent": 85.56,
+    "executor_cost_factor": 0.3953
+   },
+   {
+    "executor_id": "13",
+    "host": "[2600:1f18:2c09:c902:76c4:b6fd:6153:c553]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:21:27.575000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.59,
+    "total_input_bytes": 27753991085,
+    "total_shuffle_read": 48798330629,
+    "total_shuffle_write": 38582428310,
+    "peak_memory_gb": 45.34,
+    "total_tasks": 534,
+    "total_stages": 5,
+    "total_input_gb": 25.85,
+    "total_shuffle_read_gb": 45.45,
+    "total_shuffle_write_gb": 35.93,
+    "memory_utilization_percent": 83.96,
+    "cpu_utilization_percent": 86.42,
+    "executor_cost_factor": 0.3953
+   },
+   {
+    "executor_id": "1",
+    "host": "[2600:1f18:2c09:c902:1757:555:647a:7789]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:21:27.926000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.59,
+    "total_input_bytes": 25776580135,
+    "total_shuffle_read": 24272483850,
+    "total_shuffle_write": 36100777523,
+    "peak_memory_gb": 47.39,
+    "total_tasks": 463,
+    "total_stages": 5,
+    "total_input_gb": 24.01,
+    "total_shuffle_read_gb": 22.61,
+    "total_shuffle_write_gb": 33.62,
+    "memory_utilization_percent": 87.77,
+    "cpu_utilization_percent": 89.37,
+    "executor_cost_factor": 0.3953
+   },
+   {
+    "executor_id": "2",
+    "host": "[2600:1f18:2c09:c902:8956:c632:87ca:246c]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:21:28.214000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.59,
+    "total_input_bytes": 26028464890,
+    "total_shuffle_read": 17632693382,
+    "total_shuffle_write": 37319811473,
+    "peak_memory_gb": 46.2,
+    "total_tasks": 447,
+    "total_stages": 5,
+    "total_input_gb": 24.24,
+    "total_shuffle_read_gb": 16.42,
+    "total_shuffle_write_gb": 34.76,
+    "memory_utilization_percent": 85.56,
+    "cpu_utilization_percent": 82.61,
+    "executor_cost_factor": 0.3953
+   },
+   {
+    "executor_id": "3",
+    "host": "[2600:1f18:2c09:c902:6f12:2ccd:3bb3:6858]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:21:28.315000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.59,
+    "total_input_bytes": 25921548238,
+    "total_shuffle_read": 22693411767,
+    "total_shuffle_write": 35757395633,
+    "peak_memory_gb": 44.68,
+    "total_tasks": 460,
+    "total_stages": 5,
+    "total_input_gb": 24.14,
+    "total_shuffle_read_gb": 21.13,
+    "total_shuffle_write_gb": 33.3,
+    "memory_utilization_percent": 82.75,
+    "cpu_utilization_percent": 86.99,
+    "executor_cost_factor": 0.3953
+   },
+   {
+    "executor_id": "4",
+    "host": "[2600:1f18:2c09:c902:b157:8c71:c3ab:abde]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:21:29.985000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.59,
+    "total_input_bytes": 23173367326,
+    "total_shuffle_read": 20116481891,
+    "total_shuffle_write": 33932038547,
+    "peak_memory_gb": 47.92,
+    "total_tasks": 415,
+    "total_stages": 5,
+    "total_input_gb": 21.58,
+    "total_shuffle_read_gb": 18.73,
+    "total_shuffle_write_gb": 31.6,
+    "memory_utilization_percent": 88.74,
+    "cpu_utilization_percent": 84.79,
+    "executor_cost_factor": 0.3953
+   },
+   {
+    "executor_id": "11",
+    "host": "[2600:1f18:2c09:c902:7c03:3646:f877:e467]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:21:30.722000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.59,
+    "total_input_bytes": 25196017319,
+    "total_shuffle_read": 23630974262,
+    "total_shuffle_write": 35584423214,
+    "peak_memory_gb": 46.63,
+    "total_tasks": 450,
+    "total_stages": 5,
+    "total_input_gb": 23.47,
+    "total_shuffle_read_gb": 22.01,
+    "total_shuffle_write_gb": 33.14,
+    "memory_utilization_percent": 86.35,
+    "cpu_utilization_percent": 90.37,
+    "executor_cost_factor": 0.3953
+   },
+   {
+    "executor_id": "8",
+    "host": "[2600:1f18:2c09:c902:58e6:bd1:b81a:8f6d]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:21:31.816000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.59,
+    "total_input_bytes": 26553159222,
+    "total_shuffle_read": 23238080854,
+    "total_shuffle_write": 36254186589,
+    "peak_memory_gb": 47.58,
+    "total_tasks": 454,
+    "total_stages": 4,
+    "total_input_gb": 24.73,
+    "total_shuffle_read_gb": 21.64,
+    "total_shuffle_write_gb": 33.76,
+    "memory_utilization_percent": 88.11,
+    "cpu_utilization_percent": 83.41,
+    "executor_cost_factor": 0.3953
+   },
+   {
+    "executor_id": "16",
+    "host": "[2600:1f18:2c09:c902:ea98:51e9:2d20:795e]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:23:06.757000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.56,
+    "total_input_bytes": 13770316876,
+    "total_shuffle_read": 22689305180,
+    "total_shuffle_write": 24240946403,
+    "peak_memory_gb": 48.02,
+    "total_tasks": 312,
+    "total_stages": 5,
+    "total_input_gb": 12.82,
+    "total_shuffle_read_gb": 21.13,
+    "total_shuffle_write_gb": 22.58,
+    "memory_utilization_percent": 88.93,
+    "cpu_utilization_percent": 82.06,
+    "executor_cost_factor": 0.3752
+   },
+   {
+    "executor_id": "15",
+    "host": "[2600:1f18:2c09:c902:7072:e648:308e:7609]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:23:07.479000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.56,
+    "total_input_bytes": 13592501879,
+    "total_shuffle_read": 25763142644,
+    "total_shuffle_write": 23013492000,
+    "peak_memory_gb": 47.42,
+    "total_tasks": 298,
+    "total_stages": 5,
+    "total_input_gb": 12.66,
+    "total_shuffle_read_gb": 23.99,
+    "total_shuffle_write_gb": 21.43,
+    "memory_utilization_percent": 87.82,
+    "cpu_utilization_percent": 83.44,
+    "executor_cost_factor": 0.3752
+   },
+   {
+    "executor_id": "20",
+    "host": "[2600:1f18:2c09:c902:6e5c:9797:3889:2668]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:23:14.922000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.56,
+    "total_input_bytes": 13447619689,
+    "total_shuffle_read": 24096060895,
+    "total_shuffle_write": 23187641444,
+    "peak_memory_gb": 48.31,
+    "total_tasks": 302,
+    "total_stages": 5,
+    "total_input_gb": 12.52,
+    "total_shuffle_read_gb": 22.44,
+    "total_shuffle_write_gb": 21.6,
+    "memory_utilization_percent": 89.46,
+    "cpu_utilization_percent": 89.28,
+    "executor_cost_factor": 0.3752
+   },
+   {
+    "executor_id": "36",
+    "host": "[2600:1f18:2c09:c902:8f24:fa63:4dff:bcfc]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:23:14.991000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.56,
+    "total_input_bytes": 13144868680,
+    "total_shuffle_read": 24230853467,
+    "total_shuffle_write": 23706769353,
+    "peak_memory_gb": 46.68,
+    "total_tasks": 305,
+    "total_stages": 6,
+    "total_input_gb": 12.24,
+    "total_shuffle_read_gb": 22.57,
+    "total_shuffle_write_gb": 22.08,
+    "memory_utilization_percent": 86.45,
+    "cpu_utilization_percent": 85.06,
+    "executor_cost_factor": 0.3752
+   },
+   {
+    "executor_id": "17",
+    "host": "[2600:1f18:2c09:c902:c5fc:470a:d01:78cc]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:23:15.335000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.56,
+    "total_input_bytes": 11351255193,
+    "total_shuffle_read": 24743050281,
+    "total_shuffle_write": 21427818960,
+    "peak_memory_gb": 46.76,
+    "total_tasks": 279,
+    "total_stages": 5,
+    "total_input_gb": 10.57,
+    "total_shuffle_read_gb": 23.04,
+    "total_shuffle_write_gb": 19.96,
+    "memory_utilization_percent": 86.59,
+    "cpu_utilization_percent": 87.72,
+    "executor_cost_factor": 0.3752
+   },
+   {
+    "executor_id": "14",
+    "host": "[2600:1f18:2c09:c902:4b7a:d921:5a55:3c06]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:23:16.211000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.56,
+    "total_input_bytes": 11182916359,
+    "total_shuffle_read": 23632454930,
+    "total_shuffle_write": 20070934855,
+    "peak_memory_gb": 43.95,
+    "total_tasks": 261,
+    "total_stages": 5,
+    "total_input_gb": 10.41,
+    "total_shuffle_read_gb": 22.01,
+    "total_shuffle_write_gb": 18.69,
+    "memory_utilization_percent": 81.39,
+    "cpu_utilization_percent": 90.92,
+    "executor_cost_factor": 0.3752
+   },
+   {
+    "executor_id": "22",
+    "host": "[2600:1f18:2c09:c902:1d9c:4903:832d:68c4]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:23:16.347000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.56,
+    "total_input_bytes": 11664445237,
+    "total_shuffle_read": 20030063036,
+    "total_shuffle_write": 20947071229,
+    "peak_memory_gb": 46.94,
+    "total_tasks": 262,
+    "total_stages": 5,
+    "total_input_gb": 10.86,
+    "total_shuffle_read_gb": 18.65,
+    "total_shuffle_write_gb": 19.51,
+    "memory_utilization_percent": 86.93,
+    "cpu_utilization_percent": 87.69,
+    "executor_cost_factor": 0.3752
+   },
+   {
+    "executor_id": "24",
+    "host": "[2600:1f18:2c09:c902:268c:7f61:2bf5:8e14]",
+    "total_cores": 8,
+    "add_time": "2026-07-08T18:23:16.639000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.56,
+    "total_input_bytes": 11478009944,
+    "total_shuffle_read": 23288784891,
+    "total_shuffle_write": 19925089692,
+    "peak_memory_gb": 46.56,
+    "total_tasks": 272,
+    "total_stages": 5,
+    "total_input_gb": 10.69,
+    "total_shuffle_read_gb": 21.69,
+    "total_shuffle_write_gb": 18.56,
+    "memory_utilization_percent": 86.22,
+    "cpu_utilization_percent": 80.21,
+    "executor_cost_factor": 0.3752
+   }
+  ],
+  "driver_info": null
+ },
+ "io_summary": {
+  "application_level": {
+   "total_input_bytes": 664977643680,
+   "total_input_gb": 619.31,
+   "total_output_bytes": 0,
+   "total_output_gb": 0.0,
+   "total_shuffle_read_bytes": 945846115806,
+   "total_shuffle_read_gb": 880.89,
+   "total_shuffle_write_bytes": 1074791770473,
+   "total_shuffle_write_gb": 1000.98,
+   "total_shuffle_fetch_wait_sec": 47160.47,
+   "total_shuffle_write_time_sec": 2189.59,
+   "total_gc_time_sec": 9731.87,
+   "total_executor_run_time_sec": 551502.84,
+   "shuffle_fetch_wait_percent": 8.55,
+   "shuffle_write_time_percent": 0.4,
+   "gc_time_percent": 1.76,
+   "tasks_analyzed": 13816,
+   "tasks_with_input": 11669,
+   "tasks_with_output": 0,
+   "tasks_with_shuffle_read": 1902,
+   "tasks_with_shuffle_write": 13773
+  }
+ },
+ "spill_summary": {
+  "total_memory_spilled_bytes": 36789451601275,
+  "total_memory_spilled_gb": 34262.85,
+  "total_disk_spilled_bytes": 7279221723326,
+  "total_disk_spilled_gb": 6779.3,
+  "tasks_with_memory_spill": 862,
+  "tasks_with_disk_spill": 862,
+  "tasks_with_memory_spill_percent": 6.24,
+  "tasks_with_disk_spill_percent": 6.24,
+  "tasks_analyzed": 13816
+ },
+ "shuffle_data_summary": {
+  "total_shuffle_read_gb": 880.89,
+  "total_shuffle_write_gb": 1000.98,
+  "total_disk_spill_gb": 6779.3,
+  "max_stage_shuffle_read_gb": 503.34,
+  "max_stage_shuffle_write_gb": 483.72,
+  "max_stage_disk_spill_gb": 6768.67,
+  "emr_serverless_storage_eligible": false,
+  "emr_serverless_storage_limit_gb": 200
+ },
+ "total_cost_factor": 15.1956,
+ "driver_metrics": {
+  "driver_id": "driver",
+  "host": "[2600:1f18:2c09:c902:c9e6:2e5d:1451:1909]",
+  "port": "40263",
+  "cores": 4,
+  "memory_mb": 0,
+  "start_time": "2026-07-08T18:21:12.049000",
+  "end_time": "2026-07-08T18:56:43.943000",
+  "uptime_hours": 0.59,
+  "total_tasks_launched": 14135,
+  "total_jobs_submitted": 4,
+  "total_stages_submitted": 14,
+  "total_result_bytes_received": 111526542,
+  "peak_jvm_heap_memory_gb": 0,
+  "peak_jvm_off_heap_memory_gb": 0,
+  "avg_jvm_heap_memory_gb": 0,
+  "avg_jvm_off_heap_memory_gb": 0,
+  "gc_time_ms": 0,
+  "gc_count": 0,
+  "memory_metrics_samples": 0,
+  "total_result_bytes_received_gb": 0.1,
+  "configured_memory_gb": 0.0,
+  "memory_utilization_percent": 0,
+  "avg_gc_time_per_task_ms": 0
+ },
+ "job_details": {
+  "summary": {
+   "total_jobs": 4,
+   "successful_jobs": 2,
+   "failed_jobs": 0,
+   "running_jobs": 2,
+   "success_rate_percent": 50.0,
+   "avg_duration_seconds": null
+  },
+  "jobs": [
+   {
+    "job_id": 2,
+    "submission_time": "2026-07-08T18:24:11.001000",
+    "stage_ids": [
+     2,
+     3
+    ],
+    "status": "SUCCESS",
+    "completion_time": "2026-07-08T18:44:43.261000",
+    "duration_ms": null,
+    "failure_reason": null,
+    "job_group": null,
+    "num_stages": 2
+   },
+   {
+    "job_id": 0,
+    "submission_time": "2026-07-08T18:21:39.197000",
+    "stage_ids": [
+     0
+    ],
+    "status": "RUNNING",
+    "completion_time": null,
+    "duration_ms": null,
+    "failure_reason": null,
+    "job_group": null,
+    "num_stages": 1
+   },
+   {
+    "job_id": 1,
+    "submission_time": "2026-07-08T18:21:39.411000",
+    "stage_ids": [
+     1
+    ],
+    "status": "SUCCESS",
+    "completion_time": "2026-07-08T18:25:22.864000",
+    "duration_ms": null,
+    "failure_reason": null,
+    "job_group": null,
+    "num_stages": 1
+   },
+   {
+    "job_id": 3,
+    "submission_time": "2026-07-08T18:25:23.649000",
+    "stage_ids": [
+     5,
+     4
+    ],
+    "status": "RUNNING",
+    "completion_time": null,
+    "duration_ms": null,
+    "failure_reason": null,
+    "job_group": null,
+    "num_stages": 2
+   }
+  ]
+ },
+ "sql_metrics": {
+  "total_sql_executions": 1,
+  "completed_executions": 0,
+  "running_executions": 1,
+  "sql_executions": [
+   {
+    "execution_id": 0,
+    "description": "sql at NativeMethodAccessorImpl.java:0",
+    "details": "org.apache.spark.sql.SparkSession.sql(SparkSession.scala:652)\njava.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\njava.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)\njava.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\njava.base/java.lang.reflect.Method.invoke(Method.java:569)\npy4j.reflection.MethodInvoker.invoke(MethodInvoker.java:244)\npy4j.reflection.ReflectionEngine.invoke(ReflectionEngine.java:374)\npy4j.Gateway.invoke(Gateway.java:282)\npy4j.commands.AbstractCommand.invokeMethod(AbstractCommand.java:132)\npy4j.commands.CallCommand.execute(CallCommand.java:79)\npy4j.ClientServerConnection.waitForCommands(ClientServerConnection.java:182)\npy4j.ClientServerConnection.run(ClientServerConnection.java:106)\njava.base/java.lang.Thread.run(Thread.java:840)",
+    "physical_plan_description": "== Parsed Logical Plan ==\nOverwriteByExpression RelationV2[update_create_date#189, sanctionsreferenceid#190, sanctioninquiry_riskid#191, sanctioninquiry_clienttransactionid#192, status#193, precision_transaction_id#194, precision_scan_id#195, highway_endpoint_id#196, synchronous#197, highway_message_id#198, show_compliance_result_application_area_sender_logical_id#199, show_compliance_result_application_area_sender_reference_id#200, show_compliance_result_application_area_sender_unique_message_id#201, show_compliance_result_application_area_creation_date_time#202, show_compliance_result_data_area_show_confirm#203, show_compliance_result_data_area_compliance_result_run_number#204, show_compliance_result_data_area_compliance_result_references_source_reference_is_primary_reference#205, show_compliance_result_data_area_compliance_result_references_source_reference_source_reference_key_1#206, show_compliance_result_data_area_compliance_result_references_source_reference_source_reference_key",
+    "submission_time": "2026-07-08T18:21:38.527000",
+    "completion_time": null,
+    "duration_ms": null,
+    "status": "RUNNING"
+   }
+  ]
+ },
+ "executor_timeline": [
+  {
+   "time_ms": 1783560079549,
+   "event": "added",
+   "executor_id": "5",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783560084903,
+   "event": "added",
+   "executor_id": "6",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783560085880,
+   "event": "added",
+   "executor_id": "10",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783560086872,
+   "event": "added",
+   "executor_id": "7",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783560087340,
+   "event": "added",
+   "executor_id": "12",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783560087488,
+   "event": "added",
+   "executor_id": "9",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783560087575,
+   "event": "added",
+   "executor_id": "13",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783560087926,
+   "event": "added",
+   "executor_id": "1",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783560088214,
+   "event": "added",
+   "executor_id": "2",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783560088315,
+   "event": "added",
+   "executor_id": "3",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783560089985,
+   "event": "added",
+   "executor_id": "4",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783560090722,
+   "event": "added",
+   "executor_id": "11",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783560091816,
+   "event": "added",
+   "executor_id": "8",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783560186757,
+   "event": "added",
+   "executor_id": "16",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783560187479,
+   "event": "added",
+   "executor_id": "15",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783560194922,
+   "event": "added",
+   "executor_id": "20",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783560194991,
+   "event": "added",
+   "executor_id": "36",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783560195335,
+   "event": "added",
+   "executor_id": "17",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783560196211,
+   "event": "added",
+   "executor_id": "14",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783560196347,
+   "event": "added",
+   "executor_id": "22",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783560196617,
+   "event": "added",
+   "executor_id": "19",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783560196639,
+   "event": "added",
+   "executor_id": "24",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783560196923,
+   "event": "added",
+   "executor_id": "23",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783560198037,
+   "event": "added",
+   "executor_id": "21",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783560198502,
+   "event": "added",
+   "executor_id": "29",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783560198504,
+   "event": "added",
+   "executor_id": "33",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783560198624,
+   "event": "added",
+   "executor_id": "39",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783560198658,
+   "event": "added",
+   "executor_id": "34",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783560198780,
+   "event": "added",
+   "executor_id": "28",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783560198919,
+   "event": "added",
+   "executor_id": "35",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783560199007,
+   "event": "added",
+   "executor_id": "18",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783560199056,
+   "event": "added",
+   "executor_id": "30",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783560199110,
+   "event": "added",
+   "executor_id": "40",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783560199207,
+   "event": "added",
+   "executor_id": "38",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783560199264,
+   "event": "added",
+   "executor_id": "37",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783560199958,
+   "event": "added",
+   "executor_id": "25",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783560201812,
+   "event": "added",
+   "executor_id": "26",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783560202949,
+   "event": "added",
+   "executor_id": "31",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783560203083,
+   "event": "added",
+   "executor_id": "32",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783560206257,
+   "event": "added",
+   "executor_id": "27",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783560554175,
+   "event": "removed",
+   "executor_id": "19"
+  },
+  {
+   "time_ms": 1783560614297,
+   "event": "removed",
+   "executor_id": "34"
+  },
+  {
+   "time_ms": 1783560642999,
+   "event": "added",
+   "executor_id": "41",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783560703397,
+   "event": "added",
+   "executor_id": "42",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783561695790,
+   "event": "removed",
+   "executor_id": "5"
+  },
+  {
+   "time_ms": 1783561789462,
+   "event": "added",
+   "executor_id": "43",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783562086008,
+   "event": "removed",
+   "executor_id": "26"
+  },
+  {
+   "time_ms": 1783562159875,
+   "event": "added",
+   "executor_id": "44",
+   "cores": 8
+  }
+ ],
+ "sql_executions": [
+  {
+   "execution_id": 0,
+   "description": "sql at NativeMethodAccessorImpl.java:0",
+   "details": "org.apache.spark.sql.SparkSession.sql(SparkSession.scala:652)\njava.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\njava.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)\njava.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\njava.base/java.lang.reflect.Method.invoke(Method.java:569)\npy4j.reflection.MethodInvoker.invoke(MethodInvoker.java:244)\npy4j.reflection.ReflectionEngine.invoke(ReflectionEngine.java:374)\npy4j.Gateway.invoke(Gateway.java:282)\npy4j.commands.AbstractCommand.invokeMethod(AbstractCommand.java:132)\npy4j.commands.CallCommand.execute(CallCommand.java:79)\npy4j.ClientServerConnection.waitForCommands(ClientServerConnection.java:182)\npy4j.ClientServerConnection.run(ClientServerConnection.java:106)\njava.base/java.lang.Thread.run(Thread.java:840)",
+   "physical_plan_description": "== Parsed Logical Plan ==\nOverwriteByExpression RelationV2[update_create_date#189, sanctionsreferenceid#190, sanctioninquiry_riskid#191, sanctioninquiry_clienttransactionid#192, status#193, precision_transaction_id#194, precision_scan_id#195, highway_endpoint_id#196, synchronous#197, highway_message_id#198, show_compliance_result_application_area_sender_logical_id#199, show_compliance_result_application_area_sender_reference_id#200, show_compliance_result_application_area_sender_unique_message_id#201, show_compliance_result_application_area_creation_date_time#202, show_compliance_result_data_area_show_confirm#203, show_compliance_result_data_area_compliance_result_run_number#204, show_compliance_result_data_area_compliance_result_references_source_reference_is_primary_reference#205, show_compliance_result_data_area_compliance_result_references_source_reference_source_reference_key_1#206, show_compliance_result_data_area_compliance_result_references_source_reference_source_reference_key",
+   "submission_time": "2026-07-08T18:21:38.527000",
+   "completion_time": null,
+   "duration_ms": null,
+   "status": "RUNNING"
+  }
+ ],
+ "query_plans": [
+  {
+   "execution_id": 0,
+   "description": "sql at NativeMethodAccessorImpl.java:0",
+   "submission_time": "2026-07-08T18:21:38.527000",
+   "duration_ms": null,
+   "plan": {
+    "name": "OverwriteByExpression",
+    "detail": "OverwriteByExpression org.apache.spark.sql.execution.datasources.v2.DataSourceV2Strategy$$Lambda$4630/0x000000080239cd60@455d37f7, IcebergWrite(table=spark_catalog.risk.efr_sanction_customer_compliance_scan_results, format=PARQUET)",
+    "metrics": {},
+    "children": [
+     {
+      "name": "AdaptiveSparkPlan",
+      "detail": "AdaptiveSparkPlan isFinalPlan=false",
+      "metrics": {},
+      "children": [
+       {
+        "name": "HashAggregate",
+        "detail": "HashAggregate(keys=[update_create_date#140, sanctionsreferenceid#96, sanctioninquiry_riskid#122, sanctioninquiry_clienttransactionid#99, Status#0, precision_transaction_id#4, precision_scan_id#5, highway_endpoint_id#6, synchronous#7, highway_message_",
+        "metrics": {},
+        "children": [
+         {
+          "name": "HashAggregate",
+          "detail": "HashAggregate(keys=[update_create_date#140, sanctionsreferenceid#96, sanctioninquiry_riskid#122, sanctioninquiry_clienttransactionid#99, Status#0, precision_transaction_id#4, precision_scan_id#5, highway_endpoint_id#6, synchronous#7, highway_message_",
+          "metrics": {},
+          "children": [
+           {
+            "name": "Project",
+            "detail": "Project [update_create_date#140, sanctionsreferenceid#96, sanctioninquiry_riskid#122, sanctioninquiry_clienttransactionid#99, Status#0, precision_transaction_id#4, precision_scan_id#5, highway_endpoint_id#6, synchronous#7, highway_message_id#8, show_",
+            "metrics": {},
+            "children": [
+             {
+              "name": "ShuffledHashJoin (HybridHash)",
+              "detail": "ShuffledHashJoin (HybridHash) [sanctioninquiry_clienttransactionid#99], [sanctioninquiry_clienttransactionid#147], LeftOuter, BuildLeft",
+              "metrics": {},
+              "children": [
+               {
+                "name": "ShuffleQueryStage",
+                "detail": "ShuffleQueryStage 2",
+                "metrics": {},
+                "children": [
+                 {
+                  "name": "Exchange",
+                  "detail": "Exchange hashpartitioning(sanctioninquiry_clienttransactionid#99, 1000), ENSURE_REQUIREMENTS, [plan_id=412]",
+                  "metrics": {
+                   "shuffle records written": 7865781,
+                   "shuffle write time": 3670169224,
+                   "shuffle flush time": 672551668,
+                   "shuffle close time": 11145823171,
+                   "shuffle sort time": 51312455,
+                   "data size": 1068655328,
+                   "number of partitions": 1000,
+                   "shuffle bytes written": 789857066,
+                   "shuffle merge time": 1183983156
+                  },
+                  "children": [
+                   {
+                    "name": "WholeStageCodegen (4)",
+                    "detail": "WholeStageCodegen (4)",
+                    "metrics": {
+                     "duration": 1397010
+                    },
+                    "children": [
+                     {
+                      "name": "HashAggregate",
+                      "detail": "HashAggregate(keys=[update_create_date#140, sanctionsreferenceid#96, sanctioninquiry_riskid#122, sanctioninquiry_clienttransactionid#99, checkcomplianceresponse_compliancesanctionscanresults#138, Status#0, Rank_Risk#1], functions=[], schema specializ",
+                      "metrics": {
+                       "time in aggregation build": 1380022,
+                       "peak memory": 70133219328,
+                       "number of hash code collisions": 9,
+                       "number of output rows": 7865781,
+                       "avg hash probes per key": 13607
+                      },
+                      "children": [
+                       {
+                        "name": "HashAggregate",
+                        "detail": "HashAggregate(keys=[update_create_date#140, sanctionsreferenceid#96, sanctioninquiry_riskid#122, sanctioninquiry_clienttransactionid#99, checkcomplianceresponse_compliancesanctionscanresults#138, Status#0, Rank_Risk#1], functions=[], schema specializ",
+                        "metrics": {
+                         "time in aggregation build": 1354917,
+                         "peak memory": 70133219328,
+                         "number of hash code collisions": 9,
+                         "number of output rows": 7865781,
+                         "avg hash probes per key": 13607
+                        },
+                        "children": [
+                         {
+                          "name": "Filter",
+                          "detail": "Filter ((Rank_Risk#1 = 1) AND upper(Status#0) IN (FAIL,WARNING))",
+                          "metrics": {
+                           "number of output rows": 7865781
+                          },
+                          "children": [
+                           {
+                            "name": "InputAdapter",
+                            "detail": "InputAdapter",
+                            "metrics": {},
+                            "children": [
+                             {
+                              "name": "Window",
+                              "detail": "Window [row_number() windowspecdefinition(sanctioninquiry_riskid#122, update_create_date#140 DESC NULLS LAST, specifiedwindowframe(RowFrame, unboundedpreceding$(), currentrow$())) AS Rank_Risk#1], [sanctioninquiry_riskid#122], [update_create_date#140",
+                              "metrics": {
+                               "spill size": 32212254720
+                              },
+                              "children": [
+                               {
+                                "name": "WholeStageCodegen (3)",
+                                "detail": "WholeStageCodegen (3)",
+                                "metrics": {
+                                 "duration": 48189394
+                                },
+                                "children": [
+                                 {
+                                  "name": "Sort",
+                                  "detail": "Sort [sanctioninquiry_riskid#122 ASC NULLS FIRST, update_create_date#140 DESC NULLS LAST], false, 0",
+                                  "metrics": {
+                                   "sort time": 151559,
+                                   "peak memory": 3253033959424,
+                                   "spill size": 35836133376
+                                  },
+                                  "children": [
+                                   {
+                                    "name": "InputAdapter",
+                                    "detail": "InputAdapter",
+                                    "metrics": {},
+                                    "children": [
+                                     {
+                                      "name": "ShuffleQueryStage",
+                                      "detail": "ShuffleQueryStage 0",
+                                      "metrics": {},
+                                      "children": [
+                                       {
+                                        "name": "Exchange",
+                                        "detail": "Exchange hashpartitioning(sanctioninquiry_riskid#122, 1000), ENSURE_REQUIREMENTS, [plan_id=224]",
+                                        "metrics": {
+                                         "shuffle records written": 1023312231,
+                                         "shuffle write time": 369063237305,
+                                         "shuffle flush time": 886082,
+                                         "shuffle close time": 3427667112082,
+                                         "shuffle sort time": 6957102851,
+                                         "records read": 1030998479,
+                                         "local bytes read": 13523100617,
+                                         "fetch wait time": 42530479,
+                                         "remote bytes read": 526931250091,
+                                         "local blocks read": 146283,
+                                         "remote blocks read": 5648948,
+                                         "data size": 3194387816384,
+                                         "number of partitions": 1000,
+                                         "remote reqs duration": 178957760,
+                                         "shuffle bytes written": 536439868146,
+                                         "shuffle merge time": 5708785298
+                                        },
+                                        "children": [
+                                         {
+                                          "name": "Project",
+                                          "detail": "Project [update_create_date#140, sanctionsreferenceid#96, sanctioninquiry_riskid#122, sanctioninquiry_clienttransactionid#99, checkcomplianceresponse_compliancesanctionscanresults#138, get_json_object(checkcomplianceresponse_compliancesanctionscanres",
+                                          "metrics": {},
+                                          "children": [
+                                           {
+                                            "name": "WholeStageCodegen (1)",
+                                            "detail": "WholeStageCodegen (1)",
+                                            "metrics": {
+                                             "duration": 22292642
+                                            },
+                                            "children": [
+                                             {
+                                              "name": "ColumnarToRow",
+                                              "detail": "ColumnarToRow",
+                                              "metrics": {
+                                               "number of output rows": 1023312231,
+                                               "number of input batches": 208621
+                                              },
+                                              "children": [
+                                               {
+                                                "name": "InputAdapter",
+                                                "detail": "InputAdapter",
+                                                "metrics": {},
+                                                "children": [
+                                                 {
+                                                  "name": "BatchScan spark_catalog.risk.eg_sanction_customer_raw_domain_event_v3",
+                                                  "detail": "BatchScan spark_catalog.risk.eg_sanction_customer_raw_domain_event_v3[sanctionsreferenceid#96, sanctioninquiry_clienttransactionid#99, sanctioninquiry_riskid#122, checkcomplianceresponse_compliancesanctionscanresults#138, update_create_date#140] spar",
+                                                  "metrics": {
+                                                   "Time spent on file scans": 16954460978280,
+                                                   "number of skipped data files": 373,
+                                                   "total data manifests": 62,
+                                                   "total planning duration (ms)": 1683,
+                                                   "total data file size (bytes)": 733715368350,
+                                                   "number of file splits read": 7536,
+                                                   "number of output rows": 1023312231,
+                                                   "number of scanned data manifests": 61,
+                                                   "number of result data files": 2693,
+                                                   "number of skipped data manifests": 1
+                                                  },
+                                                  "children": []
+                                                 }
+                                                ]
+                                               }
+                                              ]
+                                             }
+                                            ]
+                                           }
+                                          ]
+                                         }
+                                        ],
+                                        "failures": [
+                                         {
+                                          "stage_id": 3,
+                                          "failed_tasks": 1,
+                                          "reasons": {
+                                           "FetchFailed": 1
+                                          },
+                                          "sample": "org.apache.spark.shuffle.FetchFailedException\n\tat org.apache.spark.errors.SparkCoreErrors$.fetchFailedError(SparkCoreErrors.scala:438)\n\tat org.apache.spark.storage.ShuffleBlockFetcherIterator.throwFetchFailedException(ShuffleBlockFetcherIterator.scala:1253)\n\tat org.apache.spark.storage.ShuffleBlockF"
+                                         }
+                                        ]
+                                       }
+                                      ]
+                                     }
+                                    ]
+                                   }
+                                  ],
+                                  "failures": [
+                                   {
+                                    "stage_id": 3,
+                                    "failed_tasks": 1,
+                                    "reasons": {
+                                     "FetchFailed": 1
+                                    },
+                                    "sample": "org.apache.spark.shuffle.FetchFailedException\n\tat org.apache.spark.errors.SparkCoreErrors$.fetchFailedError(SparkCoreErrors.scala:438)\n\tat org.apache.spark.storage.ShuffleBlockFetcherIterator.throwFetchFailedException(ShuffleBlockFetcherIterator.scala:1253)\n\tat org.apache.spark.storage.ShuffleBlockF"
+                                   }
+                                  ]
+                                 }
+                                ],
+                                "failures": [
+                                 {
+                                  "stage_id": 3,
+                                  "failed_tasks": 1,
+                                  "reasons": {
+                                   "FetchFailed": 1
+                                  },
+                                  "sample": "org.apache.spark.shuffle.FetchFailedException\n\tat org.apache.spark.errors.SparkCoreErrors$.fetchFailedError(SparkCoreErrors.scala:438)\n\tat org.apache.spark.storage.ShuffleBlockFetcherIterator.throwFetchFailedException(ShuffleBlockFetcherIterator.scala:1253)\n\tat org.apache.spark.storage.ShuffleBlockF"
+                                 }
+                                ]
+                               }
+                              ],
+                              "failures": [
+                               {
+                                "stage_id": 3,
+                                "failed_tasks": 1,
+                                "reasons": {
+                                 "FetchFailed": 1
+                                },
+                                "sample": "org.apache.spark.shuffle.FetchFailedException\n\tat org.apache.spark.errors.SparkCoreErrors$.fetchFailedError(SparkCoreErrors.scala:438)\n\tat org.apache.spark.storage.ShuffleBlockFetcherIterator.throwFetchFailedException(ShuffleBlockFetcherIterator.scala:1253)\n\tat org.apache.spark.storage.ShuffleBlockF"
+                               }
+                              ]
+                             }
+                            ]
+                           }
+                          ],
+                          "failures": [
+                           {
+                            "stage_id": 3,
+                            "failed_tasks": 1,
+                            "reasons": {
+                             "FetchFailed": 1
+                            },
+                            "sample": "org.apache.spark.shuffle.FetchFailedException\n\tat org.apache.spark.errors.SparkCoreErrors$.fetchFailedError(SparkCoreErrors.scala:438)\n\tat org.apache.spark.storage.ShuffleBlockFetcherIterator.throwFetchFailedException(ShuffleBlockFetcherIterator.scala:1253)\n\tat org.apache.spark.storage.ShuffleBlockF"
+                           }
+                          ]
+                         }
+                        ],
+                        "failures": [
+                         {
+                          "stage_id": 3,
+                          "failed_tasks": 1,
+                          "reasons": {
+                           "FetchFailed": 1
+                          },
+                          "sample": "org.apache.spark.shuffle.FetchFailedException\n\tat org.apache.spark.errors.SparkCoreErrors$.fetchFailedError(SparkCoreErrors.scala:438)\n\tat org.apache.spark.storage.ShuffleBlockFetcherIterator.throwFetchFailedException(ShuffleBlockFetcherIterator.scala:1253)\n\tat org.apache.spark.storage.ShuffleBlockF"
+                         }
+                        ]
+                       }
+                      ],
+                      "failures": [
+                       {
+                        "stage_id": 3,
+                        "failed_tasks": 1,
+                        "reasons": {
+                         "FetchFailed": 1
+                        },
+                        "sample": "org.apache.spark.shuffle.FetchFailedException\n\tat org.apache.spark.errors.SparkCoreErrors$.fetchFailedError(SparkCoreErrors.scala:438)\n\tat org.apache.spark.storage.ShuffleBlockFetcherIterator.throwFetchFailedException(ShuffleBlockFetcherIterator.scala:1253)\n\tat org.apache.spark.storage.ShuffleBlockF"
+                       }
+                      ]
+                     }
+                    ],
+                    "failures": [
+                     {
+                      "stage_id": 3,
+                      "failed_tasks": 1,
+                      "reasons": {
+                       "FetchFailed": 1
+                      },
+                      "sample": "org.apache.spark.shuffle.FetchFailedException\n\tat org.apache.spark.errors.SparkCoreErrors$.fetchFailedError(SparkCoreErrors.scala:438)\n\tat org.apache.spark.storage.ShuffleBlockFetcherIterator.throwFetchFailedException(ShuffleBlockFetcherIterator.scala:1253)\n\tat org.apache.spark.storage.ShuffleBlockF"
+                     }
+                    ]
+                   }
+                  ],
+                  "failures": [
+                   {
+                    "stage_id": 3,
+                    "failed_tasks": 1,
+                    "reasons": {
+                     "FetchFailed": 1
+                    },
+                    "sample": "org.apache.spark.shuffle.FetchFailedException\n\tat org.apache.spark.errors.SparkCoreErrors$.fetchFailedError(SparkCoreErrors.scala:438)\n\tat org.apache.spark.storage.ShuffleBlockFetcherIterator.throwFetchFailedException(ShuffleBlockFetcherIterator.scala:1253)\n\tat org.apache.spark.storage.ShuffleBlockF"
+                   }
+                  ]
+                 }
+                ]
+               },
+               {
+                "name": "ShuffleQueryStage",
+                "detail": "ShuffleQueryStage 3",
+                "metrics": {},
+                "children": [
+                 {
+                  "name": "Exchange",
+                  "detail": "Exchange hashpartitioning(sanctioninquiry_clienttransactionid#147, 1000), ENSURE_REQUIREMENTS, [plan_id=610]",
+                  "metrics": {
+                   "shuffle records written": 92226602,
+                   "shuffle write time": 378444226298,
+                   "shuffle close time": 462022683232,
+                   "shuffle sort time": 749319983,
+                   "data size": 114916767064,
+                   "number of partitions": 1000,
+                   "shuffle bytes written": 11332260040,
+                   "shuffle merge time": 3548455774
+                  },
+                  "children": [
+                   {
+                    "name": "WholeStageCodegen (9)",
+                    "detail": "WholeStageCodegen (9)",
+                    "metrics": {
+                     "duration": 442967716
+                    },
+                    "children": [
+                     {
+                      "name": "HashAggregate",
+                      "detail": "HashAggregate(keys=[update_create_date#188, sanctioninquiry_riskid#170, sanctioninquiry_clienttransactionid#147, sanction_hit_description#40, party_result#41, denied_party_match#283, result#282, precision_transaction_id#4, precision_scan_id#5, highwa",
+                      "metrics": {
+                       "spill size": 18360570736497,
+                       "time in aggregation build": 371444103,
+                       "peak memory": 3575948575697,
+                       "number of hash code collisions": 240,
+                       "number of output rows": 92226602,
+                       "number of sort fallback tasks": 861,
+                       "avg hash probes per key": 12918
+                      },
+                      "children": [
+                       {
+                        "name": "HashAggregate",
+                        "detail": "HashAggregate(keys=[update_create_date#188, sanctioninquiry_riskid#170, sanctioninquiry_clienttransactionid#147, sanction_hit_description#40, party_result#41, denied_party_match#283, result#282, precision_transaction_id#4, precision_scan_id#5, highwa",
+                        "metrics": {
+                         "spill size": 18359540631050,
+                         "time in aggregation build": 169966126,
+                         "peak memory": 3563675661883,
+                         "number of hash code collisions": 251,
+                         "number of output rows": 92226602,
+                         "number of sort fallback tasks": 861,
+                         "avg hash probes per key": 12908
+                        },
+                        "children": [
+                         {
+                          "name": "InputAdapter",
+                          "detail": "InputAdapter",
+                          "metrics": {},
+                          "children": [
+                           {
+                            "name": "Project",
+                            "detail": "Project [update_create_date#188, sanctioninquiry_riskid#170, sanctioninquiry_clienttransactionid#147, sanction_hit_description#40, party_result#41, denied_party_match#283, result#282, precision_transaction_id#4, precision_scan_id#5, highway_endpoint_",
+                            "metrics": {},
+                            "children": [
+                             {
+                              "name": "WholeStageCodegen (8)",
+                              "detail": "WholeStageCodegen (8)",
+                              "metrics": {
+                               "duration": 156744912
+                              },
+                              "children": [
+                               {
+                                "name": "Generate",
+                                "detail": "Generate explode(split(regexp_replace(regexp_replace(deniedpartymatch#69, ^\\[|\\]$, , 1), \\},\\{\"checkType\", \\},,,,,\\{\"checkType\", 1), ,,,,,, -1)), [update_create_date#188, sanctioninquiry_riskid#170, sanctioninquiry_clienttransactionid#147, precision_",
+                                "metrics": {
+                                 "number of output rows": 92757775
+                                },
+                                "children": [
+                                 {
+                                  "name": "InputAdapter",
+                                  "detail": "InputAdapter",
+                                  "metrics": {},
+                                  "children": [
+                                   {
+                                    "name": "Project",
+                                    "detail": "Project [update_create_date#188, sanctioninquiry_riskid#170, sanctioninquiry_clienttransactionid#147, precision_transaction_id#4, precision_scan_id#5, highway_endpoint_id#6, synchronous#7, highway_message_id#8, show_compliance_result_application_area",
+                                    "metrics": {},
+                                    "children": [
+                                     {
+                                      "name": "Filter",
+                                      "detail": "Filter (get_json_object(result#282, $.deniedPartyResult.complianceStatus) = FAIL)",
+                                      "metrics": {
+                                       "number of output rows": 7780522
+                                      },
+                                      "children": [
+                                       {
+                                        "name": "WholeStageCodegen (7)",
+                                        "detail": "WholeStageCodegen (7)",
+                                        "metrics": {
+                                         "duration": 156753062
+                                        },
+                                        "children": [
+                                         {
+                                          "name": "Generate",
+                                          "detail": "Generate explode(split(regexp_replace(regexp_replace(party_result#41, ^\\[|\\]$, , 1), \\},\\{\"partyCheck\", \\},,,,,\\{\"partyCheck\", 1), ,,,,,, -1)), [update_create_date#188, sanctioninquiry_riskid#170, sanctioninquiry_clienttransactionid#147, precision_tr",
+                                          "metrics": {
+                                           "number of output rows": 15570218
+                                          },
+                                          "children": [
+                                           {
+                                            "name": "HashAggregate",
+                                            "detail": "HashAggregate(keys=[update_create_date#188, sanctioninquiry_riskid#170, sanctioninquiry_clienttransactionid#147, precision_transaction_id#4, precision_scan_id#5, highway_endpoint_id#6, synchronous#7, highway_message_id#8, show_compliance_result_appli",
+                                            "metrics": {
+                                             "time in aggregation build": 21595344,
+                                             "peak memory": 115787169792,
+                                             "number of hash code collisions": 6,
+                                             "number of output rows": 6505865,
+                                             "avg hash probes per key": 11256
+                                            },
+                                            "children": [
+                                             {
+                                              "name": "HashAggregate",
+                                              "detail": "HashAggregate(keys=[update_create_date#188, sanctioninquiry_riskid#170, sanctioninquiry_clienttransactionid#147, precision_transaction_id#4, precision_scan_id#5, highway_endpoint_id#6, synchronous#7, highway_message_id#8, show_compliance_result_appli",
+                                              "metrics": {
+                                               "time in aggregation build": 21557831,
+                                               "peak memory": 115787169792,
+                                               "number of hash code collisions": 6,
+                                               "number of output rows": 6505865,
+                                               "avg hash probes per key": 11256
+                                              },
+                                              "children": [
+                                               {
+                                                "name": "InputAdapter",
+                                                "detail": "InputAdapter",
+                                                "metrics": {},
+                                                "children": [
+                                                 {
+                                                  "name": "Project",
+                                                  "detail": "Project [update_create_date#188, sanctioninquiry_riskid#170, sanctioninquiry_clienttransactionid#147, get_json_object(checkcomplianceresponse_compliancesanctionscanresults#186, $[0].transactionId) AS precision_transaction_id#4, get_json_object(checkc",
+                                                  "metrics": {},
+                                                  "children": [
+                                                   {
+                                                    "name": "WholeStageCodegen (6)",
+                                                    "detail": "WholeStageCodegen (6)",
+                                                    "metrics": {
+                                                     "duration": 21603236
+                                                    },
+                                                    "children": [
+                                                     {
+                                                      "name": "Filter",
+                                                      "detail": "Filter (((Rank_Risk#3 = 1) AND upper(Status#2) IN (FAIL,WARNING)) AND isnotnull(sanctioninquiry_clienttransactionid#147))",
+                                                      "metrics": {
+                                                       "number of output rows": 6505865
+                                                      },
+                                                      "children": [
+                                                       {
+                                                        "name": "InputAdapter",
+                                                        "detail": "InputAdapter",
+                                                        "metrics": {},
+                                                        "children": [
+                                                         {
+                                                          "name": "Window",
+                                                          "detail": "Window [row_number() windowspecdefinition(sanctioninquiry_riskid#170, update_create_date#188 DESC NULLS LAST, specifiedwindowframe(RowFrame, unboundedpreceding$(), currentrow$())) AS Rank_Risk#3], [sanctioninquiry_riskid#170], [update_create_date#188",
+                                                          "metrics": {},
+                                                          "children": [
+                                                           {
+                                                            "name": "WholeStageCodegen (5)",
+                                                            "detail": "WholeStageCodegen (5)",
+                                                            "metrics": {
+                                                             "duration": 28904559
+                                                            },
+                                                            "children": [
+                                                             {
+                                                              "name": "Sort",
+                                                              "detail": "Sort [sanctioninquiry_riskid#170 ASC NULLS FIRST, update_create_date#188 DESC NULLS LAST], false, 0",
+                                                              "metrics": {
+                                                               "sort time": 123737,
+                                                               "peak memory": 2634134257664
+                                                              },
+                                                              "children": [
+                                                               {
+                                                                "name": "InputAdapter",
+                                                                "detail": "InputAdapter",
+                                                                "metrics": {},
+                                                                "children": [
+                                                                 {
+                                                                  "name": "ShuffleQueryStage",
+                                                                  "detail": "ShuffleQueryStage 1",
+                                                                  "metrics": {},
+                                                                  "children": [
+                                                                   {
+                                                                    "name": "Exchange",
+                                                                    "detail": "Exchange hashpartitioning(sanctioninquiry_riskid#170, 1000), ENSURE_REQUIREMENTS, [plan_id=245]",
+                                                                    "metrics": {
+                                                                     "shuffle records written": 1090679397,
+                                                                     "shuffle write time": 1402055686431,
+                                                                     "shuffle flush time": 698684,
+                                                                     "shuffle close time": 4519079699179,
+                                                                     "shuffle sort time": 5829456787,
+                                                                     "records read": 840893415,
+                                                                     "local bytes read": 10121530900,
+                                                                     "fetch wait time": 4629996,
+                                                                     "remote bytes read": 395270234198,
+                                                                     "local blocks read": 119639,
+                                                                     "remote blocks read": 4673533,
+                                                                     "data size": 3351351123472,
+                                                                     "number of partitions": 1000,
+                                                                     "remote reqs duration": 29231091,
+                                                                     "shuffle bytes written": 523872498686,
+                                                                     "shuffle merge time": 5687997779
+                                                                    },
+                                                                    "children": [
+                                                                     {
+                                                                      "name": "Project",
+                                                                      "detail": "Project [update_create_date#188, sanctioninquiry_riskid#170, sanctioninquiry_clienttransactionid#147, checkcomplianceresponse_compliancesanctionscanresults#186, get_json_object(checkcomplianceresponse_compliancesanctionscanresults#186, $[0].status) A",
+                                                                      "metrics": {},
+                                                                      "children": [
+                                                                       {
+                                                                        "name": "WholeStageCodegen (2)",
+                                                                        "detail": "WholeStageCodegen (2)",
+                                                                        "metrics": {
+                                                                         "duration": 22076385
+                                                                        },
+                                                                        "children": [
+                                                                         {
+                                                                          "name": "ColumnarToRow",
+                                                                          "detail": "ColumnarToRow",
+                                                                          "metrics": {
+                                                                           "number of output rows": 1090679397,
+                                                                           "number of input batches": 222338
+                                                                          },
+                                                                          "children": [
+                                                                           {
+                                                                            "name": "InputAdapter",
+                                                                            "detail": "InputAdapter",
+                                                                            "metrics": {},
+                                                                            "children": [
+                                                                             {
+                                                                              "name": "BatchScan spark_catalog.risk.eg_sanction_customer_raw_domain_event_v3",
+                                                                              "detail": "BatchScan spark_catalog.risk.eg_sanction_customer_raw_domain_event_v3[sanctioninquiry_clienttransactionid#147, sanctioninquiry_riskid#170, checkcomplianceresponse_compliancesanctionscanresults#186, update_create_date#188] spark_catalog.risk.eg_sancti",
+                                                                              "metrics": {
+                                                                               "Time spent on file scans": 16747752060159,
+                                                                               "number of skipped data files": 373,
+                                                                               "total data manifests": 62,
+                                                                               "total planning duration (ms)": 777,
+                                                                               "total data file size (bytes)": 733715368350,
+                                                                               "number of file splits read": 8016,
+                                                                               "number of output rows": 1090679397,
+                                                                               "number of scanned data manifests": 61,
+                                                                               "number of result data files": 2693,
+                                                                               "number of skipped data manifests": 1
+                                                                              },
+                                                                              "children": []
+                                                                             }
+                                                                            ]
+                                                                           }
+                                                                          ]
+                                                                         }
+                                                                        ]
+                                                                       }
+                                                                      ]
+                                                                     }
+                                                                    ],
+                                                                    "failures": [
+                                                                     {
+                                                                      "stage_id": 5,
+                                                                      "failed_tasks": 40,
+                                                                      "reasons": {
+                                                                       "FetchFailed": 8,
+                                                                       "ExecutorLostFailure": 32
+                                                                      },
+                                                                      "sample": "org.apache.spark.shuffle.FetchFailedException\n\tat org.apache.spark.errors.SparkCoreErrors$.fetchFailedError(SparkCoreErrors.scala:438)\n\tat org.apache.spark.storage.ShuffleBlockFetcherIterator.throwFetchFailedException(ShuffleBlockFetcherIterator.scala:1253)\n\tat org.apache.spark.storage.ShuffleBlockF"
+                                                                     }
+                                                                    ]
+                                                                   }
+                                                                  ]
+                                                                 }
+                                                                ]
+                                                               }
+                                                              ],
+                                                              "failures": [
+                                                               {
+                                                                "stage_id": 5,
+                                                                "failed_tasks": 40,
+                                                                "reasons": {
+                                                                 "FetchFailed": 8,
+                                                                 "ExecutorLostFailure": 32
+                                                                },
+                                                                "sample": "org.apache.spark.shuffle.FetchFailedException\n\tat org.apache.spark.errors.SparkCoreErrors$.fetchFailedError(SparkCoreErrors.scala:438)\n\tat org.apache.spark.storage.ShuffleBlockFetcherIterator.throwFetchFailedException(ShuffleBlockFetcherIterator.scala:1253)\n\tat org.apache.spark.storage.ShuffleBlockF"
+                                                               }
+                                                              ]
+                                                             }
+                                                            ],
+                                                            "failures": [
+                                                             {
+                                                              "stage_id": 5,
+                                                              "failed_tasks": 40,
+                                                              "reasons": {
+                                                               "FetchFailed": 8,
+                                                               "ExecutorLostFailure": 32
+                                                              },
+                                                              "sample": "org.apache.spark.shuffle.FetchFailedException\n\tat org.apache.spark.errors.SparkCoreErrors$.fetchFailedError(SparkCoreErrors.scala:438)\n\tat org.apache.spark.storage.ShuffleBlockFetcherIterator.throwFetchFailedException(ShuffleBlockFetcherIterator.scala:1253)\n\tat org.apache.spark.storage.ShuffleBlockF"
+                                                             }
+                                                            ]
+                                                           }
+                                                          ],
+                                                          "failures": [
+                                                           {
+                                                            "stage_id": 5,
+                                                            "failed_tasks": 40,
+                                                            "reasons": {
+                                                             "FetchFailed": 8,
+                                                             "ExecutorLostFailure": 32
+                                                            },
+                                                            "sample": "org.apache.spark.shuffle.FetchFailedException\n\tat org.apache.spark.errors.SparkCoreErrors$.fetchFailedError(SparkCoreErrors.scala:438)\n\tat org.apache.spark.storage.ShuffleBlockFetcherIterator.throwFetchFailedException(ShuffleBlockFetcherIterator.scala:1253)\n\tat org.apache.spark.storage.ShuffleBlockF"
+                                                           }
+                                                          ]
+                                                         }
+                                                        ]
+                                                       }
+                                                      ],
+                                                      "failures": [
+                                                       {
+                                                        "stage_id": 5,
+                                                        "failed_tasks": 40,
+                                                        "reasons": {
+                                                         "FetchFailed": 8,
+                                                         "ExecutorLostFailure": 32
+                                                        },
+                                                        "sample": "org.apache.spark.shuffle.FetchFailedException\n\tat org.apache.spark.errors.SparkCoreErrors$.fetchFailedError(SparkCoreErrors.scala:438)\n\tat org.apache.spark.storage.ShuffleBlockFetcherIterator.throwFetchFailedException(ShuffleBlockFetcherIterator.scala:1253)\n\tat org.apache.spark.storage.ShuffleBlockF"
+                                                       }
+                                                      ]
+                                                     }
+                                                    ],
+                                                    "failures": [
+                                                     {
+                                                      "stage_id": 5,
+                                                      "failed_tasks": 40,
+                                                      "reasons": {
+                                                       "FetchFailed": 8,
+                                                       "ExecutorLostFailure": 32
+                                                      },
+                                                      "sample": "org.apache.spark.shuffle.FetchFailedException\n\tat org.apache.spark.errors.SparkCoreErrors$.fetchFailedError(SparkCoreErrors.scala:438)\n\tat org.apache.spark.storage.ShuffleBlockFetcherIterator.throwFetchFailedException(ShuffleBlockFetcherIterator.scala:1253)\n\tat org.apache.spark.storage.ShuffleBlockF"
+                                                     }
+                                                    ]
+                                                   }
+                                                  ]
+                                                 }
+                                                ]
+                                               }
+                                              ],
+                                              "failures": [
+                                               {
+                                                "stage_id": 5,
+                                                "failed_tasks": 40,
+                                                "reasons": {
+                                                 "FetchFailed": 8,
+                                                 "ExecutorLostFailure": 32
+                                                },
+                                                "sample": "org.apache.spark.shuffle.FetchFailedException\n\tat org.apache.spark.errors.SparkCoreErrors$.fetchFailedError(SparkCoreErrors.scala:438)\n\tat org.apache.spark.storage.ShuffleBlockFetcherIterator.throwFetchFailedException(ShuffleBlockFetcherIterator.scala:1253)\n\tat org.apache.spark.storage.ShuffleBlockF"
+                                               }
+                                              ]
+                                             }
+                                            ],
+                                            "failures": [
+                                             {
+                                              "stage_id": 5,
+                                              "failed_tasks": 40,
+                                              "reasons": {
+                                               "FetchFailed": 8,
+                                               "ExecutorLostFailure": 32
+                                              },
+                                              "sample": "org.apache.spark.shuffle.FetchFailedException\n\tat org.apache.spark.errors.SparkCoreErrors$.fetchFailedError(SparkCoreErrors.scala:438)\n\tat org.apache.spark.storage.ShuffleBlockFetcherIterator.throwFetchFailedException(ShuffleBlockFetcherIterator.scala:1253)\n\tat org.apache.spark.storage.ShuffleBlockF"
+                                             }
+                                            ]
+                                           }
+                                          ],
+                                          "failures": [
+                                           {
+                                            "stage_id": 5,
+                                            "failed_tasks": 40,
+                                            "reasons": {
+                                             "FetchFailed": 8,
+                                             "ExecutorLostFailure": 32
+                                            },
+                                            "sample": "org.apache.spark.shuffle.FetchFailedException\n\tat org.apache.spark.errors.SparkCoreErrors$.fetchFailedError(SparkCoreErrors.scala:438)\n\tat org.apache.spark.storage.ShuffleBlockFetcherIterator.throwFetchFailedException(ShuffleBlockFetcherIterator.scala:1253)\n\tat org.apache.spark.storage.ShuffleBlockF"
+                                           }
+                                          ]
+                                         }
+                                        ],
+                                        "failures": [
+                                         {
+                                          "stage_id": 5,
+                                          "failed_tasks": 40,
+                                          "reasons": {
+                                           "FetchFailed": 8,
+                                           "ExecutorLostFailure": 32
+                                          },
+                                          "sample": "org.apache.spark.shuffle.FetchFailedException\n\tat org.apache.spark.errors.SparkCoreErrors$.fetchFailedError(SparkCoreErrors.scala:438)\n\tat org.apache.spark.storage.ShuffleBlockFetcherIterator.throwFetchFailedException(ShuffleBlockFetcherIterator.scala:1253)\n\tat org.apache.spark.storage.ShuffleBlockF"
+                                         }
+                                        ]
+                                       }
+                                      ],
+                                      "failures": [
+                                       {
+                                        "stage_id": 5,
+                                        "failed_tasks": 40,
+                                        "reasons": {
+                                         "FetchFailed": 8,
+                                         "ExecutorLostFailure": 32
+                                        },
+                                        "sample": "org.apache.spark.shuffle.FetchFailedException\n\tat org.apache.spark.errors.SparkCoreErrors$.fetchFailedError(SparkCoreErrors.scala:438)\n\tat org.apache.spark.storage.ShuffleBlockFetcherIterator.throwFetchFailedException(ShuffleBlockFetcherIterator.scala:1253)\n\tat org.apache.spark.storage.ShuffleBlockF"
+                                       }
+                                      ]
+                                     }
+                                    ]
+                                   }
+                                  ]
+                                 }
+                                ],
+                                "failures": [
+                                 {
+                                  "stage_id": 5,
+                                  "failed_tasks": 40,
+                                  "reasons": {
+                                   "FetchFailed": 8,
+                                   "ExecutorLostFailure": 32
+                                  },
+                                  "sample": "org.apache.spark.shuffle.FetchFailedException\n\tat org.apache.spark.errors.SparkCoreErrors$.fetchFailedError(SparkCoreErrors.scala:438)\n\tat org.apache.spark.storage.ShuffleBlockFetcherIterator.throwFetchFailedException(ShuffleBlockFetcherIterator.scala:1253)\n\tat org.apache.spark.storage.ShuffleBlockF"
+                                 }
+                                ]
+                               }
+                              ],
+                              "failures": [
+                               {
+                                "stage_id": 5,
+                                "failed_tasks": 40,
+                                "reasons": {
+                                 "FetchFailed": 8,
+                                 "ExecutorLostFailure": 32
+                                },
+                                "sample": "org.apache.spark.shuffle.FetchFailedException\n\tat org.apache.spark.errors.SparkCoreErrors$.fetchFailedError(SparkCoreErrors.scala:438)\n\tat org.apache.spark.storage.ShuffleBlockFetcherIterator.throwFetchFailedException(ShuffleBlockFetcherIterator.scala:1253)\n\tat org.apache.spark.storage.ShuffleBlockF"
+                               }
+                              ]
+                             }
+                            ]
+                           }
+                          ]
+                         }
+                        ],
+                        "failures": [
+                         {
+                          "stage_id": 5,
+                          "failed_tasks": 40,
+                          "reasons": {
+                           "FetchFailed": 8,
+                           "ExecutorLostFailure": 32
+                          },
+                          "sample": "org.apache.spark.shuffle.FetchFailedException\n\tat org.apache.spark.errors.SparkCoreErrors$.fetchFailedError(SparkCoreErrors.scala:438)\n\tat org.apache.spark.storage.ShuffleBlockFetcherIterator.throwFetchFailedException(ShuffleBlockFetcherIterator.scala:1253)\n\tat org.apache.spark.storage.ShuffleBlockF"
+                         }
+                        ]
+                       }
+                      ],
+                      "failures": [
+                       {
+                        "stage_id": 5,
+                        "failed_tasks": 40,
+                        "reasons": {
+                         "FetchFailed": 8,
+                         "ExecutorLostFailure": 32
+                        },
+                        "sample": "org.apache.spark.shuffle.FetchFailedException\n\tat org.apache.spark.errors.SparkCoreErrors$.fetchFailedError(SparkCoreErrors.scala:438)\n\tat org.apache.spark.storage.ShuffleBlockFetcherIterator.throwFetchFailedException(ShuffleBlockFetcherIterator.scala:1253)\n\tat org.apache.spark.storage.ShuffleBlockF"
+                       }
+                      ]
+                     }
+                    ],
+                    "failures": [
+                     {
+                      "stage_id": 5,
+                      "failed_tasks": 40,
+                      "reasons": {
+                       "FetchFailed": 8,
+                       "ExecutorLostFailure": 32
+                      },
+                      "sample": "org.apache.spark.shuffle.FetchFailedException\n\tat org.apache.spark.errors.SparkCoreErrors$.fetchFailedError(SparkCoreErrors.scala:438)\n\tat org.apache.spark.storage.ShuffleBlockFetcherIterator.throwFetchFailedException(ShuffleBlockFetcherIterator.scala:1253)\n\tat org.apache.spark.storage.ShuffleBlockF"
+                     }
+                    ]
+                   }
+                  ],
+                  "failures": [
+                   {
+                    "stage_id": 5,
+                    "failed_tasks": 40,
+                    "reasons": {
+                     "FetchFailed": 8,
+                     "ExecutorLostFailure": 32
+                    },
+                    "sample": "org.apache.spark.shuffle.FetchFailedException\n\tat org.apache.spark.errors.SparkCoreErrors$.fetchFailedError(SparkCoreErrors.scala:438)\n\tat org.apache.spark.storage.ShuffleBlockFetcherIterator.throwFetchFailedException(ShuffleBlockFetcherIterator.scala:1253)\n\tat org.apache.spark.storage.ShuffleBlockF"
+                   }
+                  ]
+                 }
+                ]
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ],
+ "spark_config": {
+  "spark.ams_application_name": null,
+  "spark.app.attempt.id": null,
+  "spark.app.id": "00g72m8n01eb1g0b",
+  "spark.app.name": "pysql-executor-custom",
+  "spark.app.startTime": "2026-07-08T18:21:12.049000",
+  "spark.app.submitTime": "2026-07-08T18:21:11.210000",
+  "spark.blacklist.decommissioning.enabled": "true",
+  "spark.blacklist.decommissioning.timeout": "1h",
+  "spark.broadcast.blockSize": null,
+  "spark.decommissioning.timeout.threshold": "20",
+  "spark.driver.cores": "4",
+  "spark.driver.defaultJavaOptions": "-XX:OnOutOfMemoryError='kill -9 %p'",
+  "spark.driver.memory": "27G",
+  "spark.driver.transparentHugePage.enabled": null,
+  "spark.dynamicAllocation.enabled": "true",
+  "spark.dynamicAllocation.maxExecutors": "40",
+  "spark.emr.default.executor.cores": null,
+  "spark.emr.default.executor.memory": null,
+  "spark.emr_cluster_id": null,
+  "spark.emr_cluster_name": null,
+  "spark.eventLog.dir": "file:///var/log/spark/apps",
+  "spark.eventLog.enabled": "true",
+  "spark.executor.cores": "8",
+  "spark.executor.defaultJavaOptions": "-verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseParallelGC -XX:InitiatingHeapOccupancyPercent=70 -XX:OnOutOfMemoryError='kill -9 %p'",
+  "spark.executor.id": "driver",
+  "spark.executor.instances": "3",
+  "spark.executor.memory": "54G",
+  "spark.executor.memoryOverhead": null,
+  "spark.executor.transparentHugePage.enabled": "false",
+  "spark.executorEnv.AWS_SPARK_REDSHIFT_CONNECTOR_SERVICE_NAME": null,
+  "spark.executorEnv.JAVA_HOME": null,
+  "spark.extraListeners": "io.openlineage.spark.agent.OpenLineageSparkListener,com.expediagroup.data.processing.DataprocSparkListener",
+  "spark.files.fetchFailure.unRegisterOutputOnHost": "true",
+  "spark.hadoop.fs.s3.getObject.initialSocketTimeoutMilliseconds": "2000",
+  "spark.hadoop.fs.s3a.committer.magic.enabled": "true",
+  "spark.hadoop.fs.s3a.committer.magic.track.commits.in.memory.enabled": "true",
+  "spark.hadoop.fs.s3a.committer.name": "magicv2",
+  "spark.hadoop.fs.s3a.connection.ssl.enabled": "true",
+  "spark.hadoop.fs.s3a.encryption.algorithm": null,
+  "spark.hadoop.fs.s3a.server-side-encryption-algorithm": null,
+  "spark.hadoop.hive.metastore.client.connect.retry.delay": "15",
+  "spark.hadoop.hive.metastore.client.socket.timeout": "1200",
+  "spark.hadoop.hive.metastore.failure.retries": "5",
+  "spark.hadoop.hive.metastore.uris": "thrift://waggledance-metastore-proxy.egdp-prod.aws.away.black:48869",
+  "spark.hadoop.mapreduce.fileoutputcommitter.algorithm.version.emr_internal_use_only.EmrFileSystem": "2",
+  "spark.hadoop.mapreduce.fileoutputcommitter.cleanup-failures.ignored.emr_internal_use_only.EmrFileSystem": "true",
+  "spark.hadoop.mapreduce.input.fileinputformat.split.minsize": null,
+  "spark.hadoop.mapreduce.output.fs.optimized.committer.enabled": "true",
+  "spark.hadoop.yarn.timeline-service.enabled": null,
+  "spark.history.fs.logDirectory": "file:///var/log/spark/apps",
+  "spark.history.ui.port": "18080",
+  "spark.job_id": "a7d8747e-4ffa-4c6c-b6e5-3ef006b2d0d6",
+  "spark.master": "custom:emr-serverless",
+  "spark.metrics.eventLog.dir": "s3://spark-history-872193204297-us-east-1/dataproc_job_spark_metrics",
+  "spark.openlineage.namespace": "risktechbigdata",
+  "spark.org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter.param.PROXY_HOSTS": null,
+  "spark.org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter.param.PROXY_URI_BASES": null,
+  "spark.product": null,
+  "spark.resourceManager.cleanupExpiredHost": "true",
+  "spark.scheduler.mode": "FIFO",
+  "spark.shuffle.service.enabled": null,
+  "spark.sql.autoBroadcastJoinThreshold": null,
+  "spark.sql.adaptive.advisoryPartitionSizeInBytes": null,
+  "spark.sql.adaptive.coalescePartitions.enabled": null,
+  "spark.sql.adaptive.coalescePartitions.minPartitionSize": null,
+  "spark.sql.catalog.iceberg": null,
+  "spark.sql.catalog.iceberg.type": null,
+  "spark.sql.catalog.spark_catalog": "org.apache.iceberg.spark.SparkSessionCatalog",
+  "spark.sql.catalog.spark_catalog.type": "hive",
+  "spark.sql.catalogImplementation": "hive",
+  "spark.sql.emr.internal.extensions": "com.amazonaws.emr.spark.EmrSparkSessionExtensions",
+  "spark.sql.extensions": "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions",
+  "spark.sql.files.maxPartitionBytes": "256m",
+  "spark.sql.hive.caseSensitiveInferenceMode": null,
+  "spark.sql.hive.metastore.sharedPrefixes": "software.amazon.awssdk.services.dynamodb",
+  "spark.sql.parquet.fs.optimized.committer.optimization-enabled": "true",
+  "spark.sql.parquet.output.committer.class": "com.amazon.emr.committer.EmrOptimizedSparkSqlParquetOutputCommitter",
+  "spark.sql.shuffle.partitions": "1000",
+  "spark.sql.sources.partitionOverwriteMode": null,
+  "spark.sql.warehouse.dir": null,
+  "spark.stage.attempt.ignoreOnDecommissionFetchFailure": "true",
+  "spark.submit.deployMode": "client",
+  "spark.submit.pyFiles": "/tmp/spark-17011b79-8b09-47dc-88a7-3e42001ee159/spark_session.py,/tmp/spark-17011b79-8b09-47dc-88a7-3e42001ee159/Log.py,/home/hadoop/.ivy2/jars/org.apache.iceberg_iceberg-spark-runtime-3.5_2.12-1.4.2.jar",
+  "spark.ui.filters": null,
+  "spark.ui.port": "4040",
+  "spark.yarn.app.container.log.dir": null,
+  "spark.yarn.app.id": null,
+  "spark.yarn.appMasterEnv.AWS_SPARK_REDSHIFT_CONNECTOR_SERVICE_NAME": null,
+  "spark.yarn.appMasterEnv.HADOOP_USER_NAME": null,
+  "spark.yarn.appMasterEnv.JAVA_HOME": null,
+  "spark.yarn.appMasterEnv.SPARK_PUBLIC_DNS": null,
+  "spark.yarn.dist.files": null,
+  "spark.yarn.dist.jars": null,
+  "spark.yarn.heterogeneousExecutors.enabled": "false",
+  "spark.yarn.historyServer.address": null,
+  "spark.yarn.maxAppAttempts": null,
+  "spark.yarn.secondary.jars": null,
+  "spark.yarn.submit.waitAppCompletion": null,
+  "spark.yarn.tags": null,
+  "spark.shuffle.spill.compress": "true",
+  "spark.app.initial.archive.urls": "spark://[2600:1f18:2c09:c902:c9e6:2e5d:1451:1909]:40263/files/cacerts.jks,spark://[2600:1f18:2c09:c902:c9e6:2e5d:1451:1909]:40263/files/cacerts.pem",
+  "spark.dynamicAllocation.shuffleTracking.enabled": "true",
+  "spark.sql.catalog.egdp_prod.glue.account-id": "112945290135",
+  "spark.python.dependencyVersion.pyarrow": "23.0.1",
+  "spark.hadoop.hive.metastore.client.factory.class": "org.apache.hadoop.hive.ql.metadata.SessionHiveMetaStoreClientFactory",
+  "spark.sql.catalog.egdp_prod.glue.id": "112945290135",
+  "spark.dynamicAllocation.sustainedSchedulerBacklogTimeout": "1s",
+  "spark.emr.clusterId": "",
+  "spark.serializer.objectStreamReset": "100",
+  "spark.emr-serverless.lakeformation.enabled": "",
+  "spark.sql.catalog.data_corp.glue.id": "177220994061",
+  "spark.hadoop.fs.s3a.retry.interval": "1000ms",
+  "spark.sql.catalog.data_dw.type": "glue",
+  "spark.sql.catalog.data_dw.glue.account-id": "872193204297",
+  "spark.sql.adaptive.enabled": "true",
+  "spark.archives": "file:/tmp/spark-17011b79-8b09-47dc-88a7-3e42001ee159/cacerts.jks,file:/tmp/spark-17011b79-8b09-47dc-88a7-3e42001ee159/cacerts.pem",
+  "spark.python.dependencyVersion.pip": "22.3.1",
+  "spark.driver.maxResultSize": "6g",
+  "spark.sql.catalog.data_corp": "org.apache.iceberg.spark.SparkCatalog",
+  "spark.hadoop.fs.s3.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem",
+  "spark.emr-serverless.executor.disk": "1000G",
+  "spark.emr-serverless.client.create.batch.size": "100",
+  "spark.sql.catalog.egdp_prod.glue.lakeformation-enabled": "true",
+  "spark.emr-serverless.allocation.executor.timeout": "300s",
+  "spark.rdd.compress": "True",
+  "spark.shuffle.compress": "true",
+  "spark.ui.custom.executor.log.url": "/logs/{{CONTAINER_ID}}/{{FILE_NAME}}.gz",
+  "spark.hadoop.fs.defaultFS": "file:///",
+  "spark.python.dependencyVersion.numpy": "2.4.3",
+  "spark.eventLog.rotation.minFileSize": "1m",
+  "spark.sql.catalog.data_dw.glue.id": "872193204297",
+  "spark.hadoop.hive.exec.dynamic.partition": "true",
+  "spark.sql.catalog.data_dw.glue.lakeformation-enabled": "true",
+  "spark.emr.stepId": "",
+  "spark.hadoop.fs.s3a.threads.core": "128",
+  "spark.emr-serverless.executor.disk.type": "shuffle_optimized",
+  "spark.ui.enabled": "true",
+  "spark.python.dependencyVersion.python-dateutil": "2.9.0.post0",
+  "spark.sql.catalog.data_corp.type": "glue",
+  "spark.sql.adaptive.coalescePartitions.parallelismFirst": "false",
+  "spark.ui.killEnabled": "false",
+  "spark.emr-serverless.fluentd.eventLog.custom.chunking.enabled": "false",
+  "spark.hadoop.fs.s3a.aws.credentials.provider": "software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider",
+  "spark.network.timeout": "1200s",
+  "spark.eventLog.rotation.maxFilesToRetain": "2",
+  "spark.hadoop.fs.s3a.connection.maximum": "2048",
+  "spark.emr-serverless.driverEnv.SPARK_LOCAL_IP": "[fd00::2%eth0]",
+  "spark.hadoop.fs.s3a.connection.timeout": "600000",
+  "spark.app.initial.file.urls": "spark://[2600:1f18:2c09:c902:c9e6:2e5d:1451:1909]:40263/files/Log.py,spark://[2600:1f18:2c09:c902:c9e6:2e5d:1451:1909]:40263/files/spark_session.py,spark://[2600:1f18:2c09:c902:c9e6:2e5d:1451:1909]:40263/files/org.apache.iceberg_iceberg-spark-runtime-3.5_2.12-1.4.2.jar",
+  "spark.python.dependencyVersion.jmespath": "1.1.0",
+  "spark.python.version": "3.11.14",
+  "spark.sql.catalog.data_dw.client.region": "us-east-1",
+  "spark.sql.catalog.egdp_prod.type": "glue",
+  "spark.hadoop.fs.s3a.attempts.maximum": "10",
+  "spark.python.dependencyVersion.botocore": "1.42.78",
+  "spark.sql.catalog.data_corp.client.region": "us-east-1",
+  "spark.hadoop.hive.metastore.schema.verification": "false",
+  "spark.eventLog.rotation.enabled": "true",
+  "spark.sql.catalog.data_corp.glue.account-id": "177220994061",
+  "spark.hadoop.hive.exec.dynamic.partition.mode": "nonstrict",
+  "spark.emr-serverless.driver.disk": "20G",
+  "spark.hadoop.fs.s3.maxConnections": "500",
+  "spark.hadoop.fs.s3a.retry.limit": "10",
+  "spark.hadoop.fs.s3a.connection.establish.timeout": "10000",
+  "spark.emr-serverless.memoryOverheadFactor": "0.1",
+  "spark.emr.releaseLabel": "",
+  "spark.hadoop.hive.metastore.mapfiles": "true",
+  "spark.sql.optimizer.excludedRules": "org.apache.spark.sql.catalyst.optimizer.InferWindowGroupLimit",
+  "spark.submit.customResourceManager.submit.class": "org.apache.spark.deploy.emrserverless.submit.EmrServerlessClientApplication",
+  "spark.emr-serverless.client.release.batch.size": "100",
+  "spark.python.dependencyVersion.setuptools": "65.5.1",
+  "spark.shuffle.io.connectionTimeout": "600s",
+  "spark.emr-serverless.initialExecutorTimeout": "1200000",
+  "spark.app.initial.jar.urls": "spark://[2600:1f18:2c09:c902:c9e6:2e5d:1451:1909]:40263/jars/org.apache.iceberg_iceberg-spark-runtime-3.5_2.12-1.4.2.jar,spark://[2600:1f18:2c09:c902:c9e6:2e5d:1451:1909]:40263/jars/dataproc-job-spark-listener-1.0.4.jar,spark://[2600:1f18:2c09:c902:c9e6:2e5d:1451:1909]:40263/jars/openlineage-spark_2.12-1.27.0.jar",
+  "spark.sql.catalog.data_corp.glue.lakeformation-enabled": "true",
+  "spark.ssl.ui.enabled": "false",
+  "spark.ssl.internode.enabled": "false",
+  "spark.hadoop.fs.s3n.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem",
+  "spark.python.dependencyVersion.urllib3": "2.6.3",
+  "spark.authenticate": "true",
+  "spark.sql.catalog.egdp_prod": "org.apache.iceberg.spark.SparkCatalog",
+  "spark.python.dependencyVersion.boto3": "1.42.78",
+  "spark.python.dependencyVersion.pandas": "3.0.1",
+  "spark.hadoop.fs.s3a.threads.max": "512",
+  "spark.hadoop.dynamodb.region": "us-east-1",
+  "spark.aws.accountId": "",
+  "spark.sql.catalog.egdp_prod.client.region": "us-east-1",
+  "spark.hadoop.fs.s3a.retry.throttle.limit": "60",
+  "spark.hadoop.fs.s3.customAWSCredentialsProvider": "com.amazonaws.auth.DefaultAWSCredentialsProviderChain",
+  "spark.hadoop.fs.AbstractFileSystem.s3.impl": "org.apache.hadoop.fs.s3a.S3A",
+  "spark.hadoop.aws.region": "us-east-1",
+  "spark.dynamicAllocation.minExecutors": "13",
+  "spark.dynamicAllocation.initialExecutors": "13",
+  "spark.sql.catalog.data_dw": "org.apache.iceberg.spark.SparkCatalog",
+  "spark.hadoop.fs.s3a.endpoint.region": "us-east-1",
+  "spark.python.dependencyVersion.six": "1.17.0",
+  "spark.eventLog.rotation.interval": "300s",
+  "spark.emr-serverless.client.describe.batch.size": "100",
+  "spark.python.dependencyVersion.s3transfer": "0.16.0",
+  "spark.emr-serverless.maxPendingExecutors": "1000"
+ }
+}
