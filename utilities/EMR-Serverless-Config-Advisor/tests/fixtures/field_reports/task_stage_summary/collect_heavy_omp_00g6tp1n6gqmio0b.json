@@ -1,0 +1,2529 @@
+{
+ "application_id": "collect_heavy_omp_00g6tp1n6gqmio0b",
+ "extraction_timestamp": "2026-07-21T17:47:31.877918",
+ "extraction_engine": "python",
+ "event_count": 58530,
+ "file_count": 20,
+ "src_event_log_location": "/tmp/field-fixes/omp-success-raw/eventLogs-omp-destination-profile-source-job-SUCCESS-00g6tp1n6gqmio0b/",
+ "application_info": {
+  "job_id": "f0c22689-9f2d-4bc0-84ce-ddb245e3c66f",
+  "cluster_id": "N/A",
+  "application_name": "read-load-hive-through-spark",
+  "app_id": "collect_heavy_omp_00g6tp1n6gqmio0b",
+  "application_start_time": "2026-07-02T15:48:56.972000",
+  "application_end_time": "2026-07-02T15:53:27.969000",
+  "total_run_duration_minutes": 4.52,
+  "total_run_duration_hours": 0.08
+ },
+ "application_start_time": "2026-07-02T15:48:56.972000",
+ "application_end_time": "2026-07-02T15:53:27.969000",
+ "total_run_duration_minutes": 4.52,
+ "total_run_duration_hours": 0.08,
+ "task_summary": {
+  "total_tasks": 29166,
+  "completed_tasks": 29166,
+  "failed_tasks": 0,
+  "killed_tasks": 0,
+  "success_rate_percent": 100.0
+ },
+ "stage_summary": {
+  "total_stages": 48,
+  "completed_stages": 48,
+  "failed_stages": 0,
+  "skipped_stages": 0,
+  "success_rate_percent": 100.0,
+  "stages": [
+   {
+    "stage_id": 0,
+    "name": "pivot at ompDestinationProfileSource.scala:96",
+    "num_tasks": 90,
+    "attempts": 1,
+    "tasks_completed": 90,
+    "duration_sec": 8.4,
+    "input_gb": 0.28,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.0,
+    "shuffle_write_gb": 0.0,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 80.3,
+    "total_cpu_time_sec": 17.5,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 2,
+    "name": "pivot at ompDestinationProfileSource.scala:96",
+    "num_tasks": 1,
+    "attempts": 1,
+    "tasks_completed": 1,
+    "duration_sec": 0.2,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.0,
+    "shuffle_write_gb": 0.0,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 0.1,
+    "total_cpu_time_sec": 0.1,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 4,
+    "name": "pivot at ompDestinationProfileSource.scala:96",
+    "num_tasks": 1,
+    "attempts": 1,
+    "tasks_completed": 1,
+    "duration_sec": 0.1,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.0,
+    "shuffle_write_gb": 0.0,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 0.0,
+    "total_cpu_time_sec": 0.0,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 7,
+    "name": "pivot at ompDestinationProfileSource.scala:96",
+    "num_tasks": 1,
+    "attempts": 1,
+    "tasks_completed": 1,
+    "duration_sec": 0.1,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.0,
+    "shuffle_write_gb": 0.0,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 0.0,
+    "total_cpu_time_sec": 0.0,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 98,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 761,
+    "duration_sec": 0.0,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.04,
+    "shuffle_write_gb": 0.01,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 5.9,
+    "total_cpu_time_sec": 4.2,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 44,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 30,
+    "duration_sec": 81.1,
+    "input_gb": 2.1,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.0,
+    "shuffle_write_gb": 0.0,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 31.8,
+    "total_cpu_time_sec": 7.0,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 45,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 90,
+    "duration_sec": 83.6,
+    "input_gb": 6.9,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.0,
+    "shuffle_write_gb": 0.0,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 106.2,
+    "total_cpu_time_sec": 24.4,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 46,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 90,
+    "duration_sec": 86.3,
+    "input_gb": 6.78,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.0,
+    "shuffle_write_gb": 0.0,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 105.3,
+    "total_cpu_time_sec": 24.4,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 47,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 90,
+    "duration_sec": 89.0,
+    "input_gb": 6.9,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.0,
+    "shuffle_write_gb": 0.0,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 107.5,
+    "total_cpu_time_sec": 26.0,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 48,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 90,
+    "duration_sec": 91.6,
+    "input_gb": 6.78,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.0,
+    "shuffle_write_gb": 0.0,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 105.2,
+    "total_cpu_time_sec": 24.0,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 49,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 90,
+    "duration_sec": 94.2,
+    "input_gb": 6.9,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.0,
+    "shuffle_write_gb": 0.0,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 106.9,
+    "total_cpu_time_sec": 25.2,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 50,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 90,
+    "duration_sec": 96.9,
+    "input_gb": 6.78,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.0,
+    "shuffle_write_gb": 0.0,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 106.1,
+    "total_cpu_time_sec": 24.1,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 51,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 90,
+    "duration_sec": 99.6,
+    "input_gb": 6.9,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.0,
+    "shuffle_write_gb": 0.0,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 108.0,
+    "total_cpu_time_sec": 25.6,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 52,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 90,
+    "duration_sec": 102.1,
+    "input_gb": 6.78,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.0,
+    "shuffle_write_gb": 0.0,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 104.2,
+    "total_cpu_time_sec": 22.8,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 53,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 90,
+    "duration_sec": 104.6,
+    "input_gb": 6.9,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.0,
+    "shuffle_write_gb": 0.0,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 106.0,
+    "total_cpu_time_sec": 24.4,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 54,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 90,
+    "duration_sec": 107.3,
+    "input_gb": 6.78,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.0,
+    "shuffle_write_gb": 0.0,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 105.8,
+    "total_cpu_time_sec": 24.7,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 55,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 60,
+    "duration_sec": 0.0,
+    "input_gb": 4.84,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.0,
+    "shuffle_write_gb": 0.0,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 75.5,
+    "total_cpu_time_sec": 17.1,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 94,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 736,
+    "duration_sec": 87.3,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.05,
+    "shuffle_write_gb": 0.02,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 6.1,
+    "total_cpu_time_sec": 4.4,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 96,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 1000,
+    "duration_sec": 82.6,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.06,
+    "shuffle_write_gb": 0.02,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 8.8,
+    "total_cpu_time_sec": 6.0,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 132,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 774,
+    "duration_sec": 1.6,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.07,
+    "shuffle_write_gb": 0.0,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 37.4,
+    "total_cpu_time_sec": 6.3,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 134,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 724,
+    "duration_sec": 0.0,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.04,
+    "shuffle_write_gb": 0.0,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 33.2,
+    "total_cpu_time_sec": 5.7,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 89,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 733,
+    "duration_sec": 90.8,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.05,
+    "shuffle_write_gb": 0.02,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 6.9,
+    "total_cpu_time_sec": 4.8,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 92,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 767,
+    "duration_sec": 0.0,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.03,
+    "shuffle_write_gb": 0.01,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 17.0,
+    "total_cpu_time_sec": 3.8,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 104,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 502,
+    "duration_sec": 64.8,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.03,
+    "shuffle_write_gb": 0.01,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 4.1,
+    "total_cpu_time_sec": 2.8,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 106,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 759,
+    "duration_sec": 0.0,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.04,
+    "shuffle_write_gb": 0.01,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 5.7,
+    "total_cpu_time_sec": 3.7,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 187,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 1839,
+    "duration_sec": 15.7,
+    "input_gb": 0.23,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.0,
+    "shuffle_write_gb": 0.0,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 403.8,
+    "total_cpu_time_sec": 21.3,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 188,
+    "name": "first at incrementalSFMCDataUtils.scala:42",
+    "num_tasks": 65,
+    "attempts": 1,
+    "tasks_completed": 65,
+    "duration_sec": 0.7,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.0,
+    "shuffle_write_gb": 0.0,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 22.1,
+    "total_cpu_time_sec": 0.6,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 190,
+    "name": "first at incrementalSFMCDataUtils.scala:42",
+    "num_tasks": 1,
+    "attempts": 1,
+    "tasks_completed": 1,
+    "duration_sec": 0.0,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.0,
+    "shuffle_write_gb": 0.0,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 0.0,
+    "total_cpu_time_sec": 0.0,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 191,
+    "name": "first at incrementalSFMCDataUtils.scala:52",
+    "num_tasks": 65,
+    "attempts": 1,
+    "tasks_completed": 65,
+    "duration_sec": 0.6,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.0,
+    "shuffle_write_gb": 0.0,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 16.2,
+    "total_cpu_time_sec": 0.4,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 193,
+    "name": "$anonfun$withThreadLocalCaptured$1 at FutureTask.java:264",
+    "num_tasks": 1,
+    "attempts": 1,
+    "tasks_completed": 1,
+    "duration_sec": 0.0,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.0,
+    "shuffle_write_gb": 0.0,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 0.0,
+    "total_cpu_time_sec": 0.0,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 194,
+    "name": "first at incrementalSFMCDataUtils.scala:52",
+    "num_tasks": 65,
+    "attempts": 1,
+    "tasks_completed": 65,
+    "duration_sec": 0.5,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.0,
+    "shuffle_write_gb": 0.0,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 15.5,
+    "total_cpu_time_sec": 0.4,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 196,
+    "name": "first at incrementalSFMCDataUtils.scala:52",
+    "num_tasks": 1,
+    "attempts": 1,
+    "tasks_completed": 1,
+    "duration_sec": 0.0,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.0,
+    "shuffle_write_gb": 0.0,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 0.0,
+    "total_cpu_time_sec": 0.0,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 197,
+    "name": "count at ompDestinationProfileSource.scala:200",
+    "num_tasks": 65,
+    "attempts": 1,
+    "tasks_completed": 65,
+    "duration_sec": 1.1,
+    "input_gb": 0.06,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.0,
+    "shuffle_write_gb": 0.14,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 32.7,
+    "total_cpu_time_sec": 4.6,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 199,
+    "name": "count at ompDestinationProfileSource.scala:200",
+    "num_tasks": 5,
+    "attempts": 1,
+    "tasks_completed": 5,
+    "duration_sec": 0.3,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.14,
+    "shuffle_write_gb": 0.0,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 1.1,
+    "total_cpu_time_sec": 1.1,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 202,
+    "name": "count at ompDestinationProfileSource.scala:200",
+    "num_tasks": 1,
+    "attempts": 1,
+    "tasks_completed": 1,
+    "duration_sec": 0.0,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.0,
+    "shuffle_write_gb": 0.0,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 0.0,
+    "total_cpu_time_sec": 0.0,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 78,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 729,
+    "duration_sec": 101.1,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.0,
+    "shuffle_write_gb": 0.0,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 0.0,
+    "total_cpu_time_sec": 0.3,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 80,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 1000,
+    "duration_sec": 101.6,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.05,
+    "shuffle_write_gb": 0.01,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 7.2,
+    "total_cpu_time_sec": 5.0,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 82,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 770,
+    "duration_sec": 0.0,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.05,
+    "shuffle_write_gb": 0.01,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 6.7,
+    "total_cpu_time_sec": 4.3,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 176,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 843,
+    "duration_sec": 2.6,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.1,
+    "shuffle_write_gb": 0.0,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 17.6,
+    "total_cpu_time_sec": 6.9,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 177,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 647,
+    "duration_sec": 0.0,
+    "input_gb": 0.08,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.0,
+    "shuffle_write_gb": 0.0,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 10.6,
+    "total_cpu_time_sec": 0.3,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 69,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 1000,
+    "duration_sec": 104.4,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.11,
+    "shuffle_write_gb": 0.05,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 38.3,
+    "total_cpu_time_sec": 10.8,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 70,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 1000,
+    "duration_sec": 104.5,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.0,
+    "shuffle_write_gb": 0.0,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 3.4,
+    "total_cpu_time_sec": 1.7,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 71,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 1000,
+    "duration_sec": 104.6,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.0,
+    "shuffle_write_gb": 0.0,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 1.3,
+    "total_cpu_time_sec": 1.1,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 63,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 720,
+    "duration_sec": 101.8,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.08,
+    "shuffle_write_gb": 0.09,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 36.9,
+    "total_cpu_time_sec": 8.1,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 64,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 1000,
+    "duration_sec": 102.7,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.11,
+    "shuffle_write_gb": 0.08,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 36.7,
+    "total_cpu_time_sec": 10.6,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 66,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 1000,
+    "duration_sec": 103.2,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.06,
+    "shuffle_write_gb": 0.02,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 13.5,
+    "total_cpu_time_sec": 7.6,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 73,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 1000,
+    "duration_sec": 103.8,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.06,
+    "shuffle_write_gb": 0.02,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 9.4,
+    "total_cpu_time_sec": 5.5,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 77,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 773,
+    "duration_sec": 0.0,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.05,
+    "shuffle_write_gb": 0.02,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 8.8,
+    "total_cpu_time_sec": 5.3,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 75,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 1,
+    "duration_sec": 103.9,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.0,
+    "shuffle_write_gb": 0.0,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 0.0,
+    "total_cpu_time_sec": 0.0,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 139,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 780,
+    "duration_sec": 1.4,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.07,
+    "shuffle_write_gb": 0.0,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 33.0,
+    "total_cpu_time_sec": 6.0,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 141,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 719,
+    "duration_sec": 0.0,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.05,
+    "shuffle_write_gb": 0.0,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 34.2,
+    "total_cpu_time_sec": 5.5,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 146,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 786,
+    "duration_sec": 1.5,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.05,
+    "shuffle_write_gb": 0.0,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 32.2,
+    "total_cpu_time_sec": 5.7,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 148,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 212,
+    "duration_sec": 0.0,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.02,
+    "shuffle_write_gb": 0.0,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 8.4,
+    "total_cpu_time_sec": 1.7,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 87,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 770,
+    "duration_sec": 0.0,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.04,
+    "shuffle_write_gb": 0.01,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 5.5,
+    "total_cpu_time_sec": 3.7,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 83,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 730,
+    "duration_sec": 99.8,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.0,
+    "shuffle_write_gb": 0.0,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 0.5,
+    "total_cpu_time_sec": 0.7,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 85,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 1000,
+    "duration_sec": 100.1,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.06,
+    "shuffle_write_gb": 0.01,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 8.6,
+    "total_cpu_time_sec": 5.4,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 100,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 739,
+    "duration_sec": 73.5,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.05,
+    "shuffle_write_gb": 0.02,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 5.9,
+    "total_cpu_time_sec": 4.4,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 102,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 1000,
+    "duration_sec": 69.1,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.06,
+    "shuffle_write_gb": 0.02,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 8.1,
+    "total_cpu_time_sec": 5.5,
+    "failure_reason": null
+   },
+   {
+    "stage_id": 68,
+    "name": "N/A",
+    "num_tasks": 0,
+    "attempts": 1,
+    "tasks_completed": 1000,
+    "duration_sec": 103.3,
+    "input_gb": 0.0,
+    "output_gb": 0,
+    "shuffle_read_gb": 0.0,
+    "shuffle_write_gb": 0.0,
+    "mem_spill_gb": 0.0,
+    "disk_spill_gb": 0.0,
+    "total_task_time_sec": 0.8,
+    "total_cpu_time_sec": 0.5,
+    "failure_reason": null
+   }
+  ]
+ },
+ "executor_summary": {
+  "total_executors": 5,
+  "active_executors": 5,
+  "dead_executors": 0,
+  "total_cores": 24,
+  "total_uptime_hours": 0.21,
+  "max_peak_memory_gb": 18.18,
+  "avg_peak_memory_gb": 16.6,
+  "avg_memory_utilization_percent": 30.74,
+  "min_memory_utilization_percent": 24.02,
+  "max_memory_utilization_percent": 33.67,
+  "median_memory_utilization_percent": 31.46,
+  "avg_cpu_utilization_percent": 20.9,
+  "min_cpu_utilization_percent": 20.76,
+  "max_cpu_utilization_percent": 20.99,
+  "median_cpu_utilization_percent": 20.96,
+  "total_cost_factor": 0.1407,
+  "total_task_execution_hours": 0.61,
+  "total_available_core_hours": 1.68,
+  "idle_core_percentage": 63.74,
+  "memory_calculation_method": {
+   "approach": "jvm_heap_memory",
+   "formula": "(peak_jvm_heap_mb / executor_memory_mb) * 100",
+   "data_source": "Task Executor Metrics -> JVMHeapMemory",
+   "executor_memory_mb": 55296,
+   "note": "Uses actual JVM heap usage from Task Executor Metrics in TaskEnd events"
+  },
+  "cost_calculation_params": {
+   "executor_memory_gb": 54.0,
+   "executor_cores": 8,
+   "cost_per_core_hour": 0.05,
+   "cost_per_gb_hour": 0.005
+  },
+  "dead_executor_reasons": {},
+  "executor_details": [
+   {
+    "executor_id": "2",
+    "host": "[2600:1f18:2c09:c901:3bf7:ba1c:4e1:4d4e]",
+    "total_cores": 8,
+    "add_time": "2026-07-02T15:48:59.814000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.07,
+    "total_input_bytes": 16926710465,
+    "total_shuffle_read": 351329516,
+    "total_shuffle_write": 118670199,
+    "peak_memory_gb": 16.92,
+    "total_tasks": 5874,
+    "total_stages": 54,
+    "total_input_gb": 15.76,
+    "total_shuffle_read_gb": 0.33,
+    "total_shuffle_write_gb": 0.11,
+    "memory_utilization_percent": 31.33,
+    "cpu_utilization_percent": 20.96,
+    "executor_cost_factor": 0.0469
+   },
+   {
+    "executor_id": "1",
+    "host": "[2600:1f18:2c09:c901:7c15:b5ad:399d:9f84]",
+    "total_cores": 8,
+    "add_time": "2026-07-02T15:49:00.001000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.07,
+    "total_input_bytes": 15641421518,
+    "total_shuffle_read": 344056025,
+    "total_shuffle_write": 118836179,
+    "peak_memory_gb": 17.94,
+    "total_tasks": 5536,
+    "total_stages": 53,
+    "total_input_gb": 14.57,
+    "total_shuffle_read_gb": 0.32,
+    "total_shuffle_write_gb": 0.11,
+    "memory_utilization_percent": 33.21,
+    "cpu_utilization_percent": 20.76,
+    "executor_cost_factor": 0.0469
+   },
+   {
+    "executor_id": "3",
+    "host": "[2600:1f18:2c09:c901:753e:dac7:f847:e08d]",
+    "total_cores": 8,
+    "add_time": "2026-07-02T15:49:00.665000",
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0.07,
+    "total_input_bytes": 16629640338,
+    "total_shuffle_read": 349737016,
+    "total_shuffle_write": 123723700,
+    "peak_memory_gb": 16.99,
+    "total_tasks": 5715,
+    "total_stages": 51,
+    "total_input_gb": 15.49,
+    "total_shuffle_read_gb": 0.33,
+    "total_shuffle_write_gb": 0.12,
+    "memory_utilization_percent": 31.46,
+    "cpu_utilization_percent": 20.99,
+    "executor_cost_factor": 0.0469
+   },
+   {
+    "executor_id": "5",
+    "host": "[2600:1f18:2c09:c901:554f:aa64:32bf:cd08]",
+    "total_cores": 0,
+    "add_time": null,
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0,
+    "total_input_bytes": 15892456052,
+    "total_shuffle_read": 342543819,
+    "total_shuffle_write": 136020009,
+    "peak_memory_gb": 12.97,
+    "total_tasks": 5940,
+    "total_stages": 52,
+    "total_input_gb": 14.8,
+    "total_shuffle_read_gb": 0.32,
+    "total_shuffle_write_gb": 0.13,
+    "memory_utilization_percent": 24.02,
+    "cpu_utilization_percent": 0.0,
+    "executor_cost_factor": 0.0
+   },
+   {
+    "executor_id": "4",
+    "host": "[2600:1f18:2c09:c901:db16:bab5:1efb:eeba]",
+    "total_cores": 0,
+    "add_time": null,
+    "remove_time": null,
+    "remove_reason": null,
+    "status": "active",
+    "uptime_hours": 0,
+    "total_input_bytes": 16463228623,
+    "total_shuffle_read": 376519333,
+    "total_shuffle_write": 133708783,
+    "peak_memory_gb": 18.18,
+    "total_tasks": 6101,
+    "total_stages": 51,
+    "total_input_gb": 15.33,
+    "total_shuffle_read_gb": 0.35,
+    "total_shuffle_write_gb": 0.12,
+    "memory_utilization_percent": 33.67,
+    "cpu_utilization_percent": 0.0,
+    "executor_cost_factor": 0.0
+   }
+  ],
+  "driver_info": null
+ },
+ "io_summary": {
+  "application_level": {
+   "total_input_bytes": 81553456996,
+   "total_input_gb": 75.95,
+   "total_output_bytes": 60895065,
+   "total_output_gb": 0.06,
+   "total_shuffle_read_bytes": 1764185709,
+   "total_shuffle_read_gb": 1.64,
+   "total_shuffle_write_bytes": 630958870,
+   "total_shuffle_write_gb": 0.59,
+   "total_shuffle_fetch_wait_sec": 189.58,
+   "total_shuffle_write_time_sec": 8.18,
+   "total_gc_time_sec": 12.14,
+   "total_executor_run_time_sec": 2193.28,
+   "shuffle_fetch_wait_percent": 8.64,
+   "shuffle_write_time_percent": 0.37,
+   "gc_time_percent": 0.55,
+   "tasks_analyzed": 29166,
+   "tasks_with_input": 3621,
+   "tasks_with_output": 1832,
+   "tasks_with_shuffle_read": 22263,
+   "tasks_with_shuffle_write": 17753
+  }
+ },
+ "spill_summary": {
+  "total_memory_spilled_bytes": 0,
+  "total_memory_spilled_gb": 0.0,
+  "total_disk_spilled_bytes": 0,
+  "total_disk_spilled_gb": 0.0,
+  "tasks_with_memory_spill": 0,
+  "tasks_with_disk_spill": 0,
+  "tasks_with_memory_spill_percent": 0.0,
+  "tasks_with_disk_spill_percent": 0.0,
+  "tasks_analyzed": 29166
+ },
+ "shuffle_data_summary": {
+  "total_shuffle_read_gb": 1.64,
+  "total_shuffle_write_gb": 0.59,
+  "total_disk_spill_gb": 0.0,
+  "max_stage_shuffle_read_gb": 0.14,
+  "max_stage_shuffle_write_gb": 0.14,
+  "max_stage_disk_spill_gb": 0.0,
+  "emr_serverless_storage_eligible": true,
+  "emr_serverless_storage_limit_gb": 200
+ },
+ "total_cost_factor": 0.1407,
+ "driver_metrics": {
+  "driver_id": "driver",
+  "host": "[2600:1f18:2c09:c901:85e9:9d8b:9ad9:ccb]",
+  "port": "37589",
+  "cores": 8,
+  "memory_mb": 0,
+  "start_time": "2026-07-02T15:48:56.972000",
+  "end_time": "2026-07-02T15:53:27.969000",
+  "uptime_hours": 0.08,
+  "total_tasks_launched": 29159,
+  "total_jobs_submitted": 14,
+  "total_stages_submitted": 13,
+  "total_result_bytes_received": 2831278482,
+  "peak_jvm_heap_memory_gb": 0,
+  "peak_jvm_off_heap_memory_gb": 0,
+  "avg_jvm_heap_memory_gb": 0,
+  "avg_jvm_off_heap_memory_gb": 0,
+  "gc_time_ms": 0,
+  "gc_count": 0,
+  "memory_metrics_samples": 0,
+  "total_result_bytes_received_gb": 2.64,
+  "configured_memory_gb": 0.0,
+  "memory_utilization_percent": 0,
+  "avg_gc_time_per_task_ms": 0
+ },
+ "job_details": {
+  "summary": {
+   "total_jobs": 14,
+   "successful_jobs": 14,
+   "failed_jobs": 0,
+   "running_jobs": 0,
+   "success_rate_percent": 100.0,
+   "avg_duration_seconds": null
+  },
+  "jobs": [
+   {
+    "job_id": 0,
+    "submission_time": "2026-07-02T15:49:04.233000",
+    "stage_ids": [
+     0
+    ],
+    "status": "SUCCESS",
+    "completion_time": "2026-07-02T15:49:12.609000",
+    "duration_ms": null,
+    "failure_reason": null,
+    "job_group": null,
+    "num_stages": 1
+   },
+   {
+    "job_id": 1,
+    "submission_time": "2026-07-02T15:49:12.711000",
+    "stage_ids": [
+     1,
+     2
+    ],
+    "status": "SUCCESS",
+    "completion_time": "2026-07-02T15:49:12.900000",
+    "duration_ms": null,
+    "failure_reason": null,
+    "job_group": null,
+    "num_stages": 2
+   },
+   {
+    "job_id": 2,
+    "submission_time": "2026-07-02T15:49:12.906000",
+    "stage_ids": [
+     3,
+     4
+    ],
+    "status": "SUCCESS",
+    "completion_time": "2026-07-02T15:49:12.965000",
+    "duration_ms": null,
+    "failure_reason": null,
+    "job_group": null,
+    "num_stages": 2
+   },
+   {
+    "job_id": 3,
+    "submission_time": "2026-07-02T15:49:13.010000",
+    "stage_ids": [
+     5,
+     6,
+     7
+    ],
+    "status": "SUCCESS",
+    "completion_time": "2026-07-02T15:49:13.106000",
+    "duration_ms": null,
+    "failure_reason": null,
+    "job_group": null,
+    "num_stages": 3
+   },
+   {
+    "job_id": 104,
+    "submission_time": "2026-07-02T15:53:23.802000",
+    "stage_ids": [
+     188
+    ],
+    "status": "SUCCESS",
+    "completion_time": "2026-07-02T15:53:24.518000",
+    "duration_ms": null,
+    "failure_reason": null,
+    "job_group": null,
+    "num_stages": 1
+   },
+   {
+    "job_id": 105,
+    "submission_time": "2026-07-02T15:53:24.525000",
+    "stage_ids": [
+     190,
+     189
+    ],
+    "status": "SUCCESS",
+    "completion_time": "2026-07-02T15:53:24.537000",
+    "duration_ms": null,
+    "failure_reason": null,
+    "job_group": null,
+    "num_stages": 2
+   },
+   {
+    "job_id": 106,
+    "submission_time": "2026-07-02T15:53:24.754000",
+    "stage_ids": [
+     191
+    ],
+    "status": "SUCCESS",
+    "completion_time": "2026-07-02T15:53:25.383000",
+    "duration_ms": null,
+    "failure_reason": null,
+    "job_group": null,
+    "num_stages": 1
+   },
+   {
+    "job_id": 107,
+    "submission_time": "2026-07-02T15:53:25.395000",
+    "stage_ids": [
+     192,
+     193
+    ],
+    "status": "SUCCESS",
+    "completion_time": "2026-07-02T15:53:25.412000",
+    "duration_ms": null,
+    "failure_reason": null,
+    "job_group": null,
+    "num_stages": 2
+   },
+   {
+    "job_id": 108,
+    "submission_time": "2026-07-02T15:53:25.530000",
+    "stage_ids": [
+     194
+    ],
+    "status": "SUCCESS",
+    "completion_time": "2026-07-02T15:53:26.054000",
+    "duration_ms": null,
+    "failure_reason": null,
+    "job_group": null,
+    "num_stages": 1
+   },
+   {
+    "job_id": 109,
+    "submission_time": "2026-07-02T15:53:26.062000",
+    "stage_ids": [
+     195,
+     196
+    ],
+    "status": "SUCCESS",
+    "completion_time": "2026-07-02T15:53:26.079000",
+    "duration_ms": null,
+    "failure_reason": null,
+    "job_group": null,
+    "num_stages": 2
+   },
+   {
+    "job_id": 110,
+    "submission_time": "2026-07-02T15:53:26.453000",
+    "stage_ids": [],
+    "status": "SUCCESS",
+    "completion_time": "2026-07-02T15:53:26.453000",
+    "duration_ms": null,
+    "failure_reason": null,
+    "job_group": null,
+    "num_stages": 0
+   },
+   {
+    "job_id": 111,
+    "submission_time": "2026-07-02T15:53:26.543000",
+    "stage_ids": [
+     197
+    ],
+    "status": "SUCCESS",
+    "completion_time": "2026-07-02T15:53:27.622000",
+    "duration_ms": null,
+    "failure_reason": null,
+    "job_group": null,
+    "num_stages": 1
+   },
+   {
+    "job_id": 112,
+    "submission_time": "2026-07-02T15:53:27.657000",
+    "stage_ids": [
+     198,
+     199
+    ],
+    "status": "SUCCESS",
+    "completion_time": "2026-07-02T15:53:27.937000",
+    "duration_ms": null,
+    "failure_reason": null,
+    "job_group": null,
+    "num_stages": 2
+   },
+   {
+    "job_id": 113,
+    "submission_time": "2026-07-02T15:53:27.950000",
+    "stage_ids": [
+     201,
+     202,
+     200
+    ],
+    "status": "SUCCESS",
+    "completion_time": "2026-07-02T15:53:27.966000",
+    "duration_ms": null,
+    "failure_reason": null,
+    "job_group": null,
+    "num_stages": 3
+   }
+  ]
+ },
+ "sql_metrics": {
+  "total_sql_executions": 5,
+  "completed_executions": 5,
+  "running_executions": 0,
+  "sql_executions": [
+   {
+    "execution_id": 0,
+    "description": "pivot at ompDestinationProfileSource.scala:96",
+    "details": "org.apache.spark.sql.RelationalGroupedDataset.pivot(RelationalGroupedDataset.scala:340)\ncom.expediagroup.data.transformation.ompDestinationProfile.ompDestinationProfileSource$.transformData(ompDestinationProfileSource.scala:96)\ncom.expediagroup.data.transformation.ompDestinationProfile.ompDestinationProfileSource$.main(ompDestinationProfileSource.scala:220)\ncom.expediagroup.data.transformation.ompDestinationProfile.ompDestinationProfileSource.main(ompDestinationProfileSource.scala)\njava.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\njava.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)\njava.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\njava.base/java.lang.reflect.Method.invoke(Method.java:569)\norg.apache.spark.deploy.JavaMainApplication.start(SparkApplication.scala:52)\norg.apache.spark.deploy.SparkSubmit.org$apache$spark$deploy$SparkSubmit$$runMain(SparkSubmit.scala:1150)\norg.apache.spark.deploy.SparkSubmit.doRunMain$1(SparkSubmit.scala:200)\norg.apache.spark.deploy.SparkSubmit.submit(SparkSubmit.scala:223)\norg.apache.spark.deploy.SparkSubmit.doSubmit(SparkSubmit.scala:92)\norg.apache.spark.deploy.SparkSubmit$$anon$2.doSubmit(SparkSubmit.scala:1246)\norg.apache.spark.deploy.SparkSubmit$.main(SparkSubmit.scala:1255)\norg.apache.spark.deploy.SparkSubmit.main(SparkSubmit.scala)",
+    "physical_plan_description": "== Parsed Logical Plan ==\n'Sort ['ancestor_category ASC NULLS FIRST], true\n+- GlobalLimit 10001\n   +- LocalLimit 10001\n      +- Deduplicate [ancestor_category#7]\n         +- Project [ancestor_category#7]\n            +- Project [location_gaia_id#0, location_category#2, location_latitude#4, location_longitude#5, ancestor_gaia_id#6, ancestor_category#7, as_of_date#11]\n               +- Filter ((location_status#3 = active) AND location_category#2 IN (city,continent,country,metropolitanArea,neighborhood,province,pointOfInterest,highLevelRegion,airport))\n                  +- SubqueryAlias spark_catalog.destination.gaia_ancestor_mapping\n                     +- Relation spark_catalog.destination.gaia_ancestor_mapping[location_gaia_id#0,eg_location_id#1,location_category#2,location_status#3,location_latitude#4,location_longitude#5,ancestor_gaia_id#6,ancestor_category#7,ancestor_status#8,ancestor_latitude#9,ancestor_longitude#10,as_of_date#11,country_id#12,continent_id#13] parquet\n\n== Analyzed L",
+    "submission_time": "2026-07-02T15:49:03.770000",
+    "completion_time": "2026-07-02T15:49:13.663000",
+    "duration_ms": 9893,
+    "status": "COMPLETED"
+   },
+   {
+    "execution_id": 2,
+    "description": "sql at parquetWriteUtils.scala:22",
+    "details": "org.apache.spark.sql.SparkSession.sql(SparkSession.scala:836)\ncom.expediagroup.data.utils.parquetWriteUtils$.msckRepair(parquetWriteUtils.scala:22)\ncom.expediagroup.data.transformation.ompDestinationProfile.ompDestinationProfileSource$.loadData(ompDestinationProfileSource.scala:194)\ncom.expediagroup.data.transformation.ompDestinationProfile.ompDestinationProfileSource$.main(ompDestinationProfileSource.scala:224)\ncom.expediagroup.data.transformation.ompDestinationProfile.ompDestinationProfileSource.main(ompDestinationProfileSource.scala)\njava.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\njava.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)\njava.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\njava.base/java.lang.reflect.Method.invoke(Method.java:569)\norg.apache.spark.deploy.JavaMainApplication.start(SparkApplication.scala:52)\norg.apache.spark.deploy.SparkSubmit.org$apache$spark$deploy$SparkSubmit$$runMain(SparkSubmit.scala:1150)\norg.apache.spark.deploy.SparkSubmit.doRunMain$1(SparkSubmit.scala:200)\norg.apache.spark.deploy.SparkSubmit.submit(SparkSubmit.scala:223)\norg.apache.spark.deploy.SparkSubmit.doSubmit(SparkSubmit.scala:92)\norg.apache.spark.deploy.SparkSubmit$$anon$2.doSubmit(SparkSubmit.scala:1246)\norg.apache.spark.deploy.SparkSubmit$.main(SparkSubmit.scala:1255)\norg.apache.spark.deploy.SparkSubmit.main(SparkSubmit.scala)",
+    "physical_plan_description": "== Parsed Logical Plan ==\nRepairTableCommand `spark_catalog`.`communications`.`destination_profile_test`, true, false, MSCK REPAIR TABLE\n\n== Analyzed Logical Plan ==\nRepairTableCommand `spark_catalog`.`communications`.`destination_profile_test`, true, false, MSCK REPAIR TABLE\n\n== Optimized Logical Plan ==\nRepairTableCommand `spark_catalog`.`communications`.`destination_profile_test`, true, false, MSCK REPAIR TABLE\n\n== Physical Plan ==\nExecute RepairTableCommand\n   +- RepairTableCommand `spark_catalog`.`communications`.`destination_profile_test`, true, false, MSCK REPAIR TABLE\n",
+    "submission_time": "2026-07-02T15:53:22.070000",
+    "completion_time": "2026-07-02T15:53:23.330000",
+    "duration_ms": 1260,
+    "status": "COMPLETED"
+   },
+   {
+    "execution_id": 3,
+    "description": "first at incrementalSFMCDataUtils.scala:42",
+    "details": "org.apache.spark.sql.Dataset.first(Dataset.scala:3376)\ncom.expediagroup.data.utils.incrementalSFMCDataUtils$.getMaxLoadDate(incrementalSFMCDataUtils.scala:42)\ncom.expediagroup.data.utils.incrementalSFMCDataUtils$.getIncrementalData(incrementalSFMCDataUtils.scala:84)\ncom.expediagroup.data.transformation.ompDestinationProfile.ompDestinationProfileSource$.loadData(ompDestinationProfileSource.scala:198)\ncom.expediagroup.data.transformation.ompDestinationProfile.ompDestinationProfileSource$.main(ompDestinationProfileSource.scala:224)\ncom.expediagroup.data.transformation.ompDestinationProfile.ompDestinationProfileSource.main(ompDestinationProfileSource.scala)\njava.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\njava.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)\njava.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\njava.base/java.lang.reflect.Method.invoke(Method.java:569)\norg.apache.spark.deploy.JavaMainApplication.start(SparkApplication.scala:52)\norg.apache.spark.deploy.SparkSubmit.org$apache$spark$deploy$SparkSubmit$$runMain(SparkSubmit.scala:1150)\norg.apache.spark.deploy.SparkSubmit.doRunMain$1(SparkSubmit.scala:200)\norg.apache.spark.deploy.SparkSubmit.submit(SparkSubmit.scala:223)\norg.apache.spark.deploy.SparkSubmit.doSubmit(SparkSubmit.scala:92)\norg.apache.spark.deploy.SparkSubmit$$anon$2.doSubmit(SparkSubmit.scala:1246)\norg.apache.spark.deploy.SparkSubmit$.main(SparkSubmit.scala:1255)\norg.apache.spark.deploy.SparkSubmit.main(SparkSubmit.scala)",
+    "physical_plan_description": "== Parsed Logical Plan ==\nGlobalLimit 1\n+- LocalLimit 1\n   +- Aggregate [max(etl_date#56520) AS max(etl_date)#56522]\n      +- SubqueryAlias spark_catalog.communications.destination_profile_test\n         +- Relation spark_catalog.communications.destination_profile_test[gaia_name#56501,latitude#56502,multi_city_name#56503,multi_city_gaia_id#56504,update_date#56505,neighborhood_gaia_id#56506,gaia_id#56507,longitude#56508,province_name#56509,neighborhood_name#56510,create_date#56511,continent_gaia_id#56512,city_name#56513,city_gaia_id#56514,country_gaia_id#56515,gaia_category#56516,continent_name#56517,country_name#56518,province_gaia_id#56519,etl_date#56520] parquet\n\n== Analyzed Logical Plan ==\nmax(etl_date): string\nGlobalLimit 1\n+- LocalLimit 1\n   +- Aggregate [max(etl_date#56520) AS max(etl_date)#56522]\n      +- SubqueryAlias spark_catalog.communications.destination_profile_test\n         +- Relation spark_catalog.communications.destination_profile_test[gaia_name#56501,latitude#56502,mul",
+    "submission_time": "2026-07-02T15:53:23.433000",
+    "completion_time": "2026-07-02T15:53:24.548000",
+    "duration_ms": 1115,
+    "status": "COMPLETED"
+   },
+   {
+    "execution_id": 4,
+    "description": "first at incrementalSFMCDataUtils.scala:52",
+    "details": "org.apache.spark.sql.Dataset.first(Dataset.scala:3376)\ncom.expediagroup.data.utils.incrementalSFMCDataUtils$.getSecondMaxLoadDate(incrementalSFMCDataUtils.scala:52)\ncom.expediagroup.data.utils.incrementalSFMCDataUtils$.getIncrementalData(incrementalSFMCDataUtils.scala:85)\ncom.expediagroup.data.transformation.ompDestinationProfile.ompDestinationProfileSource$.loadData(ompDestinationProfileSource.scala:198)\ncom.expediagroup.data.transformation.ompDestinationProfile.ompDestinationProfileSource$.main(ompDestinationProfileSource.scala:224)\ncom.expediagroup.data.transformation.ompDestinationProfile.ompDestinationProfileSource.main(ompDestinationProfileSource.scala)\njava.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\njava.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)\njava.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\njava.base/java.lang.reflect.Method.invoke(Method.java:569)\norg.apache.spark.deploy.JavaMainApplication.start(SparkApplication.scala:52)\norg.apache.spark.deploy.SparkSubmit.org$apache$spark$deploy$SparkSubmit$$runMain(SparkSubmit.scala:1150)\norg.apache.spark.deploy.SparkSubmit.doRunMain$1(SparkSubmit.scala:200)\norg.apache.spark.deploy.SparkSubmit.submit(SparkSubmit.scala:223)\norg.apache.spark.deploy.SparkSubmit.doSubmit(SparkSubmit.scala:92)\norg.apache.spark.deploy.SparkSubmit$$anon$2.doSubmit(SparkSubmit.scala:1246)\norg.apache.spark.deploy.SparkSubmit$.main(SparkSubmit.scala:1255)\norg.apache.spark.deploy.SparkSubmit.main(SparkSubmit.scala)",
+    "physical_plan_description": "== Parsed Logical Plan ==\nGlobalLimit 1\n+- LocalLimit 1\n   +- Aggregate [max(etl_date#56572) AS max(etl_date)#56596]\n      +- Filter NOT etl_date#56572 IN (list#56552 [])\n         :  +- Aggregate [max(etl_date#56592) AS max(etl_date)#56594]\n         :     +- SubqueryAlias spark_catalog.communications.destination_profile_test\n         :        +- Relation spark_catalog.communications.destination_profile_test[gaia_name#56573,latitude#56574,multi_city_name#56575,multi_city_gaia_id#56576,update_date#56577,neighborhood_gaia_id#56578,gaia_id#56579,longitude#56580,province_name#56581,neighborhood_name#56582,create_date#56583,continent_gaia_id#56584,city_name#56585,city_gaia_id#56586,country_gaia_id#56587,gaia_category#56588,continent_name#56589,country_name#56590,province_gaia_id#56591,etl_date#56592] parquet\n         +- SubqueryAlias spark_catalog.communications.destination_profile_test\n            +- Relation spark_catalog.communications.destination_profile_test[gaia_name#56553,latitude#565",
+    "submission_time": "2026-07-02T15:53:24.650000",
+    "completion_time": "2026-07-02T15:53:26.080000",
+    "duration_ms": 1430,
+    "status": "COMPLETED"
+   },
+   {
+    "execution_id": 5,
+    "description": "count at ompDestinationProfileSource.scala:200",
+    "details": "org.apache.spark.sql.Dataset.count(Dataset.scala:3661)\ncom.expediagroup.data.transformation.ompDestinationProfile.ompDestinationProfileSource$.loadData(ompDestinationProfileSource.scala:200)\ncom.expediagroup.data.transformation.ompDestinationProfile.ompDestinationProfileSource$.main(ompDestinationProfileSource.scala:224)\ncom.expediagroup.data.transformation.ompDestinationProfile.ompDestinationProfileSource.main(ompDestinationProfileSource.scala)\njava.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\njava.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)\njava.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\njava.base/java.lang.reflect.Method.invoke(Method.java:569)\norg.apache.spark.deploy.JavaMainApplication.start(SparkApplication.scala:52)\norg.apache.spark.deploy.SparkSubmit.org$apache$spark$deploy$SparkSubmit$$runMain(SparkSubmit.scala:1150)\norg.apache.spark.deploy.SparkSubmit.doRunMain$1(SparkSubmit.scala:200)\norg.apache.spark.deploy.SparkSubmit.submit(SparkSubmit.scala:223)\norg.apache.spark.deploy.SparkSubmit.doSubmit(SparkSubmit.scala:92)\norg.apache.spark.deploy.SparkSubmit$$anon$2.doSubmit(SparkSubmit.scala:1246)\norg.apache.spark.deploy.SparkSubmit$.main(SparkSubmit.scala:1255)\norg.apache.spark.deploy.SparkSubmit.main(SparkSubmit.scala)",
+    "physical_plan_description": "== Parsed Logical Plan ==\nAggregate [count(1) AS count#56795L]\n+- Project [gaia_name#56614, latitude#56615, multi_city_name#56616, multi_city_gaia_id#56617, update_date#56618, neighborhood_gaia_id#56619, gaia_id#56620, longitude#56621, province_name#56622, neighborhood_name#56623, create_date#56624, continent_gaia_id#56625, city_name#56626, city_gaia_id#56627, country_gaia_id#56628, gaia_category#56629, continent_name#56630, country_name#56631, province_gaia_id#56632, cast(current_date(Some(GMT)) as string) AS etl_date#56753]\n   +- Except false\n      :- Project [gaia_name#56614, latitude#56615, multi_city_name#56616, multi_city_gaia_id#56617, update_date#56618, neighborhood_gaia_id#56619, gaia_id#56620, longitude#56621, province_name#56622, neighborhood_name#56623, create_date#56624, continent_gaia_id#56625, city_name#56626, city_gaia_id#56627, country_gaia_id#56628, gaia_category#56629, continent_name#56630, country_name#56631, province_gaia_id#56632]\n      :  +- Project [gaia_name#56",
+    "submission_time": "2026-07-02T15:53:26.415000",
+    "completion_time": "2026-07-02T15:53:27.968000",
+    "duration_ms": 1553,
+    "status": "COMPLETED"
+   }
+  ]
+ },
+ "executor_timeline": [
+  {
+   "time_ms": 1783032539814,
+   "event": "added",
+   "executor_id": "2",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783032540001,
+   "event": "added",
+   "executor_id": "1",
+   "cores": 8
+  },
+  {
+   "time_ms": 1783032540665,
+   "event": "added",
+   "executor_id": "3",
+   "cores": 8
+  }
+ ],
+ "sql_executions": [
+  {
+   "execution_id": 0,
+   "description": "pivot at ompDestinationProfileSource.scala:96",
+   "details": "org.apache.spark.sql.RelationalGroupedDataset.pivot(RelationalGroupedDataset.scala:340)\ncom.expediagroup.data.transformation.ompDestinationProfile.ompDestinationProfileSource$.transformData(ompDestinationProfileSource.scala:96)\ncom.expediagroup.data.transformation.ompDestinationProfile.ompDestinationProfileSource$.main(ompDestinationProfileSource.scala:220)\ncom.expediagroup.data.transformation.ompDestinationProfile.ompDestinationProfileSource.main(ompDestinationProfileSource.scala)\njava.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\njava.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)\njava.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\njava.base/java.lang.reflect.Method.invoke(Method.java:569)\norg.apache.spark.deploy.JavaMainApplication.start(SparkApplication.scala:52)\norg.apache.spark.deploy.SparkSubmit.org$apache$spark$deploy$SparkSubmit$$runMain(SparkSubmit.scala:1150)\norg.apache.spark.deploy.SparkSubmit.doRunMain$1(SparkSubmit.scala:200)\norg.apache.spark.deploy.SparkSubmit.submit(SparkSubmit.scala:223)\norg.apache.spark.deploy.SparkSubmit.doSubmit(SparkSubmit.scala:92)\norg.apache.spark.deploy.SparkSubmit$$anon$2.doSubmit(SparkSubmit.scala:1246)\norg.apache.spark.deploy.SparkSubmit$.main(SparkSubmit.scala:1255)\norg.apache.spark.deploy.SparkSubmit.main(SparkSubmit.scala)",
+   "physical_plan_description": "== Parsed Logical Plan ==\n'Sort ['ancestor_category ASC NULLS FIRST], true\n+- GlobalLimit 10001\n   +- LocalLimit 10001\n      +- Deduplicate [ancestor_category#7]\n         +- Project [ancestor_category#7]\n            +- Project [location_gaia_id#0, location_category#2, location_latitude#4, location_longitude#5, ancestor_gaia_id#6, ancestor_category#7, as_of_date#11]\n               +- Filter ((location_status#3 = active) AND location_category#2 IN (city,continent,country,metropolitanArea,neighborhood,province,pointOfInterest,highLevelRegion,airport))\n                  +- SubqueryAlias spark_catalog.destination.gaia_ancestor_mapping\n                     +- Relation spark_catalog.destination.gaia_ancestor_mapping[location_gaia_id#0,eg_location_id#1,location_category#2,location_status#3,location_latitude#4,location_longitude#5,ancestor_gaia_id#6,ancestor_category#7,ancestor_status#8,ancestor_latitude#9,ancestor_longitude#10,as_of_date#11,country_id#12,continent_id#13] parquet\n\n== Analyzed L",
+   "submission_time": "2026-07-02T15:49:03.770000",
+   "completion_time": "2026-07-02T15:49:13.663000",
+   "duration_ms": 9893,
+   "status": "COMPLETED"
+  },
+  {
+   "execution_id": 2,
+   "description": "sql at parquetWriteUtils.scala:22",
+   "details": "org.apache.spark.sql.SparkSession.sql(SparkSession.scala:836)\ncom.expediagroup.data.utils.parquetWriteUtils$.msckRepair(parquetWriteUtils.scala:22)\ncom.expediagroup.data.transformation.ompDestinationProfile.ompDestinationProfileSource$.loadData(ompDestinationProfileSource.scala:194)\ncom.expediagroup.data.transformation.ompDestinationProfile.ompDestinationProfileSource$.main(ompDestinationProfileSource.scala:224)\ncom.expediagroup.data.transformation.ompDestinationProfile.ompDestinationProfileSource.main(ompDestinationProfileSource.scala)\njava.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\njava.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)\njava.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\njava.base/java.lang.reflect.Method.invoke(Method.java:569)\norg.apache.spark.deploy.JavaMainApplication.start(SparkApplication.scala:52)\norg.apache.spark.deploy.SparkSubmit.org$apache$spark$deploy$SparkSubmit$$runMain(SparkSubmit.scala:1150)\norg.apache.spark.deploy.SparkSubmit.doRunMain$1(SparkSubmit.scala:200)\norg.apache.spark.deploy.SparkSubmit.submit(SparkSubmit.scala:223)\norg.apache.spark.deploy.SparkSubmit.doSubmit(SparkSubmit.scala:92)\norg.apache.spark.deploy.SparkSubmit$$anon$2.doSubmit(SparkSubmit.scala:1246)\norg.apache.spark.deploy.SparkSubmit$.main(SparkSubmit.scala:1255)\norg.apache.spark.deploy.SparkSubmit.main(SparkSubmit.scala)",
+   "physical_plan_description": "== Parsed Logical Plan ==\nRepairTableCommand `spark_catalog`.`communications`.`destination_profile_test`, true, false, MSCK REPAIR TABLE\n\n== Analyzed Logical Plan ==\nRepairTableCommand `spark_catalog`.`communications`.`destination_profile_test`, true, false, MSCK REPAIR TABLE\n\n== Optimized Logical Plan ==\nRepairTableCommand `spark_catalog`.`communications`.`destination_profile_test`, true, false, MSCK REPAIR TABLE\n\n== Physical Plan ==\nExecute RepairTableCommand\n   +- RepairTableCommand `spark_catalog`.`communications`.`destination_profile_test`, true, false, MSCK REPAIR TABLE\n",
+   "submission_time": "2026-07-02T15:53:22.070000",
+   "completion_time": "2026-07-02T15:53:23.330000",
+   "duration_ms": 1260,
+   "status": "COMPLETED"
+  },
+  {
+   "execution_id": 3,
+   "description": "first at incrementalSFMCDataUtils.scala:42",
+   "details": "org.apache.spark.sql.Dataset.first(Dataset.scala:3376)\ncom.expediagroup.data.utils.incrementalSFMCDataUtils$.getMaxLoadDate(incrementalSFMCDataUtils.scala:42)\ncom.expediagroup.data.utils.incrementalSFMCDataUtils$.getIncrementalData(incrementalSFMCDataUtils.scala:84)\ncom.expediagroup.data.transformation.ompDestinationProfile.ompDestinationProfileSource$.loadData(ompDestinationProfileSource.scala:198)\ncom.expediagroup.data.transformation.ompDestinationProfile.ompDestinationProfileSource$.main(ompDestinationProfileSource.scala:224)\ncom.expediagroup.data.transformation.ompDestinationProfile.ompDestinationProfileSource.main(ompDestinationProfileSource.scala)\njava.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\njava.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)\njava.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\njava.base/java.lang.reflect.Method.invoke(Method.java:569)\norg.apache.spark.deploy.JavaMainApplication.start(SparkApplication.scala:52)\norg.apache.spark.deploy.SparkSubmit.org$apache$spark$deploy$SparkSubmit$$runMain(SparkSubmit.scala:1150)\norg.apache.spark.deploy.SparkSubmit.doRunMain$1(SparkSubmit.scala:200)\norg.apache.spark.deploy.SparkSubmit.submit(SparkSubmit.scala:223)\norg.apache.spark.deploy.SparkSubmit.doSubmit(SparkSubmit.scala:92)\norg.apache.spark.deploy.SparkSubmit$$anon$2.doSubmit(SparkSubmit.scala:1246)\norg.apache.spark.deploy.SparkSubmit$.main(SparkSubmit.scala:1255)\norg.apache.spark.deploy.SparkSubmit.main(SparkSubmit.scala)",
+   "physical_plan_description": "== Parsed Logical Plan ==\nGlobalLimit 1\n+- LocalLimit 1\n   +- Aggregate [max(etl_date#56520) AS max(etl_date)#56522]\n      +- SubqueryAlias spark_catalog.communications.destination_profile_test\n         +- Relation spark_catalog.communications.destination_profile_test[gaia_name#56501,latitude#56502,multi_city_name#56503,multi_city_gaia_id#56504,update_date#56505,neighborhood_gaia_id#56506,gaia_id#56507,longitude#56508,province_name#56509,neighborhood_name#56510,create_date#56511,continent_gaia_id#56512,city_name#56513,city_gaia_id#56514,country_gaia_id#56515,gaia_category#56516,continent_name#56517,country_name#56518,province_gaia_id#56519,etl_date#56520] parquet\n\n== Analyzed Logical Plan ==\nmax(etl_date): string\nGlobalLimit 1\n+- LocalLimit 1\n   +- Aggregate [max(etl_date#56520) AS max(etl_date)#56522]\n      +- SubqueryAlias spark_catalog.communications.destination_profile_test\n         +- Relation spark_catalog.communications.destination_profile_test[gaia_name#56501,latitude#56502,mul",
+   "submission_time": "2026-07-02T15:53:23.433000",
+   "completion_time": "2026-07-02T15:53:24.548000",
+   "duration_ms": 1115,
+   "status": "COMPLETED"
+  },
+  {
+   "execution_id": 4,
+   "description": "first at incrementalSFMCDataUtils.scala:52",
+   "details": "org.apache.spark.sql.Dataset.first(Dataset.scala:3376)\ncom.expediagroup.data.utils.incrementalSFMCDataUtils$.getSecondMaxLoadDate(incrementalSFMCDataUtils.scala:52)\ncom.expediagroup.data.utils.incrementalSFMCDataUtils$.getIncrementalData(incrementalSFMCDataUtils.scala:85)\ncom.expediagroup.data.transformation.ompDestinationProfile.ompDestinationProfileSource$.loadData(ompDestinationProfileSource.scala:198)\ncom.expediagroup.data.transformation.ompDestinationProfile.ompDestinationProfileSource$.main(ompDestinationProfileSource.scala:224)\ncom.expediagroup.data.transformation.ompDestinationProfile.ompDestinationProfileSource.main(ompDestinationProfileSource.scala)\njava.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\njava.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)\njava.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\njava.base/java.lang.reflect.Method.invoke(Method.java:569)\norg.apache.spark.deploy.JavaMainApplication.start(SparkApplication.scala:52)\norg.apache.spark.deploy.SparkSubmit.org$apache$spark$deploy$SparkSubmit$$runMain(SparkSubmit.scala:1150)\norg.apache.spark.deploy.SparkSubmit.doRunMain$1(SparkSubmit.scala:200)\norg.apache.spark.deploy.SparkSubmit.submit(SparkSubmit.scala:223)\norg.apache.spark.deploy.SparkSubmit.doSubmit(SparkSubmit.scala:92)\norg.apache.spark.deploy.SparkSubmit$$anon$2.doSubmit(SparkSubmit.scala:1246)\norg.apache.spark.deploy.SparkSubmit$.main(SparkSubmit.scala:1255)\norg.apache.spark.deploy.SparkSubmit.main(SparkSubmit.scala)",
+   "physical_plan_description": "== Parsed Logical Plan ==\nGlobalLimit 1\n+- LocalLimit 1\n   +- Aggregate [max(etl_date#56572) AS max(etl_date)#56596]\n      +- Filter NOT etl_date#56572 IN (list#56552 [])\n         :  +- Aggregate [max(etl_date#56592) AS max(etl_date)#56594]\n         :     +- SubqueryAlias spark_catalog.communications.destination_profile_test\n         :        +- Relation spark_catalog.communications.destination_profile_test[gaia_name#56573,latitude#56574,multi_city_name#56575,multi_city_gaia_id#56576,update_date#56577,neighborhood_gaia_id#56578,gaia_id#56579,longitude#56580,province_name#56581,neighborhood_name#56582,create_date#56583,continent_gaia_id#56584,city_name#56585,city_gaia_id#56586,country_gaia_id#56587,gaia_category#56588,continent_name#56589,country_name#56590,province_gaia_id#56591,etl_date#56592] parquet\n         +- SubqueryAlias spark_catalog.communications.destination_profile_test\n            +- Relation spark_catalog.communications.destination_profile_test[gaia_name#56553,latitude#565",
+   "submission_time": "2026-07-02T15:53:24.650000",
+   "completion_time": "2026-07-02T15:53:26.080000",
+   "duration_ms": 1430,
+   "status": "COMPLETED"
+  },
+  {
+   "execution_id": 5,
+   "description": "count at ompDestinationProfileSource.scala:200",
+   "details": "org.apache.spark.sql.Dataset.count(Dataset.scala:3661)\ncom.expediagroup.data.transformation.ompDestinationProfile.ompDestinationProfileSource$.loadData(ompDestinationProfileSource.scala:200)\ncom.expediagroup.data.transformation.ompDestinationProfile.ompDestinationProfileSource$.main(ompDestinationProfileSource.scala:224)\ncom.expediagroup.data.transformation.ompDestinationProfile.ompDestinationProfileSource.main(ompDestinationProfileSource.scala)\njava.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\njava.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)\njava.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\njava.base/java.lang.reflect.Method.invoke(Method.java:569)\norg.apache.spark.deploy.JavaMainApplication.start(SparkApplication.scala:52)\norg.apache.spark.deploy.SparkSubmit.org$apache$spark$deploy$SparkSubmit$$runMain(SparkSubmit.scala:1150)\norg.apache.spark.deploy.SparkSubmit.doRunMain$1(SparkSubmit.scala:200)\norg.apache.spark.deploy.SparkSubmit.submit(SparkSubmit.scala:223)\norg.apache.spark.deploy.SparkSubmit.doSubmit(SparkSubmit.scala:92)\norg.apache.spark.deploy.SparkSubmit$$anon$2.doSubmit(SparkSubmit.scala:1246)\norg.apache.spark.deploy.SparkSubmit$.main(SparkSubmit.scala:1255)\norg.apache.spark.deploy.SparkSubmit.main(SparkSubmit.scala)",
+   "physical_plan_description": "== Parsed Logical Plan ==\nAggregate [count(1) AS count#56795L]\n+- Project [gaia_name#56614, latitude#56615, multi_city_name#56616, multi_city_gaia_id#56617, update_date#56618, neighborhood_gaia_id#56619, gaia_id#56620, longitude#56621, province_name#56622, neighborhood_name#56623, create_date#56624, continent_gaia_id#56625, city_name#56626, city_gaia_id#56627, country_gaia_id#56628, gaia_category#56629, continent_name#56630, country_name#56631, province_gaia_id#56632, cast(current_date(Some(GMT)) as string) AS etl_date#56753]\n   +- Except false\n      :- Project [gaia_name#56614, latitude#56615, multi_city_name#56616, multi_city_gaia_id#56617, update_date#56618, neighborhood_gaia_id#56619, gaia_id#56620, longitude#56621, province_name#56622, neighborhood_name#56623, create_date#56624, continent_gaia_id#56625, city_name#56626, city_gaia_id#56627, country_gaia_id#56628, gaia_category#56629, continent_name#56630, country_name#56631, province_gaia_id#56632]\n      :  +- Project [gaia_name#56",
+   "submission_time": "2026-07-02T15:53:26.415000",
+   "completion_time": "2026-07-02T15:53:27.968000",
+   "duration_ms": 1553,
+   "status": "COMPLETED"
+  }
+ ],
+ "query_plans": [
+  {
+   "execution_id": 0,
+   "description": "pivot at ompDestinationProfileSource.scala:96",
+   "submission_time": "2026-07-02T15:49:03.770000",
+   "duration_ms": 9893,
+   "plan": {
+    "name": "AdaptiveSparkPlan",
+    "detail": "AdaptiveSparkPlan isFinalPlan=true",
+    "metrics": {
+     "cumulative time for AQE to re-optimize": 15,
+     "number of times re-optimization was applied": 2,
+     "cumulative time for effective re-optimization": 12,
+     "number of effective re-optimization was applied": 1
+    },
+    "children": [
+     {
+      "name": "WholeStageCodegen (3)",
+      "detail": "WholeStageCodegen (3)",
+      "metrics": {
+       "duration": 18
+      },
+      "children": [
+       {
+        "name": "Sort",
+        "detail": "Sort [ancestor_category#7 ASC NULLS FIRST], true, 0",
+        "metrics": {
+         "sort time": 1,
+         "peak memory": 67108864
+        },
+        "children": [
+         {
+          "name": "InputAdapter",
+          "detail": "InputAdapter",
+          "metrics": {},
+          "children": [
+           {
+            "name": "AQEShuffleRead",
+            "detail": "AQEShuffleRead coalesced",
+            "metrics": {
+             "number of partitions": 1,
+             "partition data size": 362,
+             "number of coalesced partitions": 1
+            },
+            "children": [
+             {
+              "name": "ShuffleQueryStage",
+              "detail": "ShuffleQueryStage 1",
+              "metrics": {},
+              "children": [
+               {
+                "name": "Exchange",
+                "detail": "Exchange rangepartitioning(ancestor_category#7 ASC NULLS FIRST, 1000), ENSURE_REQUIREMENTS, [plan_id=95]",
+                "metrics": {
+                 "shuffle records written": 11,
+                 "shuffle write time": 4012993,
+                 "records read": 11,
+                 "local bytes read": 792,
+                 "local blocks read": 1,
+                 "data size": 312,
+                 "number of partitions": 11,
+                 "shuffle bytes written": 792
+                },
+                "children": [
+                 {
+                  "name": "WholeStageCodegen (2)",
+                  "detail": "WholeStageCodegen (2)",
+                  "metrics": {
+                   "duration": 35
+                  },
+                  "children": [
+                   {
+                    "name": "HashAggregate",
+                    "detail": "HashAggregate(keys=[ancestor_category#7], functions=[], schema specialized)",
+                    "metrics": {
+                     "time in aggregation build": 19,
+                     "peak memory": 134742016,
+                     "number of output rows": 22,
+                     "avg hash probes per key": 20
+                    },
+                    "children": [
+                     {
+                      "name": "InputAdapter",
+                      "detail": "InputAdapter",
+                      "metrics": {},
+                      "children": [
+                       {
+                        "name": "AQEShuffleRead",
+                        "detail": "AQEShuffleRead coalesced",
+                        "metrics": {
+                         "number of partitions": 1,
+                         "partition data size": 32580,
+                         "number of coalesced partitions": 1
+                        },
+                        "children": [
+                         {
+                          "name": "ShuffleQueryStage",
+                          "detail": "ShuffleQueryStage 0",
+                          "metrics": {},
+                          "children": [
+                           {
+                            "name": "Exchange",
+                            "detail": "Exchange hashpartitioning(ancestor_category#7, 1000), ENSURE_REQUIREMENTS, [plan_id=59]",
+                            "metrics": {
+                             "shuffle records written": 990,
+                             "shuffle write time": 7401232,
+                             "shuffle close time": 237527228,
+                             "shuffle sort time": 4989372,
+                             "records read": 1980,
+                             "local bytes read": 49104,
+                             "remote bytes read": 93456,
+                             "local blocks read": 62,
+                             "remote blocks read": 118,
+                             "data size": 28080,
+                             "number of partitions": 1000,
+                             "remote reqs duration": 46,
+                             "shuffle bytes written": 71280,
+                             "shuffle merge time": 639269131
+                            },
+                            "children": [
+                             {
+                              "name": "WholeStageCodegen (1)",
+                              "detail": "WholeStageCodegen (1)",
+                              "metrics": {
+                               "duration": 71342
+                              },
+                              "children": [
+                               {
+                                "name": "HashAggregate",
+                                "detail": "HashAggregate(keys=[ancestor_category#7], functions=[], schema specialized)",
+                                "metrics": {
+                                 "time in aggregation build": 67470,
+                                 "peak memory": 6063390720,
+                                 "passthrough row count threshold": 299593,
+                                 "number of output rows": 990,
+                                 "avg hash probes per key": 900
+                                },
+                                "children": [
+                                 {
+                                  "name": "Project",
+                                  "detail": "Project [ancestor_category#7]",
+                                  "metrics": {},
+                                  "children": [
+                                   {
+                                    "name": "Filter",
+                                    "detail": "Filter ((isnotnull(location_status#3) AND (location_status#3 = active)) AND location_category#2 IN (city,continent,country,metropolitanArea,neighborhood,province,pointOfInterest,highLevelRegion,airport))",
+                                    "metrics": {
+                                     "number of output rows": 3299266
+                                    },
+                                    "children": [
+                                     {
+                                      "name": "ColumnarToRow",
+                                      "detail": "ColumnarToRow",
+                                      "metrics": {
+                                       "number of output rows": 234255848,
+                                       "number of input batches": 57242
+                                      },
+                                      "children": [
+                                       {
+                                        "name": "InputAdapter",
+                                        "detail": "InputAdapter",
+                                        "metrics": {},
+                                        "children": [
+                                         {
+                                          "name": "Scan parquet spark_catalog.destination.gaia_ancestor_mapping",
+                                          "detail": "FileScan parquet spark_catalog.destination.gaia_ancestor_mapping[location_category#2,location_status#3,ancestor_category#7] Batched: true, DataFilters: [isnotnull(location_status#3), (location_status#3 = active), location_category#2 IN (city,contine.",
+                                          "metrics": {
+                                           "number of files read": 20,
+                                           "scan time": 55416,
+                                           "metadata time": 4,
+                                           "size of files read": 11713635426,
+                                           "max size of file split": 134217728,
+                                           "number of output rows": 234255848,
+                                           "initiate download time": 564616950
+                                          },
+                                          "children": []
+                                         }
+                                        ]
+                                       }
+                                      ]
+                                     }
+                                    ]
+                                   }
+                                  ]
+                                 }
+                                ]
+                               }
+                              ]
+                             }
+                            ]
+                           }
+                          ]
+                         }
+                        ]
+                       }
+                      ]
+                     }
+                    ]
+                   }
+                  ]
+                 }
+                ]
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "execution_id": 2,
+   "description": "sql at parquetWriteUtils.scala:22",
+   "submission_time": "2026-07-02T15:53:22.070000",
+   "duration_ms": 1260,
+   "plan": {
+    "name": "Execute RepairTableCommand",
+    "detail": "Execute RepairTableCommand",
+    "metrics": {},
+    "children": []
+   }
+  },
+  {
+   "execution_id": 3,
+   "description": "first at incrementalSFMCDataUtils.scala:42",
+   "submission_time": "2026-07-02T15:53:23.433000",
+   "duration_ms": 1115,
+   "plan": {
+    "name": "AdaptiveSparkPlan",
+    "detail": "AdaptiveSparkPlan isFinalPlan=true",
+    "metrics": {
+     "number of times re-optimization was applied": 1
+    },
+    "children": [
+     {
+      "name": "SortAggregate",
+      "detail": "SortAggregate(key=[], functions=[max(etl_date#56520)])",
+      "metrics": {
+       "number of output rows": 1
+      },
+      "children": [
+       {
+        "name": "ShuffleQueryStage",
+        "detail": "ShuffleQueryStage 0",
+        "metrics": {},
+        "children": [
+         {
+          "name": "Exchange",
+          "detail": "Exchange SinglePartition, ENSURE_REQUIREMENTS, [plan_id=197785]",
+          "metrics": {
+           "shuffle records written": 65,
+           "shuffle write time": 32582243,
+           "records read": 65,
+           "local bytes read": 1140,
+           "remote bytes read": 3800,
+           "local blocks read": 15,
+           "remote blocks read": 50,
+           "data size": 2080,
+           "number of partitions": 1,
+           "remote reqs duration": 4,
+           "shuffle bytes written": 4940
+          },
+          "children": [
+           {
+            "name": "SortAggregate",
+            "detail": "SortAggregate(key=[], functions=[partial_max(etl_date#56520)])",
+            "metrics": {
+             "number of output rows": 65
+            },
+            "children": [
+             {
+              "name": "WholeStageCodegen (1)",
+              "detail": "WholeStageCodegen (1)",
+              "metrics": {
+               "duration": 21525
+              },
+              "children": [
+               {
+                "name": "ColumnarToRow",
+                "detail": "ColumnarToRow",
+                "metrics": {
+                 "number of output rows": 687912,
+                 "number of input batches": 1993
+                },
+                "children": [
+                 {
+                  "name": "InputAdapter",
+                  "detail": "InputAdapter",
+                  "metrics": {},
+                  "children": [
+                   {
+                    "name": "Scan parquet spark_catalog.communications.destination_profile_test",
+                    "detail": "FileScan parquet spark_catalog.communications.destination_profile_test[etl_date#56520] Batched: true, DataFilters: [], Format: Parquet, Location: CatalogFileIndex(1 paths)[s3://apiary-112945290135-us-east-1-communications/omp/rcp_test/destinat..., Pa",
+                    "metrics": {
+                     "number of files read": 1993,
+                     "scan time": 21215,
+                     "metadata time": 318,
+                     "size of files read": 71395800,
+                     "max size of file split": 134217728,
+                     "number of output rows": 687912,
+                     "initiate download time": 93145261,
+                     "number of partitions read": 3
+                    },
+                    "children": []
+                   }
+                  ]
+                 }
+                ]
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "execution_id": 4,
+   "description": "first at incrementalSFMCDataUtils.scala:52",
+   "submission_time": "2026-07-02T15:53:24.650000",
+   "duration_ms": 1430,
+   "plan": {
+    "name": "AdaptiveSparkPlan",
+    "detail": "AdaptiveSparkPlan isFinalPlan=true",
+    "metrics": {
+     "cumulative time for AQE to re-optimize": 6,
+     "number of times re-optimization was applied": 3
+    },
+    "children": [
+     {
+      "name": "SortAggregate",
+      "detail": "SortAggregate(key=[], functions=[max(etl_date#56572)])",
+      "metrics": {
+       "number of output rows": 1
+      },
+      "children": [
+       {
+        "name": "ShuffleQueryStage",
+        "detail": "ShuffleQueryStage 2",
+        "metrics": {},
+        "children": [
+         {
+          "name": "Exchange",
+          "detail": "Exchange SinglePartition, ENSURE_REQUIREMENTS, [plan_id=197926]",
+          "metrics": {
+           "shuffle records written": 65,
+           "shuffle write time": 22291357,
+           "records read": 65,
+           "local bytes read": 912,
+           "remote bytes read": 2793,
+           "local blocks read": 16,
+           "remote blocks read": 49,
+           "data size": 1040,
+           "number of partitions": 1,
+           "remote reqs duration": 5,
+           "shuffle bytes written": 3705
+          },
+          "children": [
+           {
+            "name": "SortAggregate",
+            "detail": "SortAggregate(key=[], functions=[partial_max(etl_date#56572)])",
+            "metrics": {
+             "number of output rows": 65
+            },
+            "children": [
+             {
+              "name": "WholeStageCodegen (2)",
+              "detail": "WholeStageCodegen (2)",
+              "metrics": {
+               "duration": 30138
+              },
+              "children": [
+               {
+                "name": "BroadcastHashJoin",
+                "detail": "BroadcastHashJoin [etl_date#56572], [max(etl_date)#56594], LeftAnti, BuildRight, true",
+                "metrics": {},
+                "children": [
+                 {
+                  "name": "ColumnarToRow",
+                  "detail": "ColumnarToRow",
+                  "metrics": {
+                   "number of output rows": 687912,
+                   "number of input batches": 1993
+                  },
+                  "children": [
+                   {
+                    "name": "InputAdapter",
+                    "detail": "InputAdapter",
+                    "metrics": {},
+                    "children": [
+                     {
+                      "name": "Scan parquet spark_catalog.communications.destination_profile_test",
+                      "detail": "FileScan parquet spark_catalog.communications.destination_profile_test[etl_date#56572] Batched: true, DataFilters: [], Format: Parquet, Location: CatalogFileIndex(1 paths)[s3://apiary-112945290135-us-east-1-communications/omp/rcp_test/destinat..., Pa",
+                      "metrics": {
+                       "number of files read": 1993,
+                       "scan time": 14804,
+                       "metadata time": 72,
+                       "size of files read": 71395800,
+                       "max size of file split": 134217728,
+                       "number of output rows": 687912,
+                       "initiate download time": 115737308,
+                       "number of partitions read": 3
+                      },
+                      "children": []
+                     }
+                    ]
+                   }
+                  ]
+                 },
+                 {
+                  "name": "InputAdapter",
+                  "detail": "InputAdapter",
+                  "metrics": {},
+                  "children": [
+                   {
+                    "name": "BroadcastQueryStage",
+                    "detail": "BroadcastQueryStage 1",
+                    "metrics": {},
+                    "children": [
+                     {
+                      "name": "BroadcastExchange",
+                      "detail": "BroadcastExchange HashedRelationBroadcastMode(List(input[0, string, true]),true), [plan_id=197861]",
+                      "metrics": {
+                       "time to build": 11,
+                       "number of unique hash keys": 1,
+                       "time to collect": 22,
+                       "number of output rows": 1,
+                       "data size": 67109872,
+                       "number of values in hashed relation": 1
+                      },
+                      "children": [
+                       {
+                        "name": "SortAggregate",
+                        "detail": "SortAggregate(key=[], functions=[max(etl_date#56592)])",
+                        "metrics": {
+                         "number of output rows": 1
+                        },
+                        "children": [
+                         {
+                          "name": "ShuffleQueryStage",
+                          "detail": "ShuffleQueryStage 0",
+                          "metrics": {},
+                          "children": [
+                           {
+                            "name": "Exchange",
+                            "detail": "Exchange SinglePartition, ENSURE_REQUIREMENTS, [plan_id=197852]",
+                            "metrics": {
+                             "shuffle records written": 65,
+                             "shuffle write time": 21778686,
+                             "records read": 65,
+                             "local bytes read": 1140,
+                             "remote bytes read": 3800,
+                             "local blocks read": 15,
+                             "remote blocks read": 50,
+                             "data size": 2080,
+                             "number of partitions": 1,
+                             "remote reqs duration": 4,
+                             "shuffle bytes written": 4940
+                            },
+                            "children": [
+                             {
+                              "name": "SortAggregate",
+                              "detail": "SortAggregate(key=[], functions=[partial_max(etl_date#56592)])",
+                              "metrics": {
+                               "number of output rows": 65
+                              },
+                              "children": [
+                               {
+                                "name": "WholeStageCodegen (1)",
+                                "detail": "WholeStageCodegen (1)",
+                                "metrics": {
+                                 "duration": 15999
+                                },
+                                "children": [
+                                 {
+                                  "name": "ColumnarToRow",
+                                  "detail": "ColumnarToRow",
+                                  "metrics": {
+                                   "number of output rows": 687912,
+                                   "number of input batches": 1993
+                                  },
+                                  "children": [
+                                   {
+                                    "name": "InputAdapter",
+                                    "detail": "InputAdapter",
+                                    "metrics": {},
+                                    "children": [
+                                     {
+                                      "name": "Scan parquet spark_catalog.communications.destination_profile_test",
+                                      "detail": "FileScan parquet spark_catalog.communications.destination_profile_test[etl_date#56592] Batched: true, DataFilters: [], Format: Parquet, Location: CatalogFileIndex(1 paths)[s3://apiary-112945290135-us-east-1-communications/omp/rcp_test/destinat..., Pa",
+                                      "metrics": {
+                                       "number of files read": 1993,
+                                       "scan time": 15898,
+                                       "metadata time": 70,
+                                       "size of files read": 71395800,
+                                       "max size of file split": 134217728,
+                                       "number of output rows": 687912,
+                                       "initiate download time": 101446649,
+                                       "number of partitions read": 3
+                                      },
+                                      "children": []
+                                     }
+                                    ]
+                                   }
+                                  ]
+                                 }
+                                ]
+                               }
+                              ]
+                             }
+                            ]
+                           }
+                          ]
+                         }
+                        ]
+                       }
+                      ]
+                     }
+                    ]
+                   }
+                  ]
+                 }
+                ]
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "execution_id": 5,
+   "description": "count at ompDestinationProfileSource.scala:200",
+   "submission_time": "2026-07-02T15:53:26.415000",
+   "duration_ms": 1553,
+   "plan": {
+    "name": "AdaptiveSparkPlan",
+    "detail": "AdaptiveSparkPlan isFinalPlan=true",
+    "metrics": {
+     "cumulative time for AQE to re-optimize": 3,
+     "number of times re-optimization was applied": 3,
+     "cumulative time for effective re-optimization": 2,
+     "number of effective re-optimization was applied": 1
+    },
+    "children": [
+     {
+      "name": "WholeStageCodegen (4)",
+      "detail": "WholeStageCodegen (4)",
+      "metrics": {},
+      "children": [
+       {
+        "name": "HashAggregate",
+        "detail": "HashAggregate(keys=[], functions=[count(1)])",
+        "metrics": {
+         "number of output rows": 1
+        },
+        "children": [
+         {
+          "name": "InputAdapter",
+          "detail": "InputAdapter",
+          "metrics": {},
+          "children": [
+           {
+            "name": "ShuffleQueryStage",
+            "detail": "ShuffleQueryStage 2",
+            "metrics": {},
+            "children": [
+             {
+              "name": "Exchange",
+              "detail": "Exchange SinglePartition, ENSURE_REQUIREMENTS, [plan_id=198100]",
+              "metrics": {
+               "shuffle records written": 5,
+               "shuffle write time": 1847713,
+               "records read": 5,
+               "local bytes read": 50,
+               "remote bytes read": 200,
+               "local blocks read": 1,
+               "remote blocks read": 4,
+               "data size": 80,
+               "number of partitions": 1,
+               "remote reqs duration": 2,
+               "shuffle bytes written": 250
+              },
+              "children": [
+               {
+                "name": "WholeStageCodegen (3)",
+                "detail": "WholeStageCodegen (3)",
+                "metrics": {
+                 "duration": 968
+                },
+                "children": [
+                 {
+                  "name": "HashAggregate",
+                  "detail": "HashAggregate(keys=[], functions=[partial_count(1)])",
+                  "metrics": {
+                   "time in aggregation build": 944,
+                   "number of output rows": 5
+                  },
+                  "children": [
+                   {
+                    "name": "HashAggregate",
+                    "detail": "HashAggregate(keys=[gaia_name#56614, latitude#56615, multi_city_name#56616, multi_city_gaia_id#56617, update_date#56618, neighborhood_gaia_id#56619, gaia_id#56620, longitude#56621, province_name#56622, neighborhood_name#56623, create_date#56624, cont",
+                    "metrics": {
+                     "time in aggregation build": 895,
+                     "peak memory": 369623040,
+                     "number of hash code collisions": 10,
+                     "number of output rows": 687912,
+                     "avg hash probes per key": 79
+                    },
+                    "children": [
+                     {
+                      "name": "InputAdapter",
+                      "detail": "InputAdapter",
+                      "metrics": {},
+                      "children": [
+                       {
+                        "name": "AQEShuffleRead",
+                        "detail": "AQEShuffleRead coalesced",
+                        "metrics": {
+                         "number of partitions": 5,
+                         "partition data size": 66951419,
+                         "number of coalesced partitions": 5
+                        },
+                        "children": [
+                         {
+                          "name": "ShuffleQueryStage",
+                          "detail": "ShuffleQueryStage 1",
+                          "metrics": {},
+                          "children": [
+                           {
+                            "name": "Exchange",
+                            "detail": "Exchange hashpartitioning(gaia_name#56614, latitude#56615, multi_city_name#56616, multi_city_gaia_id#56617, update_date#56618, neighborhood_gaia_id#56619, gaia_id#56620, longitude#56621, province_name#56622, neighborhood_name#56623, create_date#56624",
+                            "metrics": {
+                             "shuffle records written": 687912,
+                             "shuffle write time": 304509332,
+                             "shuffle flush time": 63925868,
+                             "shuffle close time": 1203533648,
+                             "shuffle sort time": 3896558,
+                             "records read": 687912,
+                             "local bytes read": 29063789,
+                             "remote bytes read": 118830051,
+                             "local blocks read": 64,
+                             "remote blocks read": 274,
+                             "data size": 257421632,
+                             "number of partitions": 1000,
+                             "remote reqs duration": 310,
+                             "shuffle bytes written": 147893840,
+                             "shuffle merge time": 39526145
+                            },
+                            "children": [
+                             {
+                              "name": "WholeStageCodegen (2)",
+                              "detail": "WholeStageCodegen (2)",
+                              "metrics": {
+                               "duration": 30598
+                              },
+                              "children": [
+                               {
+                                "name": "HashAggregate",
+                                "detail": "HashAggregate(keys=[gaia_name#56614, knownfloatingpointnormalized(normalizenanandzero(latitude#56615)) AS latitude#56615, multi_city_name#56616, multi_city_gaia_id#56617, update_date#56618, neighborhood_gaia_id#56619, gaia_id#56620, knownfloatingpoin",
+                                "metrics": {
+                                 "time in aggregation build": 27355,
+                                 "peak memory": 4404281344,
+                                 "passthrough row count threshold": 100000,
+                                 "number of output rows": 687912,
+                                 "avg hash probes per key": 812
+                                },
+                                "children": [
+                                 {
+                                  "name": "Project",
+                                  "detail": "Project [gaia_name#56614, latitude#56615, multi_city_name#56616, multi_city_gaia_id#56617, update_date#56618, neighborhood_gaia_id#56619, gaia_id#56620, longitude#56621, province_name#56622, neighborhood_name#56623, create_date#56624, continent_gaia_",
+                                  "metrics": {},
+                                  "children": [
+                                   {
+                                    "name": "ColumnarToRow",
+                                    "detail": "ColumnarToRow",
+                                    "metrics": {
+                                     "number of output rows": 687912,
+                                     "number of input batches": 1993
+                                    },
+                                    "children": [
+                                     {
+                                      "name": "InputAdapter",
+                                      "detail": "InputAdapter",
+                                      "metrics": {},
+                                      "children": [
+                                       {
+                                        "name": "Scan parquet spark_catalog.communications.destination_profile_test",
+                                        "detail": "FileScan parquet spark_catalog.communications.destination_profile_test[gaia_name#56614,latitude#56615,multi_city_name#56616,multi_city_gaia_id#56617,update_date#56618,neighborhood_gaia_id#56619,gaia_id#56620,longitude#56621,province_name#56622,neighb",
+                                        "metrics": {
+                                         "number of files read": 1993,
+                                         "scan time": 26174,
+                                         "metadata time": 81,
+                                         "size of files read": 71395800,
+                                         "max size of file split": 134217728,
+                                         "number of output rows": 687912,
+                                         "initiate download time": 402541180,
+                                         "number of partitions read": 1
+                                        },
+                                        "children": []
+                                       }
+                                      ]
+                                     }
+                                    ]
+                                   }
+                                  ]
+                                 }
+                                ]
+                               }
+                              ]
+                             }
+                            ]
+                           }
+                          ]
+                         }
+                        ]
+                       }
+                      ]
+                     }
+                    ]
+                   }
+                  ]
+                 }
+                ]
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ],
+ "spark_config": {
+  "spark.ams_application_name": null,
+  "spark.app.attempt.id": null,
+  "spark.app.id": "00g6tp1n6gqmio0b",
+  "spark.app.name": "read-load-hive-through-spark",
+  "spark.app.startTime": "2026-07-02T15:48:56.972000",
+  "spark.app.submitTime": "2026-07-02T15:48:56.812000",
+  "spark.blacklist.decommissioning.enabled": "true",
+  "spark.blacklist.decommissioning.timeout": "1h",
+  "spark.broadcast.blockSize": null,
+  "spark.decommissioning.timeout.threshold": "20",
+  "spark.driver.cores": "8",
+  "spark.driver.defaultJavaOptions": "-XX:OnOutOfMemoryError='kill -9 %p'",
+  "spark.driver.memory": "54G",
+  "spark.driver.transparentHugePage.enabled": null,
+  "spark.dynamicAllocation.enabled": "true",
+  "spark.dynamicAllocation.maxExecutors": "5",
+  "spark.emr.default.executor.cores": null,
+  "spark.emr.default.executor.memory": null,
+  "spark.emr_cluster_id": null,
+  "spark.emr_cluster_name": null,
+  "spark.eventLog.dir": "file:///var/log/spark/apps",
+  "spark.eventLog.enabled": "true",
+  "spark.executor.cores": "8",
+  "spark.executor.defaultJavaOptions": "-verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseParallelGC -XX:InitiatingHeapOccupancyPercent=70 -XX:OnOutOfMemoryError='kill -9 %p'",
+  "spark.executor.id": "driver",
+  "spark.executor.instances": "3",
+  "spark.executor.memory": "54G",
+  "spark.executor.memoryOverhead": null,
+  "spark.executor.transparentHugePage.enabled": "false",
+  "spark.executorEnv.AWS_SPARK_REDSHIFT_CONNECTOR_SERVICE_NAME": null,
+  "spark.executorEnv.JAVA_HOME": null,
+  "spark.extraListeners": "com.expediagroup.data.processing.DataprocSparkListener",
+  "spark.files.fetchFailure.unRegisterOutputOnHost": "true",
+  "spark.hadoop.fs.s3.getObject.initialSocketTimeoutMilliseconds": "2000",
+  "spark.hadoop.fs.s3a.committer.magic.enabled": "true",
+  "spark.hadoop.fs.s3a.committer.magic.track.commits.in.memory.enabled": "true",
+  "spark.hadoop.fs.s3a.committer.name": "magicv2",
+  "spark.hadoop.fs.s3a.connection.ssl.enabled": "true",
+  "spark.hadoop.fs.s3a.encryption.algorithm": null,
+  "spark.hadoop.fs.s3a.server-side-encryption-algorithm": "AES256",
+  "spark.hadoop.hive.metastore.client.connect.retry.delay": "15",
+  "spark.hadoop.hive.metastore.client.socket.timeout": "1200",
+  "spark.hadoop.hive.metastore.failure.retries": "5",
+  "spark.hadoop.hive.metastore.uris": "thrift://waggledance-metastore-proxy.egdp-prod.aws.away.black:48869",
+  "spark.hadoop.mapreduce.fileoutputcommitter.algorithm.version.emr_internal_use_only.EmrFileSystem": "2",
+  "spark.hadoop.mapreduce.fileoutputcommitter.cleanup-failures.ignored.emr_internal_use_only.EmrFileSystem": "true",
+  "spark.hadoop.mapreduce.input.fileinputformat.split.minsize": null,
+  "spark.hadoop.mapreduce.output.fs.optimized.committer.enabled": "true",
+  "spark.hadoop.yarn.timeline-service.enabled": null,
+  "spark.history.fs.logDirectory": "file:///var/log/spark/apps",
+  "spark.history.ui.port": "18080",
+  "spark.job_id": "f0c22689-9f2d-4bc0-84ce-ddb245e3c66f",
+  "spark.master": "custom:emr-serverless",
+  "spark.metrics.eventLog.dir": "s3://spark-history-872193204297-us-east-1/dataproc_job_spark_metrics",
+  "spark.openlineage.namespace": "comms-data",
+  "spark.org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter.param.PROXY_HOSTS": null,
+  "spark.org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter.param.PROXY_URI_BASES": null,
+  "spark.product": null,
+  "spark.resourceManager.cleanupExpiredHost": "true",
+  "spark.scheduler.mode": "FIFO",
+  "spark.shuffle.service.enabled": null,
+  "spark.sql.autoBroadcastJoinThreshold": null,
+  "spark.sql.adaptive.advisoryPartitionSizeInBytes": null,
+  "spark.sql.adaptive.coalescePartitions.enabled": null,
+  "spark.sql.adaptive.coalescePartitions.minPartitionSize": null,
+  "spark.sql.catalog.iceberg": null,
+  "spark.sql.catalog.iceberg.type": null,
+  "spark.sql.catalog.spark_catalog": "org.apache.iceberg.spark.SparkSessionCatalog",
+  "spark.sql.catalog.spark_catalog.type": "hive",
+  "spark.sql.catalogImplementation": "hive",
+  "spark.sql.emr.internal.extensions": "com.amazonaws.emr.spark.EmrSparkSessionExtensions",
+  "spark.sql.extensions": "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions",
+  "spark.sql.files.maxPartitionBytes": "128m",
+  "spark.sql.hive.caseSensitiveInferenceMode": null,
+  "spark.sql.hive.metastore.sharedPrefixes": "software.amazon.awssdk.services.dynamodb",
+  "spark.sql.parquet.fs.optimized.committer.optimization-enabled": "true",
+  "spark.sql.parquet.output.committer.class": "com.amazon.emr.committer.EmrOptimizedSparkSqlParquetOutputCommitter",
+  "spark.sql.shuffle.partitions": "1000",
+  "spark.sql.sources.partitionOverwriteMode": null,
+  "spark.sql.warehouse.dir": null,
+  "spark.stage.attempt.ignoreOnDecommissionFetchFailure": "true",
+  "spark.submit.deployMode": "client",
+  "spark.submit.pyFiles": "",
+  "spark.ui.filters": null,
+  "spark.ui.port": "4040",
+  "spark.yarn.app.container.log.dir": null,
+  "spark.yarn.app.id": null,
+  "spark.yarn.appMasterEnv.AWS_SPARK_REDSHIFT_CONNECTOR_SERVICE_NAME": null,
+  "spark.yarn.appMasterEnv.HADOOP_USER_NAME": null,
+  "spark.yarn.appMasterEnv.JAVA_HOME": null,
+  "spark.yarn.appMasterEnv.SPARK_PUBLIC_DNS": null,
+  "spark.yarn.dist.files": null,
+  "spark.yarn.dist.jars": null,
+  "spark.yarn.heterogeneousExecutors.enabled": "false",
+  "spark.yarn.historyServer.address": null,
+  "spark.yarn.maxAppAttempts": null,
+  "spark.yarn.secondary.jars": null,
+  "spark.yarn.submit.waitAppCompletion": null,
+  "spark.yarn.tags": null,
+  "spark.app.initial.archive.urls": "spark://[2600:1f18:2c09:c901:85e9:9d8b:9ad9:ccb]:37589/files/cacerts.jks",
+  "spark.dynamicAllocation.shuffleTracking.enabled": "true",
+  "spark.sql.catalog.egdp_prod.glue.account-id": "112945290135",
+  "spark.hadoop.hive.metastore.client.factory.class": "org.apache.hadoop.hive.ql.metadata.SessionHiveMetaStoreClientFactory",
+  "spark.sql.catalog.egdp_prod.glue.id": "112945290135",
+  "spark.dynamicAllocation.sustainedSchedulerBacklogTimeout": "1s",
+  "spark.emr.clusterId": "",
+  "spark.emr-serverless.lakeformation.enabled": "",
+  "spark.sql.catalog.data_corp.glue.id": "177220994061",
+  "spark.sql.catalog.data_dw.type": "glue",
+  "spark.sql.catalog.data_dw.glue.account-id": "872193204297",
+  "spark.sql.adaptive.enabled": "true",
+  "spark.archives": "file:/tmp/spark-fbf926f5-6efc-4aca-88ae-5b8c0fdc2fb3/cacerts.jks",
+  "spark.driver.maxResultSize": "6g",
+  "spark.sql.catalog.data_corp": "org.apache.iceberg.spark.SparkCatalog",
+  "spark.hadoop.fs.s3.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem",
+  "spark.emr-serverless.executor.disk": "20G",
+  "spark.emr-serverless.client.create.batch.size": "100",
+  "spark.sql.catalog.egdp_prod.glue.lakeformation-enabled": "true",
+  "spark.emr-serverless.allocation.executor.timeout": "300s",
+  "spark.ui.custom.executor.log.url": "/logs/{{CONTAINER_ID}}/{{FILE_NAME}}.gz",
+  "spark.hadoop.fs.defaultFS": "file:///",
+  "spark.eventLog.rotation.minFileSize": "1m",
+  "spark.sql.catalog.data_dw.glue.id": "872193204297",
+  "spark.sql.catalog.data_dw.glue.lakeformation-enabled": "true",
+  "spark.emr.stepId": "",
+  "spark.ui.enabled": "true",
+  "spark.sql.catalog.data_corp.type": "glue",
+  "spark.sql.adaptive.coalescePartitions.parallelismFirst": "false",
+  "spark.ui.killEnabled": "false",
+  "spark.emr-serverless.fluentd.eventLog.custom.chunking.enabled": "false",
+  "spark.hadoop.fs.s3a.aws.credentials.provider": "org.apache.hadoop.fs.s3a.auth.AssumedRoleCredentialProvider",
+  "spark.network.timeout": "1200s",
+  "spark.eventLog.rotation.maxFilesToRetain": "2",
+  "spark.hadoop.fs.s3a.connection.maximum": "1000",
+  "spark.emr-serverless.driverEnv.SPARK_LOCAL_IP": "[fd00::2%eth0]",
+  "spark.hadoop.fs.s3a.connection.timeout": "5000",
+  "spark.hadoop.fs.s3a.enableServerSideEncryption": "true",
+  "spark.sql.catalog.data_dw.client.region": "us-east-1",
+  "spark.sql.catalog.egdp_prod.type": "glue",
+  "spark.hadoop.fs.s3a.attempts.maximum": "10",
+  "spark.sql.catalog.data_corp.client.region": "us-east-1",
+  "spark.hadoop.hive.metastore.schema.verification": "false",
+  "spark.eventLog.rotation.enabled": "true",
+  "spark.sql.catalog.data_corp.glue.account-id": "177220994061",
+  "spark.emr-serverless.driver.disk": "20G",
+  "spark.hadoop.fs.s3a.retry.limit": "10",
+  "spark.emr-serverless.memoryOverheadFactor": "0.1",
+  "spark.emr.releaseLabel": "",
+  "spark.hadoop.hive.metastore.mapfiles": "true",
+  "spark.sql.optimizer.excludedRules": "org.apache.spark.sql.catalyst.optimizer.InferWindowGroupLimit",
+  "spark.submit.customResourceManager.submit.class": "org.apache.spark.deploy.emrserverless.submit.EmrServerlessClientApplication",
+  "spark.emr-serverless.client.release.batch.size": "100",
+  "spark.shuffle.io.connectionTimeout": "600s",
+  "spark.emr-serverless.initialExecutorTimeout": "1200000",
+  "spark.app.initial.jar.urls": "spark://[2600:1f18:2c09:c901:85e9:9d8b:9ad9:ccb]:37589/jars/dataproc-job-spark-listener-1.0.4.jar,s3://dataproc-emr-872193204297-us-east-1/comms-data/test/ump-de-batch-compute-1.2.75-20260622.113720-23.jar",
+  "spark.sql.catalog.data_corp.glue.lakeformation-enabled": "true",
+  "spark.ssl.ui.enabled": "false",
+  "spark.ssl.internode.enabled": "false",
+  "spark.hadoop.fs.s3n.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem",
+  "spark.authenticate": "true",
+  "spark.sql.catalog.egdp_prod": "org.apache.iceberg.spark.SparkCatalog",
+  "spark.hadoop.dynamodb.region": "us-east-1",
+  "spark.aws.accountId": "",
+  "spark.hadoop.fs.s3a.assumed.role.arn": "arn:aws:iam::872193204297:role/dataproc-comms-data-us-east-1",
+  "spark.sql.catalog.egdp_prod.client.region": "us-east-1",
+  "spark.hadoop.fs.s3a.serverSideEncryptionAlgorithm": "AES256",
+  "spark.hadoop.fs.s3.customAWSCredentialsProvider": "com.amazonaws.auth.DefaultAWSCredentialsProviderChain",
+  "spark.driver.allowMultipleContexts": "true",
+  "spark.hadoop.fs.AbstractFileSystem.s3.impl": "org.apache.hadoop.fs.s3a.S3A",
+  "spark.hadoop.aws.region": "us-east-1",
+  "spark.dynamicAllocation.minExecutors": "3",
+  "spark.dynamicAllocation.initialExecutors": "3",
+  "spark.sql.catalog.data_dw": "org.apache.iceberg.spark.SparkCatalog",
+  "spark.hadoop.fs.s3a.endpoint.region": "us-east-1",
+  "spark.eventLog.rotation.interval": "300s",
+  "spark.hadoop.fs.s3a.assumed.role.credentials.provider": "com.amazonaws.auth.InstanceProfileCredentialsProvider",
+  "spark.emr-serverless.client.describe.batch.size": "100",
+  "spark.emr-serverless.maxPendingExecutors": "1000"
+ }
+}
