@@ -18,7 +18,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(HERE))
 
 from emr_s_fine_tuner import (_preserve_xlarge_source, _xlarge_memory_from_heap,
-                              XLARGE_MEM_TIERS)
+                              _promote_to_xlarge, XLARGE_MEM_TIERS)
 
 FAILURES = []
 
@@ -79,6 +79,62 @@ def main():
     check("no_heap_keeps_source_219", _xlarge_memory_from_heap(0, 219.0) == 219)
     check("no_heap_keeps_source_54", _xlarge_memory_from_heap(0, 54.0) == 54)
     check("no_heap_no_mem_max_tier", _xlarge_memory_from_heap(0, 0) == 219)
+
+    # --- Promotion: consolidate large small-worker fleets onto 32c ---
+    print("\n32c promotion tests — _promote_to_xlarge")
+
+    def promote(is_ec2=False, orig_cores=16, wtype="Small", wvcpu=4,
+                spill=0.0, dspill=0.0, fetch_wait=0.0, stages=None,
+                s_out_gb=677.0, max_exec=60, floor=0):
+        return _promote_to_xlarge(is_ec2, orig_cores, wtype, wvcpu, spill,
+                                  dspill, fetch_wait, stages or [],
+                                  s_out_gb, max_exec, floor)
+
+    # 10. Calibration case A (43-join multijoin replica, 32c proven at
+    #     equal vCPU): Small x60 = 240 vCPU, 677 GB shuffle, clean run
+    #     -> consolidates to ceil(240/32) = 8 XLarge workers.
+    check("multijoin_promotes_to_8", promote() == 8)
+
+    # 11. Calibration case B (IOPS-bound single-agg, 16c won 2.6x):
+    #     each veto must fire INDEPENDENTLY.
+    #     B as recommended: Medium x549, 4737 GB shuffle, fetch-wait 27%,
+    #     serving floor 549 hosts.
+    vb = dict(wtype="Medium", wvcpu=8, s_out_gb=4737.0, max_exec=549)
+    check("iopsbound_fetchwait_veto", promote(fetch_wait=27.2, **vb) is None)
+    check("iopsbound_serving_floor_veto", promote(floor=549, **vb) is None)
+    check("iopsbound_both_vetoed", promote(fetch_wait=27.2, floor=549, **vb) is None)
+    # Sanity: with both vetoes lifted the shape WOULD promote — proving
+    # the vetoes (not some other gate) are what block this class.
+    check("iopsbound_promotes_without_vetoes", promote(**vb) == 138)
+
+    # 12. Scale floor: below 192 total vCPU consolidation isn't worth it.
+    check("small_fleet_no_promote", promote(max_exec=47) is None)   # 188 vCPU
+    check("at_192_vcpu_promotes", promote(max_exec=48) == 6)        # benchmark shape
+
+    # 13. Spill vetoes (execution-memory contention risk grows with
+    #     cores per executor).
+    check("mem_spill_veto", promote(spill=100.0) is None)
+    check("disk_spill_veto", promote(dspill=100.0) is None)
+
+    # 14. Retried stages veto.
+    check("failed_stage_veto",
+          promote(stages=[{"failure_reason": "FetchFailed"}]) is None)
+
+    # 15. Shuffle-intensity floor: scan-heavy jobs with thin shuffle keep
+    #     smaller workers for S3 read parallelism (Neil's Slack concern).
+    check("thin_shuffle_no_promote", promote(s_out_gb=200.0) is None)  # 25 GB/worker
+
+    # 16. Already 32c (source or recommendation): preservation path owns it.
+    check("already_32c_source", promote(orig_cores=32) is None)
+    check("already_xlarge_rec", promote(wtype="XLarge", wvcpu=32) is None)
+
+    # 17. EC2 sources excluded.
+    check("ec2_no_promote", promote(is_ec2=True) is None)
+
+    # 18. Promoted memory is always the 219G tier (only 32c tier that
+    #     preserves 6.75 GB/core) — encoded at the call site; here we
+    #     assert the tier exists and is the max.
+    check("promotion_tier_is_219", XLARGE_MEM_TIERS[-1] == 219)
 
     print()
     if FAILURES:

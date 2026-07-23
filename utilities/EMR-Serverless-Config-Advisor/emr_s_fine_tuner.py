@@ -282,6 +282,67 @@ def _preserve_xlarge_source(is_ec2: bool, orig_cores: int, spill_gb: float,
     return "XLarge", {"vcpu": 32, "memory": mem}
 
 
+def _promote_to_xlarge(is_ec2: bool, orig_cores: int, worker_type: str,
+                       worker_vcpu: int, spill_gb: float, disk_spill_gb: float,
+                       shuffle_fetch_wait_pct: float, stages_raw: list,
+                       s_out_gb: float, max_exec: int,
+                       serving_floor_hosts: int):
+    """Consolidate a large fleet of smaller workers onto 32-vCPU workers.
+
+    Serverless bills per vCPU-hour, so equal-total-vCPU consolidation is
+    cost-neutral on compute; the win comes from second-order effects:
+    fewer hosts = less N-to-N shuffle fan-in, more shuffle read locally,
+    higher per-disk IOPS/throughput on shuffle-optimized disk, and less
+    driver coordination. Benchmarked 26-38% faster/cheaper on TPC-DS 3TB /
+    TPC-H 1TB at identical 192 total vCPU (48x4c -> 6x32c), and validated
+    on a 43-join production replica (32c beat 16c on cost at equal vCPU).
+
+    Consolidation LOSES when shuffle serving is IOPS/fan-in-bound: fewer
+    hosts concentrate the same fetch fan-in (validated: a 4.4TB single-agg
+    with ~53M sub-100KB shuffle blocks ran 2.6x faster on 16c than 32c).
+    Two independent vetoes cover that class: elevated fetch-wait on the
+    source, and the shuffle-serving floor (hosts needed to serve peak
+    shuffle at 0.04 GB/s/host) exceeding the consolidated host count.
+
+    Gates (all must hold):
+      - Serverless source, not already on/recommended 32c
+      - no spill (execution-memory contention risk rises with cores/exec;
+        proven: 8c spills where 4c doesn't at equal mem/core)
+      - no retried stages, fetch-wait <= 20%
+      - recommended fleet >= 192 total vCPU (benchmark floor: 6 x 32c;
+        below that consolidation has too few hosts to matter)
+      - consolidated host count still satisfies the serving floor
+      - shuffle write >= 32 GB per consolidated worker (shuffle-intensive
+        per the launch guidance; scan-dominated jobs keep smaller workers
+        for S3 read parallelism)
+
+    Promoted memory is always the 219G tier: it is the only 32c tier that
+    preserves the 6.75 GB/core of every other Serverless tier, and the
+    promotion target is an unproven shape for this workload. The next run's
+    event log gives a measured 32c peak heap, and preservation
+    (_preserve_xlarge_source) right-sizes the tier from it.
+
+    Returns the consolidated executor count, or None if any gate fails.
+    """
+    if is_ec2 or orig_cores == 32 or worker_type == "XLarge":
+        return None
+    if (spill_gb or 0) + (disk_spill_gb or 0) > 10:
+        return None
+    if shuffle_fetch_wait_pct > 20:
+        return None
+    if any(s.get('failure_reason') for s in (stages_raw or [])):
+        return None
+    total_vcpu = max_exec * worker_vcpu
+    if total_vcpu < 192:
+        return None
+    n_xl = int(math.ceil(total_vcpu / 32.0))
+    if serving_floor_hosts and n_xl < serving_floor_hosts:
+        return None
+    if s_out_gb / max(n_xl, 1) < 32:
+        return None
+    return n_xl
+
+
 def _compute_exec_limits(input_gb: float, vcpu: int, partitions: int = 0,
                         mem_pct: float = 60.0, cpu_pct: float = 50.0,
                         idle_pct: float = 50.0, spill_gb: float = 0.0,
@@ -1045,8 +1106,30 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                 if _new_max_p != max_exec_perf:
                     max_exec_perf = _new_max_p
                     min_exec_perf = max(1, min(max_exec_perf - 2, max(5, max_exec_perf // 3)))
+        # Consolidate large fleets of smaller workers onto 32c when the
+        # workload profile is throughput-bound (see _promote_to_xlarge).
+        # Cost and perf recs share one worker shape, so both fleets must
+        # pass the gates (each against its own serving floor).
+        _xl_cost = _promote_to_xlarge(is_ec2, orig_cores, worker_type,
+                                      worker_cfg["vcpu"], spill_gb, disk_spill_gb,
+                                      shuffle_fetch_wait_pct, stages_raw,
+                                      s_out_gb, max_exec_cost, _floor_cost)
+        _xl_perf = _promote_to_xlarge(is_ec2, orig_cores, worker_type,
+                                      worker_cfg["vcpu"], spill_gb, disk_spill_gb,
+                                      shuffle_fetch_wait_pct, stages_raw,
+                                      s_out_gb, max_exec_perf, _floor_perf)
+        if _xl_cost and _xl_perf:
+            worker_type = "XLarge"
+            worker_cfg = {"vcpu": 32, "memory": 219}
+            max_exec_cost = _xl_cost
+            min_exec_cost = max(1, min(max_exec_cost - 2, max(3, max_exec_cost // 3)))
+            max_exec_perf = _xl_perf
+            min_exec_perf = max(1, min(max_exec_perf - 2, max(3, max_exec_perf // 3)))
+            executor_disk_cost = _calculate_executor_disk(
+                s_out_gb, _eff_disk_spill, _eff_mem_spill, max_exec_cost)
+
         executor_disk_perf = _calculate_executor_disk(s_out_gb, _eff_disk_spill, _eff_mem_spill, max_exec_perf)
-        
+
         # Build base metrics
         base_metrics = {
             "input_gb": round(i_in_gb, 2),
