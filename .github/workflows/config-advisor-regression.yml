@@ -32,3 +32,6 @@ jobs:
       - name: Run Rule 3 unit tests
         working-directory: utilities/EMR-Serverless-Config-Advisor
         run: python3 tests/test_exec_limits_rule3.py
+      - name: Run 32c worker tests
+        working-directory: utilities/EMR-Serverless-Config-Advisor
+        run: python3 tests/test_worker_32c.py
