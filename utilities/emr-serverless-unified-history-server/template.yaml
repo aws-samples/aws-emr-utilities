@@ -1,0 +1,224 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Event-driven Spark event log aggregation: S3 Event Notification on the source
+  bucket (EMR Serverless log destination) triggers a Lambda that copies ONLY Spark
+  event logs (under sparklogs/) into a single flat Spark History Server log
+  directory in the destination bucket. Includes SQS DLQ for failed async invocations.
+
+Parameters:
+  SourceBucketName:
+    Type: String
+    Description: Name for the source bucket (must be globally unique)
+  DestinationBucketName:
+    Type: String
+    Description: Name for the destination bucket (must be globally unique)
+  LogPrefix:
+    Type: String
+    Default: logs/applications/
+    Description: Only objects under this prefix trigger the copy Lambda
+  DestinationPrefix:
+    Type: String
+    Default: logs/
+    Description: >
+      Spark History Server log directory in the destination bucket. Event logs land
+      at <DestinationPrefix>eventlog_v2_<job-run-id>/... regardless of source app/job.
+
+Resources:
+
+  # ---------- Destination bucket ----------
+  DestinationBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref DestinationBucketName
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+  # ---------- DLQ for failed async Lambda invocations ----------
+  CopyDlq:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub '${AWS::StackName}-copy-dlq'
+      MessageRetentionPeriod: 1209600  # 14 days
+
+  # ---------- Lambda execution role ----------
+  CopyFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: lambda.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: S3CopyLeastPrivilege
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:GetObjectTagging
+                Resource: !Sub 'arn:aws:s3:::${SourceBucketName}/*'
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:PutObjectTagging
+                  - s3:AbortMultipartUpload
+                Resource: !Sub 'arn:aws:s3:::${DestinationBucketName}/*'
+        - PolicyName: DlqSend
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: sqs:SendMessage
+                Resource: !GetAtt CopyDlq.Arn
+
+  # ---------- Lambda function ----------
+  CopyFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-s3-log-copy'
+      Runtime: python3.12
+      Handler: index.lambda_handler
+      MemorySize: 128
+      Timeout: 60
+      Role: !GetAtt CopyFunctionRole.Arn
+      DeadLetterConfig:
+        TargetArn: !GetAtt CopyDlq.Arn
+      Environment:
+        Variables:
+          DESTINATION_BUCKET: !Ref DestinationBucketName
+          DESTINATION_PREFIX: !Ref DestinationPrefix
+      Code:
+        ZipFile: |
+          import json, logging, os, urllib.parse
+          import boto3
+          from botocore.config import Config
+
+          logger = logging.getLogger()
+          logger.setLevel(logging.INFO)
+          s3 = boto3.client("s3", config=Config(retries={"max_attempts": 3, "mode": "adaptive"}))
+          DESTINATION_BUCKET = os.environ["DESTINATION_BUCKET"]
+          DESTINATION_PREFIX = os.environ.get("DESTINATION_PREFIX", "logs/")
+          SPARKLOGS_MARKER = "/sparklogs/"
+          COPY_OBJECT_MAX_BYTES = 5 * 1024 * 1024 * 1024
+
+          def destination_key_for(source_key):
+              idx = source_key.find(SPARKLOGS_MARKER)
+              if idx == -1:
+                  return None
+              return DESTINATION_PREFIX + source_key[idx + len(SPARKLOGS_MARKER):]
+
+          def lambda_handler(event, context):
+              records = event.get("Records", [])
+              copied, skipped, failed = 0, 0, 0
+              for record in records:
+                  try:
+                      source_bucket = record["s3"]["bucket"]["name"]
+                      source_key = urllib.parse.unquote_plus(record["s3"]["object"]["key"])
+                      size = record["s3"]["object"].get("size", 0)
+                  except KeyError:
+                      logger.error("Malformed record, skipping: %s", json.dumps(record))
+                      failed += 1
+                      continue
+                  destination_key = destination_key_for(source_key)
+                  if destination_key is None:
+                      skipped += 1
+                      logger.info("Skipped (not a spark event log): s3://%s/%s", source_bucket, source_key)
+                      continue
+                  try:
+                      if size > COPY_OBJECT_MAX_BYTES:
+                          _multipart_copy(source_bucket, source_key, destination_key, size)
+                      else:
+                          s3.copy_object(
+                              CopySource={"Bucket": source_bucket, "Key": source_key},
+                              Bucket=DESTINATION_BUCKET, Key=destination_key)
+                      copied += 1
+                      logger.info("Copied s3://%s/%s -> s3://%s/%s (%d bytes)",
+                                  source_bucket, source_key, DESTINATION_BUCKET, destination_key, size)
+                  except Exception:
+                      failed += 1
+                      logger.exception("Failed to copy s3://%s/%s -> s3://%s/%s",
+                                       source_bucket, source_key, DESTINATION_BUCKET, destination_key)
+              result = {"copied": copied, "skipped": skipped, "failed": failed, "total": len(records)}
+              logger.info("Batch complete: %s", json.dumps(result))
+              return result
+
+          def _multipart_copy(source_bucket, source_key, destination_key, size):
+              part_size = 1 * 1024 * 1024 * 1024
+              mpu = s3.create_multipart_upload(Bucket=DESTINATION_BUCKET, Key=destination_key)
+              upload_id = mpu["UploadId"]
+              try:
+                  parts, part_number, offset = [], 1, 0
+                  while offset < size:
+                      last_byte = min(offset + part_size, size) - 1
+                      resp = s3.upload_part_copy(
+                          Bucket=DESTINATION_BUCKET, Key=destination_key,
+                          UploadId=upload_id, PartNumber=part_number,
+                          CopySource={"Bucket": source_bucket, "Key": source_key},
+                          CopySourceRange=f"bytes={offset}-{last_byte}")
+                      parts.append({"ETag": resp["CopyPartResult"]["ETag"], "PartNumber": part_number})
+                      offset = last_byte + 1
+                      part_number += 1
+                  s3.complete_multipart_upload(
+                      Bucket=DESTINATION_BUCKET, Key=destination_key,
+                      UploadId=upload_id, MultipartUpload={"Parts": parts})
+              except Exception:
+                  s3.abort_multipart_upload(
+                      Bucket=DESTINATION_BUCKET, Key=destination_key, UploadId=upload_id)
+                  raise
+
+  # ---------- Permission for S3 to invoke the Lambda ----------
+  S3InvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref CopyFunction
+      Action: lambda:InvokeFunction
+      Principal: s3.amazonaws.com
+      SourceAccount: !Ref AWS::AccountId
+      SourceArn: !Sub 'arn:aws:s3:::${SourceBucketName}'
+
+  # ---------- Source bucket with event notification ----------
+  SourceBucket:
+    Type: AWS::S3::Bucket
+    DependsOn: S3InvokePermission
+    Properties:
+      BucketName: !Ref SourceBucketName
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      NotificationConfiguration:
+        LambdaConfigurations:
+          - Event: 's3:ObjectCreated:*'
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: prefix
+                    Value: !Ref LogPrefix
+            Function: !GetAtt CopyFunction.Arn
+
+Outputs:
+  SourceBucket:
+    Value: !Ref SourceBucket
+  DestinationBucket:
+    Value: !Ref DestinationBucket
+  CopyFunctionArn:
+    Value: !GetAtt CopyFunction.Arn
+  DlqUrl:
+    Value: !Ref CopyDlq
