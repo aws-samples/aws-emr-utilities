@@ -218,6 +218,70 @@ def _select_worker_type(input_gb: float, shuffle_ratio: float,
     return size, {"vcpu": r["vcpu"], "memory": mem}
 
 
+# 32-vCPU workers only accept three discrete memory configurations (60/120/
+# 244 GB); spark.executor.memory + 10% overhead must land within 8 GB of one
+# of them, so the usable executor-memory values are 54G / 108G / 219G.
+XLARGE_MEM_TIERS = [54, 108, 219]
+
+
+def _xlarge_memory_from_heap(peak_heap_gb: float, orig_mem_gb: float) -> int:
+    """Pick the 32-vCPU discrete memory tier from measured peak JVM heap.
+
+    Peak heap on an oversized executor overstates the live set (GC runs
+    lazily, letting the heap grow toward capacity before collecting), so a
+    2x headroom factor here would round every over-provisioned source back
+    up to its own wasteful tier. 1.25x on measured peak, plus the tier's
+    built-in 10% container overhead gap, reproduces the field-validated
+    right-sizing: 84 GB peak on a 219G executor -> 108G tier, which ran
+    best of nine tuning iterations on the reporting workload.
+    """
+    if peak_heap_gb and peak_heap_gb > 0:
+        needed = peak_heap_gb * 1.25
+    else:
+        # No heap measurement: keep the source's proven memory
+        needed = orig_mem_gb or XLARGE_MEM_TIERS[-1]
+    for m in XLARGE_MEM_TIERS:
+        if m >= needed:
+            return m
+    return XLARGE_MEM_TIERS[-1]
+
+
+def _preserve_xlarge_source(is_ec2: bool, orig_cores: int, spill_gb: float,
+                            shuffle_fetch_wait_pct: float, stages_raw: list,
+                            max_peak_mem_gb: float, orig_mem_gb: float):
+    """Keep a proven 32-vCPU Serverless source on 32c workers.
+
+    The sizing matrix tops out at Large (16c), so a healthy 32c source gets
+    demoted to the spill/heap escalation ladder — field report: a 32c/219G
+    x12 job at 36% memory utilization was recommended Small 4c/27G x79,
+    while the proven-best manual fix kept 32c and only cut memory to the
+    120 GB tier. When the source itself demonstrates the 32c shape works,
+    reproduce it and right-size memory from peak JVM heap.
+
+    Preservation only — never promotes a non-32c source to 32c. Fewer,
+    fatter hosts lose when shuffle serving is IOPS/fan-in-bound (validated:
+    a 4.4TB single-agg with 45M small shuffle blocks ran 2.6x faster on 16c
+    than 32c), and that class isn't reliably separable from an event log,
+    so promotion needs per-workload evidence.
+
+    Returns (worker_type, worker_cfg) or None if the guards don't hold.
+    """
+    if is_ec2 or orig_cores != 32:
+        return None
+    if spill_gb > 10:
+        # Memory pressure — let the escalation ladder resize the worker
+        return None
+    if shuffle_fetch_wait_pct > 20:
+        # Shuffle-serving-bound: fewer fatter hosts concentrate fan-in;
+        # this is the class where 16c beats 32c
+        return None
+    if any(s.get('failure_reason') for s in (stages_raw or [])):
+        # Retried stages — the 32c shape isn't proven on this run
+        return None
+    mem = _xlarge_memory_from_heap(max_peak_mem_gb, orig_mem_gb)
+    return "XLarge", {"vcpu": 32, "memory": mem}
+
+
 def _compute_exec_limits(input_gb: float, vcpu: int, partitions: int = 0,
                         mem_pct: float = 60.0, cpu_pct: float = 50.0,
                         idle_pct: float = 50.0, spill_gb: float = 0.0,
@@ -627,6 +691,14 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                                                       max_shuffle_write_per_task_gb=max_shuffle_write_per_task_gb,
                                                       peak_mem_pct=peak_mem_pct, is_ec2=is_ec2)
 
+        # Proven 32c Serverless source: preserve the worker shape, right-size
+        # memory from peak JVM heap (see _preserve_xlarge_source).
+        _xl = _preserve_xlarge_source(is_ec2, orig_cores, spill_gb,
+                                      shuffle_fetch_wait_pct, stages_raw,
+                                      max_peak_mem_gb, orig_executor_mem_gb)
+        if _xl:
+            worker_type, worker_cfg = _xl
+
         # Large advisory (>=500MB) means large partitions — need 8c for memory headroom
         _src_adv = str(_spark_config_raw.get('spark.sql.adaptive.advisoryPartitionSizeInBytes', ''))
         if is_ec2 and worker_type == "Small" and 'MB' in _src_adv.upper():
@@ -761,7 +833,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         if not is_ec2:
             _total_shuffle_gb = s_in_gb + s_out_gb
             _orig_vcpu = worker_cfg["vcpu"]
-            if (_total_shuffle_gb > 15000 or spill_gb > 50000) and worker_type != "Large":
+            if (_total_shuffle_gb > 15000 or spill_gb > 50000) and worker_type not in ("Large", "XLarge"):
                 worker_type = "Large"
                 worker_cfg = {"vcpu": 16, "memory": 108}
                 max_exec_cost = max(2, max_exec_cost * _orig_vcpu // 16)

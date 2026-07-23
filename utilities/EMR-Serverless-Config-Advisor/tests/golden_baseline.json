@@ -83,6 +83,13 @@
     "field_reports/windowsort_fetchfail_00g72m8n01eb1g0b: NEW app not in golden baseline"
    ],
    "reason": "Field fixes: (1) worker section now syncs with dynamicAllocation confs when build_spark_cfg raises them (the 11 remaining diffs are exactly this pre-existing inconsistency resolving); (2) spill-aware partition boost for stages that spilled AND failed (fetch-fail retry loops) \u2014 field-validated 4016~=4000 proven fix on 8.5T-spill window sort, harm-gated so steady-state spilling jobs (search-health class) keep proven 1000-part configs; (3) collect-heavy driver sizing from Task Metrics Result Size (2.64G collected -> 8c/54G driver, matching Parth's validated $0.44 run) + never below proven source driver; (4) stage-attempt dedupe (extractor emitted one row per retry attempt each carrying full aggregate \u2014 4x-retried stage summed 4x spill). New field_reports fixture set pins both: windowsort_fetchfail_00g72m8n01eb1g0b (Geethanjali, parts 4016 + 8c/54G driver) and collect_heavy_omp_00g6tp1n6gqmio0b (Parth OMP, 8c/54G driver, Small workers)"
+  },
+  {
+   "changed_lines": 1,
+   "changes": [
+    "field_reports/xlarge_tpcds_iter2_00g745gvsf93oo0b: NEW app not in golden baseline"
+   ],
+   "reason": "32c worker awareness: preserve proven XLarge Serverless sources, size memory from peak JVM heap (field report: 32c/219G x12 at 36% mem util was demoted to Small 4c/27G x79; proven-best manual fix kept 32c at 108G tier). New fixture xlarge_tpcds_iter2. Existing 22 apps unchanged."
   }
  ],
  "snapshot": {
@@ -614,6 +621,32 @@
      "worker.min_executors": 12,
      "worker.type": "Large",
      "worker.vcpu": 16
+    }
+   },
+   "xlarge_tpcds_iter2_00g745gvsf93oo0b": {
+    "cost": {
+     "spark_configs.spark.dynamicAllocation.maxExecutors": "9",
+     "spark_configs.spark.dynamicAllocation.minExecutors": "3",
+     "spark_configs.spark.emr-serverless.executor.disk": "1000G",
+     "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
+     "spark_configs.spark.sql.shuffle.partitions": "1000",
+     "worker.max_executors": 9,
+     "worker.memory_gb": 108,
+     "worker.min_executors": 3,
+     "worker.type": "XLarge",
+     "worker.vcpu": 32
+    },
+    "performance": {
+     "spark_configs.spark.dynamicAllocation.maxExecutors": "13",
+     "spark_configs.spark.dynamicAllocation.minExecutors": "4",
+     "spark_configs.spark.emr-serverless.executor.disk": "1000G",
+     "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
+     "spark_configs.spark.sql.shuffle.partitions": "1000",
+     "worker.max_executors": 13,
+     "worker.memory_gb": 108,
+     "worker.min_executors": 4,
+     "worker.type": "XLarge",
+     "worker.vcpu": 32
     }
    }
   },
