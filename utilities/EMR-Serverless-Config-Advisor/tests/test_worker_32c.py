@@ -107,6 +107,18 @@ def main():
     # the vetoes (not some other gate) are what block this class.
     check("iopsbound_promotes_without_vetoes", promote(**vb) == 138)
 
+    # 11b. Promotion fetch-wait veto is 10% — stricter than preservation's
+    #      20% guard. The 10-20% band has no empirical coverage (validated:
+    #      0% promotes and wins even at 8x block count; 27% amplified to
+    #      75% on consolidation, 2.6x loss). Sources in the band keep
+    #      today's recommendation; preservation keeps its 20% guard since
+    #      its source already proved the 32c shape at that fetch-wait.
+    check("band_fetchwait_15pct_no_promote", promote(fetch_wait=15.0) is None)
+    check("band_fetchwait_11pct_no_promote", promote(fetch_wait=11.0) is None)
+    check("fetchwait_10pct_promotes", promote(fetch_wait=10.0) == 8)
+    check("preservation_keeps_20pct_guard",
+          preserve(fetch_wait=15.0) is not None)
+
     # 12. Scale floor: below 192 total vCPU consolidation isn't worth it.
     check("small_fleet_no_promote", promote(max_exec=47) is None)   # 188 vCPU
     check("at_192_vcpu_promotes", promote(max_exec=48) == 6)        # benchmark shape

@@ -304,6 +304,14 @@ def _promote_to_xlarge(is_ec2: bool, orig_cores: int, worker_type: str,
     source, and the shuffle-serving floor (hosts needed to serve peak
     shuffle at 0.04 GB/s/host) exceeding the consolidated host count.
 
+    The fetch-wait veto is 10% for promotion (stricter than the 20%
+    preservation guard, deliberately): promotion moves a workload to an
+    unproven shape, and the 10-20%% band has no empirical coverage —
+    validated points are 0%% (promotes, wins at 1x and 8x block count)
+    and 27%% (consolidation amplified fetch-wait to 75%%, 2.6x loss).
+    Sources in the band keep today's recommendation. Preservation keeps
+    20%%: its source already ran successfully on 32c at that fetch-wait.
+
     Gates (all must hold):
       - Serverless source, not already on/recommended 32c
       - no spill (execution-memory contention risk rises with cores/exec;
@@ -328,7 +336,7 @@ def _promote_to_xlarge(is_ec2: bool, orig_cores: int, worker_type: str,
         return None
     if (spill_gb or 0) + (disk_spill_gb or 0) > 10:
         return None
-    if shuffle_fetch_wait_pct > 20:
+    if shuffle_fetch_wait_pct > 10:
         return None
     if any(s.get('failure_reason') for s in (stages_raw or [])):
         return None
