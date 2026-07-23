@@ -136,12 +136,23 @@ def main():
     #     smaller workers for S3 read parallelism (Neil's Slack concern).
     check("thin_shuffle_no_promote", promote(s_out_gb=200.0) is None)  # 25 GB/worker
 
-    # 16. Already 32c (source or recommendation): preservation path owns it.
+    # 16. Already 32c on Serverless (source or recommendation):
+    #     preservation path owns it.
     check("already_32c_source", promote(orig_cores=32) is None)
     check("already_xlarge_rec", promote(wtype="XLarge", wvcpu=32) is None)
 
-    # 17. EC2 sources excluded.
-    check("ec2_no_promote", promote(is_ec2=True) is None)
+    # 17. EC2 sources ARE eligible: the scenario signature is
+    #     workload-intrinsic, and the platform-dependent gates (spill,
+    #     fetch-wait) transfer conservatively — EC2's lower mem/core
+    #     OVERSTATES spill, so clean-on-EC2 is stronger evidence.
+    check("ec2_clean_promotes", promote(is_ec2=True) == 8)
+    # EC2 32-core source has no preservation path; consolidation
+    # preserves the proven fat shape across the migration.
+    check("ec2_32c_source_promotes", promote(is_ec2=True, orig_cores=32) == 8)
+    # The typical EC2 migration profile (heavy spill from soft YARN
+    # enforcement / low mem-per-core) is still vetoed by the spill gate.
+    check("ec2_spilling_vetoed", promote(is_ec2=True, spill=156.6) is None)
+    check("ec2_high_fetchwait_vetoed", promote(is_ec2=True, fetch_wait=47.6) is None)
 
     # 18. Promoted memory is always the 219G tier (only 32c tier that
     #     preserves 6.75 GB/core) — encoded at the call site; here we

@@ -313,7 +313,8 @@ def _promote_to_xlarge(is_ec2: bool, orig_cores: int, worker_type: str,
     20%%: its source already ran successfully on 32c at that fetch-wait.
 
     Gates (all must hold):
-      - Serverless source, not already on/recommended 32c
+      - not already on/recommended 32c (Serverless 32c sources belong to
+        the preservation path)
       - no spill (execution-memory contention risk rises with cores/exec;
         proven: 8c spills where 4c doesn't at equal mem/core)
       - no retried stages, fetch-wait <= 20%
@@ -324,6 +325,19 @@ def _promote_to_xlarge(is_ec2: bool, orig_cores: int, worker_type: str,
         per the launch guidance; scan-dominated jobs keep smaller workers
         for S3 read parallelism)
 
+    EC2 sources are eligible: the scenario signature is workload-intrinsic
+    (shuffle volume and topology come from the data and query plan), the
+    fleet gate reads the already-platform-adjusted Serverless target, and
+    the platform-dependent gates transfer in the conservative direction —
+    EC2's lower memory/core and softer enforcement OVERSTATE spill, and
+    its disks overstate disk-driven fetch-wait, so a profile that is clean
+    on EC2 is stronger evidence, not weaker. Fan-in that premium EC2
+    networking might mask is guarded by the Serverless-calibrated serving
+    floor on the consolidated count. The untransferable risk (32-core
+    execution-memory contention) is the same one accepted for 4c->32c
+    Serverless promotion, mitigated the same way: the 219G tier holds the
+    max memory/core, and preservation right-sizes on the next run.
+
     Promoted memory is always the 219G tier: it is the only 32c tier that
     preserves the 6.75 GB/core of every other Serverless tier, and the
     promotion target is an unproven shape for this workload. The next run's
@@ -332,7 +346,13 @@ def _promote_to_xlarge(is_ec2: bool, orig_cores: int, worker_type: str,
 
     Returns the consolidated executor count, or None if any gate fails.
     """
-    if is_ec2 or orig_cores == 32 or worker_type == "XLarge":
+    if worker_type == "XLarge":
+        return None
+    if not is_ec2 and orig_cores == 32:
+        # Proven Serverless 32c source — preservation path owns it. An
+        # EC2 32-core source has no preservation path; consolidating it
+        # onto Serverless 32c preserves the proven fat shape across the
+        # migration, so it stays eligible here.
         return None
     if (spill_gb or 0) + (disk_spill_gb or 0) > 10:
         return None
