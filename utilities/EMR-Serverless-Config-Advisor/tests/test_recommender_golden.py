@@ -55,6 +55,24 @@ CONTRACT_FIELDS = [
 ]
 
 
+def check_fixtures_parse(fixture_dir):
+    """Fail loudly on unparseable fixture JSONs. The recommender's loader
+    silently skips files that fail json.load, so a corrupt fixture degrades
+    coverage without failing anything (found: one fixture with an invalid
+    escape sequence contributed nothing for weeks while looking protective)."""
+    import glob as _glob
+    bad = []
+    for f in _glob.glob(os.path.join(fixture_dir, "task_stage_summary", "*.json")):
+        try:
+            with open(f) as fh:
+                json.load(fh)
+        except Exception as e:
+            bad.append("%s: %s" % (os.path.basename(f), e))
+    if bad:
+        raise RuntimeError("unparseable fixture(s) in %s:\n  %s"
+                           % (fixture_dir, "\n  ".join(bad)))
+
+
 def run_recommender(fixture_dir):
     """Run the recommender on one fixture dir, return (cost_recs, perf_recs)."""
     with tempfile.TemporaryDirectory() as td:
@@ -92,6 +110,7 @@ def build_snapshot():
             print("WARN: skipping %s (no task_stage_summary)" % fdir, file=sys.stderr)
             continue
         set_name = os.path.basename(fdir)
+        check_fixtures_parse(fdir)
         cost, perf = run_recommender(fdir)
         apps = {}
         for mode, recs in (("cost", cost), ("performance", perf)):
