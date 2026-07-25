@@ -414,8 +414,13 @@ def _compute_exec_limits(input_gb: float, vcpu: int, partitions: int = 0,
         # Rule 1: Shuffle boost for small clusters with very high shuffle ratio
         if orig_executors < 110 and shuf_ratio > 10:
             cores = base_cores + total_shuf_write / 30
-        # Rule 2: Cap for large over-provisioned clusters
-        elif orig_executors > 150 and shuf_ratio < 8 and eff < 0.40:
+        # Rule 2: Cap for large over-provisioned clusters. Scale is guarded
+        # by executor count OR total vCPU — counting executors alone let
+        # fat-executor fleets escape work-based sizing (100 x 32-core =
+        # 3,200 mostly-idle vCPU is only 100 executors), copying the waste
+        # into the recommendation. 1200 vCPU ~ the 150-executor guard at
+        # the 8-core executors typical of the fleets Rule 2 was built on.
+        elif (orig_executors > 150 or orig_vcpu > 1200) and shuf_ratio < 8 and eff < 0.40:
             mult = max(0.5, 1.8 - eff * 3)
             io_boost = input_gb / 5 if shuf_ratio < 1 else 0
             cores = work * mult + io_boost + 30
@@ -905,7 +910,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
 
         # Bump up worker size if too many executors (shuffle coordination overhead)
         # Always go Small→Medium→Large (never skip Medium)
-        _is_rule2_spill = is_ec2 and orig_executors > 150 and sh_ratio < 800 and spill_gb > 5000
+        _is_rule2_spill = is_ec2 and (orig_executors > 150 or orig_executors * orig_cores > 1200) and sh_ratio < 800 and spill_gb > 5000
         if is_ec2 and max_exec_cost > 70 and worker_type == "Small" and not _is_rule2_spill:
             worker_type = "Medium"
             worker_cfg = {"vcpu": 8, "memory": 54}

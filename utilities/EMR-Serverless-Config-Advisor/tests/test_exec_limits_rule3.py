@@ -96,6 +96,29 @@ def main():
     expected = max(4, int(120.0 * 1.1 / 4))
     check("zero_orig_vcpu_fallback", mx == expected, f"(max_exec={mx})")
 
+    # 8b. EC2 Rule 2 vCPU guard: a fat-executor idle EC2 fleet must not
+    #     escape work-based sizing just because its executor COUNT is low.
+    #     100 x 32c = 3,200 vCPU at eff 0.20/idle 80% — pre-guard, Rule 2
+    #     required >150 executors and copied the waste forward.
+    def ec2_limits(orig_executors, cores, eff, dur_h=1.0, input_gb=3000.0):
+        task_h = eff * orig_executors * cores * dur_h
+        return _compute_exec_limits(
+            input_gb, 4, 0, mem_pct=25.0, cpu_pct=50.0, idle_pct=80.0,
+            spill_gb=0.0, mode="cost", orig_executors=orig_executors,
+            orig_cores=cores, orig_mem_mb=64 * 1024,
+            total_task_exec_hours=task_h, duration_hours=dur_h,
+            stages=[], is_ec2_source=True)
+
+    fat_idle, _ = ec2_limits(100, 32, eff=0.20)
+    # anchor-based sizing would give ~ 3200 * base_eff(0.80) / 4 = 640 execs
+    check("ec2_fat_idle_capped", fat_idle < 400, f"(max_exec={fat_idle})")
+    thin_ok, _ = ec2_limits(100, 8, eff=0.20)   # 800 vCPU — below both guards
+    anchor = int(100 * 8 * (0.47 + 0.33 * min(1.0, (64/8) / 6.75)) / 4)
+    check("ec2_small_fleet_unguarded", thin_ok >= anchor - 1,
+          f"(max_exec={thin_ok}, anchor~{anchor})")
+    fat_busy, _ = ec2_limits(100, 32, eff=0.75)  # efficient — Rule 2 must not fire
+    check("ec2_fat_busy_unchanged", fat_busy > 400, f"(max_exec={fat_busy})")
+
     # 8. Monotonicity: Rule 3 can only reduce vs the old anchor.
     for eff in (0.05, 0.15, 0.25, 0.35, 0.39):
         dur = 0.5
