@@ -218,6 +218,166 @@ def _select_worker_type(input_gb: float, shuffle_ratio: float,
     return size, {"vcpu": r["vcpu"], "memory": mem}
 
 
+# 32-vCPU workers only accept three discrete memory configurations (60/120/
+# 244 GB); spark.executor.memory + 10% overhead must land within 8 GB of one
+# of them, so the usable executor-memory values are 54G / 108G / 219G.
+XLARGE_MEM_TIERS = [54, 108, 219]
+
+
+def _xlarge_memory_from_heap(peak_heap_gb: float, orig_mem_gb: float) -> int:
+    """Pick the 32-vCPU discrete memory tier from measured peak JVM heap.
+
+    Peak heap on an oversized executor overstates the live set (GC runs
+    lazily, letting the heap grow toward capacity before collecting), so a
+    2x headroom factor here would round every over-provisioned source back
+    up to its own wasteful tier. 1.25x on measured peak, plus the tier's
+    built-in 10% container overhead gap, reproduces the field-validated
+    right-sizing: 84 GB peak on a 219G executor -> 108G tier, which ran
+    best of nine tuning iterations on the reporting workload.
+    """
+    if peak_heap_gb and peak_heap_gb > 0:
+        needed = peak_heap_gb * 1.25
+    else:
+        # No heap measurement: keep the source's proven memory
+        needed = orig_mem_gb or XLARGE_MEM_TIERS[-1]
+    for m in XLARGE_MEM_TIERS:
+        if m >= needed:
+            return m
+    return XLARGE_MEM_TIERS[-1]
+
+
+def _preserve_xlarge_source(is_ec2: bool, orig_cores: int, spill_gb: float,
+                            shuffle_fetch_wait_pct: float, stages_raw: list,
+                            max_peak_mem_gb: float, orig_mem_gb: float):
+    """Keep a proven 32-vCPU Serverless source on 32c workers.
+
+    The sizing matrix tops out at Large (16c), so a healthy 32c source gets
+    demoted to the spill/heap escalation ladder — field report: a 32c/219G
+    x12 job at 36% memory utilization was recommended Small 4c/27G x79,
+    while the proven-best manual fix kept 32c and only cut memory to the
+    120 GB tier. When the source itself demonstrates the 32c shape works,
+    reproduce it and right-size memory from peak JVM heap.
+
+    Preservation only — never promotes a non-32c source to 32c. Fewer,
+    fatter hosts lose when shuffle serving is IOPS/fan-in-bound (validated:
+    a 4.4TB single-agg with 45M small shuffle blocks ran 2.6x faster on 16c
+    than 32c), and that class isn't reliably separable from an event log,
+    so promotion needs per-workload evidence.
+
+    Returns (worker_type, worker_cfg) or None if the guards don't hold.
+    """
+    if is_ec2 or orig_cores != 32:
+        return None
+    if spill_gb > 10:
+        # Memory pressure — let the escalation ladder resize the worker
+        return None
+    if shuffle_fetch_wait_pct > 20:
+        # Shuffle-serving-bound: fewer fatter hosts concentrate fan-in;
+        # this is the class where 16c beats 32c
+        return None
+    if any(s.get('failure_reason') for s in (stages_raw or [])):
+        # Retried stages — the 32c shape isn't proven on this run
+        return None
+    mem = _xlarge_memory_from_heap(max_peak_mem_gb, orig_mem_gb)
+    return "XLarge", {"vcpu": 32, "memory": mem}
+
+
+def _promote_to_xlarge(is_ec2: bool, orig_cores: int, worker_type: str,
+                       worker_vcpu: int, spill_gb: float, disk_spill_gb: float,
+                       shuffle_fetch_wait_pct: float, stages_raw: list,
+                       s_out_gb: float, max_exec: int,
+                       serving_floor_hosts: int):
+    """Consolidate a large fleet of smaller workers onto 32-vCPU workers.
+
+    Serverless bills per vCPU-hour, so equal-total-vCPU consolidation is
+    cost-neutral on compute; the win comes from second-order effects:
+    fewer hosts = less N-to-N shuffle fan-in, more shuffle read locally,
+    higher per-disk IOPS/throughput on shuffle-optimized disk, and less
+    driver coordination. Benchmarked 26-38% faster/cheaper on TPC-DS 3TB /
+    TPC-H 1TB at identical 192 total vCPU (48x4c -> 6x32c), and validated
+    on a 43-join production replica (32c beat 16c on cost at equal vCPU).
+
+    Consolidation LOSES when shuffle serving is IOPS/fan-in-bound: fewer
+    hosts concentrate the same fetch fan-in (validated: a 4.4TB single-agg
+    with ~53M sub-100KB shuffle blocks ran 2.6x faster on 16c than 32c).
+    Two independent vetoes cover that class: elevated fetch-wait on the
+    source, and the shuffle-serving floor (hosts needed to serve peak
+    shuffle at 0.04 GB/s/host) exceeding the consolidated host count.
+
+    The fetch-wait veto is 10% for promotion (stricter than the 20%
+    preservation guard, deliberately): promotion moves a workload to an
+    unproven shape, and the 10-20%% band has no empirical coverage —
+    validated points are 0%% (promotes, wins at 1x and 8x block count)
+    and 27%% (consolidation amplified fetch-wait to 75%%, 2.6x loss).
+    Sources in the band keep today's recommendation. Preservation keeps
+    20%%: its source already ran successfully on 32c at that fetch-wait.
+
+    Gates (all must hold):
+      - not already on/recommended 32c (Serverless 32c sources belong to
+        the preservation path)
+      - no spill (execution-memory contention risk rises with cores/exec;
+        proven: 8c spills where 4c doesn't at equal mem/core). Field
+        confirmation 2026-07: a manual 32c probe on a 5.2TB-spill hash-agg
+        job — 32 concurrent tasks sharing one unified memory pool forced
+        each other to spill at smaller working sets, spill amplified 12.6x
+        (14.7TB -> 185.8TB memory spill), map-side combining collapsed
+        (shuffle write 1.05TB -> 8.7TB), and the run hit its 3h timeout
+        unfinished at 10.6x the billed vCPU-h of the 16c run. This veto
+        rejects that job three orders of magnitude past threshold.
+      - no retried stages, fetch-wait <= 20%
+      - recommended fleet >= 192 total vCPU (benchmark floor: 6 x 32c;
+        below that consolidation has too few hosts to matter)
+      - consolidated host count still satisfies the serving floor
+      - shuffle write >= 32 GB per consolidated worker (shuffle-intensive
+        per the launch guidance; scan-dominated jobs keep smaller workers
+        for S3 read parallelism)
+
+    EC2 sources are eligible: the scenario signature is workload-intrinsic
+    (shuffle volume and topology come from the data and query plan), the
+    fleet gate reads the already-platform-adjusted Serverless target, and
+    the platform-dependent gates transfer in the conservative direction —
+    EC2's lower memory/core and softer enforcement OVERSTATE spill, and
+    its disks overstate disk-driven fetch-wait, so a profile that is clean
+    on EC2 is stronger evidence, not weaker. Fan-in that premium EC2
+    networking might mask is guarded by the Serverless-calibrated serving
+    floor on the consolidated count. The untransferable risk (32-core
+    execution-memory contention) is the same one accepted for 4c->32c
+    Serverless promotion, mitigated the same way: the 219G tier holds the
+    max memory/core, and preservation right-sizes on the next run.
+
+    Promoted memory is always the 219G tier: it is the only 32c tier that
+    preserves the 6.75 GB/core of every other Serverless tier, and the
+    promotion target is an unproven shape for this workload. The next run's
+    event log gives a measured 32c peak heap, and preservation
+    (_preserve_xlarge_source) right-sizes the tier from it.
+
+    Returns the consolidated executor count, or None if any gate fails.
+    """
+    if worker_type == "XLarge":
+        return None
+    if not is_ec2 and orig_cores == 32:
+        # Proven Serverless 32c source — preservation path owns it. An
+        # EC2 32-core source has no preservation path; consolidating it
+        # onto Serverless 32c preserves the proven fat shape across the
+        # migration, so it stays eligible here.
+        return None
+    if (spill_gb or 0) + (disk_spill_gb or 0) > 10:
+        return None
+    if shuffle_fetch_wait_pct > 10:
+        return None
+    if any(s.get('failure_reason') for s in (stages_raw or [])):
+        return None
+    total_vcpu = max_exec * worker_vcpu
+    if total_vcpu < 192:
+        return None
+    n_xl = int(math.ceil(total_vcpu / 32.0))
+    if serving_floor_hosts and n_xl < serving_floor_hosts:
+        return None
+    if s_out_gb / max(n_xl, 1) < 32:
+        return None
+    return n_xl
+
+
 def _compute_exec_limits(input_gb: float, vcpu: int, partitions: int = 0,
                         mem_pct: float = 60.0, cpu_pct: float = 50.0,
                         idle_pct: float = 50.0, spill_gb: float = 0.0,
@@ -261,8 +421,13 @@ def _compute_exec_limits(input_gb: float, vcpu: int, partitions: int = 0,
         # Rule 1: Shuffle boost for small clusters with very high shuffle ratio
         if orig_executors < 110 and shuf_ratio > 10:
             cores = base_cores + total_shuf_write / 30
-        # Rule 2: Cap for large over-provisioned clusters
-        elif orig_executors > 150 and shuf_ratio < 8 and eff < 0.40:
+        # Rule 2: Cap for large over-provisioned clusters. Scale is guarded
+        # by executor count OR total vCPU — counting executors alone let
+        # fat-executor fleets escape work-based sizing (100 x 32-core =
+        # 3,200 mostly-idle vCPU is only 100 executors), copying the waste
+        # into the recommendation. 1200 vCPU ~ the 150-executor guard at
+        # the 8-core executors typical of the fleets Rule 2 was built on.
+        elif (orig_executors > 150 or orig_vcpu > 1200) and shuf_ratio < 8 and eff < 0.40:
             mult = max(0.5, 1.8 - eff * 3)
             io_boost = input_gb / 5 if shuf_ratio < 1 else 0
             cores = work * mult + io_boost + 30
@@ -747,6 +912,14 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                                                       max_shuffle_write_per_task_gb=max_shuffle_write_per_task_gb,
                                                       peak_mem_pct=peak_mem_pct, is_ec2=is_ec2)
 
+        # Proven 32c Serverless source: preserve the worker shape, right-size
+        # memory from peak JVM heap (see _preserve_xlarge_source).
+        _xl = _preserve_xlarge_source(is_ec2, orig_cores, spill_gb,
+                                      shuffle_fetch_wait_pct, stages_raw,
+                                      max_peak_mem_gb, orig_executor_mem_gb)
+        if _xl:
+            worker_type, worker_cfg = _xl
+
         # Large advisory (>=500MB) means large partitions — need 8c for memory headroom
         _src_adv = str(_spark_config_raw.get('spark.sql.adaptive.advisoryPartitionSizeInBytes', ''))
         if is_ec2 and worker_type == "Small" and 'MB' in _src_adv.upper():
@@ -864,7 +1037,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
 
         # Bump up worker size if too many executors (shuffle coordination overhead)
         # Always go Small→Medium→Large (never skip Medium)
-        _is_rule2_spill = is_ec2 and orig_executors > 150 and sh_ratio < 800 and spill_gb > 5000
+        _is_rule2_spill = is_ec2 and (orig_executors > 150 or orig_executors * orig_cores > 1200) and sh_ratio < 800 and spill_gb > 5000
         if is_ec2 and max_exec_cost > 70 and worker_type == "Small" and not _is_rule2_spill:
             worker_type = "Medium"
             worker_cfg = {"vcpu": 8, "memory": 54}
@@ -881,7 +1054,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         if not is_ec2:
             _total_shuffle_gb = s_in_gb + s_out_gb
             _orig_vcpu = worker_cfg["vcpu"]
-            if (_total_shuffle_gb > 15000 or spill_gb > 50000) and worker_type != "Large":
+            if (_total_shuffle_gb > 15000 or spill_gb > 50000) and worker_type not in ("Large", "XLarge"):
                 worker_type = "Large"
                 worker_cfg = {"vcpu": 16, "memory": 108}
                 max_exec_cost = max(2, max_exec_cost * _orig_vcpu // 16)
@@ -1129,12 +1302,39 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                 if _new_max_p != max_exec_perf:
                     max_exec_perf = _new_max_p
                     min_exec_perf = max(1, min(max_exec_perf - 2, max(5, max_exec_perf // 3)))
+        # Consolidate large fleets of smaller workers onto 32c when the
+        # workload profile is throughput-bound (see _promote_to_xlarge).
+        # Cost and perf recs share one worker shape, so both fleets must
+        # pass the gates (each against its own serving floor).
+        _xl_cost = _promote_to_xlarge(is_ec2, orig_cores, worker_type,
+                                      worker_cfg["vcpu"], spill_gb, disk_spill_gb,
+                                      shuffle_fetch_wait_pct, stages_raw,
+                                      s_out_gb, max_exec_cost, _floor_cost)
+        _xl_perf = _promote_to_xlarge(is_ec2, orig_cores, worker_type,
+                                      worker_cfg["vcpu"], spill_gb, disk_spill_gb,
+                                      shuffle_fetch_wait_pct, stages_raw,
+                                      s_out_gb, max_exec_perf, _floor_perf)
+        if _xl_cost and _xl_perf:
+            worker_type = "XLarge"
+            worker_cfg = {"vcpu": 32, "memory": 219}
+            max_exec_cost = _xl_cost
+            min_exec_cost = max(1, min(max_exec_cost - 2, max(3, max_exec_cost // 3)))
+            max_exec_perf = _xl_perf
+            min_exec_perf = max(1, min(max_exec_perf - 2, max(3, max_exec_perf // 3)))
+            # Re-derive the cost disk on the promoted shape: 32c has real
+            # throughput tiers up to 1.0 GB/s at 2000G, and the fleet is
+            # now ~4x fewer hosts serving the same shuffle.
+            executor_disk_cost = _calculate_executor_disk(
+                s_out_gb, _eff_disk_spill, max_exec_cost,
+                worker_vcpu=worker_cfg["vcpu"],
+                stages=stages_raw, fetch_wait_pct=shuffle_fetch_wait_pct)
+
         executor_disk_perf = _calculate_executor_disk(
             s_out_gb, _eff_disk_spill, max_exec_perf,
             worker_vcpu=worker_cfg["vcpu"],
             stages=stages_raw, fetch_wait_pct=shuffle_fetch_wait_pct,
             mode="performance")
-        
+
         # Build base metrics
         base_metrics = {
             "input_gb": round(i_in_gb, 2),
