@@ -17,7 +17,7 @@ import zipfile
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from log_evidence import (SIGNATURES, corroboration_notes,
-                          extract_log_evidence)
+                          extract_log_evidence, scan_text)
 
 FAILURES = []
 
@@ -137,6 +137,23 @@ def test_corroboration():
           all("corroborates" in n for n in mem + iops))
 
 
+def test_scan_text():
+    print("scan_text: zip-free path used by check_job_health")
+    text = (CANONICAL["heap_oom"]
+            + "\n\tat org.apache.spark.Foo.bar(Foo.java:1)\n"
+            + CANONICAL["disk_full"] + "\n" + CANONICAL["disk_full"] + "\n")
+    sigs = scan_text(text)
+    ids = {s["id"]: s for s in sigs}
+    check("heap_oom found", "heap_oom" in ids)
+    check("disk_full counted twice", ids.get("disk_full", {}).get("count") == 2)
+    check("source tagged driver",
+          ids["heap_oom"]["sources"].get("driver") == 1)
+    check("excerpt keeps stack head",
+          "Foo.java:1" in ids["heap_oom"]["excerpts"][0]["text"])
+    check("clean text yields no signatures",
+          scan_text("26/07/24 INFO SparkContext: Running Spark 3.5.6\n") == [])
+
+
 def test_empty_and_clean():
     print("edge cases: no log files / clean logs")
     zp = make_zip({"random.json": "{}"})
@@ -155,6 +172,7 @@ if __name__ == "__main__":
     test_signature_table()
     test_layouts_and_scan()
     test_corroboration()
+    test_scan_text()
     test_empty_and_clean()
     print()
     if FAILURES:

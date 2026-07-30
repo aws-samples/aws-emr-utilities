@@ -242,6 +242,43 @@ def _flush_excerpt(hit, buf, source, exec_id, filename):
     })
 
 
+def _format_hits(hits: dict) -> list:
+    """Signature hit dicts -> the public signatures list, ordered by the
+    SIGNATURES table (severity of what they explain), zero-count elided."""
+    signatures = []
+    for sig in SIGNATURES:
+        h = hits[sig["id"]]
+        if not h["count"]:
+            continue
+        signatures.append({
+            "id": sig["id"],
+            "title": sig["title"],
+            "meaning": sig["meaning"],
+            "refines": sig["refines"],
+            "count": h["count"],
+            "sources": {f"{src}{' ' + eid if eid else ''}": n
+                        for (src, eid), n in sorted(
+                            h["sources"].items(),
+                            key=lambda kv: -kv[1])[:10]},
+            "excerpts": h["excerpts"],
+        })
+    return signatures
+
+
+def scan_text(text: str, source: str = "driver", exec_id=None,
+              filename: str = "stderr") -> list:
+    """Scan one already-decoded log text against the signature table.
+
+    Same element shape as extract_log_evidence()["signatures"] — lets the
+    running-job health check reuse the curated table on a driver stderr
+    fetched straight from S3, without building a zip.
+    """
+    hits = {s["id"]: {"count": 0, "sources": {}, "excerpts": []}
+            for s in SIGNATURES}
+    _scan_stream(io.StringIO(text), source, exec_id, filename, hits)
+    return _format_hits(hits)
+
+
 def extract_log_evidence(zip_path) -> dict:
     """Scan a zip of driver/executor logs; return structured evidence.
 
@@ -269,26 +306,8 @@ def extract_log_evidence(zip_path) -> dict:
             except Exception:
                 files_skipped += 1
 
-    signatures = []
-    for sig in SIGNATURES:
-        h = hits[sig["id"]]
-        if not h["count"]:
-            continue
-        signatures.append({
-            "id": sig["id"],
-            "title": sig["title"],
-            "meaning": sig["meaning"],
-            "refines": sig["refines"],
-            "count": h["count"],
-            "sources": {f"{src}{' ' + eid if eid else ''}": n
-                        for (src, eid), n in sorted(
-                            h["sources"].items(),
-                            key=lambda kv: -kv[1])[:10]},
-            "excerpts": h["excerpts"],
-        })
-
     return {
-        "signatures": signatures,
+        "signatures": _format_hits(hits),
         "files_scanned": files_scanned,
         "files_skipped": max(files_skipped, 0),
         "sources": source_counts,
