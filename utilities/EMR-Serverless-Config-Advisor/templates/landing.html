@@ -76,6 +76,7 @@ fetch("/api/metrics/apps?hours=48").then(r => r.json()).then(j => {
 
 // ===== Applications & job runs table with Optimize / Troubleshoot / Upgrade =====
 const FAILED_STATES = ["FAILED", "CANCELLED", "CANCELLING"];
+const RUNNING_STATES = ["RUNNING", "SCHEDULED", "PENDING", "SUBMITTED"];
 
 // Home page context for the Ask-AI panel (set when an action button is clicked)
 let aiCtx = { page: "home" };
@@ -131,6 +132,7 @@ function renderOverview(data) {
             const tb = document.createElement("tbody");
             app.jobs.forEach(job => {
                 const failed = FAILED_STATES.includes(job.state);
+                const running = RUNNING_STATES.includes(job.state);
                 const tr = document.createElement("tr");
                 tr.innerHTML = `
                     <td class="job-name">${job.name}${job.hasMetrics ? ` <a class="mlink" href="/metrics-dashboard?app_id=${job.id}" title="open in Observability">📈</a>` : ""}</td>
@@ -139,13 +141,18 @@ function renderOverview(data) {
                     <td class="mono">${job.createdAt.slice(0, 16).replace("T", " ")}</td>
                     <td class="td-actions">
                         <button class="act-btn optimize">Optimize</button>
-                        <button class="act-btn troubleshoot" ${failed ? "" : "disabled"}
-                            title="${failed ? "Diagnose this failed run" : "Enabled for failed/cancelled runs"}">Troubleshoot</button>
+                        ${running ? `<button class="act-btn health"
+                            title="${job.hasMetrics ? "Full health check: stall detection, driver log scan, duration vs history" : "Health check (no live metrics for this run — state, driver log, and duration history only)"}">Check health</button>`
+                        : `<button class="act-btn troubleshoot" ${failed ? "" : "disabled"}
+                            title="${failed ? "Diagnose this failed run" : "Enabled for failed/cancelled runs"}">Troubleshoot</button>`}
                     </td>`;
                 tr.querySelector(".optimize").addEventListener("click", () =>
                     askAgent(`Optimize job run ${job.id} (${job.name}). Run run_config_advisor on it${job.hasMetrics ? " and cross-check with get_metrics_snapshot" : ""}, then give me the recommended worker sizing and Spark configs with the reasoning, cost vs performance.`,
                              { application_id: app.id, job_run_id: job.id }));
-                tr.querySelector(".troubleshoot").addEventListener("click", () =>
+                if (running) tr.querySelector(".health").addEventListener("click", () =>
+                    askAgent(`Check the health of job run ${job.id} (${job.name}), currently ${job.state}. Use check_job_health, give me the verdict with the evidence behind each check, and if anything is degraded or unhealthy say what to do about it.`,
+                             { application_id: app.id, job_run_id: job.id }));
+                else tr.querySelector(".troubleshoot").addEventListener("click", () =>
                     askAgent(`Troubleshoot job run ${job.id} (${job.name}) which is ${job.state}. Use troubleshoot_job, identify the root cause from the state details and driver stderr, and give the fix.`,
                              { application_id: app.id, job_run_id: job.id }));
                 tb.appendChild(tr);

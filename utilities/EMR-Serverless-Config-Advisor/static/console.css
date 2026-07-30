@@ -316,6 +316,8 @@ body.console {
 .act-btn.troubleshoot:not(:disabled):hover { background: #FDF1EF; }
 .act-btn.upgrade:not(:disabled) { border-color: #FFAD4A; color: #FFAD4A; }
 .act-btn.upgrade:not(:disabled):hover { background: #FFF6EA; }
+.act-btn.health:not(:disabled) { border-color: #5CB85C; color: #5CB85C; }
+.act-btn.health:not(:disabled):hover { background: #EFF8EF; }
 
 /* ===== Ask AI chat widget ===== */
 #aiFab {

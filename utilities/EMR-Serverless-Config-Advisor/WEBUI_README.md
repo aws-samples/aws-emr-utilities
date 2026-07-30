@@ -27,6 +27,18 @@ FastAPI web UI for the Config Advisor with an EMR-console-style shell.
 - **Observability**: live driver/executor dashboards (heap, RSS, CPU, GC,
   disk, tasks, job status) from a self-hosted Prometheus (see
   `bucket-agent/docs/METRICS_OBSERVABILITY_STACK.md` for the stack).
+- **Job health (running jobs)**: a "Check health" action on the home page's
+  job table for RUNNING runs (also available to the Ask AI agent as the
+  `check_job_health` tool). Correlates four independent checks into one
+  verdict — healthy / degraded / unhealthy / insufficient signal:
+  - EMR job state and state details
+  - task-activity stall detection from Prometheus ("RUNNING but no active
+    tasks for 30+ min"); degrades gracefully for uninstrumented jobs
+  - driver stderr from S3 scanned against the curated failure-signature
+    table — catches unhandled exceptions before the job reaches a terminal
+    state (EMR Serverless pushes logs to S3 periodically, so this evidence
+    can lag an in-flight run by minutes; the result says so)
+  - elapsed time vs the P95 of prior same-name successful runs (30 days)
 - **Ask AI**: embedded agentic assistant (Bedrock Converse tool-use) with
   tools over the EMR Serverless API, Prometheus, the analyses, and a
   t-shirt-sizing tool for brand-new jobs.
