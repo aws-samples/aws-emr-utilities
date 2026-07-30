@@ -101,6 +101,15 @@
     "ec2_migration/eventlog_v2_00g6bunn7pe8do0b [performance] spark_configs.spark.emr-serverless.executor.disk: golden='2000G' current='1000G'"
    ],
    "reason": "tier-aware disk sizing: A/B-validated 2026-07-25 on replicated production workloads \u2014 16c 2000G->1000G won on both test jobs (-13.3% wall/-18% cost and -8.6%/-13.9%); 8c IOPS floor + FetchFailed IOPS-ladder escalation keep serving-bound fleets on 1000G+"
+  },
+  {
+   "changed_lines": 3,
+   "changes": [
+    "field_reports/xlarge_promote_multijoin_16c: NEW app not in golden baseline",
+    "field_reports/xlarge_tpcds_iter2_00g745gvsf93oo0b: NEW app not in golden baseline",
+    "field_reports/xlarge_veto_iopsbound_16c: NEW app not in golden baseline"
+   ],
+   "reason": "32c (XLarge) worker awareness re-land: preserve proven 32c sources (memory tier from peak JVM heap x1.25), promote >=192-vCPU throughput-bound fleets to 32c/219G behind gates (spill<=10GB, fetch-wait<=10%, serving floor, >=32GB shuffle/worker). 3 new fixtures: promote-win, veto-iopsbound, preserve-tier-cut. Disk sizing now flows through the tier-table rule on the promoted shape."
   }
  ],
  "snapshot": {
@@ -632,6 +641,84 @@
      "worker.min_executors": 12,
      "worker.type": "Large",
      "worker.vcpu": 16
+    }
+   },
+   "xlarge_promote_multijoin_16c": {
+    "cost": {
+     "spark_configs.spark.dynamicAllocation.maxExecutors": "8",
+     "spark_configs.spark.dynamicAllocation.minExecutors": "3",
+     "spark_configs.spark.emr-serverless.executor.disk": "2000G",
+     "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
+     "spark_configs.spark.sql.shuffle.partitions": "1000",
+     "worker.max_executors": 8,
+     "worker.memory_gb": 219,
+     "worker.min_executors": 3,
+     "worker.type": "XLarge",
+     "worker.vcpu": 32
+    },
+    "performance": {
+     "spark_configs.spark.dynamicAllocation.maxExecutors": "12",
+     "spark_configs.spark.dynamicAllocation.minExecutors": "4",
+     "spark_configs.spark.emr-serverless.executor.disk": "2000G",
+     "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
+     "spark_configs.spark.sql.shuffle.partitions": "1000",
+     "worker.max_executors": 12,
+     "worker.memory_gb": 219,
+     "worker.min_executors": 4,
+     "worker.type": "XLarge",
+     "worker.vcpu": 32
+    }
+   },
+   "xlarge_tpcds_iter2_00g745gvsf93oo0b": {
+    "cost": {
+     "spark_configs.spark.dynamicAllocation.maxExecutors": "9",
+     "spark_configs.spark.dynamicAllocation.minExecutors": "3",
+     "spark_configs.spark.emr-serverless.executor.disk": "200G",
+     "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
+     "spark_configs.spark.sql.shuffle.partitions": "1000",
+     "worker.max_executors": 9,
+     "worker.memory_gb": 108,
+     "worker.min_executors": 3,
+     "worker.type": "XLarge",
+     "worker.vcpu": 32
+    },
+    "performance": {
+     "spark_configs.spark.dynamicAllocation.maxExecutors": "13",
+     "spark_configs.spark.dynamicAllocation.minExecutors": "4",
+     "spark_configs.spark.emr-serverless.executor.disk": "2000G",
+     "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
+     "spark_configs.spark.sql.shuffle.partitions": "1000",
+     "worker.max_executors": 13,
+     "worker.memory_gb": 108,
+     "worker.min_executors": 4,
+     "worker.type": "XLarge",
+     "worker.vcpu": 32
+    }
+   },
+   "xlarge_veto_iopsbound_16c": {
+    "cost": {
+     "spark_configs.spark.dynamicAllocation.maxExecutors": "549",
+     "spark_configs.spark.dynamicAllocation.minExecutors": "183",
+     "spark_configs.spark.emr-serverless.executor.disk": "1000G",
+     "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
+     "spark_configs.spark.sql.shuffle.partitions": "4738",
+     "worker.max_executors": 549,
+     "worker.memory_gb": 54,
+     "worker.min_executors": 183,
+     "worker.type": "Medium",
+     "worker.vcpu": 8
+    },
+    "performance": {
+     "spark_configs.spark.dynamicAllocation.maxExecutors": "655",
+     "spark_configs.spark.dynamicAllocation.minExecutors": "218",
+     "spark_configs.spark.emr-serverless.executor.disk": "1000G",
+     "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
+     "spark_configs.spark.sql.shuffle.partitions": "4738",
+     "worker.max_executors": 655,
+     "worker.memory_gb": 54,
+     "worker.min_executors": 218,
+     "worker.type": "Medium",
+     "worker.vcpu": 8
     }
    }
   },
