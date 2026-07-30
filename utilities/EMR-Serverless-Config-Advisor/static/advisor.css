@@ -17,6 +17,26 @@
 
 .app-id { font-family: monospace; font-size: 0.85rem; color: var(--ink-muted); }
 
+/* Source worker banner — the submitted worker shape, always visible */
+.source-worker-banner {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+    background: var(--card-bg); border: 1px solid var(--card-border);
+    border-left: 4px solid var(--blue); border-radius: var(--radius);
+    padding: 0.7rem 1rem; margin-bottom: 1rem;
+}
+.source-worker-banner.compact { border-left-width: 3px; padding: 0.4rem 0.6rem; margin: 8px 0 0; }
+.swb-caption { font-size: 0.78rem; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.swb-chip {
+    font-family: 'SF Mono', Menlo, monospace; font-size: 0.82rem; font-weight: 600;
+    color: var(--ink); background: #F7F8FA; border: 1px solid var(--card-border);
+    border-radius: 6px; padding: 3px 10px; white-space: nowrap;
+}
+.source-worker-banner.compact .swb-chip { font-size: 0.72rem; padding: 2px 7px; }
+.swb-chip.tier { color: #fff; background: var(--blue); border-color: var(--blue); }
+.swb-chip.disk { color: #6B5CA8; background: #F4F2FB; border-color: var(--purple); }
+.swb-chip.unknown { color: var(--ink-muted); font-weight: 400; font-style: italic; cursor: help; }
+.swb-chip.muted { color: var(--ink-muted); font-weight: 400; }
+
 .back-link { color: var(--blue); text-decoration: none; font-size: 0.9rem; display: inline-block; margin-bottom: 0.5rem; }
 .back-link:hover { text-decoration: underline; }
 

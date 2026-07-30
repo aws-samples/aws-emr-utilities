@@ -12,6 +12,34 @@
 <h1 class="page-title">Analysis Results</h1>
 <p class="page-subtitle">{{ result.application_name }} <span class="app-id">({{ result.application_id }})</span></p>
 
+{% if result.source_worker %}{% set w = result.source_worker %}
+<div class="source-worker-banner">
+    <span class="swb-caption">This run used</span>
+    {% if w.cores %}
+    <span class="swb-chip tier">{{ w.cores }} vCPU{% if w.tier %} · {{ w.tier }}{% endif %}</span>
+    {% endif %}
+    {% if w.heap %}
+    <span class="swb-chip">{{ w.heap }} heap{% if w.billed_memory_gb %} → {{ w.billed_memory_gb }} GB worker{% endif %}</span>
+    {% endif %}
+    {% if w.platform == 'emr-serverless' %}
+        {% if w.disk %}
+        <span class="swb-chip disk">{{ w.disk }} disk{% if w.disk_type %} · {{ w.disk_type }}{% endif %}</span>
+        {% else %}
+        <span class="swb-chip unknown" title="spark.emr-serverless.executor.disk is a submit-only parameter — absence from the event log does NOT mean it wasn't set. Check the submitted job parameters.">disk not captured in event log</span>
+        {% endif %}
+    {% endif %}
+    {% if w.max_executors %}
+    <span class="swb-chip">{% if w.dynamic_allocation %}{{ w.min_executors or '?' }}–{{ w.max_executors }} executors (dynamic){% else %}{{ w.max_executors }} executors{% endif %}</span>
+    {% endif %}
+    {% if w.driver_cores or w.driver_memory %}
+    <span class="swb-chip muted">driver {{ w.driver_cores }}c / {{ w.driver_memory }}{% if w.driver_disk %} / {{ w.driver_disk }} disk{% endif %}</span>
+    {% endif %}
+    {% if w.platform == 'emr-ec2' %}
+    <span class="swb-chip muted">EMR on EC2 source</span>
+    {% endif %}
+</div>
+{% endif %}
+
 {% if result.source_platform == 'emr-ec2' %}
 <div class="flash" style="background:#EDF6FC;border:1px solid #4DA3D4;color:#2F6E96;">
   <b>EMR on EC2 source detected</b> — recommendations below are the
@@ -190,6 +218,8 @@
                         <tr><td>Min Executors</td><td>{{ result.cost_recommendation.worker.min_executors }}</td></tr>
                         <tr><td>Total vCPU</td><td>{{ result.cost_recommendation.worker.total_vcpu_capacity }}</td></tr>
                         <tr><td>Total Memory</td><td>{{ result.cost_recommendation.worker.total_memory_capacity }} GB</td></tr>
+                        {% set cd = result.cost_recommendation.spark_configs or {} %}
+                        <tr><td>Disk</td><td>{{ cd.get('spark.emr-serverless.executor.disk', '20G (default)') }}{% if cd.get('spark.emr-serverless.executor.disk.type') %} · {{ cd.get('spark.emr-serverless.executor.disk.type') }}{% endif %}</td></tr>
                         {% if result.cost_recommendation.shuffle_tuned %}
                         <tr><td>Partitions</td><td>{{ result.cost_recommendation.shuffle_tuned.partitions }}</td></tr>
                         {% endif %}
@@ -212,6 +242,8 @@
                         <tr><td>Min Executors</td><td>{{ result.perf_recommendation.worker.min_executors }}</td></tr>
                         <tr><td>Total vCPU</td><td>{{ result.perf_recommendation.worker.total_vcpu_capacity }}</td></tr>
                         <tr><td>Total Memory</td><td>{{ result.perf_recommendation.worker.total_memory_capacity }} GB</td></tr>
+                        {% set pd = result.perf_recommendation.spark_configs or {} %}
+                        <tr><td>Disk</td><td>{{ pd.get('spark.emr-serverless.executor.disk', '20G (default)') }}{% if pd.get('spark.emr-serverless.executor.disk.type') %} · {{ pd.get('spark.emr-serverless.executor.disk.type') }}{% endif %}</td></tr>
                         {% if result.perf_recommendation.shuffle_tuned %}
                         <tr><td>Partitions</td><td>{{ result.perf_recommendation.shuffle_tuned.partitions }}</td></tr>
                         {% endif %}

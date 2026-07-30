@@ -289,6 +289,20 @@ def _compute_exec_limits(input_gb: float, vcpu: int, partitions: int = 0,
             cores = min(work * mult + 30, orig_vcpu * 1.1)
         else:
             cores = max(work * 1.1, orig_vcpu * 1.1) if orig_vcpu > 0 else work * 1.1
+            # No idle-trim on healthy sources (the former Rule 4). The
+            # 2026-07-25 replicated-workload A/B (max 17 vs 15, same config
+            # otherwise) tested exactly the trim mechanism: wall-clock
+            # flat, billed vCPU-h ROSE 87.6 -> 93.6 (+6.8% cost). Under
+            # DRA + per-second billing a lower cap doesn't release the
+            # measured idle — idle_core_percentage is WITHIN-executor core
+            # gaps (skew/contention), so the narrower fleet just holds the
+            # same executors alive longer. The rule's founding evidence
+            # (a 600 -> 432 vCPU win on the same workload) was confounded with an
+            # 8c -> 16c worker shape change. Rule 3 above owns genuine
+            # over-provisioning (eff < 0.40); re-add a trim only when the
+            # extractor exposes fleet-level TASKLESS-executor time
+            # (executor_timeline today records only add/remove events,
+            # not per-executor busy spans).
 
     max_exec = max(4, int(cores / vcpu))  # EMR Serverless minimum is 4
 
@@ -332,39 +346,145 @@ def _compute_exec_limits(input_gb: float, vcpu: int, partitions: int = 0,
     return max_exec, min_exec
 
 
+# shuffle_optimized disk throughput (GB/s) by worker vCPU x disk size —
+# the EMR Serverless service-side tier table (verified empirically via
+# per-tier disk benchmark runs on each worker shape).
+# Entries: (min_disk_gib, throughput_gbps), largest tier first. KEY FACT:
+# on <=8 vCPU workers every size >=170G serves the SAME 250 MiB/s — a
+# bigger disk on a small worker buys capacity only, never bandwidth.
+_DISK_THROUGHPUT_TIERS = {
+    8:  [(170, 0.250), (0, 0.125)],
+    16: [(1000, 0.500), (170, 0.250), (0, 0.125)],
+    32: [(2000, 1.000), (1500, 0.750), (1000, 0.500), (170, 0.250), (0, 0.125)],
+}
+
+
+def _disk_tiers_for_vcpu(worker_vcpu: int) -> list:
+    if worker_vcpu <= 8:
+        return _DISK_THROUGHPUT_TIERS[8]
+    if worker_vcpu <= 16:
+        return _DISK_THROUGHPUT_TIERS[16]
+    return _DISK_THROUGHPUT_TIERS[32]
+
+
 def _calculate_executor_disk(shuffle_write_gb: float, disk_spill_gb: float,
-                             memory_spill_gb: float, max_executors: int) -> str:
-    """Attach shuffle_optimized disk for shuffle-intensive jobs.
-    Shuffle-optimized disks provide higher IOPS and faster disk access,
-    benefiting jobs with significant shuffle operations or disk spill.
-    For non-shuffle workloads, default disk avoids unnecessary cost.
-    
-    Disk tier selection also considers IOPS/throughput needs:
-      - 200G + 16c: 250 MiB/s, 3,000 IOPS (small shuffle)
-      - 1000G + 16c: 500 MiB/s, 6,000 IOPS (medium shuffle)
-      - 2000G + 16c: 500 MiB/s, 16,000 IOPS (large shuffle, IOPS-bound)
-    
-    For massive shuffle (>10 TB), the IOPS tier matters more than capacity.
+                             max_executors: int, worker_vcpu: int = 4,
+                             stages: list = None,
+                             fetch_wait_pct: float = 0.0,
+                             mode: str = "cost") -> str:
+    """Attach shuffle_optimized disk sized from per-executor need and
+    measured serving demand — never from fleet-total volume.
+
+    Field validation (replicated customer ETL, 2026-07: 2.26TB fleet
+    shuffle, 9.7x spill):
+    this function's old fleet-total rule (>2000G shuffle -> 2000G disk)
+    billed $8/run for disks whose throughput tier was IDENTICAL to 200G —
+    per the control-plane table above, 8c workers cap at 250 MiB/s at any
+    size. The same job then ran healthier on 500G (fetch-wait 3.1%) and,
+    on 16c workers where 1000G is a real tier, fastest at 1000G. Replica
+    matrix confirmed the tier boundary directly: 16c@500G ran 1.5x the
+    task-hours of 16c@1000G on the same data.
+
+    Three independent constraints, each tiered by THIS worker's table:
+
+    1. CAPACITY — this executor's share of shuffle write + disk spill,
+       x1.5 for uneven distribution. (Memory-spill bytes are the same data
+       as disk-spill bytes pre-compression — counting both double-counts.)
+    2. SERVING — peak sustained per-host disk IO must fit the tier's
+       throughput with x1.5 headroom. Sizes from workload arithmetic, not
+       from what disk the source ran with (evidence-conditioned-on-
+       treatment guard). If NO tier on this worker shape can sustain the
+       demand (8c fleet needing >250 MiB/s), disk cannot fix it — take the
+       biggest useful tier and leave worker-shape escalation to the sizing
+       matrix, which is the actual cure.
+       IOPS floor: throughput tiers are flat across sizes on 8c, but IOPS
+       still scale with size (~3K@200G -> ~16K@2000G), and high-fan-in
+       shuffle serving is IOPS-bound. A/B 2026-07-25 (replicated customer job, 92x8c, 1.7TB
+       peak-stage shuffle): 200G ran +17.5% wall vs 2000G with shuffle
+       write inflated 3365->3979 GB; a prior disk sweep on the same job
+       was monotonic — 500G=730s/$8.42, 1000G=531s/$6.79, 2000G=404s/$4.85
+       (biggest disk fastest AND cheapest). So when serving demand exceeds
+       the base tier on a flat-throughput shape, floor at 1000G, and at
+       2000G once demand crosses half the shape's ceiling. Shapes with
+       real throughput tiers (16c/32c) already land on large disks via
+       the throughput math — their demand-sized picks won their A/Bs.
+    3. EVIDENCE — observed serving harm (FetchFailed retries, or
+       fetch-wait > 10%) escalates one tier boundary when a higher tier
+       EXISTS for this shape. PR #191 harm-gate pattern: volume alone is
+       not evidence.
+    4. PERF MODE floors at the shape's MAX-throughput tier. Demand math
+       sizes serving (shuffle read fan-out over hosts) but spill I/O
+       scales with the CORES doing the work, not the host count — a big
+       perf fleet passes the serving check while every worker still
+       writes/merges its spill through the base tier. Replica matrix:
+       the healthy/degraded boundary tracked per-vCPU disk bandwidth
+       (~31 MiB/s/vCPU healthy, ~15.6 degraded at 1.4-1.5x task-hours),
+       and each shape reaches ~31 exactly at its top tier — 8c@170G+,
+       16c@1000G, 32c@2000G. Perf mode pays for wall-clock; shipping it
+       on a half-bandwidth disk defeats the mode. Cost mode keeps
+       demand-based sizing (spill-tolerant by definition).
     """
-    total_shuffle_and_spill = shuffle_write_gb + disk_spill_gb + memory_spill_gb
-    if total_shuffle_and_spill < 20:
+    landed = shuffle_write_gb + disk_spill_gb
+    if landed < 20:
         return ""  # Minimal shuffle — default disk sufficient
-    
-    # IOPS-tier selection: for large shuffle, bump to 2000G for 16K IOPS
-    # regardless of per-executor capacity needs.
-    # Rationale: shuffle blocks are typically 16-200 KB; serving them is
-    # IOPS-bound, not throughput-bound. 2000G gives 16K IOPS vs 3K at 200G.
-    if shuffle_write_gb > 10000:
-        return "2000G"  # Massive shuffle: need 16K IOPS tier
-    if shuffle_write_gb > 2000:
-        return "2000G"  # Large shuffle: 16K IOPS helps significantly
-    if shuffle_write_gb > 500:
-        return "1000G"  # Medium shuffle: 6K IOPS tier
-    
-    # Small-to-moderate shuffle: size by capacity
-    per_exec = total_shuffle_and_spill / max(max_executors, 1)
-    disk_gb = max(200, min(2000, int(per_exec * 1.5 / 20) * 20 + 20))
-    return f"{disk_gb}G"
+    hosts = max(max_executors, 1)
+    tiers = _disk_tiers_for_vcpu(worker_vcpu)
+
+    # 1) capacity
+    per_exec = landed / hosts
+    capacity_gb = max(200, min(2000, int(per_exec * 1.5 / 20) * 20 + 20))
+
+    # 2) serving demand: peak sustained per-host disk IO across real stages
+    demand = 0.0
+    for s in (stages or []):
+        dur = s.get("duration_sec") or 0
+        if dur <= 30:
+            continue  # too short for reliable rate; can't be rate-limiting
+        io_gb = ((s.get("shuffle_read_gb") or 0)
+                 + (s.get("shuffle_write_gb") or 0)
+                 + (s.get("disk_spill_gb") or 0))
+        demand = max(demand, io_gb / dur / hosts)
+    # smallest tier on THIS worker shape that sustains demand x1.5;
+    # if none does, the largest tier is the best disk can do here
+    tier_floor = 200
+    needed = demand * 1.5
+    if needed > tiers[-1][1]:  # above the base 125 MiB/s tier
+        sustaining = [min_gib for min_gib, gbps in tiers if gbps >= needed]
+        tier_floor = max(200, min(sustaining) if sustaining else tiers[0][0])
+        # IOPS floor (see docstring): on shapes whose throughput ceiling is
+        # flat across sizes, the throughput table alone says "bigger buys
+        # nothing" — but serving-bound stages are IOPS-bound and IOPS scale
+        # with size. Floor at 1000G; 2000G once demand crosses half the
+        # shape's ceiling.
+        shape_ceiling = tiers[0][1]
+        flat_throughput = len({gbps for _, gbps in tiers if gbps > tiers[-1][1]}) <= 1
+        if flat_throughput:
+            tier_floor = max(tier_floor,
+                             2000 if needed >= shape_ceiling * 0.5 else 1000)
+
+    # 3) evidence escalation: one tier boundary up, where one exists.
+    # On flat-throughput shapes the throughput table has no boundary above
+    # 200G, which left FetchFailed fleets on the 3K-IOPS disk — escalate
+    # up the IOPS ladder (200 -> 1000 -> 2000) instead. Evidence of harm
+    # trumps demand arithmetic (PR #191 pattern), so this applies even
+    # when the serving check above did not fire.
+    fetch_fail = any("FetchFailed" in (s.get("failure_reason") or "")
+                     for s in (stages or []))
+    if fetch_fail or fetch_wait_pct > 10:
+        flat = len({gbps for _, gbps in tiers if gbps > tiers[-1][1]}) <= 1
+        if flat:
+            tier_floor = 2000 if tier_floor >= 1000 else 1000
+        else:
+            boundaries = sorted(min_gib for min_gib, _ in tiers if min_gib > 0)
+            higher = [b for b in boundaries if b > tier_floor]
+            if higher:
+                tier_floor = higher[0]
+
+    # 4) perf mode: floor at this shape's max-throughput tier (see above)
+    if mode == "performance":
+        tier_floor = max(tier_floor, tiers[0][0], 200)
+
+    return f"{max(capacity_gb, tier_floor)}G"
 
 
 def _max_partition_bytes(input_gb: float, advisory_bytes: int = 0) -> str:
@@ -797,7 +917,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             # stages that spilled AND failed (fetch-fail/executor-death
             # retry loops) get their sort footprint sized into partitions.
             # Steady-state spill on succeeding stages is the workload's
-            # proven operating point (search-health class spills 6-14x data
+            # proven operating point (steady-spill class: 6-14x data
             # moved and wins on big workers) — boosting those inflated proven
             # 1000-partition configs to 8-11k.
             # Memory spill is the uncompressed sort footprint; disk spill is
@@ -884,31 +1004,65 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         # its share of total shuffle write under full fan-in). A spill-discounted
         # compute answer can be correct on cores yet collapse on serving.
         #
-        # The binding constraint is the per-host SERVING RATE:
-        #     shuffle_write_gb / hosts / target_duration_sec
-        # not raw GB/host (a longer job serves the same bytes more slowly) and
-        # not connection count alone (connections × per-connection volume is
-        # what saturates Netty/TCP — the rate captures the product). This is
-        # network/fan-in bound, NOT disk bound: thresholds sit ~6x below the
-        # 0.244 GB/s shuffle_optimized GP3 per-executor throughput.
+        # The floor has TWO terms, because serving fails two different ways:
         #
-        # Calibration (validated production workload, ~14-17TB shuffle write):
-        #   0.057 GB/s/host demanded (82 hosts, 62min compute budget)
-        #          → fetch timeouts → unregisterOutputOnHost storms →
-        #            congestion collapse (301 min, 75% fetch-wait)
-        #   0.033 GB/s/host (300 hosts, 25min) → healthy (45% fetch-wait)
-        #   0.021 GB/s/host (118 EC2 hosts, 95min) → completed (48% fetch-wait)
-        # Safe ceiling: 0.04 GB/s/host — above the healthiest observed run,
-        # well below the observed collapse point.
+        # DISK term — fleet disk bandwidth must sustain the peak-stage IO
+        # rate. Per-host capacity is the worker shape's best shuffle_optimized
+        # tier (see _DISK_THROUGHPUT_TIERS; 8c caps at
+        # 0.25 GB/s at ANY disk size, 16c reaches 0.5 at 1000G, 32c 1.0 at
+        # 2000G). Tier-aware calibration (replica benchmark matrix, 7 cells):
+        # every config at ~31 MiB/s/vCPU fleet disk bandwidth ran healthy,
+        # every config below ran degraded-to-collapsed, ordering exactly by
+        # this metric. The previous flat 0.04 GB/s/host constant conflated
+        # this term with fan-in and over-floored healthy fleets (production
+        # 16c@1000G ran clean at 0.10 GB/s/host, 2.5x that constant).
+        #
+        # NETWORK fan-in term — connections x per-connection volume
+        # saturating Netty/TCP, independent of disk. Calibration (~14-17TB
+        # shuffle write, many sub-100KB blocks): 0.057 GB/s/host → congestion
+        # collapse (301min, 75% fetch-wait); 0.033 → healthy. Ceiling 0.04.
+        # Applied ONLY on evidence of fan-in distress (source fetch-wait >10%
+        # or FetchFailed retries) — the PR #191 harm-gate pattern. Without
+        # the gate this term masquerades as a disk limit and inflates floors
+        # on jobs whose own runs prove serving is fine (a healthy replica at 8.4%
+        # fetch-wait was floored 27→31 for nothing).
         SAFE_SERVING_GBPS = 0.04
         _serve_target_cost_h = duration
         _serve_target_perf_h = (max(duration * 0.25, min(duration, 20.0 / 60.0))
                                 if is_ec2 else duration)
 
+        # Peak-stage serving demand (GB/s): the rate the fleet must sustain.
+        # Only stages that are a meaningful share of the job bind the floor —
+        # a short burst (e.g. 1TB in 49s inside a 38min job) doubling in
+        # length is invisible at job level, but sizing the fleet to preserve
+        # its rate inflated one migration fixture's fleet by 80%. Stages
+        # shorter than 5% of the job (or 120s) size nothing; if they slow
+        # down on the new fleet, the job-level cost is by construction <5%.
+        _min_binding_sec = max(120.0, (duration or 0) * 3600 * 0.05)
+        _peak_io_gbps = 0.0
+        for _s in (stages_raw or []):
+            _dur = _s.get("duration_sec") or 0
+            if _dur < _min_binding_sec:
+                continue
+            _io = ((_s.get("shuffle_read_gb") or 0)
+                   + (_s.get("shuffle_write_gb") or 0)
+                   + (_s.get("disk_spill_gb") or 0))
+            _peak_io_gbps = max(_peak_io_gbps, _io / _dur)
+
+        _fanin_evidence = (shuffle_fetch_wait_pct > 10
+                           or any("FetchFailed" in (s.get("failure_reason") or "")
+                                  for s in (stages_raw or [])))
+
         def _serving_floor(target_h):
             if s_out_gb <= 1000 or target_h <= 0:
                 return 0
-            return int(math.ceil(s_out_gb / (SAFE_SERVING_GBPS * target_h * 3600)))
+            avg_gbps = s_out_gb / (target_h * 3600)
+            demand = max(_peak_io_gbps, avg_gbps)
+            best_tier_gbps = _disk_tiers_for_vcpu(worker_cfg["vcpu"])[0][1]
+            disk_hosts = int(math.ceil(demand * 1.5 / best_tier_gbps))
+            net_hosts = (int(math.ceil(avg_gbps / SAFE_SERVING_GBPS))
+                         if _fanin_evidence else 0)
+            return max(disk_hosts, net_hosts)
 
         _floor_cost = _serving_floor(_serve_target_cost_h)
         if _floor_cost > max_exec_cost:
@@ -925,9 +1079,11 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
 
         # Account for EC2 spill conservatively: Serverless has more memory per core
         # and AQE reduces spill, but not to zero. Use 10% of observed spill as safety floor.
-        _eff_disk_spill = disk_spill_gb * 0.1
-        _eff_mem_spill = spill_gb * 0.1
-        executor_disk_cost = _calculate_executor_disk(s_out_gb, _eff_disk_spill, _eff_mem_spill, max_exec_cost)
+        _eff_disk_spill = disk_spill_gb * (0.1 if is_ec2 else 1.0)
+        executor_disk_cost = _calculate_executor_disk(
+            s_out_gb, _eff_disk_spill, max_exec_cost,
+            worker_vcpu=worker_cfg["vcpu"],
+            stages=stages_raw, fetch_wait_pct=shuffle_fetch_wait_pct)
         # Performance-optimized
         max_exec_perf_init, min_exec_perf = _compute_exec_limits(
             i_in_gb, worker_cfg["vcpu"], 0, mem_pct, cpu_pct, idle_pct, spill_gb, mode="performance",
@@ -973,7 +1129,11 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                 if _new_max_p != max_exec_perf:
                     max_exec_perf = _new_max_p
                     min_exec_perf = max(1, min(max_exec_perf - 2, max(5, max_exec_perf // 3)))
-        executor_disk_perf = _calculate_executor_disk(s_out_gb, _eff_disk_spill, _eff_mem_spill, max_exec_perf)
+        executor_disk_perf = _calculate_executor_disk(
+            s_out_gb, _eff_disk_spill, max_exec_perf,
+            worker_vcpu=worker_cfg["vcpu"],
+            stages=stages_raw, fetch_wait_pct=shuffle_fetch_wait_pct,
+            mode="performance")
         
         # Build base metrics
         base_metrics = {
@@ -1112,7 +1272,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             spill_ratio = spill_gb / shuffle_total_gb
             
             # Advisory: don't set — let EMR defaults handle (64MB + AQE coalesces as needed)
-            # Setting advisory explicitly risks spill (1GB advisory caused 158TB spill on sup-trvlr-bml)
+            # Setting advisory explicitly risks spill (1GB advisory caused 158TB spill on one replicated workload)
             # EMR's default AQE coalescing is safe and effective for all workload sizes
             
             # Partitions: if spill is significant relative to shuffle, compute from zero-spill formula.
@@ -1334,7 +1494,10 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                          io_r["min_mem"] + (-(-(io_mem - io_r["min_mem"]) // io_r["mem_step"])) * io_r["mem_step"]))
             io_max = max_exec_cost * io_mult
             io_min = min_exec_cost * io_mult
-            io_disk = _calculate_executor_disk(s_out_gb, disk_spill_gb, spill_gb, io_max)
+            io_disk = _calculate_executor_disk(
+                s_out_gb, _eff_disk_spill, io_max,
+                worker_vcpu=io_r["vcpu"],
+                stages=stages_raw, fetch_wait_pct=shuffle_fetch_wait_pct)
             io_cfg = {"vcpu": io_r["vcpu"], "memory": io_mem}
             # Temporarily swap worker_cfg for build_spark_cfg
             saved_cfg, saved_type = worker_cfg, worker_type
