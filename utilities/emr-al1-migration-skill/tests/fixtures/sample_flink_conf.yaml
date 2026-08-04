@@ -1,0 +1,10 @@
+# Flink configuration for EMR 5.x
+jobmanager.heap.mb: 2048
+taskmanager.heap.mb: 8192
+state.backend: rocksdb
+state.checkpoints.dir: s3://my-bucket/flink/checkpoints
+parallelism.default: 8
+execution.checkpointing.interval: 60000
+restart-strategy: fixed-delay
+restart-strategy.fixed-delay.attempts: 3
+restart-strategy.fixed-delay.delay: 10s
