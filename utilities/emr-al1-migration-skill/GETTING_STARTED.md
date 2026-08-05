@@ -26,12 +26,8 @@ cd aws-emr-utilities/utilities/emr-al1-migration-skill
 cd emr-al1-migration-skill
 
 # Step 2: Configure AWS credentials (use a non-production account)
-# You need a role with permissions to: describe/create/terminate EMR clusters,
-# add EMR steps, read/write S3, read CloudWatch Logs, describe EC2 subnets,
-# and PassRole for EMR service roles.
-# See references/iam-permissions.md for the exact policy.
 # Note: 'ada --region' flag is not supported; set region via environment variable instead
-ada credentials update --account <YOUR_ACCOUNT_ID> --role <ROLE_WITH_EMR_PERMISSIONS>
+ada credentials update --account <YOUR_ACCOUNT_ID> --role Admin
 export AWS_DEFAULT_REGION=<REGION>
 # or
 export AWS_PROFILE=<your-profile>
@@ -48,63 +44,6 @@ Copy the skill directly into your Kiro workspace:
 mkdir -p .kiro/skills/emr-al1-migration
 cp -r emr-al1-migration-skill/* .kiro/skills/emr-al1-migration/
 ```
-
-#### Enable autonomous mode (recommended)
-
-For the Spark Upgrade Agent to run E2E without stopping for approval at each tool call:
-
-**Step 1: Deploy the Spark Upgrade Agent stack** (one-time setup)
-
-Follow the [setup instructions](https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-spark-upgrade-agent-setup.html) to deploy the CloudFormation stack in your region. This creates the IAM role needed to access the Spark Upgrade service.
-
-**Step 2: Configure the MCP server** in `~/.kiro/settings/mcp.json`:
-
-Use the same AWS profile you configured in Step 2 of the installation above. The MCP proxy will use it to assume the Spark Upgrade role.
-
-```json
-{
-  "mcpServers": {
-    "spark-upgrade": {
-      "type": "stdio",
-      "command": "uvx",
-      "args": [
-        "mcp-proxy-for-aws@latest",
-        "https://sagemaker-unified-studio-mcp.<YOUR_REGION>.api.aws/spark-upgrade/mcp",
-        "--service", "sagemaker-unified-studio-mcp",
-        "--region", "<YOUR_REGION>",
-        "--profile", "<YOUR_AWS_PROFILE>",
-        "--read-timeout", "180"
-      ],
-      "timeout": 180000,
-      "autoApprove": [
-        "generate_spark_upgrade_plan",
-        "reuse_existing_spark_upgrade_plan",
-        "update_build_configuration",
-        "check_and_update_build_environment",
-        "check_and_update_python_environment",
-        "compile_and_build_project",
-        "prepare_python_venv_on_emr",
-        "run_validation_job",
-        "check_job_status",
-        "fix_upgrade_failure",
-        "post_upgrade_result",
-        "post_build_result",
-        "post_test_result",
-        "get_data_quality_summary",
-        "list_upgrade_analyses",
-        "describe_upgrade_analysis",
-        "generate_assessment"
-      ]
-    }
-  }
-}
-```
-
-> **Note**: Replace `<YOUR_REGION>` in both the endpoint URL and the `--region` flag (they must match). Replace `<YOUR_AWS_PROFILE>` with the same profile you use for EMR operations.
-
-> **Why autoApprove?** The Spark Upgrade Agent makes up to 40 sequential tool calls (plan → build → fix → compile → validate → compare). Without auto-approve, you'll be prompted to approve each one individually, breaking the autonomous flow. All operations are reversible (new files only, originals never modified).
-
-> **Security note:** These tools only operate on your local project copy and your designated S3 staging bucket. They do not modify your source cluster. If you prefer manual approval, omit the `autoApprove` field — the agent will pause at each step for your confirmation.
 
 Then invoke by typing in chat:
 ```

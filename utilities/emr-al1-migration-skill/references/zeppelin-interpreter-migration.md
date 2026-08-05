@@ -206,7 +206,7 @@ Zeppelin notebooks are stored as JSON. Key fields to modify during migration:
 | Field | Change |
 |-------|--------|
 | `paragraphs[].text` | Update interpreter prefix + code content |
-| `config.interpreterBindings` | Remove `pig` and `sh` interpreters, verify `spark`/`jdbc`/`python` present |
+| `config.interpreterBindings` | Remove `pig` interpreter, verify `spark`/`jdbc`/`sh` present |
 | `noteParams` | Update any `%default`-style parameters |
 
 ---

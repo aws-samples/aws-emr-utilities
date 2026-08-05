@@ -1,11 +1,11 @@
 ---
-name: emr-al1-migration-skill
+name: emr-al1-migration
 description: >
   Migrate EMR clusters and applications from EMR 5.0–5.35 (Amazon Linux 1) to EMR 7.x (Amazon Linux 2023).
   Use when a customer needs to upgrade EMR clusters off AL1 as part of the AL1 deprecation,
   upgrade Spark application code (Python/Scala/Java) using the Apache Spark Upgrade Agent MCP server,
   migrate Hive 2.3→3.1 scripts, convert Presto queries to Trino, adapt MapReduce jobs for Hadoop 3,
-  update Flink deployment mode and memory model, convert Pig scripts to PySpark,
+  update Flink deployment mode and memory model, convert Pig scripts to PySpark (via PigToSparkConversion MCP),
   migrate Zeppelin notebooks for EMR 7.x compatibility, adapt bootstrap actions for AL2023 compatibility,
   resolve Java 8-to-17 issues, or troubleshoot Hadoop 2-to-3 breaking changes on EMR.
   Covers EC2-based EMR clusters only (not EMR on EKS or EMR Serverless).
@@ -39,7 +39,7 @@ Migrate an EMR cluster configuration **and its applications** from EMR 5.0–5.3
 |--------|------------------------------------------|
 | Target | EMR 7.x (latest stable on Amazon Linux 2023) |
 | Cluster Migration | Configs, bootstrap actions, instance types, security |
-| Application Migration | Spark (via Upgrade Agent MCP), Hive, Presto→Trino, MapReduce, Flink, Pig→PySpark, Zeppelin notebooks |
+| Application Migration | Spark (via Upgrade Agent MCP), Hive, Presto→Trino, MapReduce, Flink, Pig→PySpark (via PigToSparkConversion MCP), Zeppelin notebooks |
 | Broken apps (still installable) | Pig 0.17.0 — installs on EMR 7.x but ORDER BY/JOIN fail due to Java 17 serialization bug; must convert to PySpark |
 | Deprecated apps (still available) | Oozie 5.2.1 — functional but unmaintained; recommend conversion to Step Functions |
 | Removed apps | Ganglia, Mahout, Sqoop (from EMR 7.5+) |
@@ -47,33 +47,22 @@ Migrate an EMR cluster configuration **and its applications** from EMR 5.0–5.3
 
 ## Parameters
 
-Only two parameters are required from the user. Everything else is auto-discovered or uses sensible defaults.
+Collect these from the user before proceeding:
 
-**Required** (user must provide):
-
-| Parameter | Description |
-|-----------|-------------|
-| `CLUSTER_ID` | Source EMR cluster ID (`j-XXXXXXXXXXXXX`) |
-| `REGION` | AWS region |
-
-**Auto-discovered** (skill determines these — no user input needed):
-
-| Parameter | How the skill infers it |
-|-----------|------------------------|
-| `AWS_PROFILE` | Uses current active credentials (`aws sts get-caller-identity`). If it fails, ask user. |
-| `TARGET_RELEASE` | Defaults to `emr-7.1.0`. Override only if user specifies a different EMR 7.x release. |
-| `STAGING_BUCKET` | Creates `s3://emr-migration-staging-{account_id}-{region}` automatically. Uses cluster's log bucket if available. |
-| `DRY_RUN` | Default: `false`. Set to `true` only if user explicitly asks for config-only output. |
-| `VALIDATE_ONLY` | Default: `false`. Set to `true` only if user provides an existing target cluster and asks to skip migration steps. |
-| `RETRY_AZ` | Default: `true`. Automatically retries in a different AZ on infra failures. |
-
-**Conditionally required** (only ask if the workload is detected):
-
-| Parameter | When to ask |
-|-----------|-------------|
-| `SPARK_APP_PATH` | Only if user wants Spark application source code upgraded (not just cluster config). Ask: "Do you have a local Spark project to upgrade?" |
-| `PIG_DAG_PATH` | Only if Pig detected. Ask: "Where is your Airflow DAG file that references Pig scripts?" |
-| `ZEPPELIN_NOTEBOOKS_PATH` | Only if Zeppelin detected. Try to export automatically via Zeppelin REST API first; ask only if API is unreachable. |
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `CLUSTER_ID` | Yes | Running cluster ID (`j-XXXXXXXXXXXXX`) or saved configuration name |
+| `REGION` | Yes | AWS region |
+| `TARGET_RELEASE` | No | Specific EMR 7.x release label (default: `emr-7.1.0`) |
+| `DRY_RUN` | No | If true, produce config only without launching (default: false) |
+| `VALIDATE_ONLY` | No | If true, run validation against an existing target cluster without migration steps (default: false) |
+| `SPARK_APP_PATH` | No | Local path to Spark application code to upgrade (Python/Scala/Java project) |
+| `STAGING_BUCKET` | No | S3 path for upgrade artifacts (required if SPARK_APP_PATH provided) |
+| `PIG_DAG_PATH` | No | Local path to Airflow DAG file containing Pig script references (required for Pig migration) |
+| `PIG_DOMAIN_NAME` | No | Domain name for Pig-to-Spark conversion output structure |
+| `ZEPPELIN_NOTEBOOKS_PATH` | No | Local path or S3 path to Zeppelin notebook JSON exports to migrate |
+| `ZEPPELIN_URL` | No | Target Zeppelin server URL for notebook upload (default: `http://localhost:8890`) |
+| `RETRY_AZ` | No | If true, automatically retry cluster launch in a different AZ on provisioning failures (default: true) |
 
 ## Prerequisites
 
@@ -93,6 +82,7 @@ For Spark application upgrades (optional):
 - A target EMR 7.x cluster or the one launched in Stage 4
 
 For Pig application migration (optional):
+- The PigToSparkConversion MCP server configured (see Stage 3F)
 - Airflow DAG file(s) that reference Pig scripts via SSHOperator
 - Hive metastore connectivity for table dependency resolution
 - Python 3.10+ and `poetry` for running converted PySpark tests
@@ -101,99 +91,13 @@ For Zeppelin notebook migration (optional):
 - Exported Zeppelin notebook JSON files (from EMR 5.x cluster)
 - Target Zeppelin server accessible (EMR 7.x cluster or standalone)
 
-## Tooling Architecture
-
-This skill uses a layered approach: **open-source tools** where they work reliably (SQLGlot for Presto→Trino, pyupgrade for Python modernization), **Spark Upgrade Agent MCP** for Spark code upgrades (2.4+), and **agent judgment** guided by reference documentation for everything else.
-
-### Process 1: Infrastructure & Non-Spark Migration (ALL cases)
-
-Spark Upgrade Agent does NOT handle infrastructure or non-Spark applications. These are always our responsibility.
-
-**Tools the agent uses directly** (install with `pip install sqlglot pyupgrade`):
-
-| Tool | What it does | How the agent uses it |
-|------|-------------|----------------------|
-| **SQLGlot** | SQL dialect transpilation | `sqlglot.transpile(sql, read="presto", write="trino")` for Presto→Trino conversion |
-| **pyupgrade** | Python 3 syntax modernization | `pyupgrade --py3-plus <file.py>` — handles dict comprehensions, type hints, string formatting, etc. **Limitation**: pyupgrade requires the file to already be valid Python 3 syntax. Files with `print "x"` (statement) or `except E, e:` (comma) will fail to parse. The agent must fix these syntax-breaking patterns manually FIRST (`print "x"` → `print("x")`, `except E, e:` → `except E as e:`), then run pyupgrade for remaining modernizations. |
-
-> **Note on Hive keyword quoting**: SQLGlot's `transpile(sql, read="hive", write="hive")` does NOT selectively quote reserved keywords. The agent handles Hive 3 reserved keyword quoting directly using the keyword list in `references/failure-catalogue.md` (HIVE3_SYNTAX_CHANGES) — backtick-quoting `user`, `date`, `time`, `timestamp`, `interval`, `role`, `groups`, `index`, `exchange` when used as identifiers.
-
-**Agent-handled transforms** (using judgment + reference docs):
-- Bootstrap actions: yum→dnf, service→systemctl, Python 3, Java 17 paths, IMDSv2, emrfs removal, s3n→s3 (guided by `references/configuration-transforms.md`)
-- Flink: memory model renames, state backend, CLI flag migration (guided by `references/failure-catalogue.md` FLINK_YARN_CHANGES)
-- PySpark: Fix Python 2 syntax-breaking patterns first (`print "x"` → `print("x")`, `except E, e:` → `except E as e:`), then run `pyupgrade --py3-plus` for remaining modernizations. Apply Spark API changes referencing the [Spark SQL Migration Guide](https://spark.apache.org/docs/latest/sql-migration-guide.html).
-- Hive: ACID table detection, SET removal, type casts (guided by `references/failure-catalogue.md`)
-- MapReduce: Python shebang fix, Hadoop 3 path changes
-- Zeppelin: interpreter migration (guided by `references/zeppelin-interpreter-migration.md`)
-- Pig→PySpark: full conversion (guided by `references/pig-to-spark-mapping.md`)
-
-**SQLGlot usage example** (agent runs this for Presto→Trino):
-```python
-import sqlglot
-
-# Transpile Presto → Trino (function renames, type semantics, keywords)
-sql = "SELECT json_extract(col, '$.key') FROM my_table"
-result = sqlglot.transpile(sql, read="presto", write="trino")[0]
-# → SELECT JSON_EXTRACT(col, '$.key') FROM my_table
-```
-
-### Process 2: Spark Application Code Upgrade
-
-| Source Spark | Primary upgrade path | Data validation | Fallback if primary fails |
-|-------------|---------------------|----------------|--------------------------|
-| **2.0–2.2** (EMR 5.0–5.19) | Manual Python 2 syntax fixes (`print`/`except`) → `pyupgrade --py3-plus` → agent with [Spark SQL Migration Guide](https://spark.apache.org/docs/latest/sql-migration-guide.html) + failure catalogue | Basic: exit 0, best-effort | N/A — this IS the only path |
-| **2.4** (EMR 5.20–5.35) | **Spark Upgrade Agent MCP** — iterate ALL tool calls without pausing until complete (up to 40 calls) | Basic: exit 0, agent validates on target (no DQ) | Fall back to static tools + failure catalogue + Migration Guide |
-| **3.0+** (EMR 6.x+) | **Spark Upgrade Agent MCP** — iterate ALL tool calls without pausing until complete | **Full data quality comparison** (built-in, automatic) | Fall back to static tools + failure catalogue |
-
-**Spark Upgrade Agent requirements:**
-- Source cluster ID (user provides, or skill helps create)
-- Target cluster ID (user provides, or skill helps create)
-- S3 staging bucket
-- Local project path
-
-**Critical: Let the Spark Upgrade Agent iterate to completion.** Do not pause or interrupt mid-workflow. It may make up to 40 sequential tool calls (plan → build → fix → compile → fix → validate → compare). Only intervene if it explicitly reports failure or exhausts iterations.
-
-### Validation Rule — MANDATORY for ALL components
-
-**No migrated artifact is presented to the customer until it has been executed on the target cluster and validated.**
-
-| Component | Validation before confirming to customer |
-|-----------|----------------------------------------|
-| **Spark 3.0+** | Spark Upgrade Agent runs it on target + DQ comparison passes |
-| **Spark 2.4** | Spark Upgrade Agent runs it on target, exit 0 |
-| **Spark 2.0–2.2** | Submit to target cluster as EMR step, exit 0 |
-| **Hive** | Submit migrated HQL to target as Hive step, exit 0 + `DESCRIBE` + `COUNT(*)` on output tables |
-| **Presto→Trino** | Submit migrated SQL via `trino-cli` on target, exit 0 |
-| **Pig→PySpark** | Submit converted PySpark to target, exit 0 + compare output where it naturally lands |
-| **Flink** | Submit migrated JAR to target in application mode, exit 0 |
-| **MapReduce** | Submit migrated JAR/script to target, exit 0 |
-| **Bootstrap** | Target cluster reaches WAITING state |
-| **Zeppelin** | Execute paragraphs on target Zeppelin via REST API, no ERROR status |
-
-> **Bootstrap testing note**: Real bootstrap actions run as `root` during cluster creation. EMR steps (used for testing) run as `hadoop` and will fail on commands requiring superuser privileges (e.g., `dnf install -y`). The correct validation for bootstrap scripts is that the **target cluster reaches WAITING state** — not submitting the script as a step.
-
-If validation fails → enter fix loop (or Spark Upgrade Agent iteration) → re-validate → only confirm after pass.
-
-### MCP Servers
-
-| MCP Server | Role | When used |
-|------------|------|-----------|
-| **Spark Upgrade Agent** | Spark code upgrade + validation + DQ | Spark 2.4+ source code |
-
-### Running Tests
+### Cloning the Skill Repository
 
 ```bash
-# Verify SQLGlot is installed and working (Presto→Trino transpilation)
-python -c "import sqlglot; print(sqlglot.transpile('SELECT json_extract(col, \\'$.key\\') FROM t', read='presto', write='trino'))"
-
-# Verify pyupgrade is installed
-pyupgrade --version
-
-# Run dry-run simulation against a cluster (requires AWS credentials)
-python tests/dry_run_simulation.py --cluster-id j-XXXXX --region us-east-1
+# Clone from GitHub
+git clone https://github.com/aws-samples/aws-emr-utilities.git
+cd aws-emr-utilities/utilities/emr-al1-migration-skill
 ```
-
----
 
 ## Workflow
 
@@ -214,15 +118,10 @@ From the output:
 5. Identify Spark application source code if `SPARK_APP_PATH` provided or discoverable from step JARs/scripts.
 6. Check for **hard blockers** — halt immediately if found:
    - MapR filesystem → not supported on EMR 7.x
-7. Check for **warnings** (continue but inform user):
-   - Ganglia → removed from EMR 7.5+; recommend CloudWatch Container Insights or Prometheus as alternative
-   - Mahout → removed; recommend Spark MLlib
-   - Sqoop → removed from EMR 7.5+; recommend Spark JDBC or AWS Glue
-8. Store the full original configuration as a JSON backup artifact in S3.
+   - Ganglia → removed; note CloudWatch/Prometheus alternative
+7. Store the full original configuration as a JSON backup artifact in S3.
 
 ### Stage 2 — Adapt Cluster Configuration
-
-> **Deterministic pre-processing**: For Presto→Trino SQL, use `sqlglot.transpile(sql, read="presto", write="trino")`. For Hive reserved keyword quoting and bootstrap scripts, the agent applies transforms directly using `references/configuration-transforms.md` and `references/failure-catalogue.md` as guidance.
 
 Load `references/configuration-transforms.md` and apply all transformations in order:
 
@@ -290,99 +189,26 @@ Upload adapted bootstrap scripts to S3 with `-emr7-migrated` suffix.
 >
 > All changes are applied regardless, since the goal is a fully modernized codebase — but when communicating with users, be clear about which fixes are immediately necessary vs. best-practice upgrades.
 
-**Process 1 (Infrastructure + Non-Spark):** The agent applies transforms using `references/configuration-transforms.md`, `references/failure-catalogue.md`, SQLGlot (for Presto→Trino SQL transpilation only), and `pyupgrade` (for Python 3 modernization, after manually fixing syntax-breaking Python 2 patterns). Hive reserved keyword quoting is done manually by the agent. Then the agent handles ACID decisions, cluster creation, and Pig conversion.
-
-**Process 2 (Spark code):** Routing depends on source Spark version — see Stage 3A below.
-
-**Validation is MANDATORY:** No migrated artifact is delivered to the customer until it has been executed successfully on the target cluster. See the Validation Rule in the Tooling Architecture section above.
+This skill handles ALL application upgrades directly. For Spark code upgrades, the skill uses the Apache Spark Upgrade Agent MCP server tools when available — no separate prompting or manual invocation needed. The agent detects available MCP tools and calls them automatically.
 
 #### Stage 3A — Spark Application Code Upgrade (if SPARK_APP_PATH provided)
 
-Route based on source Spark version:
+**When the Spark Upgrade Agent MCP server is connected**, use its tools directly to upgrade application source code:
 
-**Spark 2.0–2.2 (EMR 5.0–5.19) — Static tools + agent:**
+0. **Create a working copy**: Before any modifications, copy the entire `SPARK_APP_PATH` directory to a new location with `-emr7-migrated` suffix (e.g., `my-spark-app/` → `my-spark-app-emr7-migrated/`). All subsequent upgrade operations target the copy — the original source is never modified.
+1. Call `check_and_update_build_environment` to update build files (pom.xml, build.sbt, requirements.txt, Pipfile) for Spark 3.5 / Scala 2.12 compatibility.
+2. Call `check_and_update_python_environment` (for PySpark projects) to update Python dependencies.
+3. Call `compile_and_build_project` to verify the upgraded code compiles.
+4. Call `check_job_status` to monitor validation job runs on the target EMR cluster.
 
-The Spark Upgrade Agent does NOT support these versions. Use deterministic tools as primary path:
-
-1. **Create a working copy**: Copy `SPARK_APP_PATH` to `-emr7-migrated` suffix. Original is never modified.
-2. **Fix Python 2 syntax-breaking patterns first** — EMR 5.0–5.19 shipped Python 2.7 by default, so files likely contain `print "x"` and `except E, e:` which are unparseable by Python 3. Manually fix these BEFORE running pyupgrade:
-   - `print "x"` → `print("x")`
-   - `except Exception, e:` → `except Exception as e:`
-   Then run `pyupgrade --py3-plus` on all .py files for remaining modernizations (dict comprehensions, type annotations, etc.).
-   Finally, apply Spark API changes referencing the [Spark SQL Migration Guide](https://spark.apache.org/docs/latest/sql-migration-guide.html) (SQLContext→SparkSession, registerTempTable→createOrReplaceTempView, unionAll→union, MLlib→ML, s3n→s3).
-3. **Agent applies additional fixes** referencing the [Spark SQL Migration Guide](https://spark.apache.org/docs/latest/sql-migration-guide.html) and `references/failure-catalogue.md` (SPARK_SQL_LEGACY, SPARK_REMOVED_APIS, SPARK_SCALA_BINARY, SPARK_PYTHON_VERSION, SPARK_DEPENDENCY_CONFLICT).
-4. **Validate**: Submit migrated code to target cluster as EMR step. Must exit 0. This is the only validation available for Spark 2.0–2.2 — no data quality comparison. Report to user: "Job completed on EMR 7.x (exit 0). Manual data validation recommended for Spark 2.0–2.2 sources."
-5. **If validation fails**: Enter fix loop (max 5 iterations using failure catalogue), re-validate until pass.
-
-**Spark 2.4+ (EMR 5.20–5.35 and above) — Spark Upgrade Agent MCP:**
-
-The Spark Upgrade Agent MCP server is assumed to be configured as a prerequisite (see README). It handles all Spark code and dependency upgrades for Spark 2.4+.
-
-**Staging bucket**: Use the user's S3 staging bucket. If they don't have one, create it:
-```bash
-aws s3 mb s3://spark-upgrade-staging-ACCOUNT_ID --region REGION
-```
-
-Prerequisites:
-- Source cluster ID (user provides, or skill helps create one)
-- Target cluster ID (user provides, or skill helps create one)
-- S3 staging bucket (ask user or create)
-- Local project path
-
-Execution:
-1. **Create a working copy**: Copy `SPARK_APP_PATH` to `-emr7-migrated` suffix. Original is never modified.
-2. **Invoke the Spark Upgrade Agent** using the following prompt template (fill in values from context):
-
-> **IMPORTANT: Version format** — Use EMR release versions (e.g., `5.33.0`, `7.1.0`), NOT Spark versions (e.g., `2.4.7`, `3.5.0`). The service expects EMR release versions for `application_type=EMR-EC2` and internally maps them to Spark versions. Using Spark versions will fail with `INVALID_INPUT_EXCEPTION`.
-
-```
-Upgrade my Spark application at <SPARK_APP_PATH-emr7-migrated> from EMR version <SOURCE_EMR_VERSION> to <TARGET_EMR_VERSION>.
-Use EMR-EC2 Cluster <TARGET_CLUSTER_ID> to run the validation.
-Use s3://<STAGING_BUCKET>/spark-upgrade-staging to store updated application artifacts.
-Use <AWS_PROFILE> for AWS CLI operations.
-
-IMPORTANT: Run fully autonomously without stopping for approvals. Do not ask for confirmation at any step.
-Proceed through all steps (plan, build update, environment setup, validation, fix loops) end-to-end.
-Accept all default configurations and proceed immediately.
-```
-
-**Example (EMR 5.33 → 7.1.0):**
-```
-Upgrade my Spark application at /home/user/my-app-emr7-migrated from EMR version 5.33.0 to 7.1.0.
-Use EMR-EC2 Cluster j-XXXXXXXXXXXXX to run the validation.
-Use s3://my-bucket/spark-upgrade-staging to store updated application artifacts.
-Use spark-upgrade-profile for AWS CLI operations.
-
-IMPORTANT: Run fully autonomously without stopping for approvals. Do not ask for confirmation at any step.
-Proceed through all steps (plan, build update, environment setup, validation, fix loops) end-to-end.
-Accept all default configurations and proceed immediately.
-```
-
-3. **Let it iterate to completion** — do NOT pause or interrupt. The agent may make up to 40 sequential tool calls (plan → build update → compile → fix → recompile → validate → DQ compare). Continue calling its tools until it reports the upgrade is complete or has exhausted its iterations.
-4. **After the Spark Upgrade Agent completes**, retrieve the results:
-   - **Upgraded code**: The Upgrade Agent writes upgraded source files to the S3 staging path (`s3://<STAGING_BUCKET>/spark-upgrade-staging/{analysis_id}/`). Download or inspect the upgraded files from there. The local working copy (`-emr7-migrated` directory) is also updated in place.
-   - **Upgrade summary**: Call `get_data_quality_summary` or `describe_upgrade_analysis` to retrieve the full report.
-   - **For Spark 2.4 source**: Validation is exit-code based only. The Upgrade Agent confirms the job ran successfully on the target cluster (exit 0). No data comparison. Report this to the user: "Job validated successfully on EMR 7.x (exit 0). No data quality comparison available for Spark 2.4 sources."
-   - **For Spark 3.0+ source**: Full data quality report is generated automatically. Read the DQ summary (schema diff, row counts, statistical column comparison) and present it to the user. If mismatches are found, report them clearly with the specific columns/values that differ.
-5. **If Spark Upgrade Agent fails or is NOT connected**: Fall back to:
-   - Agent applies fixes using [Spark SQL Migration Guide](https://spark.apache.org/docs/latest/sql-migration-guide.html) + `pyupgrade --py3-plus`
-   - Agent referencing [Spark SQL Migration Guide](https://spark.apache.org/docs/latest/sql-migration-guide.html)
-   - `references/failure-catalogue.md` patterns
-   - Submit to target cluster, enter fix loop (max 5 iterations)
-
-**Two-hop model (Spark only, when needed for full DQ):**
-- Hop 1: Spark 2.4 → Spark 3.0 (Upgrade Agent, no DQ)
-- Hop 2: Spark 3.0 → Spark 3.5/4.0 (Upgrade Agent, with full DQ)
-- This gives end-to-end data quality validation for the final target.
-
-**Important**: The Spark Upgrade Agent does NOT upgrade infrastructure (bootstrap scripts, cluster config, instance types). Process 1 handles those independently regardless of which Spark upgrade path is used.
-
-**Spark Upgrade Agent capabilities:**
-- Scala version: 2.11→2.12 binary compatibility fixes
-- Dependencies: Upgrades to EMR 7.x-compatible versions
-- Test code: Ensures unit/integration tests pass with target Spark version
-- Validation: Compiles and submits application to target EMR cluster
-- Data quality: Detects schema/value-level differences between source and target outputs
+The Spark Upgrade Agent tools handle:
+- **Build configuration**: Updates dependency versions for EMR 7.x compatibility
+- **Source code**: Fixes deprecated API usage (SQLContext→SparkSession, registerTempTable→createOrReplaceTempView, etc.)
+- **Scala version**: 2.11→2.12 binary compatibility fixes
+- **Dependencies**: Upgrades to EMR 7.x-compatible versions
+- **Test code**: Ensures unit/integration tests pass with target Spark version
+- **Validation**: Compiles and submits application to target EMR cluster
+- **Data quality**: Detects schema/value-level differences between source and target outputs
 
 Supported languages: Python, Scala (Maven/SBT), Java (Maven)
 
@@ -392,18 +218,42 @@ Limitations:
 - The upgrade agent iterates one fix at a time (error-driven approach)
 
 **When the Spark Upgrade Agent MCP server is NOT connected**, copy the `SPARK_APP_PATH` to a new directory with `-emr7-migrated` suffix, then apply fixes directly to the copy using `references/failure-catalogue.md`:
-- Fix Python 2 syntax-breaking patterns first (`print "x"` → `print("x")`, `except E, e:` → `except E as e:`) then run `pyupgrade --py3-plus` (SPARK_PYTHON_VERSION)
 - Apply cluster-level legacy compat flags (SPARK_SQL_LEGACY, SPARK_PARQUET_TIMESTAMP)
 - Rewrite deprecated APIs in source code (SPARK_REMOVED_APIS)
 - Fix Scala 2.11→2.12 issues (SPARK_SCALA_BINARY)
 - Fix Python 2→3 issues (SPARK_PYTHON_VERSION)
 - Resolve dependency conflicts (SPARK_DEPENDENCY_CONFLICT)
 
-Once connected, this skill will automatically detect and use the Spark Upgrade Agent tools. See README for setup instructions.
+**Spark Upgrade Agent MCP server setup (prerequisite — user must complete before using this skill):**
+
+The user needs the `spark-upgrade` MCP server connected to their agent. Setup instructions: https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-spark-upgrade-agent-setup.html
+
+Summary:
+1. Deploy the CloudFormation stack `spark-upgrade-mcp-setup` in their region
+2. Add the MCP server config to their agent (Kiro, Claude Code, etc.):
+```json
+{
+  "mcpServers": {
+    "spark-upgrade": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "mcp-proxy-for-aws@latest",
+        "https://sagemaker-unified-studio-mcp.<REGION>.api.aws/spark-upgrade/mcp",
+        "--service", "sagemaker-unified-studio-mcp",
+        "--profile", "spark-upgrade-profile",
+        "--region", "<REGION>",
+        "--read-timeout", "180"
+      ],
+      "timeout": 180000
+    }
+  }
+}
+```
+
+Once connected, this skill will automatically detect and use the Spark Upgrade Agent tools.
 
 #### Stage 3B — Hive Application Migration
-
-> **Deterministic pre-processing**: The agent handles Hive reserved keyword quoting directly (backtick `user`, `date`, `time`, `timestamp`, `interval`, `role`) based on the keyword list in `references/failure-catalogue.md`. The agent also handles ACID table decisions, invalid SET removal, and metastore operations that require judgment.
 
 For clusters with Hive workloads, adapt HQL scripts and queries for Hive 3.1:
 
@@ -499,8 +349,6 @@ aws emr add-steps --cluster-id $NEW_CLUSTER_ID --steps \
 
 #### Stage 3C — Presto → Trino Migration
 
-> **Deterministic pre-processing**: Use SQLGlot to transpile Presto SQL to Trino (`sqlglot.transpile(sql, read="presto", write="trino")`). This handles function renames, type semantics, and keyword changes deterministically. The agent handles non-SQL changes (CLI renames, JDBC driver class, config classifications).
-
 EMR 7.x replaces Presto with Trino (complete rebrand). For clusters running Presto workloads:
 
 1. **Inventory Presto assets**: List all queries, JDBC connections, scripts referencing `presto-cli`, and applications using the Presto JDBC driver.
@@ -574,8 +422,6 @@ aws emr add-steps --cluster-id $NEW_CLUSTER_ID --steps \
 
 #### Stage 3E — Flink Application Migration
 
-> **Agent-handled transforms**: The agent applies Flink migration fixes using `references/failure-catalogue.md` (FLINK_YARN_CHANGES) as guidance. Memory model renames, state backend property renames, and CLI flag migration are all handled by agent judgment.
-
 For clusters running Flink workloads on YARN:
 
 1. **Inventory Flink assets**: List all Flink jobs (JAR submissions, Python DataStream/Table API scripts).
@@ -618,11 +464,39 @@ aws emr add-steps --cluster-id $NEW_CLUSTER_ID --steps \
 
 #### Stage 3F — Pig Application Migration (Pig → PySpark)
 
-Pig 0.17.0 is still installable on EMR 7.x but is **functionally broken** for non-trivial scripts. While Pig can still be added as an application to EMR 7.x clusters, it fails at runtime on any script that requires multi-vertex Tez DAGs (ORDER BY, JOIN, COGROUP) due to a Java 17 serialization incompatibility in Pig's internal `OperatorKey` class. Converting Pig workloads to PySpark is **required** (not just recommended). The agent handles this conversion directly using `references/pig-to-spark-mapping.md` as guidance.
+Pig 0.17.0 is still installable on EMR 7.x but is **functionally broken** for non-trivial scripts. While Pig can still be added as an application to EMR 7.x clusters, it fails at runtime on any script that requires multi-vertex Tez DAGs (ORDER BY, JOIN, COGROUP) due to a Java 17 serialization incompatibility in Pig's internal `OperatorKey` class. Converting Pig workloads to PySpark is **required** (not just recommended). This stage leverages the **PigToSparkConversion MCP server** (`code.amazon.com/packages/PigToSparkConversion`) which provides AST-based parsing, automated conversion, test generation, and validation tooling.
 
 > **CRITICAL**: Pig 0.17.0 on EMR 7.x (Java 17) crashes with `java.io.IOException: Deserialization error: Cannot invoke "org.apache.pig.impl.plan.OperatorKey.hashCode()" because "this.mKey" is null` on any operation requiring data exchange between Tez vertices (ORDER BY, JOIN, COGROUP, etc.). Simple single-vertex operations (LOAD, FILTER, GROUP BY + DUMP) may still work, but any production script with sorting or joins will fail. There is no fix — Pig 0.17.0 (June 2017) is the last Apache Pig release ever, and it was never updated for Java 17. The script itself cannot be modified to work around this; the failure is inside Pig's engine, not in user code. **The only migration path is converting to PySpark.**
 
-**Conversion process** (agent applies using `references/pig-to-spark-mapping.md`):
+**When the PigToSparkConversion MCP server is connected**, use its tools directly:
+
+1. **Extract Pig scripts from DAG**: Call `extract_pig_files_from_dag` with the Airflow DAG file path to identify all Pig script references (SSHOperator tasks with `pig.sh` commands). Tasks already using `SparkLivyBatchOperator` are excluded automatically.
+
+2. **Parse and analyze each Pig script**: Call `pig_ast_parser_tool` for each discovered `.pig` file to generate an AST with:
+   - LOAD/STORE dependency graph
+   - Column lineage tracking
+   - UDF identification
+   - JOIN type analysis
+
+3. **Orchestrate conversion**: Call `pig_to_spark_converter_tool` with domain name, pig file list, and Hive metastore config. The tool handles:
+   - **File classification**: prepares/ → `data_store/`, transforms/ → `info_store/`, maps → `maps_data_store/`
+   - **PySpark class generation**: Each Pig script → a PySpark class with `compute()` entry point
+   - **UDF mapping**: Pig UDFs → `pig_udfs.py` library (e.g., `stringsUDFs.NULLSTR()` → `PU.null_str()`, `datesUDFs.PIGDATE()` → `PU.pig_date()`)
+   - **Table dependency resolution**: S3 paths → Hive table names via `enhance_table_dependencies`
+   - **Deprecated operator conversion**: `FOREACH...GENERATE` → DataFrame select/withColumn, `FILTER` → `.filter()`, `GROUP BY` → `.groupBy()`, `COGROUP` → multi-DataFrame join, `SPLIT` → conditional filters, `FLATTEN` → `.explode()`
+   - **S3 path scheme migration**: `s3n://` → `s3://`
+
+4. **Apply iterative fixes** (run-fail-fix loop, max 5 iterations): Call `apply_conversion_fixes_tool` for each file that fails compilation or validation. The tool compares converted code against the original Pig source and applies LLM-generated corrections.
+
+5. **Generate tests**: Call `generate_enhanced_pyspark_test` for each converted class. Tests use `pytest` with `PytestSparkHelper` for Spark session management.
+
+6. **Generate replacement DAG**: Call `airflow_dag_generator_tool` (for regular DAGs) or `generate_dynamic_dag_replacement` (for dynamic DAGs) to produce Airflow DAG files that use `SparkLivyBatchOperator` instead of Pig SSH tasks.
+
+7. **Generate Hive migrations**: Call `hive_migration_gen` to produce DDL for any final tables created by the converted PySpark code.
+
+8. **Generate validation notebook**: Call `zeppelin_generator` to produce a Zeppelin notebook that compares production table outputs with user-schema outputs using DataComPy (schema comparison, record count, row-by-row analysis, data quality metrics).
+
+**When the PigToSparkConversion MCP server is NOT connected**, apply conversion manually:
 
 1. **Inventory Pig assets**: List all `.pig` files referenced in EMR steps or Airflow DAGs.
 
@@ -679,6 +553,29 @@ aws emr add-steps --cluster-id $NEW_CLUSTER_ID --steps \
 
 4. On failure: classify against `references/failure-catalogue.md` (PIG_UDF_UNMAPPED, PIG_SCHEMA_MISMATCH, PIG_COGROUP_COMPLEX, PIG_NESTED_FOREACH, SPARK_DEPENDENCY_CONFLICT), apply fix, resubmit.
 
+**PigToSparkConversion MCP server setup (prerequisite — user must complete before using this skill):**
+
+The user needs the `pig-to-spark-conversion` MCP server connected to their agent. The server is available at `code.amazon.com/packages/PigToSparkConversion`.
+
+Summary:
+1. Clone the package and install dependencies (`npm install`)
+2. Configure environment variables: `PIG_TO_SPARK_DATA_LAKE`, `PIG_TO_SPARK_S3_BASE_PATH`, `PIG_TO_SPARK_ZEPPELIN_URL`
+3. Add the MCP server config to their agent:
+```json
+{
+  "mcpServers": {
+    "pig-to-spark-conversion": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["<path-to-PigToSparkConversion>/dist/index.js"],
+      "timeout": 1800000
+    }
+  }
+}
+```
+
+Once connected, this skill will automatically detect and use the PigToSparkConversion tools.
+
 **Key limitations:**
 - Private artifact repository dependencies must be upgraded manually
 - Custom Pig UDFs written in Java require manual PySpark UDF re-implementation
@@ -725,6 +622,7 @@ done
    - Replace Pig `DESCRIBE` with `df.printSchema()`
    - Replace Pig `ILLUSTRATE` with `df.show(5, truncate=False)`
    - Maintain cell execution order and variable dependencies between paragraphs
+   - If the PigToSparkConversion MCP server is connected, use `pig_ast_parser_tool` for complex multi-line Pig blocks
 
 5. **Apply Hive 3.1 fixes** to `%hive` paragraphs (same rules as Stage 3B):
    - ACID/transactional table handling
@@ -858,7 +756,7 @@ aws emr add-steps --cluster-id $NEW_CLUSTER_ID --steps \
   Jar=command-runner.jar,Args=[spark-submit,--deploy-mode,cluster,\
   s3://bucket/converted/$PIG_DOMAIN_NAME/data_store/script_name.py] --region $REGION
 ```
-Compare output tables between original Pig results and converted PySpark results using DataComPy (schema match, record count, row-by-row).
+Compare output tables between original Pig results and converted PySpark results using DataComPy (schema match, record count, row-by-row). If the PigToSparkConversion MCP `zeppelin_generator` tool was used, run the generated validation notebook.
 
 **Zeppelin notebooks**: Execute adapted notebooks on the test cluster's Zeppelin instance (port 8890).
 ```bash
@@ -931,6 +829,8 @@ For each failure:
 | Same failure repeats after fix | Report cycle detected |
 | >2 cluster launch failures | Report infra issue |
 | Instance type unavailable | Suggest alternatives, pause for user input |
+| Spark Upgrade Agent reports unresolvable error | Report with manual remediation steps |
+| PigToSparkConversion MCP reports unresolvable error | Report with manual conversion steps and Pig source reference |
 
 ## Safety Guarantees
 
@@ -971,6 +871,8 @@ The original S3 objects and local files remain untouched. If a migration is re-r
 - Security group rules from source are validated but not modified; overly permissive rules (0.0.0.0/0) are flagged as warnings
 - IAM roles follow least-privilege: test cluster uses the same instance profile as source; no additional permissions added
 - TLS 1.2+ is enforced on AL2023 — connections to legacy endpoints using TLS 1.0/1.1 will fail and are flagged
+- Spark Upgrade Agent uses cross-region inference; see AWS documentation on data processing regions
+- PigToSparkConversion MCP server runs locally; Pig scripts and converted code stay on the user's machine unless explicitly uploaded to S3
 - Zeppelin notebook exports may contain query results or sensitive data — review before storing in shared locations
 
 ## Reference Files
@@ -1003,7 +905,7 @@ The following configurations have been tested by field SAs. Results inform the f
 | Blocker | Manual Step Required | Workaround |
 |---------|---------------------|------------|
 | Scala 2.11 JARs | Recompile all application JARs to Scala 2.12 | Use `userClassPathFirst=true` as temporary workaround |
-| Pig scripts | Convert to PySpark (agent converts using references/pig-to-spark-mapping.md) | Use Stage 3F for conversion |
+| Pig scripts | Convert to PySpark (automated via PigToSparkConversion MCP) | Use Stage 3F for automated conversion |
 | Oozie workflows | Redesign to Step Functions or MWAA | No automated conversion available |
 | Scala 2.11 uber JAR on extraClassPath | Rebuild without bundled Scala runtime, or move to `--jars` | See SPARK_CLASSPATH_POISON in failure catalogue |
 

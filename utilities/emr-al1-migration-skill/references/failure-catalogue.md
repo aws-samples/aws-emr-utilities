@@ -428,11 +428,9 @@ Failure categories for classifying errors during EMR 5.x to 7.x migration. Each 
 - **Root Cause Detail**: Hive 2.x ACID writes produce delta files only (no base file). Hive 3.x changed the internal transaction file format — it can read Hive 2.x **base files** (produced by major compaction) but NOT raw Hive 2.x delta files. The metastore schema upgrade (`schematool -upgradeSchema`) fixes the metadata schema but does **NOT** fix the on-disk ORC delta file format — this is a common misconception.
 - **Fix**:
 
-  **Option A — Export to non-ACID EXTERNAL table (Required — primary approach)**:
+  **Option A — Major compaction on source cluster BEFORE migration (Preferred)**:
 
-  > **WARNING**: Major compaction alone is NOT sufficient. Testing confirmed that even compacted `base_NNNNNN/` files retain Hive 2.x ACID ORC column encoding, which Hive 3.x cannot read (`ClassCastException: BytesColumnVector cannot be cast to LongColumnVector`). The ONLY reliable fix is exporting data to a new non-ACID table.
-
-  On the EMR 5.x cluster (or a temporary one if the original is terminated):
+  Run major compaction on the EMR 5.x cluster for ALL ACID tables before terminating it. This converts delta files into base files that Hive 3.x can read.
 
   ```sql
   -- On EMR 5.x cluster (source)
@@ -443,23 +441,21 @@ Failure categories for classifying errors during EMR 5.x to 7.x migration. Each 
   JOIN TABLE_PARAMS tp ON t.TBL_ID = tp.TBL_ID
   WHERE tp.PARAM_KEY = 'transactional' AND tp.PARAM_VALUE = 'true';
 
-  -- 2. Export each ACID table to clean non-ACID format:
-  CREATE EXTERNAL TABLE db.table_name_export
-  STORED AS ORC
-  LOCATION 's3://bucket/migration-export/table_name/'
-  AS SELECT * FROM db.table_name;
+  -- 2. For each ACID table, run major compaction on every partition
+  ALTER TABLE db.table_name PARTITION (partition_col='value') COMPACT 'major';
 
-  -- 3. Verify export contains all rows:
-  SELECT COUNT(*) FROM db.table_name;
-  SELECT COUNT(*) FROM db.table_name_export;
+  -- For unpartitioned tables:
+  ALTER TABLE db.table_name COMPACT 'major';
 
-  -- 4. On EMR 7.x, create table pointing to exported data:
-  CREATE EXTERNAL TABLE db.table_name
-  (... original schema ...)
-  STORED AS ORC
-  LOCATION 's3://bucket/migration-export/table_name/'
-  TBLPROPERTIES ('external.table.purge'='true');
+  -- 3. Monitor compaction progress (wait for all to complete)
+  SHOW COMPACTIONS;
+  -- All entries should show state = 'succeeded'
+
+  -- 4. Verify base files exist in S3
+  -- Should see base_NNNNNN/ directories alongside or replacing delta_NNNNNN/ directories
   ```
+
+  After compaction completes, the data is in base files readable by Hive 3.x. Proceed with normal migration.
 
   **Option B — Re-ingestion via temporary EMR 5.x cluster (when source is terminated)**:
 
@@ -493,8 +489,9 @@ Failure categories for classifying errors during EMR 5.x to 7.x migration. Each 
 - **Important Notes**:
   - `schematool -upgradeSchema` upgrades the **metastore schema** (MySQL/PostgreSQL tables) but does NOT convert the **ORC delta file format** — both steps are needed for ACID table migration
   - AWS Glue Data Catalog does NOT support Hive ACID transactions — if customer uses Glue Catalog, ACID tables must be converted to EXTERNAL tables regardless
-  - Non-ACID tables (no `transactional=true`) work fine without export — their ORC files are standard and readable by any Hive version
-  - Major compaction is NOT sufficient — compacted base files still retain Hive 2.x ACID column encoding that Hive 3.x cannot read (validated in E2E testing on EMR 7.5)
+  - Non-ACID tables (no `transactional=true`) work fine without compaction — their ORC files are standard and readable by any Hive version
+  - The compaction process can be time-consuming for large tables; plan for adequate cluster runtime
+  - After successful compaction, delta files can optionally be cleaned via `CLEANER` (runs automatically after compaction succeeds, or manually: keep cluster running until `SHOW COMPACTIONS` shows cleaner state = 'succeeded')
 
 ---
 
@@ -565,7 +562,7 @@ Failure categories for classifying errors during EMR 5.x to 7.x migration. Each 
 
 - **Cause**: Pig 0.17.0 on EMR 7.x (Java 17) has a fatal serialization bug. ORDER BY, JOIN, and COGROUP operations fail because Pig's internal `OperatorKey` objects cannot be deserialized in downstream Tez vertices. Simple single-vertex operations (LOAD, FILTER, GROUP BY + DUMP) may still work, but any production script with sorting or joins will crash. This is a bug in Pig's engine, not in the user's script — **no modification to the `.pig` file can fix it**. Pig 0.17.0 (2017) is the final Apache Pig release and will never be patched for Java 17.
 - **Logs**: `java.io.IOException: Deserialization error: Cannot invoke "org.apache.pig.impl.plan.OperatorKey.hashCode()" because "this.mKey" is null` at `org.apache.pig.impl.util.ObjectSerializer.deserialize(ObjectSerializer.java:62)`, `org.apache.pig.backend.hadoop.executionengine.tez.runtime.PigProcessor.initialize(PigProcessor.java:174)`
-- **Fix**: Convert to PySpark. Use Stage 3F to convert Pig scripts to PySpark DataFrame API. See `references/pig-to-spark-mapping.md`. There is no Pig-side workaround.
+- **Fix**: Convert to PySpark. Use Stage 3F (PigToSparkConversion MCP) for automated conversion, or manually convert Pig scripts to PySpark DataFrame API. See `references/pig-to-spark-mapping.md`. There is no Pig-side workaround.
 
 ### PIG_UDF_UNMAPPED
 
@@ -585,7 +582,7 @@ Failure categories for classifying errors during EMR 5.x to 7.x migration. Each 
   - Compare schemas: check that column names and types match (Pig `chararray`→`StringType`, `int`→`IntegerType`)
   - Check null handling: Pig and Spark handle nulls differently in JOINs and aggregations
   - Verify FLATTEN behavior: Pig FLATTEN on empty bags produces no rows; Spark `.explode()` on null arrays produces no rows (same behavior) but on empty arrays produces no rows
-  - Iteratively correct the conversion by comparing against the original Pig logic and expected output schema
+  - Use `apply_conversion_fixes_tool` to iteratively correct the conversion
 
 ### PIG_COGROUP_COMPLEX
 
@@ -610,7 +607,7 @@ Failure categories for classifying errors during EMR 5.x to 7.x migration. Each 
 ### PIG_STREAMING_OPERATOR
 
 - **Cause**: Pig STREAM operator (pipes data through external process) has no direct DataFrame equivalent.
-- **Detection**: Conversion encounters STREAM statement; conversion produces placeholder or skips the operation.
+- **Detection**: `pig_ast_parser_tool` flags STREAM statement; conversion tool skips or produces placeholder.
 - **Fix**:
   - If streaming process is a simple text transform: convert to PySpark UDF or `rdd.pipe()`
   - If streaming process is a complex binary: use `spark.sparkContext.pipe()` or `subprocess` in a mapPartitions UDF

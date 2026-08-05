@@ -298,21 +298,22 @@ EMR 7.x removes EMRFS Consistent View (which used DynamoDB for S3 metadata track
 
 ---
 
-## 6. Instance Type Validation
+## 6. Instance Type Substitution
 
-Instance types from the source cluster should be validated for availability in the target region/AZ. Only **previous-generation** types require substitution:
+If source instance types are deprecated or unavailable:
 
-| Previous-Gen (may be unavailable) | Suggested Replacement |
+| Deprecated | Current-Gen Replacement |
 |---|---|
-| m4.* | m5.* or m6i.* |
-| r4.* | r5.* or r6i.* |
-| c4.* | c5.* or c6i.* |
+| m5.* | m6i.* or m7i.* |
+| r5.* | r6i.* or r7i.* |
+| c5.* | c6i.* or c7i.* |
+| i3.* | i3en.* or i4i.* |
 | d2.* | d3.* |
-| i2.* | i3.* or i3en.* |
+| m4.* | m6i.* |
+| r4.* | r6i.* |
+| c4.* | c6i.* |
 
-> **Note**: m5, r5, c5, i3 are current-generation and fully supported. Do NOT replace them unless `describe-instance-type-offerings` shows them unavailable in the target AZ.
-
-Verify availability with:
+Verify with:
 ```bash
 aws ec2 describe-instance-type-offerings \
   --location-type availability-zone \

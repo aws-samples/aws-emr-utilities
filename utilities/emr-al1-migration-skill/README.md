@@ -24,8 +24,6 @@ Use skill emr-al1-migration to migrate EMR cluster <cluster-id>
 from EMR 5.x to EMR 7.x in region <region> using profile <profile-name>.
 ```
 
-3. **(Kiro only) Enable autonomous mode** — add all spark-upgrade tools to `autoApprove` in `~/.kiro/settings/mcp.json` so the Spark Upgrade Agent runs E2E without pausing for approval at each step. See [GETTING_STARTED.md](GETTING_STARTED.md) for the full config.
-
 For batch migration of scripts without a running cluster, point the agent at your script files directly. See [Batch migration](#batch--headless-upgrade-at-scale) below.
 
 ---
@@ -34,7 +32,7 @@ For batch migration of scripts without a running cluster, point the agent at you
 
 | Dimension | Value |
 |---|---|
-| Source | EMR 5.0–5.35 (Amazon Linux 1, Java 8, Spark 2.4, Hive 2.3, Pig 0.17) |
+| Source | EMR 5.0–5.36 (Amazon Linux 1, Java 8, Spark 2.4, Hive 2.3, Pig 0.17) |
 | Target | EMR 7.x latest stable (Amazon Linux 2023, Java 17, Spark 3.5, Hive 3.1, Trino) |
 | Strategy | New cluster — original never modified |
 | Applications | Spark, Hive, Presto→Trino, MapReduce, Flink, Pig→PySpark, Zeppelin |
@@ -117,74 +115,13 @@ See [`references/iam-permissions.md`](references/iam-permissions.md) for the com
 - [ ] S3 bucket for migrated artifacts and logs created
 - [ ] EMR service role and EC2 instance profile configured
 - [ ] Source scripts backed up separately (skill reads but never modifies originals)
-- [ ] Spark Upgrade Agent MCP server configured (see below)
 - [ ] Familiar with [Important constraints](#important-constraints--read-before-running)
-
-### Spark Upgrade Agent MCP Setup (required for Spark 2.4+ code upgrades)
-
-The Spark Upgrade Agent handles Spark application code upgrades, dependency resolution, and validation. Set it up before running the skill:
-
-**1. Create IAM Role** with EMR + S3 permissions:
-
-```bash
-ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-REGION=us-east-1  # your region
-
-# Create role
-aws iam create-role --role-name SparkUpgradeMCPRole \
-  --assume-role-policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${ACCOUNT_ID}:root\"},\"Action\":\"sts:AssumeRole\"}]}"
-
-# Attach EMR + S3 permissions
-aws iam put-role-policy --role-name SparkUpgradeMCPRole \
-  --policy-name SparkUpgradeAccess \
-  --policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":[\"elasticmapreduce:DescribeCluster\",\"elasticmapreduce:DescribeStep\",\"elasticmapreduce:ListSteps\",\"elasticmapreduce:ListClusters\",\"elasticmapreduce:AddJobFlowSteps\",\"elasticmapreduce:CreatePersistentAppUI\",\"elasticmapreduce:DescribePersistentAppUI\",\"elasticmapreduce:GetPersistentAppUIPresignedURL\"],\"Resource\":\"*\"},{\"Effect\":\"Allow\",\"Action\":[\"s3:GetBucket*\",\"s3:GetObject*\",\"s3:List*\",\"s3:Put*\"],\"Resource\":[\"arn:aws:s3:::YOUR_STAGING_BUCKET\",\"arn:aws:s3:::YOUR_STAGING_BUCKET/*\"]}]}"
-```
-
-Reference: https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-spark-upgrade-agent-iam-role.html
-
-**2. Create S3 staging bucket** (for upgrade artifacts and summaries):
-
-```bash
-aws s3 mb s3://spark-upgrade-staging-${ACCOUNT_ID} --region ${REGION}
-```
-
-**3. Configure AWS CLI profile:**
-
-```bash
-aws configure set profile.spark-upgrade-profile.source_profile default
-aws configure set profile.spark-upgrade-profile.role_arn arn:aws:iam::${ACCOUNT_ID}:role/SparkUpgradeMCPRole
-aws configure set profile.spark-upgrade-profile.region ${REGION}
-```
-
-**4. Add to `~/.kiro/settings/mcp.json`:**
-
-```json
-{
-  "mcpServers": {
-    "spark-upgrade": {
-      "type": "stdio",
-      "command": "uvx",
-      "args": [
-        "mcp-proxy-for-aws@latest",
-        "https://sagemaker-unified-studio-mcp.<REGION>.api.aws/spark-upgrade/mcp",
-        "--service", "sagemaker-unified-studio-mcp",
-        "--profile", "spark-upgrade-profile",
-        "--region", "<REGION>",
-        "--read-timeout", "180"
-      ],
-      "timeout": 180000
-    }
-  }
-}
-```
-
-Replace `<REGION>` with your AWS region (e.g., `us-east-1`).
 
 ---
 
 ## Confirmed breaks on EMR 7.5
 
-Validated via end-to-end testing on EMR 7.5 (AL2023):
+Validated via end-to-end testing (see [Testing by Kshitija - v1](../Testing%20by%20Kshitija%20-%20v1.md)):
 
 | Break | Error | Severity |
 |---|---|---|

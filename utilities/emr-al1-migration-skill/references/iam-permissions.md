@@ -30,7 +30,12 @@ Minimum IAM permissions needed to execute the EMR AL1 Migration Skill.
         "elasticmapreduce:AddJobFlowSteps",
         "elasticmapreduce:TerminateJobFlows"
       ],
-      "Resource": "*"
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestTag/emr-migration-skill": "test-run"
+        }
+      }
     },
     {
       "Sid": "S3ScriptAccess",
@@ -38,6 +43,7 @@ Minimum IAM permissions needed to execute the EMR AL1 Migration Skill.
       "Action": [
         "s3:GetObject",
         "s3:PutObject",
+        "s3:CopyObject",
         "s3:ListBucket"
       ],
       "Resource": [
@@ -75,15 +81,9 @@ Minimum IAM permissions needed to execute the EMR AL1 Migration Skill.
         "iam:PassRole"
       ],
       "Resource": [
-        "arn:aws:iam::*:role/EMR_DefaultRole",
-        "arn:aws:iam::*:role/EMR_EC2_DefaultRole",
-        "arn:aws:iam::*:instance-profile/EMR_EC2_DefaultRole"
-      ],
-      "Condition": {
-        "StringEquals": {
-          "iam:PassedToService": "elasticmapreduce.amazonaws.com"
-        }
-      }
+        "arn:aws:iam::*:role/EMR_*",
+        "arn:aws:iam::*:instance-profile/EMR_*"
+      ]
     }
   ]
 }
@@ -137,7 +137,8 @@ Required only when using the Apache Spark Upgrade Agent MCP server for applicati
 
 - Replace `SCRIPT_BUCKET` with the actual S3 bucket used for bootstrap scripts and JARs.
 - Replace `STAGING_BUCKET` with the S3 bucket used by the Spark Upgrade Agent for artifacts.
-- `iam:PassRole` is scoped to EMR default roles and restricted via `iam:PassedToService` to EMR only. Adjust the resource ARN to match your environment's naming convention.
+- The `EMRWriteAccess` statement uses a tag condition to scope write actions to clusters created by the skill only.
+- `iam:PassRole` is scoped to EMR-prefixed roles. Adjust the resource ARN to match your environment's naming convention.
 - For dry-run mode only, the `EMRWriteAccess` statement is not required.
 - No `*FullAccess` policies are used — this follows least-privilege.
 - The Spark Upgrade Agent CloudFormation stack creates its own IAM role with necessary permissions. The above is for reference only if provisioning manually.

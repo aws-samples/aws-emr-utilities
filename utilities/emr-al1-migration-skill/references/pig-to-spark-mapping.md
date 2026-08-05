@@ -270,7 +270,7 @@ result = (data
 
 ---
 
-## Common Pig UDF → PySpark Equivalents
+## PigToSparkConversion MCP — pig_udfs.py Library
 
 Common UDF mappings provided by the `pig_udfs.py` library (imported as `PU`):
 
