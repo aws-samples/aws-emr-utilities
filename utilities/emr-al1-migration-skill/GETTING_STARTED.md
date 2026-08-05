@@ -14,6 +14,7 @@ This guide walks you through setup, usage, expected time investment, use cases, 
 | 2 | Clone this repository to your local machine | 1 min |
 | 3 | Configure AWS credentials with [required IAM permissions](references/iam-permissions.md) | 5 min |
 | 4 | (Optional) Set up [Spark Upgrade Agent MCP](https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-spark-upgrade-agent-setup.html) for automated Spark code upgrades | 10 min |
+| 5 | (Optional) Set up PigToSparkConversion MCP for automated Pig→PySpark conversion | 10 min |
 
 ### Installation
 
@@ -146,6 +147,7 @@ use aws profile <profile-name> for any aws call.
 | MCP Server | What It Does | Setup Time |
 |------------|-------------|-----------|
 | **Spark Upgrade Agent** | Automated Spark code upgrades (build file updates, API replacements, compilation, validation) | 10 min |
+| **PigToSparkConversion** | AST-based Pig→PySpark conversion with test generation | 10 min |
 
 ---
 
