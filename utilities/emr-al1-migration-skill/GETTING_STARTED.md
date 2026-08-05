@@ -18,17 +18,9 @@ This guide walks you through setup, usage, expected time investment, use cases, 
 ### Installation
 
 ```bash
-# Step 1: Clone the repo (choose one method)
-
-# Option A: SSH (requires SSH key configured for gitlab.aws.dev)
-git clone git@ssh.gitlab.aws.dev:saxparul/emr-al1-migration-skill.git
-
-# Option B: HTTPS
-git clone https://gitlab.aws.dev/saxparul/emr-al1-migration-skill.git
-
-# Option C: ZIP download (if git clone fails due to SSH/HTTPS auth issues)
-# Navigate to https://gitlab.aws.dev/saxparul/emr-al1-migration-skill → "Code" → "Download zip"
-# Or use GitHub mirror: https://github.com/saxenapa/emr-al1-migration-skill
+# Step 1: Clone the repo
+git clone https://github.com/aws-samples/aws-emr-utilities.git
+cd aws-emr-utilities/utilities/emr-al1-migration-skill
 
 cd emr-al1-migration-skill
 
@@ -274,8 +266,8 @@ If a migration is re-run, the `-migrated` artifacts are overwritten (idempotent)
 
 | Channel | URL | When to Use |
 |---------|-----|-------------|
-| **GitLab Issues** | `https://gitlab.aws.dev/saxparul/emr-al1-migration-skill/-/issues` | Bug reports, feature requests, failure catalogue gaps |
-| **GitLab Discussions** | `https://gitlab.aws.dev/saxparul/emr-al1-migration-skill/-/issues` | Questions, suggestions, share migration stories |
+| **GitHub Issues** | `https://github.com/aws-samples/aws-emr-utilities/issues` | Bug reports, feature requests, failure catalogue gaps |
+| **GitHub Discussions** | `https://github.com/aws-samples/aws-emr-utilities/discussions` | Questions, suggestions, share migration stories |
 | **Quip Doc** (internal) | _[Link TBD — for internal AWS testers]_ | Internal feedback during beta |
 
 ### What to Include in Feedback

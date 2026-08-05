@@ -12,8 +12,9 @@ Upgrades Amazon EMR clusters from **EMR 5.x (Amazon Linux 1)** to **EMR 7.x (Ama
 1. Place the skill where your agent can read it (Claude Code, Kiro, or any MCP-aware agent):
 
 ```bash
-git clone git@ssh.gitlab.aws.dev:saxparul/emr-al1-migration-skill.git
-# or copy emr-al1-migration/ into your project's .claude/skills/ directory
+git clone https://github.com/aws-samples/aws-emr-utilities.git
+cd aws-emr-utilities/utilities/emr-al1-migration-skill
+# or copy emr-al1-migration-skill/ into your project's .kiro/skills/ or .claude/skills/ directory
 ```
 
 2. Invoke via prompt:
