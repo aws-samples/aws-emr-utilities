@@ -702,11 +702,12 @@ Failure categories for classifying errors during EMR 5.x to 7.x migration. Each 
 
 ## Removed Applications (Other)
 
-### OOZIE_REMOVED
+### OOZIE_DEPRECATED
 
-- **Cause**: Oozie not in EMR 7.x.
-- **Logs**: `oozie: command not found`
-- **Fix**: Step Functions (recommended), MWAA (Airflow), or EMR Steps + EventBridge. **Manual redesign required.**
+- **Cause**: Oozie 5.2.1 is still available on EMR 7.x but is unmaintained and deprecated. It may be removed in future EMR releases. Workflows relying on Oozie should plan migration to modern alternatives.
+- **Logs**: No immediate failure — Oozie runs but receives no updates or patches. May encounter issues with newer Hadoop 3.x APIs over time.
+- **Detection**: Cluster includes Oozie in applications list; scheduled workflows use `oozie job -run` or Oozie coordinator/bundle definitions.
+- **Fix**: Migrate to Step Functions (recommended), MWAA (Managed Airflow), or EMR Steps + EventBridge for orchestration. **Proactive redesign recommended** — Oozie will not receive compatibility fixes for future EMR releases.
 
 ---
 

@@ -680,9 +680,11 @@ aws emr create-cluster \
   --configurations <adapted-config-json> \
   --bootstrap-actions <adapted-bootstrap-list> \
   --tags emr-migration-skill=test-run \
-  --auto-terminate \
+  --auto-termination-policy '{"IdleTimeout":900}' \
   --region $REGION
 ```
+
+> **Why IdleTimeout instead of --auto-terminate?** With `--auto-terminate`, the cluster shuts down after the last submitted step completes. This conflicts with the Stage 5/6 fix loop — if a validation step fails (with `ActionOnFailure=CONTINUE`), the cluster would terminate before the agent can diagnose and resubmit. The 15-minute idle timeout keeps the cluster alive long enough for log retrieval, diagnosis, and resubmission, while still auto-terminating if the agent crashes or abandons the workflow. The skill explicitly terminates the cluster in Stage 7 after all work is complete.
 
 Use **minimum viable size**: 1 primary (m5.xlarge) + 1 core (m5.xlarge).
 
@@ -809,10 +811,10 @@ For each failure:
 - List all application-level fixes (Spark code changes, Hive script adaptations, Pig→PySpark conversions, Zeppelin notebook adaptations)
 - Provide adapted bootstrap script and application S3 locations
 - List converted Pig domains with their output structure and validation notebook URLs
-- Terminate test cluster
+- Terminate test cluster: `aws emr terminate-clusters --cluster-ids $NEW_CLUSTER_ID --region $REGION`
 
 **On failure/halt**:
-- Terminate test cluster
+- Terminate test cluster: `aws emr terminate-clusters --cluster-ids $NEW_CLUSTER_ID --region $REGION`
 - Report: fixes attempted, remaining blockers, manual remediation for each blocker
 - Output partial configuration (what was successfully adapted)
 
@@ -839,7 +841,7 @@ For each failure:
 3. Original Pig scripts are preserved; converted PySpark is written to new paths with `-spark-migrated` or domain-structured output
 4. Original Zeppelin notebooks are exported and preserved; adapted versions are uploaded as new notebooks (with `-emr7` suffix in notebook name)
 5. Test cluster tagged `emr-migration-skill=test-run` for cost tracking
-6. Test cluster auto-terminates on completion
+6. Test cluster auto-terminates after 15 minutes idle (or explicitly in Stage 7)
 7. Validation steps are read-only or use test data
 8. Minimum instance count (1 primary + 1 core) to limit cost
 

@@ -26,10 +26,20 @@ cd aws-emr-utilities/utilities/emr-al1-migration-skill
 cd emr-al1-migration-skill
 
 # Step 2: Configure AWS credentials (use a non-production account)
-# Note: 'ada --region' flag is not supported; set region via environment variable instead
-ada credentials update --account <YOUR_ACCOUNT_ID> --role Admin
-export AWS_DEFAULT_REGION=<REGION>
-# or
+# Option A: Use an AWS CLI named profile
+aws configure --profile emr-migration
+# Set: AWS Access Key ID, Secret Access Key, Default region (e.g., us-east-1)
+
+# Option B: Set environment variables directly
+export AWS_ACCESS_KEY_ID=<your-access-key>
+export AWS_SECRET_ACCESS_KEY=<your-secret-key>
+export AWS_DEFAULT_REGION=us-east-1
+
+# Option C: Use IAM role assumption (recommended for cross-account)
+aws sts assume-role --role-arn arn:aws:iam::<ACCOUNT_ID>:role/<ROLE_NAME> \
+  --role-session-name emr-migration
+
+# You need a role with permissions listed in references/iam-permissions.md
 export AWS_PROFILE=<your-profile>
 
 # Step 3: Verify access
