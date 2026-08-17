@@ -101,6 +101,13 @@
     "ec2_migration/eventlog_v2_00g6bunn7pe8do0b [performance] spark_configs.spark.emr-serverless.executor.disk: golden='2000G' current='1000G'"
    ],
    "reason": "tier-aware disk sizing: A/B-validated 2026-07-25 on replicated production workloads \u2014 16c 2000G->1000G won on both test jobs (-13.3% wall/-18% cost and -8.6%/-13.9%); 8c IOPS floor + FetchFailed IOPS-ladder escalation keep serving-bound fleets on 1000G+"
+  },
+  {
+   "changed_lines": 1,
+   "changes": [
+    "field_reports/spillheavy_hashagg_16c: NEW app not in golden baseline"
+   ],
+   "reason": "spill-aware cost-mode disk floor: disk spill >50GB/executor floors at the shape's max-throughput tier in both modes \u2014 A/B on replicated 5.2TB-spill hash-agg (16c x15): capacity-sized 400G ran +35.5% wall / +31.5% cost vs 1000G. New fixture spillheavy_hashagg_16c pins Large x29 @ 1000G cost-mode. All 22 existing entries unchanged (largest prior spill/exec = 8GB, below floor threshold)."
   }
  ],
  "snapshot": {
@@ -606,6 +613,32 @@
      "worker.min_executors": 5,
      "worker.type": "Small",
      "worker.vcpu": 4
+    }
+   },
+   "spillheavy_hashagg_16c": {
+    "cost": {
+     "spark_configs.spark.dynamicAllocation.maxExecutors": "29",
+     "spark_configs.spark.dynamicAllocation.minExecutors": "9",
+     "spark_configs.spark.emr-serverless.executor.disk": "1000G",
+     "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
+     "spark_configs.spark.sql.shuffle.partitions": "1000",
+     "worker.max_executors": 29,
+     "worker.memory_gb": 108,
+     "worker.min_executors": 9,
+     "worker.type": "Large",
+     "worker.vcpu": 16
+    },
+    "performance": {
+     "spark_configs.spark.dynamicAllocation.maxExecutors": "43",
+     "spark_configs.spark.dynamicAllocation.minExecutors": "14",
+     "spark_configs.spark.emr-serverless.executor.disk": "1000G",
+     "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
+     "spark_configs.spark.sql.shuffle.partitions": "1000",
+     "worker.max_executors": 43,
+     "worker.memory_gb": 108,
+     "worker.min_executors": 14,
+     "worker.type": "Large",
+     "worker.vcpu": 16
     }
    },
    "windowsort_fetchfail_00g72m8n01eb1g0b": {

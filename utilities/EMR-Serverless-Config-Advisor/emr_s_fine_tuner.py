@@ -412,6 +412,11 @@ def _calculate_executor_disk(shuffle_write_gb: float, disk_spill_gb: float,
        fetch-wait > 10%) escalates one tier boundary when a higher tier
        EXISTS for this shape. PR #191 harm-gate pattern: volume alone is
        not evidence.
+    3b. SPILL FLOOR — disk spill > 50 GB/executor floors at the shape's
+       max-throughput tier in BOTH modes (spill I/O is per-executor
+       write+re-read traffic invisible to the serving-rate check; see
+       inline comment for the A/B where capacity-sized 400G cost +31.5%
+       vs 1000G on a 5.2TB-spill job).
     4. PERF MODE floors at the shape's MAX-throughput tier. Demand math
        sizes serving (shuffle read fan-out over hosts) but spill I/O
        scales with the CORES doing the work, not the host count — a big
@@ -480,7 +485,24 @@ def _calculate_executor_disk(shuffle_write_gb: float, disk_spill_gb: float,
             if higher:
                 tier_floor = higher[0]
 
-    # 4) perf mode: floor at this shape's max-throughput tier (see above)
+    # 4) spill floor (both modes): heavy spill makes the disk a hot path
+    # regardless of serving rate — every spilled byte is written AND
+    # re-read through this executor's own disk, and spill I/O scales with
+    # the cores doing the work, not the host count. The serving check
+    # can't be relied on to catch it: extracts commonly carry
+    # duration_sec=0 for exactly the long spill stages (rate unknowable),
+    # and capacity math sizes bytes-at-rest, not bandwidth. A/B on a
+    # replicated 5.2TB-spill hash-agg (16c x15, ~180GB spill/executor):
+    # the capacity-sized 400G disk (250 MiB/s tier) ran +35.5% wall and
+    # +31.5% COST vs 1000G (500 MiB/s tier) — cost mode losing on its own
+    # objective. Floor at the shape's max-throughput tier when disk spill
+    # exceeds 50GB per executor; below that, spill is a minority I/O
+    # stream and demand/capacity sizing stands (validated: an 8GB/exec
+    # spill job won its A/B at the demand-sized 1000G).
+    if disk_spill_gb / hosts > 50:
+        tier_floor = max(tier_floor, tiers[0][0], 200)
+
+    # 5) perf mode: floor at this shape's max-throughput tier (see above)
     if mode == "performance":
         tier_floor = max(tier_floor, tiers[0][0], 200)
 
