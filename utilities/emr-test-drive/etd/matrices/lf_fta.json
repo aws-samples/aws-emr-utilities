@@ -1,0 +1,253 @@
+{
+  "_comment": "Expected-support matrix for access_mode=lf_fta. Full Table Access changes WHICH credentials reach S3 (Lake Formation vended for registered tables) but does not change Spark's table-provider capabilities, so the per-operation expectations are those of plain mode. Row/column/cell filters do not apply under FTA.",
+  "sources": [
+    "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-lf-fgac1.html",
+    "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/emr-serverless-lf-enable.html",
+    "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/lake-formation-unfiltered-access.html"
+  ],
+  "retrieved": "2026-08-17",
+  "access_mode": "lf_fta",
+  "basis": "Apache Spark capability by table provider. Hive/file-source (USING parquet) tables are Spark v1 tables: they support neither row-level DML nor the DataFrameWriterV2 API. Iceberg and Delta are v2 table providers and support both. FTA additionally requires EMR >= 7.8.0 (EMRFS) or >= 7.10.0 (S3A).",
+  "state_codes": {
+    "S": "SUPPORTED \u2014 uses Lake Formation credentials exclusively; no fallback to runtime-role credentials if LF permissions are insufficient",
+    "S3": "SUPPORTED_WITH_S3_IAM \u2014 does NOT use LF credentials; runtime role needs direct S3 IAM on the table location regardless of registration",
+    "N": "NOT_SUPPORTED \u2014 documented as unsupported; a failure here is expected behavior, not a regression"
+  },
+  "version_gates": {
+    "fta_min_release_emrfs": "7.8.0",
+    "fta_min_release_s3a": "7.10.0",
+    "notes": [
+      "FTA is enabled by job-level Spark configuration, not by an application switch, and cannot be combined with FGAC.",
+      "Jobs referencing tables that carry FGAC rules or Glue Data Catalog views fail under FTA; use FGAC mode for those."
+    ]
+  },
+  "formats": {
+    "parquet": {
+      "CREATE_TABLE": {
+        "state": "S",
+        "lf": []
+      },
+      "INSERT_INTO": {
+        "state": "S",
+        "lf": []
+      },
+      "SELECT": {
+        "state": "S",
+        "lf": []
+      },
+      "DESCRIBE": {
+        "state": "S",
+        "lf": []
+      },
+      "SHOW_CREATE_TABLE": {
+        "state": "S",
+        "lf": []
+      },
+      "CTAS": {
+        "state": "S",
+        "lf": []
+      },
+      "INSERT_OVERWRITE": {
+        "state": "S",
+        "lf": []
+      },
+      "ALTER_TABLE": {
+        "state": "S",
+        "lf": []
+      },
+      "UPDATE": {
+        "state": "N",
+        "lf": [],
+        "caveat": "row-level UPDATE is not supported on Spark v1 file-source tables"
+      },
+      "DELETE": {
+        "state": "N",
+        "lf": [],
+        "caveat": "row-level DELETE is not supported on Spark v1 file-source tables"
+      },
+      "MERGE_INTO": {
+        "state": "N",
+        "lf": [],
+        "caveat": "MERGE INTO is not supported on Spark v1 file-source tables"
+      },
+      "DF_WRITER_V2": {
+        "state": "N",
+        "lf": [],
+        "caveat": "DataFrameWriterV2 requires a v2 table; USING parquet produces a v1 table"
+      },
+      "DROP_TABLE": {
+        "state": "S",
+        "lf": []
+      },
+      "ROW_FILTER": {
+        "state": "NA",
+        "lf": [],
+        "caveat": "FTA grants whole-table access; filters do not apply"
+      },
+      "COLUMN_FILTER": {
+        "state": "NA",
+        "lf": [],
+        "caveat": "FTA grants whole-table access; filters do not apply"
+      },
+      "CELL_FILTER": {
+        "state": "NA",
+        "lf": [],
+        "caveat": "FTA grants whole-table access; filters do not apply"
+      },
+      "NESTED_FILTER": {
+        "state": "NA",
+        "lf": [],
+        "caveat": "FTA grants whole-table access; filters do not apply"
+      }
+    },
+    "iceberg": {
+      "CREATE_TABLE": {
+        "state": "S",
+        "lf": []
+      },
+      "INSERT_INTO": {
+        "state": "S",
+        "lf": []
+      },
+      "SELECT": {
+        "state": "S",
+        "lf": []
+      },
+      "DESCRIBE": {
+        "state": "S",
+        "lf": []
+      },
+      "SHOW_CREATE_TABLE": {
+        "state": "S",
+        "lf": []
+      },
+      "CTAS": {
+        "state": "S",
+        "lf": []
+      },
+      "INSERT_OVERWRITE": {
+        "state": "S",
+        "lf": []
+      },
+      "ALTER_TABLE": {
+        "state": "S",
+        "lf": []
+      },
+      "UPDATE": {
+        "state": "S",
+        "lf": []
+      },
+      "DELETE": {
+        "state": "S",
+        "lf": []
+      },
+      "MERGE_INTO": {
+        "state": "S",
+        "lf": []
+      },
+      "DF_WRITER_V2": {
+        "state": "S",
+        "lf": []
+      },
+      "DROP_TABLE": {
+        "state": "S",
+        "lf": []
+      },
+      "ROW_FILTER": {
+        "state": "NA",
+        "lf": [],
+        "caveat": "FTA grants whole-table access; filters do not apply"
+      },
+      "COLUMN_FILTER": {
+        "state": "NA",
+        "lf": [],
+        "caveat": "FTA grants whole-table access; filters do not apply"
+      },
+      "CELL_FILTER": {
+        "state": "NA",
+        "lf": [],
+        "caveat": "FTA grants whole-table access; filters do not apply"
+      },
+      "NESTED_FILTER": {
+        "state": "NA",
+        "lf": [],
+        "caveat": "FTA grants whole-table access; filters do not apply"
+      }
+    },
+    "delta": {
+      "CREATE_TABLE": {
+        "state": "S",
+        "lf": []
+      },
+      "INSERT_INTO": {
+        "state": "S",
+        "lf": []
+      },
+      "SELECT": {
+        "state": "S",
+        "lf": []
+      },
+      "DESCRIBE": {
+        "state": "S",
+        "lf": []
+      },
+      "SHOW_CREATE_TABLE": {
+        "state": "N",
+        "lf": [],
+        "caveat": "SHOW CREATE TABLE is not supported for Delta"
+      },
+      "CTAS": {
+        "state": "S",
+        "lf": []
+      },
+      "INSERT_OVERWRITE": {
+        "state": "S",
+        "lf": []
+      },
+      "ALTER_TABLE": {
+        "state": "S",
+        "lf": []
+      },
+      "UPDATE": {
+        "state": "S",
+        "lf": []
+      },
+      "DELETE": {
+        "state": "S",
+        "lf": []
+      },
+      "MERGE_INTO": {
+        "state": "S",
+        "lf": []
+      },
+      "DF_WRITER_V2": {
+        "state": "S",
+        "lf": []
+      },
+      "DROP_TABLE": {
+        "state": "S",
+        "lf": []
+      },
+      "ROW_FILTER": {
+        "state": "NA",
+        "lf": [],
+        "caveat": "FTA grants whole-table access; filters do not apply"
+      },
+      "COLUMN_FILTER": {
+        "state": "NA",
+        "lf": [],
+        "caveat": "FTA grants whole-table access; filters do not apply"
+      },
+      "CELL_FILTER": {
+        "state": "NA",
+        "lf": [],
+        "caveat": "FTA grants whole-table access; filters do not apply"
+      },
+      "NESTED_FILTER": {
+        "state": "NA",
+        "lf": [],
+        "caveat": "FTA grants whole-table access; filters do not apply"
+      }
+    }
+  }
+}
