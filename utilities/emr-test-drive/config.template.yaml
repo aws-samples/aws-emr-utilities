@@ -1,0 +1,178 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# EMR Test Drive — configuration template
+#
+# Copy this file, fill in the four REQUIRED values, and run:
+#
+#     etd setup     --config my.yaml     # create app(s), stage assets, build the test bed
+#     etd run       --config my.yaml     # run every workload on every variant
+#     etd report    --config my.yaml     # build report.html + report.json
+#     etd teardown  --config my.yaml     # delete everything this run created
+#
+# Everything else has a working default. Nothing outside your account is touched.
+# ─────────────────────────────────────────────────────────────────────────────
+
+run:
+  # Short name for this test drive. Used in resource names, S3 prefixes and tags.
+  name: upgrade-check
+  region: us-east-1                       # REQUIRED
+  account: "111122223333"                 # REQUIRED — used only to verify you are in the right account
+  # Bucket for assets, data, logs and results. Must already exist and be writable.
+  bucket: my-etd-bucket                   # REQUIRED
+  prefix: etd                             # everything lands under s3://<bucket>/<prefix>/
+  # IAM role EMR Serverless jobs assume. Needs S3 read/write on the bucket above
+  # and Glue catalog access. See docs/IAM.md for a minimal policy.
+  execution_role_arn: arn:aws:iam::111122223333:role/EMRServerlessJobExecutionRole   # REQUIRED
+  # OPTIONAL. A full run can outlive short-lived credentials. If your profile
+  # refreshes itself (SSO, credential_process) leave this out — boto3 handles it.
+  # If your profile holds static keys that expire, put the refresh command here
+  # and the harness will run it and retry when a call fails as expired.
+  # credential_refresh_command: aws sso login --profile my-profile
+  tags:                                   # applied to every resource created
+    etd:owner: me
+
+# ─── Variants: the environments to compare ───────────────────────────────────
+# One variant = one EMR Serverless application. Keep them identical except for
+# the ONE thing you are testing, or the report will label the pair UNMATCHED and
+# suppress the performance verdict.
+#
+# access_mode must be plain | lf_fta | lf_fgac. Note that FTA and FGAC cannot
+# coexist on one application, so each mode needs its own variant.
+variants:
+  - id: baseline
+    label: "7.11.0 (current)"
+    baseline: true
+    release_label: emr-7.11.0
+    architecture: X86_64
+    access_mode: plain
+    shape: &shape
+      driver_cores: 2
+      driver_memory: 8g
+      executor_cores: 2
+      executor_memory: 8g
+      executor_count: 2
+
+  - id: candidate
+    label: "7.13.0 (candidate)"
+    release_label: emr-7.13.0
+    architecture: X86_64
+    access_mode: plain
+    shape: *shape
+
+  # Same release, one config flag flipped — a matched A/B:
+  # - id: candidate-aqe
+  #   label: "7.13.0 + coalesce tuning"
+  #   release_label: emr-7.13.0
+  #   architecture: X86_64
+  #   access_mode: plain
+  #   shape: *shape
+  #   spark_conf:
+  #     spark.sql.adaptive.coalescePartitions.initialPartitionNum: "200"
+
+  # Same release, candidate patch supplied by AWS support — see docs/PATCH.md:
+  # - id: candidate-patch
+  #   label: "7.13.0 + candidate patch"
+  #   release_label: emr-7.13.0
+  #   architecture: X86_64
+  #   access_mode: plain
+  #   shape: *shape
+  #   image_uri: 111122223333.dkr.ecr.us-east-1.amazonaws.com/etd-patched:7.13.0-p1
+
+# ─── Which pairs to compare ──────────────────────────────────────────────────
+# intent: upgrade_regression | patch_validation | governance_overhead
+# Only upgrade_regression and patch_validation gate CI.
+comparisons:
+  - id: upgrade
+    title: "Upgrade: 7.11.0 -> 7.13.0"
+    baseline: baseline
+    candidate: candidate
+    intent: upgrade_regression
+    primary: true
+
+# ─── Test bed: the data the workloads run against ────────────────────────────
+testbed:
+  # generate = the harness creates a small star-schema dataset in your bucket.
+  # Portable, cheap, and identical in every account. Use `existing` to point at
+  # your own tables instead.
+  mode: generate
+  database: etd_testbed
+  scale:
+    # Size this so your queries take at least ~10s. Sub-second queries are
+    # dominated by fixed overhead and the harness will (correctly) refuse to
+    # call any delta a regression.
+    fact_rows: 40000000
+    dim_rows: 200000
+  # mode: existing
+  # database: my_glue_db
+  # tables: [store_sales, date_dim, item]
+
+# ─── Workloads ───────────────────────────────────────────────────────────────
+workloads:
+  # Functional: the operation matrix. Diffed against the expected-support matrix
+  # for the variant's access_mode, so an operation AWS documents as unsupported
+  # is reported EXPECTED UNSUPPORTED rather than as a regression.
+  - id: func/core
+    kind: functional
+    formats: [parquet, iceberg, delta]
+    iterations: 1
+    operations: DEFAULT          # or an explicit list, see docs/OPERATIONS.md
+
+  # Performance: your SQL, best-of-N. Replace these with queries that look like
+  # your real workload — that is the whole point.
+  - id: perf/sql
+    kind: performance
+    iterations: 3
+    # Separate job runs, not just iterations. Iterations inside one job share
+    # driver and executors and cannot see a whole-job environmental difference,
+    # which otherwise shows up as a large and entirely fake cross-variant delta.
+    #
+    # Measured on EMR Serverless in two accounts (2026-08-13): with job_repeats=1
+    # a single query appeared 3.4x faster on the candidate. At job_repeats=2 the
+    # same query came out at -3.8%. Run-to-run environmental variance was on the
+    # order of 10-20%, so treat 2 as the floor and use 3-5 when you need to
+    # resolve a delta smaller than that. If a delta does not reproduce across
+    # runs, it is not a delta.
+    job_repeats: 3
+    queries:
+      q1_scan_filter: >
+        SELECT count(*) FROM {db}.fact WHERE amount > 50
+      q2_group_agg: >
+        SELECT category, count(*) c, sum(amount) s FROM {db}.fact
+        GROUP BY category ORDER BY s DESC
+      q3_join_agg: >
+        SELECT d.region, count(*) c, avg(f.amount) a
+        FROM {db}.fact f JOIN {db}.dim d ON f.dim_id = d.dim_id
+        GROUP BY d.region ORDER BY c DESC
+      q4_window: >
+        SELECT * FROM (
+          SELECT category, amount,
+                 row_number() OVER (PARTITION BY category ORDER BY amount DESC) rn
+          FROM {db}.fact) t
+        WHERE rn <= 10
+      q5_distinct_count: >
+        SELECT category, count(DISTINCT dim_id) FROM {db}.fact GROUP BY category
+      q6_selfjoin: >
+        SELECT a.category, count(*) FROM {db}.fact a JOIN {db}.fact b
+        ON a.dim_id = b.dim_id AND a.amount < b.amount
+        WHERE a.category = 'c1' AND b.fact_id < 2000000 GROUP BY a.category
+      q7_subquery: >
+        SELECT count(*) FROM {db}.fact f WHERE f.amount >
+          (SELECT avg(amount) FROM {db}.fact WHERE category = f.category)
+      q8_multi_join: >
+        SELECT d.region, f.category, sum(f.amount) s
+        FROM {db}.fact f JOIN {db}.dim d ON f.dim_id = d.dim_id
+        WHERE d.region IN ('r1','r2') GROUP BY d.region, f.category
+
+# ─── Verdict thresholds ──────────────────────────────────────────────────────
+thresholds:
+  # Deltas inside this band are NEUTRAL, never regressions. If the observed
+  # run-to-run spread on one variant exceeds it, the report tells you to widen it.
+  perf_noise_band_pct: 5.0
+  perf_regression_alert_pct: 10.0
+  min_iterations_for_perf_verdict: 2
+
+# ─── Safety ──────────────────────────────────────────────────────────────────
+safety:
+  auto_stop_minutes: 15          # EMR Serverless application idle timeout
+  job_timeout_minutes: 30
+  max_parallel_variants: 4
+  confirm_before_provision: true # prompt with a cost estimate before creating anything

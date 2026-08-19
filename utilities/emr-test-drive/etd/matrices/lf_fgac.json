@@ -1,0 +1,657 @@
+{
+  "_comment": "EMR Lake Formation FGAC expected-support matrix. THIS IS REAL DATA transcribed from AWS documentation, not synthetic. It is the 'expected state' the comparison engine diffs observed results against, so that a documented 'Not supported' is reported as EXPECTED_UNSUPPORTED instead of a false regression.",
+  "sources": [
+    "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-lf-fgac1.html",
+    "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/emr-serverless-lf-enable.html",
+    "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/lake-formation-unfiltered-access.html"
+  ],
+  "retrieved": "2026-08-13",
+  "access_mode": "lf_fgac",
+  "state_codes": {
+    "S": "SUPPORTED \u2014 uses Lake Formation credentials exclusively; no fallback to runtime-role credentials if LF permissions are insufficient",
+    "S3": "SUPPORTED_WITH_S3_IAM \u2014 does NOT use LF credentials; runtime role needs direct S3 IAM on the table location regardless of registration",
+    "N": "NOT_SUPPORTED \u2014 documented as unsupported; a failure here is expected behavior, not a regression"
+  },
+  "version_gates": {
+    "fgac_min_release": "6.15.0",
+    "fgac_min_release_emr_serverless": "7.2.0",
+    "fgac_min_release_emr_on_eks": "7.7.0",
+    "dml_ddl_use_lf_credentials_from": "7.12.0",
+    "dml_ddl_use_runtime_role_credentials_before": "7.12.0",
+    "delete_update_merge_unsupported_at_or_before": "7.11.0",
+    "recordserver_sql_extension_required_before": "7.10.0",
+    "notes": [
+      "7.12: DML and DDL operations that modify table data switch from runtime-role credentials to Lake Formation vended credentials. Highest-risk documented upgrade change: the identity that writes your data changes.",
+      "7.11 and older: DELETE, UPDATE and MERGE are not supported under FGAC at all.",
+      "Before 7.10: Delta and Hudi require com.amazonaws.emr.recordserver.connector.spark.sql.RecordServerSQLExtension in spark.sql.extensions and spark_catalog.lf.managed=true. Iceberg catalog impl changes from SparkCatalog to SparkSessionCatalog. The customer's Spark conf must change across the upgrade.",
+      "The 7.12.0 boundary is the documented point at which DML and DDL switch from runtime-role credentials to Lake Formation vended credentials, and at which DELETE/UPDATE/MERGE become supported. Verify against the current AWS documentation for your release."
+    ]
+  },
+  "lf_permission_map_summary": {
+    "DESCRIBE": "read table or database metadata in the Data Catalog",
+    "ALTER": "modify table or database metadata in the Data Catalog",
+    "DROP": "delete table or database metadata from the Data Catalog",
+    "SELECT": "read table data from Amazon S3",
+    "INSERT": "write table data to Amazon S3",
+    "DELETE": "delete table data from Amazon S3",
+    "evaluation": "Lake Formation evaluates permissions lazily when Spark calls Glue for metadata or S3 for data. A job with insufficient permissions does not fail until the call that needs the missing permission is made."
+  },
+  "formats": {
+    "hive": {
+      "SELECT": {
+        "state": "S",
+        "lf": [
+          "SELECT"
+        ]
+      },
+      "CREATE_TABLE": {
+        "state": "S",
+        "lf": [
+          "CREATE_TABLE"
+        ]
+      },
+      "CREATE_TABLE_LIKE": {
+        "state": "S3",
+        "lf": [
+          "CREATE_TABLE"
+        ]
+      },
+      "CTAS": {
+        "state": "S3",
+        "lf": [
+          "CREATE_TABLE"
+        ]
+      },
+      "DESCRIBE": {
+        "state": "S",
+        "lf": [
+          "DESCRIBE"
+        ]
+      },
+      "SHOW_PARTITIONS": {
+        "state": "S",
+        "lf": [
+          "DESCRIBE"
+        ]
+      },
+      "SHOW_CREATE_TABLE": {
+        "state": "S",
+        "lf": [
+          "DESCRIBE"
+        ]
+      },
+      "ALTER_TABLE": {
+        "state": "S",
+        "lf": [
+          "SELECT",
+          "ALTER"
+        ]
+      },
+      "ALTER_TABLE_SET_LOCATION": {
+        "state": "N",
+        "lf": []
+      },
+      "ADD_PARTITION": {
+        "state": "S",
+        "lf": [
+          "SELECT",
+          "INSERT",
+          "ALTER"
+        ]
+      },
+      "REPAIR_TABLE": {
+        "state": "S",
+        "lf": [
+          "SELECT",
+          "ALTER"
+        ]
+      },
+      "LOAD_DATA": {
+        "state": "N",
+        "lf": []
+      },
+      "INSERT_INTO": {
+        "state": "S",
+        "lf": [
+          "INSERT",
+          "ALTER"
+        ]
+      },
+      "INSERT_OVERWRITE": {
+        "state": "S",
+        "lf": [
+          "SELECT",
+          "INSERT",
+          "DELETE",
+          "ALTER"
+        ]
+      },
+      "TRUNCATE_TABLE": {
+        "state": "S",
+        "lf": [
+          "SELECT",
+          "INSERT",
+          "DELETE",
+          "ALTER"
+        ]
+      },
+      "DROP_TABLE": {
+        "state": "S",
+        "lf": [
+          "SELECT",
+          "DROP",
+          "DELETE",
+          "ALTER"
+        ]
+      },
+      "DF_WRITER_V1": {
+        "state": "S",
+        "lf": [
+          "INSERT",
+          "ALTER"
+        ],
+        "caveat": "append to existing table only"
+      },
+      "DF_WRITER_V2": {
+        "state": "N",
+        "lf": [],
+        "caveat": "Cannot write into v1 table; DataFrameWriterV2 requires a v2 table"
+      },
+      "ROW_FILTER": {
+        "state": "S",
+        "lf": [
+          "SELECT"
+        ],
+        "added_by": "etd"
+      },
+      "COLUMN_FILTER": {
+        "state": "S",
+        "lf": [
+          "SELECT"
+        ],
+        "added_by": "etd"
+      },
+      "CELL_FILTER": {
+        "state": "S",
+        "lf": [
+          "SELECT"
+        ],
+        "added_by": "etd"
+      },
+      "NESTED_FILTER": {
+        "state": "S",
+        "lf": [
+          "SELECT"
+        ],
+        "added_by": "etd"
+      },
+      "UPDATE": {
+        "state": "N",
+        "lf": [],
+        "caveat": "UPDATE TABLE is not supported temporarily; v1 file-source tables have no row-level DML"
+      },
+      "DELETE": {
+        "state": "N",
+        "lf": [],
+        "caveat": "UNSUPPORTED_FEATURE.TABLE_OPERATION; v1 file-source tables have no row-level DML"
+      },
+      "MERGE_INTO": {
+        "state": "N",
+        "lf": [],
+        "caveat": "MERGE INTO TABLE is not supported temporarily"
+      }
+    },
+    "iceberg": {
+      "SELECT": {
+        "state": "S",
+        "lf": [
+          "SELECT"
+        ]
+      },
+      "CREATE_TABLE": {
+        "state": "S",
+        "lf": [
+          "CREATE_TABLE"
+        ]
+      },
+      "CREATE_TABLE_LIKE": {
+        "state": "S3",
+        "lf": [
+          "CREATE_TABLE"
+        ]
+      },
+      "CTAS": {
+        "state": "S3",
+        "lf": [
+          "CREATE_TABLE"
+        ]
+      },
+      "REPLACE_TABLE_AS_SELECT": {
+        "state": "S",
+        "lf": [
+          "SELECT",
+          "INSERT",
+          "ALTER"
+        ]
+      },
+      "DESCRIBE": {
+        "state": "S3",
+        "lf": [
+          "DESCRIBE"
+        ]
+      },
+      "SHOW_CREATE_TABLE": {
+        "state": "S3",
+        "lf": [
+          "DESCRIBE"
+        ]
+      },
+      "ALTER_TABLE": {
+        "state": "S",
+        "lf": [
+          "SELECT",
+          "INSERT",
+          "ALTER"
+        ]
+      },
+      "ALTER_TABLE_SET_LOCATION": {
+        "state": "S3",
+        "lf": [
+          "SELECT",
+          "INSERT",
+          "ALTER"
+        ]
+      },
+      "ALTER_TABLE_RENAME": {
+        "state": "S",
+        "lf": [
+          "CREATE_TABLE",
+          "DROP"
+        ]
+      },
+      "INSERT_INTO": {
+        "state": "S",
+        "lf": [
+          "SELECT",
+          "INSERT",
+          "ALTER"
+        ]
+      },
+      "INSERT_OVERWRITE": {
+        "state": "S",
+        "lf": [
+          "SELECT",
+          "INSERT",
+          "ALTER"
+        ]
+      },
+      "DELETE": {
+        "state": "S",
+        "lf": [
+          "SELECT",
+          "INSERT",
+          "ALTER"
+        ],
+        "min_release": "7.12.0"
+      },
+      "UPDATE": {
+        "state": "S",
+        "lf": [
+          "SELECT",
+          "INSERT",
+          "ALTER"
+        ],
+        "min_release": "7.12.0"
+      },
+      "MERGE_INTO": {
+        "state": "S",
+        "lf": [
+          "SELECT",
+          "INSERT",
+          "ALTER"
+        ],
+        "min_release": "7.12.0"
+      },
+      "DROP_TABLE": {
+        "state": "S",
+        "lf": [
+          "SELECT",
+          "DELETE",
+          "DROP"
+        ]
+      },
+      "DF_WRITER_V1": {
+        "state": "N",
+        "lf": []
+      },
+      "DF_WRITER_V2": {
+        "state": "S",
+        "lf": [
+          "INSERT",
+          "ALTER"
+        ],
+        "caveat": "append to existing table only"
+      },
+      "METADATA_TABLES": {
+        "state": "S",
+        "lf": [
+          "SELECT"
+        ],
+        "caveat": "certain metadata tables are hidden"
+      },
+      "STORED_PROCEDURES": {
+        "state": "N",
+        "lf": [],
+        "caveat": "supported only for tables NOT registered in LF and not using register_table/migrate"
+      },
+      "ROW_FILTER": {
+        "state": "S",
+        "lf": [
+          "SELECT"
+        ],
+        "added_by": "etd"
+      },
+      "COLUMN_FILTER": {
+        "state": "S",
+        "lf": [
+          "SELECT"
+        ],
+        "added_by": "etd"
+      },
+      "CELL_FILTER": {
+        "state": "S",
+        "lf": [
+          "SELECT"
+        ],
+        "added_by": "etd"
+      },
+      "NESTED_FILTER": {
+        "state": "S",
+        "lf": [
+          "SELECT"
+        ],
+        "added_by": "etd"
+      }
+    },
+    "hudi": {
+      "SELECT": {
+        "state": "S",
+        "lf": [
+          "SELECT"
+        ]
+      },
+      "CREATE_TABLE": {
+        "state": "S3",
+        "lf": [
+          "CREATE_TABLE"
+        ]
+      },
+      "CREATE_TABLE_LIKE": {
+        "state": "S3",
+        "lf": [
+          "CREATE_TABLE"
+        ]
+      },
+      "CTAS": {
+        "state": "N",
+        "lf": []
+      },
+      "DESCRIBE": {
+        "state": "S3",
+        "lf": [
+          "DESCRIBE"
+        ]
+      },
+      "SHOW_CREATE_TABLE": {
+        "state": "S3",
+        "lf": [
+          "DESCRIBE"
+        ]
+      },
+      "ALTER_TABLE": {
+        "state": "S3",
+        "lf": [
+          "SELECT"
+        ]
+      },
+      "INSERT_INTO": {
+        "state": "S3",
+        "lf": [
+          "SELECT",
+          "ALTER"
+        ]
+      },
+      "INSERT_OVERWRITE": {
+        "state": "S3",
+        "lf": [
+          "SELECT",
+          "ALTER"
+        ]
+      },
+      "DELETE": {
+        "state": "N",
+        "lf": []
+      },
+      "UPDATE": {
+        "state": "N",
+        "lf": []
+      },
+      "MERGE_INTO": {
+        "state": "N",
+        "lf": []
+      },
+      "DROP_TABLE": {
+        "state": "S3",
+        "lf": [
+          "SELECT",
+          "DROP"
+        ]
+      },
+      "DF_WRITER_V1": {
+        "state": "N",
+        "lf": []
+      },
+      "DF_WRITER_V2": {
+        "state": "S3",
+        "lf": [
+          "INSERT",
+          "ALTER"
+        ]
+      },
+      "METADATA_TABLES": {
+        "state": "N",
+        "lf": []
+      },
+      "TABLE_MAINTENANCE": {
+        "state": "N",
+        "lf": []
+      },
+      "TIME_TRAVEL": {
+        "state": "S",
+        "lf": [
+          "SELECT"
+        ],
+        "caveat": "must use WHERE _hoodie_commit_time <= point_in_time; Spark TIMESTAMP AS OF syntax and spark.read() are NOT supported"
+      },
+      "ROW_FILTER": {
+        "state": "S",
+        "lf": [
+          "SELECT"
+        ],
+        "added_by": "etd"
+      },
+      "COLUMN_FILTER": {
+        "state": "S",
+        "lf": [
+          "SELECT"
+        ],
+        "added_by": "etd"
+      },
+      "CELL_FILTER": {
+        "state": "S",
+        "lf": [
+          "SELECT"
+        ],
+        "added_by": "etd"
+      }
+    },
+    "delta": {
+      "SELECT": {
+        "state": "S",
+        "lf": [
+          "SELECT"
+        ],
+        "min_release": "7.12.0",
+        "caveat": "documented support state | Delta DDL and table creation under fine-grained access control require EMR 7.12.0 or later"
+      },
+      "CREATE_TABLE": {
+        "state": "S",
+        "lf": [
+          "CREATE_TABLE"
+        ],
+        "min_release": "7.12.0",
+        "caveat": "DDL and Delta table creation not supported before 7.12"
+      },
+      "CREATE_TABLE_LIKE": {
+        "state": "N",
+        "lf": []
+      },
+      "CTAS": {
+        "state": "S",
+        "lf": [
+          "CREATE_TABLE"
+        ],
+        "min_release": "7.12.0",
+        "caveat": "documented support state | Delta DDL and table creation under fine-grained access control require EMR 7.12.0 or later"
+      },
+      "REPLACE_TABLE_AS_SELECT": {
+        "state": "S",
+        "lf": [
+          "SELECT",
+          "INSERT",
+          "ALTER"
+        ],
+        "min_release": "7.12.0",
+        "caveat": "documented support state | Delta DDL and table creation under fine-grained access control require EMR 7.12.0 or later"
+      },
+      "DESCRIBE": {
+        "state": "S3",
+        "lf": [
+          "DESCRIBE"
+        ]
+      },
+      "SHOW_CREATE_TABLE": {
+        "state": "N",
+        "lf": [],
+        "caveat": "documented support state | Delta DDL and table creation under fine-grained access control require EMR 7.12.0 or later"
+      },
+      "ALTER_TABLE": {
+        "state": "S",
+        "lf": [
+          "SELECT",
+          "INSERT"
+        ],
+        "min_release": "7.12.0",
+        "caveat": "documented support state | Delta DDL and table creation under fine-grained access control require EMR 7.12.0 or later"
+      },
+      "ALTER_TABLE_SET_LOCATION": {
+        "state": "S3",
+        "lf": [
+          "SELECT",
+          "INSERT"
+        ]
+      },
+      "INSERT_INTO": {
+        "state": "S",
+        "lf": [
+          "SELECT",
+          "INSERT"
+        ],
+        "min_release": "7.12.0",
+        "caveat": "documented support state | Delta DDL and table creation under fine-grained access control require EMR 7.12.0 or later"
+      },
+      "INSERT_OVERWRITE": {
+        "state": "S",
+        "lf": [
+          "SELECT",
+          "INSERT"
+        ],
+        "min_release": "7.12.0",
+        "caveat": "documented support state | Delta DDL and table creation under fine-grained access control require EMR 7.12.0 or later"
+      },
+      "DELETE": {
+        "state": "S",
+        "lf": [
+          "SELECT",
+          "INSERT"
+        ],
+        "min_release": "7.12.0"
+      },
+      "UPDATE": {
+        "state": "S",
+        "lf": [
+          "SELECT",
+          "INSERT"
+        ],
+        "min_release": "7.12.0"
+      },
+      "MERGE_INTO": {
+        "state": "S",
+        "lf": [
+          "SELECT",
+          "INSERT"
+        ],
+        "min_release": "7.12.0"
+      },
+      "DROP_TABLE": {
+        "state": "S",
+        "lf": [
+          "SELECT",
+          "DELETE",
+          "DROP"
+        ],
+        "min_release": "7.12.0",
+        "caveat": "documented support state | Delta DDL and table creation under fine-grained access control require EMR 7.12.0 or later"
+      },
+      "DF_WRITER_V1": {
+        "state": "N",
+        "lf": []
+      },
+      "DF_WRITER_V2": {
+        "state": "S",
+        "lf": [
+          "INSERT",
+          "ALTER"
+        ],
+        "min_release": "7.12.0",
+        "caveat": "documented support state | Delta DDL and table creation under fine-grained access control require EMR 7.12.0 or later"
+      },
+      "TABLE_MAINTENANCE": {
+        "state": "N",
+        "lf": []
+      },
+      "ROW_FILTER": {
+        "state": "S",
+        "lf": [
+          "SELECT"
+        ],
+        "added_by": "etd",
+        "caveat": "Glue collapses Spark-created Delta schema into a single array<string> 'col' column; remove col and add real columns before defining column/cell filters"
+      },
+      "COLUMN_FILTER": {
+        "state": "S",
+        "lf": [
+          "SELECT"
+        ],
+        "added_by": "etd"
+      },
+      "CELL_FILTER": {
+        "state": "S",
+        "lf": [
+          "SELECT"
+        ],
+        "added_by": "etd"
+      }
+    }
+  }
+}

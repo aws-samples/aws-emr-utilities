@@ -1,0 +1,1656 @@
+{
+  "run_id": "etd-20260813-a41f9c",
+  "variant_id": "v-713-plain",
+  "workload_id": "func/lf-fgac-core",
+  "unit_kind": "operation",
+  "iterations": 2,
+  "cost_facts": {
+    "vcpu_hour": 11.7617,
+    "memory_gb_hour": 47.0468,
+    "storage_gb_hour": 50.4073,
+    "wall_clock_s": 1512.2,
+    "drivers_per_job": 1,
+    "avg_executors": 6,
+    "source": "synthetic fixture \u2014 derived from shape x wall clock"
+  },
+  "data_class": "SAMPLE",
+  "units": [
+    {
+      "name": "SELECT",
+      "table_format": "hive",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 17.39,
+      "iterations_observed": 2,
+      "job_id": "0000bcf6a9fcf629",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:052c954c7326ab6d",
+      "table_version_advanced": true
+    },
+    {
+      "name": "CREATE_TABLE",
+      "table_format": "hive",
+      "table_type": "external_partitioned",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "CREATE_TABLE"
+      ],
+      "duration_s": 23.85,
+      "iterations_observed": 2,
+      "job_id": "00009cd054d0e96f",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:af5f69f1145b1bc8",
+      "table_version_advanced": true
+    },
+    {
+      "name": "CREATE_TABLE_LIKE",
+      "table_format": "hive",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "CREATE_TABLE"
+      ],
+      "duration_s": 19.41,
+      "iterations_observed": 2,
+      "job_id": "00003a8c04b47e7f",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:f5d6cca20f9a9f82",
+      "table_version_advanced": true
+    },
+    {
+      "name": "CTAS",
+      "table_format": "hive",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "CREATE_TABLE"
+      ],
+      "duration_s": 16.07,
+      "iterations_observed": 2,
+      "job_id": "0000f73cf62c81b1",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:f899862b1f4ef63b",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DESCRIBE",
+      "table_format": "hive",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "DESCRIBE"
+      ],
+      "duration_s": 9.46,
+      "iterations_observed": 2,
+      "job_id": "00002eaacda460d8",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:d6015569effc8958",
+      "table_version_advanced": true
+    },
+    {
+      "name": "SHOW_PARTITIONS",
+      "table_format": "hive",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "DESCRIBE"
+      ],
+      "duration_s": 15.69,
+      "iterations_observed": 2,
+      "job_id": "0000d6dd2a31e2c3",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:790f25db36569a49",
+      "table_version_advanced": true
+    },
+    {
+      "name": "SHOW_CREATE_TABLE",
+      "table_format": "hive",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "DESCRIBE"
+      ],
+      "duration_s": 21.41,
+      "iterations_observed": 2,
+      "job_id": "00006d8043142672",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:bd7aff6b8f47dc03",
+      "table_version_advanced": true
+    },
+    {
+      "name": "ALTER_TABLE",
+      "table_format": "hive",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "SELECT",
+        "ALTER"
+      ],
+      "duration_s": 13.16,
+      "iterations_observed": 2,
+      "job_id": "00008908c3706c7a",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:c20f4c662da97d3a",
+      "table_version_advanced": true
+    },
+    {
+      "name": "ALTER_TABLE_SET_LOCATION",
+      "table_format": "hive",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [],
+      "duration_s": 22.18,
+      "iterations_observed": 2,
+      "job_id": "00007ef4c45c6002",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:caa11e4fa743098d",
+      "table_version_advanced": true
+    },
+    {
+      "name": "ADD_PARTITION",
+      "table_format": "hive",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 23.57,
+      "iterations_observed": 2,
+      "job_id": "0000c1a723ff5955",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:06e620e293605187",
+      "table_version_advanced": true
+    },
+    {
+      "name": "REPAIR_TABLE",
+      "table_format": "hive",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "SELECT",
+        "ALTER"
+      ],
+      "duration_s": 3.53,
+      "iterations_observed": 2,
+      "job_id": "0000001550e13a77",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:21839ce9669e69bf",
+      "table_version_advanced": true
+    },
+    {
+      "name": "LOAD_DATA",
+      "table_format": "hive",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [],
+      "duration_s": 19.64,
+      "iterations_observed": 2,
+      "job_id": "0000204d8c7fd981",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:a26cc4dab18ea6c5",
+      "table_version_advanced": true
+    },
+    {
+      "name": "INSERT_INTO",
+      "table_format": "hive",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 22.84,
+      "iterations_observed": 2,
+      "job_id": "0000fc041549961b",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:7ef409a936d9e1cc",
+      "table_version_advanced": true
+    },
+    {
+      "name": "INSERT_OVERWRITE",
+      "table_format": "hive",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT",
+        "DELETE",
+        "ALTER"
+      ],
+      "duration_s": 3.14,
+      "iterations_observed": 2,
+      "job_id": "00008df4db05ce15",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:3106219c14e128b1",
+      "table_version_advanced": true
+    },
+    {
+      "name": "TRUNCATE_TABLE",
+      "table_format": "hive",
+      "table_type": "external_partitioned",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT",
+        "DELETE",
+        "ALTER"
+      ],
+      "duration_s": 7.47,
+      "iterations_observed": 2,
+      "job_id": "0000901545f0f352",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:81615ef671dd2228",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DROP_TABLE",
+      "table_format": "hive",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "SELECT",
+        "DROP",
+        "DELETE",
+        "ALTER"
+      ],
+      "duration_s": 25.16,
+      "iterations_observed": 2,
+      "job_id": "0000fabbb7c715a8",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:022e4d20615e4ec5",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DF_WRITER_V1",
+      "table_format": "hive",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 19.84,
+      "iterations_observed": 2,
+      "job_id": "00002a97eea52200",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:0303c8f87fe6e651",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DF_WRITER_V2",
+      "table_format": "hive",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [],
+      "duration_s": 17.08,
+      "iterations_observed": 2,
+      "job_id": "0000ca545341a5b8",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:4921d4635a08ea05",
+      "table_version_advanced": true
+    },
+    {
+      "name": "ROW_FILTER",
+      "table_format": "hive",
+      "table_type": "managed",
+      "expected_state": "NA",
+      "expected_reason": "no Lake Formation filtering in plain mode",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 22.0,
+      "iterations_observed": 2,
+      "job_id": "000007a32c2bde13",
+      "status": "NOT_APPLICABLE",
+      "error": null,
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "COLUMN_FILTER",
+      "table_format": "hive",
+      "table_type": "external",
+      "expected_state": "NA",
+      "expected_reason": "no Lake Formation filtering in plain mode",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 25.4,
+      "iterations_observed": 2,
+      "job_id": "00008ea4bcc014a2",
+      "status": "NOT_APPLICABLE",
+      "error": null,
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "CELL_FILTER",
+      "table_format": "hive",
+      "table_type": "external",
+      "expected_state": "NA",
+      "expected_reason": "no Lake Formation filtering in plain mode",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 17.15,
+      "iterations_observed": 2,
+      "job_id": "00008ccb5aefd426",
+      "status": "NOT_APPLICABLE",
+      "error": null,
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "NESTED_FILTER",
+      "table_format": "hive",
+      "table_type": "managed",
+      "expected_state": "NA",
+      "expected_reason": "no Lake Formation filtering in plain mode",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 11.11,
+      "iterations_observed": 2,
+      "job_id": "0000fc22614c117b",
+      "status": "NOT_APPLICABLE",
+      "error": null,
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "UPDATE",
+      "table_format": "hive",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [],
+      "duration_s": 10.1,
+      "iterations_observed": 2,
+      "job_id": "0000da9963fda5ac",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:ad1765c4e3603a7c",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DELETE",
+      "table_format": "hive",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [],
+      "duration_s": 15.79,
+      "iterations_observed": 2,
+      "job_id": "00000445efe80f38",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:3386d46ed2e6bcc5",
+      "table_version_advanced": true
+    },
+    {
+      "name": "MERGE_INTO",
+      "table_format": "hive",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [],
+      "duration_s": 8.08,
+      "iterations_observed": 2,
+      "job_id": "000019f25b1b0407",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:42ce7001752b7d7d",
+      "table_version_advanced": true
+    },
+    {
+      "name": "SELECT",
+      "table_format": "iceberg",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 16.76,
+      "iterations_observed": 2,
+      "job_id": "0000d9222ff82e0a",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:d5389671ecaca1f9",
+      "table_version_advanced": true
+    },
+    {
+      "name": "CREATE_TABLE",
+      "table_format": "iceberg",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "CREATE_TABLE"
+      ],
+      "duration_s": 14.17,
+      "iterations_observed": 2,
+      "job_id": "00003816f6212e65",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:fcd9169bd6feb80e",
+      "table_version_advanced": true
+    },
+    {
+      "name": "CREATE_TABLE_LIKE",
+      "table_format": "iceberg",
+      "table_type": "external_partitioned",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "CREATE_TABLE"
+      ],
+      "duration_s": 4.87,
+      "iterations_observed": 2,
+      "job_id": "000049fdaa2178a2",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:b74bf33262248426",
+      "table_version_advanced": true
+    },
+    {
+      "name": "CTAS",
+      "table_format": "iceberg",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "CREATE_TABLE"
+      ],
+      "duration_s": 13.41,
+      "iterations_observed": 2,
+      "job_id": "00000fd1e13e66b9",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:a917bf59f2e31207",
+      "table_version_advanced": true
+    },
+    {
+      "name": "REPLACE_TABLE_AS_SELECT",
+      "table_format": "iceberg",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 18.05,
+      "iterations_observed": 2,
+      "job_id": "0000eb7f468044cd",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:1d353eaeab113e2a",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DESCRIBE",
+      "table_format": "iceberg",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "DESCRIBE"
+      ],
+      "duration_s": 4.26,
+      "iterations_observed": 2,
+      "job_id": "000095d86973ca09",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:a728fc7dfc8da4e0",
+      "table_version_advanced": true
+    },
+    {
+      "name": "SHOW_CREATE_TABLE",
+      "table_format": "iceberg",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "DESCRIBE"
+      ],
+      "duration_s": 7.96,
+      "iterations_observed": 2,
+      "job_id": "0000475db594dee4",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:c92267ca79d7566f",
+      "table_version_advanced": true
+    },
+    {
+      "name": "ALTER_TABLE",
+      "table_format": "iceberg",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 11.12,
+      "iterations_observed": 2,
+      "job_id": "0000cb4e8bfad335",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:a30e15da45d5414a",
+      "table_version_advanced": true
+    },
+    {
+      "name": "ALTER_TABLE_SET_LOCATION",
+      "table_format": "iceberg",
+      "table_type": "external_partitioned",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 8.3,
+      "iterations_observed": 2,
+      "job_id": "000008908374190a",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:ad679758f182d3bb",
+      "table_version_advanced": true
+    },
+    {
+      "name": "ALTER_TABLE_RENAME",
+      "table_format": "iceberg",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "CREATE_TABLE",
+        "DROP"
+      ],
+      "duration_s": 13.05,
+      "iterations_observed": 2,
+      "job_id": "0000b7f0e6284f85",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:de419fb128daf4a9",
+      "table_version_advanced": true
+    },
+    {
+      "name": "INSERT_INTO",
+      "table_format": "iceberg",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 3.07,
+      "iterations_observed": 2,
+      "job_id": "0000daf1d1c49957",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:1328811452acd6b5",
+      "table_version_advanced": true
+    },
+    {
+      "name": "INSERT_OVERWRITE",
+      "table_format": "iceberg",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 19.27,
+      "iterations_observed": 2,
+      "job_id": "00004bb13c170c53",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:10f2f34dd0f11116",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DELETE",
+      "table_format": "iceberg",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 16.6,
+      "iterations_observed": 2,
+      "job_id": "0000d9841fee7dda",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:8351ea8635befcce",
+      "table_version_advanced": true
+    },
+    {
+      "name": "UPDATE",
+      "table_format": "iceberg",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 3.1,
+      "iterations_observed": 2,
+      "job_id": "00002edad7f20b59",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:754878142c1227fe",
+      "table_version_advanced": true
+    },
+    {
+      "name": "MERGE_INTO",
+      "table_format": "iceberg",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 18.35,
+      "iterations_observed": 2,
+      "job_id": "00007edae66deb65",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:a854501b0a6ff5a7",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DROP_TABLE",
+      "table_format": "iceberg",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "SELECT",
+        "DELETE",
+        "DROP"
+      ],
+      "duration_s": 8.21,
+      "iterations_observed": 2,
+      "job_id": "0000d7b46b03edc6",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:86f39e9c340b80a3",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DF_WRITER_V1",
+      "table_format": "iceberg",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [],
+      "duration_s": 5.59,
+      "iterations_observed": 2,
+      "job_id": "00004048bb9c7779",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:6fde3fbf60c933ca",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DF_WRITER_V2",
+      "table_format": "iceberg",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 9.7,
+      "iterations_observed": 2,
+      "job_id": "0000c6df1b669080",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:0ba9e4a053cae7d4",
+      "table_version_advanced": true
+    },
+    {
+      "name": "METADATA_TABLES",
+      "table_format": "iceberg",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 15.25,
+      "iterations_observed": 2,
+      "job_id": "0000a9554587892c",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:33d73a0918c7c26a",
+      "table_version_advanced": true
+    },
+    {
+      "name": "STORED_PROCEDURES",
+      "table_format": "iceberg",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [],
+      "duration_s": 7.73,
+      "iterations_observed": 2,
+      "job_id": "00008b4662298878",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:57a1bb92a9dd9e00",
+      "table_version_advanced": true
+    },
+    {
+      "name": "ROW_FILTER",
+      "table_format": "iceberg",
+      "table_type": "external",
+      "expected_state": "NA",
+      "expected_reason": "no Lake Formation filtering in plain mode",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 25.67,
+      "iterations_observed": 2,
+      "job_id": "0000e704dd78579c",
+      "status": "NOT_APPLICABLE",
+      "error": null,
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "COLUMN_FILTER",
+      "table_format": "iceberg",
+      "table_type": "external_partitioned",
+      "expected_state": "NA",
+      "expected_reason": "no Lake Formation filtering in plain mode",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 22.97,
+      "iterations_observed": 2,
+      "job_id": "0000092f592ae08f",
+      "status": "NOT_APPLICABLE",
+      "error": null,
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "CELL_FILTER",
+      "table_format": "iceberg",
+      "table_type": "managed_partitioned",
+      "expected_state": "NA",
+      "expected_reason": "no Lake Formation filtering in plain mode",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 21.61,
+      "iterations_observed": 2,
+      "job_id": "0000eb74db3051bc",
+      "status": "NOT_APPLICABLE",
+      "error": null,
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "NESTED_FILTER",
+      "table_format": "iceberg",
+      "table_type": "managed",
+      "expected_state": "NA",
+      "expected_reason": "no Lake Formation filtering in plain mode",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 18.94,
+      "iterations_observed": 2,
+      "job_id": "0000dad97cb07d26",
+      "status": "NOT_APPLICABLE",
+      "error": null,
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "SELECT",
+      "table_format": "hudi",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 5.6,
+      "iterations_observed": 2,
+      "job_id": "0000a33c797c4369",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:1d1e54d00aa93889",
+      "table_version_advanced": true
+    },
+    {
+      "name": "CREATE_TABLE",
+      "table_format": "hudi",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "CREATE_TABLE"
+      ],
+      "duration_s": 10.37,
+      "iterations_observed": 2,
+      "job_id": "0000091321b89ed6",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:ce7e29fb8791dbac",
+      "table_version_advanced": true
+    },
+    {
+      "name": "CREATE_TABLE_LIKE",
+      "table_format": "hudi",
+      "table_type": "external_partitioned",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "CREATE_TABLE"
+      ],
+      "duration_s": 24.59,
+      "iterations_observed": 2,
+      "job_id": "000042617542a11b",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:8b514196057a0a5e",
+      "table_version_advanced": true
+    },
+    {
+      "name": "CTAS",
+      "table_format": "hudi",
+      "table_type": "external_partitioned",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [],
+      "duration_s": 3.08,
+      "iterations_observed": 2,
+      "job_id": "0000c18644d1ebd3",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:0486f06270d406c2",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DESCRIBE",
+      "table_format": "hudi",
+      "table_type": "external_partitioned",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "DESCRIBE"
+      ],
+      "duration_s": 9.22,
+      "iterations_observed": 2,
+      "job_id": "0000ce6ae0c2a36a",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:4fb99a8291de1b2d",
+      "table_version_advanced": true
+    },
+    {
+      "name": "SHOW_CREATE_TABLE",
+      "table_format": "hudi",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "DESCRIBE"
+      ],
+      "duration_s": 14.97,
+      "iterations_observed": 2,
+      "job_id": "00008e4091e7c941",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:99a5f44b69f89850",
+      "table_version_advanced": true
+    },
+    {
+      "name": "ALTER_TABLE",
+      "table_format": "hudi",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 15.07,
+      "iterations_observed": 2,
+      "job_id": "00008799faf4cd7b",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:41bc8bca22cb4505",
+      "table_version_advanced": true
+    },
+    {
+      "name": "INSERT_INTO",
+      "table_format": "hudi",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "SELECT",
+        "ALTER"
+      ],
+      "duration_s": 19.5,
+      "iterations_observed": 2,
+      "job_id": "0000faed24d6aa66",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:559aa7d519d2e657",
+      "table_version_advanced": true
+    },
+    {
+      "name": "INSERT_OVERWRITE",
+      "table_format": "hudi",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "SELECT",
+        "ALTER"
+      ],
+      "duration_s": 24.41,
+      "iterations_observed": 2,
+      "job_id": "0000d4f447e36280",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:f186899b8b63fd35",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DELETE",
+      "table_format": "hudi",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [],
+      "duration_s": 22.83,
+      "iterations_observed": 2,
+      "job_id": "0000243c01c2514b",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:d85fa1c98ce30557",
+      "table_version_advanced": true
+    },
+    {
+      "name": "UPDATE",
+      "table_format": "hudi",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [],
+      "duration_s": 8.19,
+      "iterations_observed": 2,
+      "job_id": "0000d66d82598ae9",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:ebde323c1d6a00ad",
+      "table_version_advanced": true
+    },
+    {
+      "name": "MERGE_INTO",
+      "table_format": "hudi",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [],
+      "duration_s": 18.94,
+      "iterations_observed": 2,
+      "job_id": "0000dac2696377f7",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:9ce75161fbcda944",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DROP_TABLE",
+      "table_format": "hudi",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "SELECT",
+        "DROP"
+      ],
+      "duration_s": 25.63,
+      "iterations_observed": 2,
+      "job_id": "0000b5aec4db384b",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:db3598c2f24c5b00",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DF_WRITER_V1",
+      "table_format": "hudi",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [],
+      "duration_s": 21.65,
+      "iterations_observed": 2,
+      "job_id": "00000d5ac1e9a9fb",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:e5ff35cf75056494",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DF_WRITER_V2",
+      "table_format": "hudi",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 19.17,
+      "iterations_observed": 2,
+      "job_id": "00009fef8407a2b6",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:725f9f2f1b992c3f",
+      "table_version_advanced": true
+    },
+    {
+      "name": "METADATA_TABLES",
+      "table_format": "hudi",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [],
+      "duration_s": 16.63,
+      "iterations_observed": 2,
+      "job_id": "000003cc846ee6a1",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:ab454837b05bad58",
+      "table_version_advanced": true
+    },
+    {
+      "name": "TABLE_MAINTENANCE",
+      "table_format": "hudi",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [],
+      "duration_s": 18.2,
+      "iterations_observed": 2,
+      "job_id": "00005350234de5d3",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:f6c6ade11a0675ca",
+      "table_version_advanced": true
+    },
+    {
+      "name": "TIME_TRAVEL",
+      "table_format": "hudi",
+      "table_type": "external_partitioned",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 20.39,
+      "iterations_observed": 2,
+      "job_id": "0000a64b1bc3796f",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:383daed72af33016",
+      "table_version_advanced": true
+    },
+    {
+      "name": "ROW_FILTER",
+      "table_format": "hudi",
+      "table_type": "external_partitioned",
+      "expected_state": "NA",
+      "expected_reason": "no Lake Formation filtering in plain mode",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 13.19,
+      "iterations_observed": 2,
+      "job_id": "000048ae1dac88b3",
+      "status": "NOT_APPLICABLE",
+      "error": null,
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "COLUMN_FILTER",
+      "table_format": "hudi",
+      "table_type": "managed_partitioned",
+      "expected_state": "NA",
+      "expected_reason": "no Lake Formation filtering in plain mode",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 13.86,
+      "iterations_observed": 2,
+      "job_id": "00005e868aaa0010",
+      "status": "NOT_APPLICABLE",
+      "error": null,
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "CELL_FILTER",
+      "table_format": "hudi",
+      "table_type": "managed_partitioned",
+      "expected_state": "NA",
+      "expected_reason": "no Lake Formation filtering in plain mode",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 25.28,
+      "iterations_observed": 2,
+      "job_id": "0000a1c3474b4741",
+      "status": "NOT_APPLICABLE",
+      "error": null,
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "SELECT",
+      "table_format": "delta",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 11.63,
+      "iterations_observed": 2,
+      "job_id": "0000c1e0b8f2be94",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:2ee9c405f6335614",
+      "table_version_advanced": true
+    },
+    {
+      "name": "CREATE_TABLE",
+      "table_format": "delta",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "CREATE_TABLE"
+      ],
+      "duration_s": 19.76,
+      "iterations_observed": 2,
+      "job_id": "000055d51bdd624d",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:4f258a1dcd6e7b7d",
+      "table_version_advanced": true
+    },
+    {
+      "name": "CREATE_TABLE_LIKE",
+      "table_format": "delta",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [],
+      "duration_s": 25.0,
+      "iterations_observed": 2,
+      "job_id": "0000eb4194ccaef3",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:5df9d71136025a3d",
+      "table_version_advanced": true
+    },
+    {
+      "name": "CTAS",
+      "table_format": "delta",
+      "table_type": "external_partitioned",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "CREATE_TABLE"
+      ],
+      "duration_s": 19.31,
+      "iterations_observed": 2,
+      "job_id": "0000170799cf958f",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:5578ac4101588a5e",
+      "table_version_advanced": true
+    },
+    {
+      "name": "REPLACE_TABLE_AS_SELECT",
+      "table_format": "delta",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 19.99,
+      "iterations_observed": 2,
+      "job_id": "00002a226f49c4b3",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:2391d0dc0c2abd1e",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DESCRIBE",
+      "table_format": "delta",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "DESCRIBE"
+      ],
+      "duration_s": 21.43,
+      "iterations_observed": 2,
+      "job_id": "00003fa1a980ecfb",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:a473dda57ccb0f6b",
+      "table_version_advanced": true
+    },
+    {
+      "name": "SHOW_CREATE_TABLE",
+      "table_format": "delta",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [],
+      "duration_s": 13.82,
+      "iterations_observed": 2,
+      "job_id": "0000951e48de5fc3",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:9b406f38b1b05a39",
+      "table_version_advanced": true
+    },
+    {
+      "name": "ALTER_TABLE",
+      "table_format": "delta",
+      "table_type": "external_partitioned",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT"
+      ],
+      "duration_s": 7.45,
+      "iterations_observed": 2,
+      "job_id": "0000f15ef4276f8e",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:a0298e24d80e31fb",
+      "table_version_advanced": true
+    },
+    {
+      "name": "ALTER_TABLE_SET_LOCATION",
+      "table_format": "delta",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT"
+      ],
+      "duration_s": 22.51,
+      "iterations_observed": 2,
+      "job_id": "0000135930130d15",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:51c000770d6da86f",
+      "table_version_advanced": true
+    },
+    {
+      "name": "INSERT_INTO",
+      "table_format": "delta",
+      "table_type": "external_partitioned",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT"
+      ],
+      "duration_s": 13.21,
+      "iterations_observed": 2,
+      "job_id": "00004c8d33c3d1a4",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:5ca992d4daf09cb1",
+      "table_version_advanced": true
+    },
+    {
+      "name": "INSERT_OVERWRITE",
+      "table_format": "delta",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT"
+      ],
+      "duration_s": 9.37,
+      "iterations_observed": 2,
+      "job_id": "00008df203246e72",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:0aad0864ac8e66e0",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DELETE",
+      "table_format": "delta",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT"
+      ],
+      "duration_s": 20.87,
+      "iterations_observed": 2,
+      "job_id": "0000a9e4ab9fcc09",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:35ef941cc983e635",
+      "table_version_advanced": true
+    },
+    {
+      "name": "UPDATE",
+      "table_format": "delta",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT"
+      ],
+      "duration_s": 10.18,
+      "iterations_observed": 2,
+      "job_id": "0000b4099c0485aa",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:89be5f0dbe9e99bf",
+      "table_version_advanced": true
+    },
+    {
+      "name": "MERGE_INTO",
+      "table_format": "delta",
+      "table_type": "external_partitioned",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT"
+      ],
+      "duration_s": 18.19,
+      "iterations_observed": 2,
+      "job_id": "000017250b55c8d8",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:e8a1e8d896161987",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DROP_TABLE",
+      "table_format": "delta",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "SELECT",
+        "DELETE",
+        "DROP"
+      ],
+      "duration_s": 18.47,
+      "iterations_observed": 2,
+      "job_id": "00006ca5fda12732",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:15f93a5118847ae2",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DF_WRITER_V1",
+      "table_format": "delta",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [],
+      "duration_s": 18.9,
+      "iterations_observed": 2,
+      "job_id": "0000e0ab39a9dea3",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:efb1d5e9586efa35",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DF_WRITER_V2",
+      "table_format": "delta",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 4.55,
+      "iterations_observed": 2,
+      "job_id": "0000a565a544560c",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:8745eb09724bf491",
+      "table_version_advanced": true
+    },
+    {
+      "name": "TABLE_MAINTENANCE",
+      "table_format": "delta",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "plain Glue catalog with runtime-role IAM",
+      "lf_permissions": [],
+      "duration_s": 22.39,
+      "iterations_observed": 2,
+      "job_id": "00005b0f6c1f469f",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:a8622f78b9bad319",
+      "table_version_advanced": true
+    },
+    {
+      "name": "ROW_FILTER",
+      "table_format": "delta",
+      "table_type": "managed",
+      "expected_state": "NA",
+      "expected_reason": "no Lake Formation filtering in plain mode",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 12.76,
+      "iterations_observed": 2,
+      "job_id": "0000dec1c9855ca7",
+      "status": "NOT_APPLICABLE",
+      "error": null,
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "COLUMN_FILTER",
+      "table_format": "delta",
+      "table_type": "external",
+      "expected_state": "NA",
+      "expected_reason": "no Lake Formation filtering in plain mode",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 24.65,
+      "iterations_observed": 2,
+      "job_id": "00009da7cf99f58e",
+      "status": "NOT_APPLICABLE",
+      "error": null,
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "CELL_FILTER",
+      "table_format": "delta",
+      "table_type": "managed_partitioned",
+      "expected_state": "NA",
+      "expected_reason": "no Lake Formation filtering in plain mode",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 13.48,
+      "iterations_observed": 2,
+      "job_id": "0000d404fe9e3965",
+      "status": "NOT_APPLICABLE",
+      "error": null,
+      "row_count": null,
+      "result_checksum": null
+    }
+  ]
+}

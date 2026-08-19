@@ -1,0 +1,63 @@
+# Smallest useful comparison: one release label against another, plain Glue Data
+# Catalog, everything else defaulted. This is the "will the upgrade break my
+# jobs?" question.
+#
+# Replace the four values marked REQUIRED and run:
+#   ./etd-cli.py --config examples/configs/minimal-upgrade.yaml setup
+#   ./etd-cli.py --config examples/configs/minimal-upgrade.yaml run --open
+
+run:
+  name: upgrade-711-to-713
+  account: "111122223333"                                            # REQUIRED
+  region: us-east-1                                                  # REQUIRED
+  bucket: my-etd-bucket                                              # REQUIRED
+  execution_role_arn: arn:aws:iam::111122223333:role/my-etd-role     # REQUIRED
+
+variants:
+  - id: base711
+    label: "7.11.0 baseline"
+    release_label: emr-7.11.0
+    baseline: true
+
+  - id: cand713
+    label: "7.13.0 candidate"
+    release_label: emr-7.13.0
+
+comparisons:
+  - id: upgrade
+    title: "Upgrade: 7.11.0 -> 7.13.0"
+    baseline: base711
+    candidate: cand713
+    intent: upgrade_regression
+    primary: true
+
+workloads:
+  # Functional: the operation matrix, diffed against the documented support
+  # matrix for each variant's access mode.
+  - id: func/core
+    kind: functional
+    formats: [parquet, iceberg, delta]
+    iterations: 1
+    operations: DEFAULT
+
+  # Performance: your SQL, best-of-N. Replace these queries with ones that look
+  # like your real workload.
+  #
+  # job_repeats counts separate job runs, not iterations inside one job.
+  # Iterations within a job share driver and executors and cannot observe a
+  # whole-job environmental difference, which otherwise appears as a large and
+  # entirely fake cross-variant delta. See docs/methodology.md.
+  - id: perf/sql
+    kind: performance
+    iterations: 3
+    job_repeats: 3
+    queries:
+      q1_scan_filter: >
+        SELECT count(*) FROM {db}.fact WHERE amount > 50
+      q2_group_agg: >
+        SELECT category, count(*) c, avg(amount) a
+        FROM {db}.fact GROUP BY category ORDER BY c DESC
+      q3_join_agg: >
+        SELECT d.region, sum(f.amount) total
+        FROM {db}.fact f JOIN {db}.dim d ON f.dim_id = d.dim_id
+        GROUP BY d.region ORDER BY total DESC
