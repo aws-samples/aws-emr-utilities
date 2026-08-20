@@ -121,7 +121,7 @@ Default is **General** — safe for any workload. Pick a specialized category on
 | Sub-Category | The Pattern | Difference from General |
 |---|---|---|
 | **General** | Mixed workload, or you are not sure. Start here. | 1-wave partitions, 200G disk |
-| **Optimized** | Heavy GROUP BY, multi-table JOINs, shuffle >1 TB or >30% of input, 20+ joins. | 2-wave partitions, 1000G disk |
+| **Optimized** | Heavy GROUP BY, multi-table JOINs, shuffle >1 TB or >30% of input, 20+ joins. | 2-wave partitions, shuffle-scaled disk (200G–2000G) |
 | **IO-Optimized** | Tiny input that explodes into massive intermediate data (EXPLODE, CROSS JOIN). | Optimized + smaller workers × 2 executors for disk parallelism |
 | **Iceberg-Maintenance** | File compaction, snapshot expiration, manifest rewrites. No business logic. | Fixed 4c/14G workers, scaled by file count |
 
@@ -219,7 +219,7 @@ A common pattern: use the T-shirt sizer for the initial run, then feed the resul
 
 **Stability over speed.** The T-shirt sizer prioritizes job completion — configs are intentionally generous. The Fine Tuner balances precision with safety, using measured metrics to right-size without over-provisioning.
 
-**AQE handles the rest.** Shuffle partitions are set using a wave-based formula: `waves × maxExecutors × cores` (min 1000, max 10000). General uses 1 wave; Optimized and IO-Optimized use 2 waves. Adaptive Query Execution coalesces unused partitions at runtime.
+**AQE handles the rest.** Shuffle partitions are set using a wave-based formula: `waves × executor-estimate × cores` (min 1000, max 10000), where the executor estimate is derived from input size, target duration, and shuffle volume. General uses 1 wave; Optimized and IO-Optimized use 2 waves. Adaptive Query Execution coalesces unused partitions at runtime.
 
 **Dynamic allocation scales down.** EMR Serverless releases idle executors automatically. Instead of a static `maxExecutors` ceiling (which forces you to guess an absolute number at cold start), the T-shirt sizer uses dynamic allocation *rate controls* — `executorAllocationRatio=0.5` and `sustainedSchedulerBacklogTimeout=15s`. These throttle how fast the job requests new executors without capping the maximum, so a job that genuinely needs more executors still gets them, but short stages don't over-provision. On TPC-DS at 3 TB this cut cost ~42% versus platform defaults and reduced run-to-run cost variance (median CV 27% → 21%). (XS micro-jobs and Iceberg-Maintenance keep an explicit `maxExecutors`, since their sizing is bounded by design.)
 
