@@ -54,7 +54,14 @@ class Run:
         return {w["workload_id"]: w for w in self.manifest["workloads"]}
 
     def payload(self, variant_id: str, workload_id: str) -> dict | None:
-        return self.units.get((variant_id, workload_id))
+        doc = self.units.get((variant_id, workload_id))
+        if doc is None:
+            return None
+        # Run-level facts some comparisons need -- for instance whether the job
+        # role is a Lake Formation administrator, which decides whether filter
+        # enforcement can be asserted at all. Shallow copy: the cached document
+        # is not mutated.
+        return {**doc, "run": self.manifest}
 
 
 def slug(workload_id: str) -> str:
@@ -161,7 +168,14 @@ def compare_functional(base: dict, cand: dict) -> dict:
                          "cand_status": cu["status"] if cu else "-",
                          "expected_base": (bu or {}).get("expected_state", "-"),
                          "expected_cand": (cu or {}).get("expected_state", "-"),
-                         "error": None, "table_type": (cu or bu).get("table_type")})
+                         "error": None, "table_type": (cu or bu).get("table_type"),
+                         # Same keys as a compared row. An operation present on
+                         # one side only is a legitimate asymmetry -- the Lake
+                         # Formation filter operations exist only under FGAC --
+                         # and the report should show it, not fail to render.
+                         "base_duration_s": (bu or {}).get("duration_s"),
+                         "cand_duration_s": (cu or {}).get("duration_s"),
+                         "lf_permissions": (cu or bu).get("lf_permissions") or []})
             continue
 
         bs, cs = bu["status"], cu["status"]
@@ -335,13 +349,30 @@ def compare_correctness(base: dict, cand: dict) -> list[dict]:
     # Lake Formation data filter not enforced. Reported on the candidate whether
     # or not the baseline did the same: unlike a performance delta, "both sides
     # disclose too much" is not a reason to stay quiet.
+    # An administrator bypasses data cell filters by design, so a full-table read
+    # is expected and reporting it as a disclosure is a false alarm. The finding is
+    # kept -- the run still could not verify enforcement -- but as information
+    # rather than a critical defect, and it no longer blocks the verdict.
+    # Assertable only when the filter check ran as a principal that filters
+    # actually apply to. Before the reader role existed this ran as the job role,
+    # which is typically a Lake Formation administrator, so a full-table read was
+    # correct behaviour being reported as a disclosure.
+    lf = ((cand.get("run") or {}).get("lake_formation")
+          or (base.get("run") or {}).get("lake_formation") or {})
+    assertable = bool(lf.get("filter_enforcement_assertable"))
     for cu in cand["units"]:
         if not cu.get("filter_over_disclosure"):
             continue
         label = f"{cu['table_format']}.{cu['name']}"
         bu = b.get(_fkey(cu))
         findings.append({
-            "category": "FILTER_NOT_ENFORCED", "severity": "critical",
+            "category": ("FILTER_NOT_ENFORCED" if assertable
+                         else "FILTER_ENFORCEMENT_NOT_ASSERTABLE"),
+            "severity": "critical" if assertable else "info",
+            "not_assertable_reason": (None if assertable else
+                ("no non-administrator reader principal was available, so the filter "
+                 "check ran as a principal that bypasses data cell filters; "
+                 "enforcement was not tested")),
             "unit_label": label,
             "table_format": cu["table_format"], "table_type": cu.get("table_type"),
             "pre_existing": bool(bu and bu.get("filter_over_disclosure")),
@@ -619,7 +650,12 @@ def build_comparison(run: Run, comparison: dict) -> dict:
     match = match_status(bv, cv, comparison)
 
     func_wid = next((w for w in run.workloads if run.workloads[w]["kind"] == "functional"), None)
-    perf_wid = next((w for w in run.workloads if run.workloads[w]["kind"] == "performance"), None)
+    # Every performance workload, in declaration order. A run can carry one per
+    # data scale (100g, 1t, 3t) and comparing only the first would silently
+    # discard the rest -- worse than not measuring them, because the report would
+    # look complete.
+    perf_wids = [w for w in run.workloads if run.workloads[w]["kind"] == "performance"]
+    perf_wid = perf_wids[0] if perf_wids else None
 
     fn = None
     if func_wid and run.payload(b_id, func_wid) and run.payload(c_id, func_wid):
@@ -629,18 +665,42 @@ def build_comparison(run: Run, comparison: dict) -> dict:
     if func_wid and run.payload(b_id, func_wid) and run.payload(c_id, func_wid):
         corr = compare_correctness(run.payload(b_id, func_wid), run.payload(c_id, func_wid))
 
-    perf = None
-    if perf_wid and run.payload(b_id, perf_wid) and run.payload(c_id, perf_wid):
-        perf = compare_perf(run.payload(b_id, perf_wid), run.payload(c_id, perf_wid),
-                            run.manifest["thresholds"], intent=comparison.get("intent", "upgrade_regression"))
+    performances = []
+    for wid in perf_wids:
+        bp, cp = run.payload(b_id, wid), run.payload(c_id, wid)
+        if not bp or not cp:
+            continue
+        performances.append({
+            "workload_id": wid,
+            "label": run.workloads[wid].get("label") or wid,
+            "perf": compare_perf(bp, cp, run.manifest["thresholds"],
+                                 intent=comparison.get("intent", "upgrade_regression")),
+        })
+    perf = performances[0]["perf"] if performances else None
+
+    # The verdict must consider every scale: a regression that only appears at the
+    # largest one is the whole point of measuring more than one. Counts are summed
+    # so the existing thresholds apply unchanged; the per-scale aggregates are left
+    # untouched for display, because a geomean across scales would be meaningless.
+    perf_for_verdict = perf
+    if len(performances) > 1:
+        merged_counts: dict = {}
+        rows: list = []
+        for entry in performances:
+            for k, v in (entry["perf"].get("counts") or {}).items():
+                if isinstance(v, (int, float)):
+                    merged_counts[k] = merged_counts.get(k, 0) + v
+            rows.extend(entry["perf"].get("rows") or [])
+        perf_for_verdict = {**perf, "counts": merged_counts, "rows": rows}
 
     cost = compare_cost(run, b_id, c_id)
-    verdict = overall_verdict(fn or {"counts": {}}, corr, perf, match,
+    verdict = overall_verdict(fn or {"counts": {}}, corr, perf_for_verdict, match,
                               intent=comparison.get("intent", "upgrade_regression"))
 
     return {
         "comparison": comparison, "baseline": bv, "candidate": cv, "match": match,
-        "functional": fn, "correctness": corr, "performance": perf, "cost": cost,
+        "functional": fn, "correctness": corr, "performance": perf,
+        "performances": performances, "cost": cost,
         "verdict": verdict,
     }
 

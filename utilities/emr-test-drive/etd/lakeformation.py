@@ -333,6 +333,169 @@ def delete_data_filters(factory, spec, tables: list[str]) -> None:
             pass
 
 
+# --------------------------------------------------------- filter reader role
+#
+# Filter enforcement cannot be tested with the job role. That role is typically a
+# Lake Formation data lake administrator -- it was in the account this was built
+# against -- and an administrator bypasses data cell filters entirely, so a read
+# returns the whole table and the harness cannot tell a working deployment from a
+# broken one. A broad table-level SELECT grant has the same effect: the wider
+# grant wins over the filter.
+#
+# So the filter check runs as its own principal: a role that is not an
+# administrator and holds exactly one Lake Formation grant, the data cell filter.
+# If the read then returns more than the filter permits, that is a real finding.
+
+def filter_reader_role_name(spec) -> str:
+    return f"etd-{spec.name}-filter-reader"[:64]
+
+
+def ensure_filter_reader_role(factory, spec) -> str:
+    """Create (or reuse) the least-privilege principal used for filter checks.
+
+    IAM grants only what Lake Formation needs to vend credentials and what Spark
+    needs to write its own result document. Deliberately absent: any table or
+    database SELECT grant, and administrator status.
+    """
+    iam = factory.client("iam")
+    name = filter_reader_role_name(spec)
+    trust = {
+        "Version": "2012-10-17",
+        "Statement": [{
+            "Effect": "Allow",
+            "Principal": {"Service": "emr-serverless.amazonaws.com"},
+            "Action": "sts:AssumeRole",
+        }],
+    }
+    try:
+        arn = iam.create_role(
+            RoleName=name,
+            AssumeRolePolicyDocument=json.dumps(trust),
+            Description="EMR Test Drive: least-privilege reader for Lake Formation filter checks",
+            Tags=[{"Key": "etd:managed", "Value": "true"},
+                  {"Key": "etd:run", "Value": spec.name}],
+        )["Role"]["Arn"]
+        print(f"  lf: created filter reader role {name}")
+    except Exception as exc:  # noqa: BLE001
+        if "EntityAlreadyExists" not in str(exc):
+            print(f"  lf: could not create filter reader role: {str(exc)[:200]}")
+            return ""
+        arn = iam.get_role(RoleName=name)["Role"]["Arn"]
+        print(f"  lf: reusing filter reader role {name}")
+
+    policy = {
+        "Version": "2012-10-17",
+        "Statement": [
+            # Lake Formation vends the scoped credentials; without GetDataAccess
+            # the read fails outright rather than returning too much.
+            {"Effect": "Allow",
+             "Action": ["lakeformation:GetDataAccess", "lakeformation:GetTemporaryTablePermissions"],
+             "Resource": "*"},
+            # Catalog metadata only. No S3 read on the table data: under FGAC the
+            # record server reads on the caller's behalf, so direct S3 access
+            # would be a second path to the same bytes and would mask a filter
+            # that is not being applied.
+            {"Effect": "Allow",
+             "Action": ["glue:GetDatabase", "glue:GetDatabases", "glue:GetTable",
+                        "glue:GetTables", "glue:GetPartition", "glue:GetPartitions"],
+             "Resource": "*"},
+            # Where the job writes its own result document, and reads the asset.
+            {"Effect": "Allow",
+             "Action": ["s3:GetObject", "s3:PutObject", "s3:ListBucket"],
+             "Resource": [
+                 f"arn:aws:s3:::{spec.bucket}",
+                 f"arn:aws:s3:::{spec.bucket}/{spec.prefix}/{spec.name}/assets/*",
+                 f"arn:aws:s3:::{spec.bucket}/{spec.prefix}/{spec.name}/results/*",
+             ]},
+            {"Effect": "Allow",
+             "Action": ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents",
+                        "logs:DescribeLogStreams"],
+             "Resource": "*"},
+        ],
+    }
+    try:
+        iam.put_role_policy(RoleName=name, PolicyName="etd-filter-reader",
+                            PolicyDocument=json.dumps(policy))
+    except Exception as exc:  # noqa: BLE001
+        print(f"  lf: reader role policy failed: {str(exc)[:200]}")
+    return arn
+
+
+def grant_filters_to_reader(factory, spec, reader_arn: str, tables: list[str]) -> dict:
+    """Grant the reader SELECT on each data cell filter, and nothing wider.
+
+    Returns what was granted plus whether the reader is an administrator, which
+    the comparison layer uses to decide if the result means anything.
+    """
+    if not reader_arn:
+        return {"reader_arn": "", "granted": 0, "reader_is_lf_admin": None}
+    lf = factory.client("lakeformation")
+    principal = {"DataLakePrincipalIdentifier": reader_arn}
+    granted = 0
+    for f in data_filter_plan(spec, tables):
+        try:
+            lf.grant_permissions(
+                Principal=principal,
+                Resource={"DataCellsFilter": {
+                    "TableCatalogId": spec.account,
+                    "DatabaseName": spec.database,
+                    "TableName": f["table"],
+                    "Name": f["name"]}},
+                Permissions=["SELECT"])
+            granted += 1
+        except Exception as exc:  # noqa: BLE001
+            if "already exists" not in str(exc).lower():
+                print(f"  lf: reader grant on {f['name']} failed: {str(exc)[:160]}")
+    # The database must be describable for Spark to resolve the table at all.
+    try:
+        lf.grant_permissions(Principal=principal,
+                             Resource={"Database": {"Name": spec.database}},
+                             Permissions=["DESCRIBE"])
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        admins = lf.get_data_lake_settings()["DataLakeSettings"].get("DataLakeAdmins") or []
+        is_admin = reader_arn in {a.get("DataLakePrincipalIdentifier") for a in admins}
+    except Exception:  # noqa: BLE001
+        is_admin = None
+    print(f"  lf: granted SELECT on {granted} data filter(s) to the reader role"
+          f"{' (WARNING: reader is an administrator)' if is_admin else ''}")
+    return {"reader_arn": reader_arn, "granted": granted, "reader_is_lf_admin": is_admin}
+
+
+def delete_filter_reader_role(factory, spec) -> None:
+    iam = factory.client("iam")
+    name = filter_reader_role_name(spec)
+    for policy in ("etd-filter-reader",):
+        try:
+            iam.delete_role_policy(RoleName=name, PolicyName=policy)
+        except Exception:  # noqa: BLE001
+            pass
+    try:
+        iam.delete_role(RoleName=name)
+        print(f"  lf: deleted filter reader role {name}")
+    except Exception:  # noqa: BLE001
+        pass
+
+
+def job_role_is_lf_admin(factory, spec) -> bool:
+    """Is the job role a Lake Formation data lake administrator?
+
+    This matters for filter testing: an administrator has implicit full access to
+    every catalog resource and is not subject to data cell filters. Asserting that
+    a filter was enforced against an administrator therefore measures nothing, and
+    reporting the resulting full-table read as a disclosure would be a false
+    alarm -- which is exactly what happened before this check existed.
+    """
+    try:
+        admins = factory.client("lakeformation").get_data_lake_settings()[
+            "DataLakeSettings"].get("DataLakeAdmins") or []
+    except Exception:  # noqa: BLE001
+        return False
+    return spec.execution_role_arn in {
+        a.get("DataLakePrincipalIdentifier") for a in admins}
+
+
 def setup(factory, spec, caller_arn: str) -> dict:
     """Full Lake Formation test bed. Idempotent."""
     print("\n== lake formation test bed ==")
@@ -347,13 +510,24 @@ def setup(factory, spec, caller_arn: str) -> dict:
     filters = []
     if any(v.access_mode == "lf_fgac" for v in spec.variants):
         filters = create_data_filters(factory, spec, ["fact"])
-    return {"registration_role_arn": role_arn, "data_filters": filters}
+    reader = {}
+    if filters:
+        reader_arn = ensure_filter_reader_role(factory, spec)
+        reader = grant_filters_to_reader(factory, spec, reader_arn, ["fact"])
+    is_admin = job_role_is_lf_admin(factory, spec)
+    if is_admin and filters:
+        print("  lf: NOTE the job role is a data lake administrator, so data cell "
+              "filters do not apply to it; filter enforcement cannot be asserted "
+              "in this run")
+    return {"registration_role_arn": role_arn, "data_filters": filters,
+            "job_role_is_lf_admin": is_admin, "filter_reader": reader}
 
 
 def teardown(factory, spec) -> None:
     lf = factory.client("lakeformation")
     iam = factory.client("iam")
     delete_data_filters(factory, spec, ["fact"])
+    delete_filter_reader_role(factory, spec)
     arn = f"arn:aws:s3:::{spec.bucket}/{spec.prefix}/{spec.name}/data"
     try:
         lf.deregister_resource(ResourceArn=arn)

@@ -167,7 +167,18 @@
       "iterations": 3,
       "description": "TPC-DS derived query subset at scale factor 100, Parquet, read via the Glue Data Catalog. Best-of-N per query.",
       "dataset": "s3://etd-example-111122223333/tpcds/sf100/",
-      "method": "spark.sql(q).write.format('noop').mode('overwrite').save(); min across iterations"
+      "method": "spark.sql(q).write.format('noop').mode('overwrite').save(); min across iterations",
+      "label": "TPC-DS 100 GB"
+    },
+    {
+      "workload_id": "perf/tpcds-sf1000",
+      "kind": "performance",
+      "unit_kind": "query",
+      "iterations": 3,
+      "description": "TPC-DS derived query subset at scale factor 100, Parquet, read via the Glue Data Catalog. Best-of-N per query.",
+      "dataset": "s3://etd-example-111122223333/tpcds/sf100/",
+      "method": "spark.sql(q).write.format('noop').mode('overwrite').save(); min across iterations",
+      "label": "TPC-DS 1 TB"
     }
   ],
   "comparisons": [
@@ -223,5 +234,11 @@
     "perf_noise_band_pct": 5.0,
     "perf_regression_alert_pct": 10.0,
     "min_iterations_for_perf_verdict": 2
+  },
+  "lake_formation": {
+    "filter_reader_arn": "arn:aws:iam::111122223333:role/etd-example-filter-reader",
+    "filter_reader_is_lf_admin": false,
+    "filter_enforcement_assertable": true,
+    "job_role_is_lf_admin": true
   }
 }

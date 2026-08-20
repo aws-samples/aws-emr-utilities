@@ -135,6 +135,48 @@ def main() -> int:
         check("a run with a disclosure does not say PROCEED",
               blocked and all(v != "PROCEED" for v in blocked), f"verdicts={blocked}")
 
+    # The filter check must be attributed to a principal filters apply to, and
+    # must not be duplicated per table format.
+    if rj.exists():
+        doc = json.loads(rj.read_text())
+        man = json.loads((Path(__file__).resolve().parents[1]
+                          / "examples/offline/fixtures/run_manifest.json").read_text())
+        lf = man.get("lake_formation") or {}
+        check("a reader principal is recorded", bool(lf.get("filter_reader_arn")))
+        check("the reader is not an LF administrator", lf.get("filter_reader_is_lf_admin") is False)
+        check("enforcement is marked assertable", lf.get("filter_enforcement_assertable") is True)
+        # Not-assertable path: clearing the flag must downgrade, not hide.
+        import copy
+        from etd.compare import compare_correctness
+        units = [{"name": "ROW_FILTER", "table_format": "n/a", "status": "FAILED",
+                  "filter_kind": "row", "rows_visible": 100, "rows_permitted": 10,
+                  "columns_visible": ["a"], "columns_permitted": None,
+                  "filter_over_disclosure": True, "expected_state": "S"}]
+        def payload(assertable):
+            return {"units": copy.deepcopy(units),
+                    "run": {"lake_formation": {"filter_enforcement_assertable": assertable}}}
+        hard = compare_correctness(payload(True), payload(True))
+        soft = compare_correctness(payload(False), payload(False))
+        cats_hard = {f["category"] for f in hard}
+        cats_soft = {f["category"] for f in soft}
+        check("assertable -> critical FILTER_NOT_ENFORCED",
+              "FILTER_NOT_ENFORCED" in cats_hard
+              and all(f["severity"] == "critical" for f in hard))
+        check("not assertable -> informational, not hidden",
+              "FILTER_ENFORCEMENT_NOT_ASSERTABLE" in cats_soft
+              and all(f["severity"] == "info" for f in soft) and len(soft) == len(hard))
+
+    # Filter units must not be duplicated per table format
+    import glob as _g2
+    dupes = []
+    for path in _g2.glob(str(Path(__file__).resolve().parents[1]
+                             / "examples/offline/fixtures/units/*func*")):
+        d = json.loads(Path(path).read_text())
+        fmts = {u.get("table_format") for u in d["units"] if u.get("filter_kind")}
+        if fmts - {"n/a"}:
+            dupes.append((d["variant_id"], sorted(f for f in fmts if f)))
+    check("filter checks are not labelled per table format", not dupes, str(dupes))
+
     # Filters are only asserted under FGAC: with plain Glue or full table access
     # every row is legitimately visible, so asserting otherwise would invent a
     # finding. Verified against the generated fixtures.

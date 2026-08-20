@@ -28,6 +28,7 @@ configs:          ## every shipped config must parse
 
 security:         ## security regression tests (needs `make example` first)
 	python3 tests/test_security.py
+	python3 tests/test_ops_sync.py
 
 clean:            ## remove generated artifacts
 	rm -rf examples/offline/out runs share

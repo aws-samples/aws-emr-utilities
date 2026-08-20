@@ -13,3 +13,6 @@ share/
 *.html
 !docs/**/*.html
 .DS_Store
+
+# Real-account configs: contain account IDs, bucket names and role ARNs.
+configs-local/
