@@ -37,6 +37,28 @@ pip install fastapi 'uvicorn[standard]' python-multipart jinja2 boto3
 python3 app.py    # http://localhost:5000
 ```
 
+### Screenshots
+
+The home page lists your EMR Serverless applications and their recent job runs, with one-click **Optimize** and **Troubleshoot** actions per run, plus a **Size a new job** button that opens the T-shirt sizer:
+
+![EMR Serverless Advisor home page showing applications, recent job runs with status, and Optimize and Troubleshoot actions per run](docs/images/home-page.png)
+
+The Config Advisor page is the web front end for the Fine Tuner: drag and drop a raw Spark event log (or an extracted summary) for server-side analysis, and use the EC2→Serverless migration and compare-two-runs workflows on the same page:
+
+![Config Advisor page with a drag-and-drop event log upload zone, an EC2 to EMR Serverless migration analyzer, and a compare-two-runs workflow](docs/images/config-advisor-page.png)
+
+The Observability page shows live driver and executor dashboards for metrics-enabled job runs, backed by a self-hosted Prometheus. The resource overview tracks running jobs, stages, tasks, and executors; the driver panels chart heap used against heap max (the gap is your out-of-memory headroom), process RSS, CPU, and GC pressure:
+
+![Observability page showing a live resource overview with 400 executors and driver charts for heap used, process RSS, CPU, and GC](docs/images/observability-driver.png)
+
+Executor panels chart the same resources across every executor in the run, plus disk used by shuffle/spill/cached blocks and active tasks per executor — the active-tasks chart makes skew visible at a glance:
+
+![Executor resource dashboards charting heap, RSS, CPU, GC, disk used, and active tasks across executors](docs/images/observability-executors.png)
+
+A Spark job status section tracks jobs, stages, and tasks by status over the run, so you can watch completion progress and spot task failures as they happen:
+
+![Spark job status dashboards showing jobs by status, stages by status, cumulative tasks completed, and task failures over time](docs/images/observability-job-status.png)
+
 ---
 
 ## T-Shirt Sizing
@@ -102,7 +124,7 @@ python3 python_extractor.py --input s3://your-bucket/event-logs/app_id/ --output
 python3 emr_s_fine_tuner.py --input-path /tmp/extracted/
 ```
 
-The Fine Tuner analyzes actual task metrics, shuffle volumes, spill, and memory utilization to produce configs that are typically 30–60% cheaper than T-shirt defaults while maintaining the same or better performance.
+The Fine Tuner analyzes actual task metrics, shuffle volumes, spill, and memory utilization to produce configs that are typically 25–35% cheaper than the T-shirt sizer's configuration on the same workload — and substantially cheaper than untuned platform defaults (−61% on our full TPC-DS 3 TB evaluation) — while maintaining the same or better performance.
 
 ### Choosing Your Size
 
