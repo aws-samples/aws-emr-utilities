@@ -221,42 +221,49 @@ A common pattern: use the T-shirt sizer for the initial run, then feed the resul
 
 **AQE handles the rest.** Shuffle partitions are set using a wave-based formula: `waves × maxExecutors × cores` (min 1000, max 10000). General uses 1 wave; Optimized and IO-Optimized use 2 waves. Adaptive Query Execution coalesces unused partitions at runtime.
 
-**Dynamic allocation scales down.** EMR Serverless releases idle executors automatically. A higher `maxExecutors` ceiling allows the job to scale up when needed without risking under-provisioning.
+**Dynamic allocation scales down.** EMR Serverless releases idle executors automatically. Instead of a static `maxExecutors` ceiling (which forces you to guess an absolute number at cold start), the T-shirt sizer uses dynamic allocation *rate controls* — `executorAllocationRatio=0.5` and `sustainedSchedulerBacklogTimeout=15s`. These throttle how fast the job requests new executors without capping the maximum, so a job that genuinely needs more executors still gets them, but short stages don't over-provision. On TPC-DS at 3 TB this cut cost ~42% versus platform defaults and reduced run-to-run cost variance (median CV 27% → 21%). (XS micro-jobs and Iceberg-Maintenance keep an explicit `maxExecutors`, since their sizing is bounded by design.)
 
 ### Config Matrix
 
-Worker type (cores/memory) is fixed by size + sub-category. `maxExecutors`, `partitions`, and `disk` are dynamically computed for Optimized/IO-Optimized.
+Worker type (cores/memory) is fixed by size + sub-category. `partitions` and `disk` are dynamically computed for Optimized/IO-Optimized. General, Optimized, and IO-Optimized use dynamic allocation rate controls (`executorAllocationRatio=0.5`, `sustainedSchedulerBacklogTimeout=15s`) instead of a static `maxExecutors`; XS and Iceberg-Maintenance keep an explicit `maxExecutors` because their sizing is bounded by design.
 
-| Size | Sub-category | Cores | Memory | maxExec | Partitions | Disk |
-|------|-------------|-------|--------|---------|-----------|------|
-| XS | General | 1 | 2G | 3 | 20 | — |
-| S | General | 4 | 27G | 50 | 1000 | 200G |
-| S | Optimized | 4 | 27G | f(input) | 2 × maxExec × cores | f(shuffle) |
-| S | IO-Optimized | 4 | 27G | f(input) × 2 | 2 × maxExec × cores | f(shuffle) |
-| M | General | 8 | 54G | 50 | 1000 | 200G |
-| M | Optimized | 8 | 54G | f(input) | 2 × maxExec × cores | f(shuffle) |
-| M | IO-Optimized | 4 | 27G | f(input) × 2 | 2 × maxExec × cores | f(shuffle) |
-| L | General | 8 | 54G | 100 | 1000 | 200G |
-| L | Optimized | 8 | 54G | f(input) | 2 × maxExec × cores | f(shuffle) |
-| L | IO-Optimized | 4 | 27G | f(input) × 2 | 2 × maxExec × cores | f(shuffle) |
-| XL | General | 16 | 108G | 125 | 2000 | 200G |
-| XL | Optimized | 16 | 108G | f(input) | 2 × maxExec × cores | f(shuffle) |
-| XL | IO-Optimized | 8 | 54G | f(input) × 2 | 2 × maxExec × cores | f(shuffle) |
+| Size | Sub-category | Cores | Memory | Executor scaling | Partitions | Disk |
+|------|-------------|-------|--------|------------------|-----------|------|
+| XS | General | 1 | 2G | maxExec=3 | 20 | — |
+| S | General | 4 | 27G | DRA rate controls | 1000 | 200G |
+| S | Optimized | 4 | 27G | DRA rate controls | 2 × f(input) × cores | f(shuffle) |
+| S | IO-Optimized | 4 | 27G | DRA rate controls | 2 × f(input) × cores | f(shuffle) |
+| M | General | 8 | 54G | DRA rate controls | 1000 | 200G |
+| M | Optimized | 8 | 54G | DRA rate controls | 2 × f(input) × cores | f(shuffle) |
+| M | IO-Optimized | 4 | 27G | DRA rate controls | 2 × f(input) × cores | f(shuffle) |
+| L | General | 8 | 54G | DRA rate controls | 1000 | 200G |
+| L | Optimized | 8 | 54G | DRA rate controls | 2 × f(input) × cores | f(shuffle) |
+| L | IO-Optimized | 4 | 27G | DRA rate controls | 2 × f(input) × cores | f(shuffle) |
+| XL | General | 16 | 108G | DRA rate controls | 2000 | 200G |
+| XL | Optimized | 16 | 108G | DRA rate controls | 2 × f(input) × cores | f(shuffle) |
+| XL | IO-Optimized | 8 | 54G | DRA rate controls | 2 × f(input) × cores | f(shuffle) |
 
-- `f(input)` — executor count derived from target duration, shuffle volume, and throughput constraints (min 1000, max 10000 for partitions)
-- `f(shuffle)` — disk per executor: `shuffle_gb / maxExec × 1.5` (min 200G, max 2000G)
+- `f(input)` — internal executor estimate derived from target duration, shuffle volume, and throughput constraints; used to size partitions and disk (partitions min 1000, max 10000)
+- `f(shuffle)` — disk per executor: `shuffle_gb / f(input) × 1.5` (min 200G, max 2000G)
 
 ---
 
 ## Benchmark Results
 
-Evaluated on TPC-DS at 3 TB scale, 104 queries, EMR Serverless release emr-7.13.0.
+Evaluated on the full TPC-DS suite at 3 TB scale, 95 queries, three iterations per configuration, EMR Serverless release emr-7.13.0. Each query ran as its own job; cost is computed from `billedResourceUtilization` at list rates.
 
-| Metric | Improvement |
-|--------|-------------|
-| Runtime | -72.7% |
-| Cost | -18.3% |
-| Regressions | 0 |
+The workflow delivers escalating savings as you give the tools more information:
+
+| Configuration | Input needed | Runtime | Cost | Cost vs defaults | Regressions |
+|--------------|-------------|---------|------|-----------------:|:-----------:|
+| Platform defaults | Nothing | 775 min | $38.65 | — | — |
+| T-shirt General (`--size L`) | Data size | 393 min | $22.58 | −42% | 9/95 |
+| T-shirt Optimized (`--shuffle-write-gb`) | + Shuffle volume | 356 min | $20.18 | −48% | 9/95 |
+| Fine Tuner (cost-optimized) | One event log | 318 min | $14.89 | −61% | 0/95 |
+
+The Fine Tuner produced zero cost regressions across all 95 queries. Cost variance (run-to-run predictability) also improves at each step: median coefficient of variation falls from 27% (defaults) → 21% (General) → 7% (Optimized) → 6% (Fine Tuner).
+
+A separate performance-optimized run of the full suite achieved −72.7% runtime / −18.3% cost with zero regressions — the right profile for latency-sensitive jobs.
 
 ---
 
