@@ -14,7 +14,6 @@ This guide walks you through setup, usage, expected time investment, use cases, 
 | 2 | Clone this repository to your local machine | 1 min |
 | 3 | Configure AWS credentials with [required IAM permissions](references/iam-permissions.md) | 5 min |
 | 4 | (Optional) Set up [Spark Upgrade Agent MCP](https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-spark-upgrade-agent-setup.html) for automated Spark code upgrades | 10 min |
-| 5 | (Optional) Set up PigToSparkConversion MCP for automated Pig→PySpark conversion | 10 min |
 
 ### Installation
 
@@ -23,27 +22,23 @@ This guide walks you through setup, usage, expected time investment, use cases, 
 git clone https://github.com/aws-samples/aws-emr-utilities.git
 cd aws-emr-utilities/utilities/emr-al1-migration-skill
 
-cd emr-al1-migration-skill
-
 # Step 2: Configure AWS credentials (use a non-production account)
-# Option A: Use an AWS CLI named profile
-aws configure --profile emr-migration
-# Set: AWS Access Key ID, Secret Access Key, Default region (e.g., us-east-1)
+# You need a role with permissions to: describe/create/terminate EMR clusters,
+# add EMR steps, read/write S3, read CloudWatch Logs, describe EC2 subnets,
+# and PassRole for EMR service roles.
+# See references/iam-permissions.md for the exact policy.
 
-# Option B: Set environment variables directly
-export AWS_ACCESS_KEY_ID=<your-access-key>
-export AWS_SECRET_ACCESS_KEY=<your-secret-key>
-export AWS_DEFAULT_REGION=us-east-1
-
-# Option C: Use IAM role assumption (recommended for cross-account)
-aws sts assume-role --role-arn arn:aws:iam::<ACCOUNT_ID>:role/<ROLE_NAME> \
-  --role-session-name emr-migration
-
-# You need a role with permissions listed in references/iam-permissions.md
+# Option A: Use AWS SSO / Identity Center
+aws sso login --profile <your-profile>
 export AWS_PROFILE=<your-profile>
 
+# Option B: Use environment variables
+export AWS_ACCESS_KEY_ID=<your-key>
+export AWS_SECRET_ACCESS_KEY=<your-secret>
+export AWS_DEFAULT_REGION=us-east-1  # your AWS region code (e.g., us-east-1, eu-west-1)
+
 # Step 3: Verify access
-aws emr list-clusters --region <REGION> --query 'Clusters[?Status.State==`WAITING`]'
+aws emr list-clusters --region us-east-1 --query 'Clusters[?Status.State==`WAITING`]'
 ```
 
 ### For Kiro users (workspace skill)
@@ -54,6 +49,63 @@ Copy the skill directly into your Kiro workspace:
 mkdir -p .kiro/skills/emr-al1-migration
 cp -r emr-al1-migration-skill/* .kiro/skills/emr-al1-migration/
 ```
+
+#### Enable autonomous mode (recommended)
+
+For the Spark Upgrade Agent to run E2E without stopping for approval at each tool call:
+
+**Step 1: Deploy the Spark Upgrade Agent stack** (one-time setup)
+
+Follow the [setup instructions](https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-spark-upgrade-agent-setup.html) to deploy the CloudFormation stack in your region. This creates the IAM role needed to access the Spark Upgrade service.
+
+**Step 2: Configure the MCP server** in `~/.kiro/settings/mcp.json`:
+
+Use the same AWS profile you configured in Step 2 of the installation above. The MCP proxy will use it to assume the Spark Upgrade role.
+
+```json
+{
+  "mcpServers": {
+    "spark-upgrade": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "mcp-proxy-for-aws@latest",
+        "https://sagemaker-unified-studio-mcp.<YOUR_REGION>.api.aws/spark-upgrade/mcp",
+        "--service", "sagemaker-unified-studio-mcp",
+        "--region", "<YOUR_REGION>",
+        "--profile", "<YOUR_AWS_PROFILE>",
+        "--read-timeout", "180"
+      ],
+      "timeout": 180000,
+      "autoApprove": [
+        "generate_spark_upgrade_plan",
+        "reuse_existing_spark_upgrade_plan",
+        "update_build_configuration",
+        "check_and_update_build_environment",
+        "check_and_update_python_environment",
+        "compile_and_build_project",
+        "prepare_python_venv_on_emr",
+        "run_validation_job",
+        "check_job_status",
+        "fix_upgrade_failure",
+        "post_upgrade_result",
+        "post_build_result",
+        "post_test_result",
+        "get_data_quality_summary",
+        "list_upgrade_analyses",
+        "describe_upgrade_analysis",
+        "generate_assessment"
+      ]
+    }
+  }
+}
+```
+
+> **Note**: Replace `<YOUR_REGION>` with an AWS region code (e.g., `us-east-1`, `eu-west-1`) in both the endpoint URL and the `--region` flag — they must match. Replace `<YOUR_AWS_PROFILE>` with the same profile you use for EMR operations.
+
+> **Why autoApprove?** The Spark Upgrade Agent makes up to 40 sequential tool calls (plan → build → fix → compile → validate → compare). Without auto-approve, you'll be prompted to approve each one individually, breaking the autonomous flow. All operations are reversible (new files only, originals never modified).
+
+> **Security note:** These tools only operate on your local project copy and your designated S3 staging bucket. They do not modify your source cluster. If you prefer manual approval, omit the `autoApprove` field — the agent will pause at each step for your confirmation.
 
 Then invoke by typing in chat:
 ```
@@ -88,7 +140,6 @@ use aws profile <profile-name> for any aws call.
 | [configuration-transforms.md](references/configuration-transforms.md) | Property-by-property mapping from EMR 5.x → 7.x | Config classification changes |
 | [pig-to-spark-mapping.md](references/pig-to-spark-mapping.md) | Pig Latin operator → PySpark/Spark SQL conversion | LOAD, FILTER, JOIN, GROUP, UDFs |
 | [zeppelin-interpreter-migration.md](references/zeppelin-interpreter-migration.md) | Zeppelin notebook interpreter config changes | Spark, Hive, Shell interpreters |
-| [removed-applications.md](references/removed-applications.md) | Migration paths for Pig, Oozie, Ganglia | Alternatives and conversion guides |
 | [iam-permissions.md](references/iam-permissions.md) | Required IAM actions | EMR, S3, CloudWatch, IAM |
 
 ### Optional MCP Servers (enhanced automation)
@@ -96,7 +147,6 @@ use aws profile <profile-name> for any aws call.
 | MCP Server | What It Does | Setup Time |
 |------------|-------------|-----------|
 | **Spark Upgrade Agent** | Automated Spark code upgrades (build file updates, API replacements, compilation, validation) | 10 min |
-| **PigToSparkConversion** | AST-based Pig→PySpark conversion with test generation | 10 min |
 
 ---
 
@@ -132,22 +182,14 @@ use aws profile <profile-name> for any aws call.
 
 ---
 
-## 4. What Do We Want Users to Do?
+## 4. Usage Guidelines
 
-### Primary Goal
+### Best Practices
 
-**Use the skill to migrate at least one real EMR 5.x cluster to EMR 7.x** and report what worked, what didn't, and where human intervention was needed.
-
-### Specific Actions
-
-| # | Action | Expected Outcome |
-|---|--------|-----------------|
-| 1 | **Run the skill against a non-prod EMR 5.x cluster** | Successful EMR 7.x test cluster with all workloads validated |
-| 2 | **Validate the output** | Confirm data correctness (row counts, schema, business rules) |
-| 3 | **Note any failures the skill couldn't fix** | Identify gaps in the failure catalogue |
-| 4 | **Test with different workload types** | Spark, Hive, Pig, Presto — the more variety, the better |
-| 5 | **Customize SKILL.md for your environment** | Add org-specific constraints, IAM boundaries, naming conventions |
-| 6 | **Provide feedback** (see Section 6) | Help us improve the skill for all users |
+- Always run against a **non-production** cluster first
+- Validate output data correctness (step succeeded ≠ correct output)
+- Test with different workload types for confidence before production promotion
+- Customize SKILL.md for your organization's standards (IAM boundaries, naming conventions)
 
 ### What NOT to Do
 
@@ -155,7 +197,7 @@ use aws profile <profile-name> for any aws call.
 - ❌ Do NOT skip data validation (step succeeded ≠ correct output)
 - ❌ Do NOT assume one successful test means all clusters will migrate cleanly
 
-### Important: Migrated Artifacts Are Never Written In-Place
+### Migrated Artifacts Are Never Written In-Place
 
 The skill **never overwrites or replaces original scripts, JARs, or notebooks**. All migrated artifacts are written to new S3 locations using a suffix naming convention. This ensures originals remain untouched and rollback is always possible.
 
@@ -165,144 +207,18 @@ The skill **never overwrites or replaces original scripts, JARs, or notebooks**.
 | Hive scripts | `s3://bucket/path/query.hql` | `s3://bucket/path/query-hive3-migrated.hql` |
 | Presto/Trino scripts | `s3://bucket/path/query.sql` | `s3://bucket/path/query-trino-migrated.sql` |
 | MapReduce JARs | `s3://bucket/path/job.jar` | `s3://bucket/path/job-hadoop3-migrated.jar` |
-| MapReduce streaming scripts | `s3://bucket/path/mapper.py` | `s3://bucket/path/mapper-hadoop3-migrated.py` |
 | Flink JARs | `s3://bucket/path/flink-app.jar` | `s3://bucket/path/flink-app-flink18-migrated.jar` |
-| Flink config | `s3://bucket/path/flink-conf.yaml` | `s3://bucket/path/flink-conf-flink18-migrated.yaml` |
 | Spark application code | `local-path/src/` | `local-path/src-emr7-migrated/` (full copy) |
-| Pig → PySpark | `s3://bucket/pig/script.pig` | `s3://bucket/converted/$DOMAIN/data_store/script_name.py` |
+| Pig → PySpark | `s3://bucket/pig/script.pig` | `s3://bucket/pig/script-pyspark-migrated.py` |
 | Zeppelin notebooks | `notebook_{id}.json` | `notebook_{id}_emr7_migrated.json` |
 
 If a migration is re-run, the `-migrated` artifacts are overwritten (idempotent), but originals are never affected.
 
 ---
 
-## 5. Use Cases to Cover
+## 5. Contributing
 
-### Priority 1 — Core Migration (cover these first)
-
-| Use Case | Input | Expected Result |
-|----------|-------|-----------------|
-| **PySpark job migration** | EMR 5.33 cluster running PySpark 2.4 steps | Script upgraded for Spark 3.5 (removed APIs, ANSI mode, timestamps) |
-| **Hive DDL/DML migration** | EMR 5.x cluster with HQL scripts | Scripts adapted for Hive 3.1 (EXTERNAL tables, reserved keywords, explicit CAST) |
-| **Bootstrap action adaptation** | Cluster with AL1-specific bootstrap (yum, python, service) | Bootstrap rewritten for AL2023 (dnf, python3, systemctl) |
-
-### Priority 2 — Application Conversions
-
-| Use Case | Input | Expected Result |
-|----------|-------|-----------------|
-| **Presto → Trino** | Cluster with Presto queries/JDBC connections | Queries + connections renamed for Trino |
-| **Pig → PySpark** | Cluster with Pig Latin scripts | Scripts converted to PySpark classes |
-| **MapReduce → Spark** | Cluster with Hadoop streaming or MR JAR steps | Steps adapted or flagged for conversion |
-
-### Priority 3 — Complex Scenarios
-
-| Use Case | Input | Expected Result |
-|----------|-------|-----------------|
-| **Custom Scala JAR (2.11)** | Spark step with custom JAR compiled for Scala 2.11 | JAR decompiled, rewritten for 2.12, recompiled |
-| **Hive ACID table migration** | Cluster with transactional tables on external RDS metastore | Compaction + schema upgrade + EXTERNAL table recreation |
-| **Multi-application cluster** | Spark + Hive + Pig + Flink on same cluster | All applications migrated in sequence |
-
-### Priority 4 — Scale Testing
-
-| Use Case | Input | Expected Result |
-|----------|-------|-----------------|
-| **Batch migration** | 5+ clusters via headless/workflow mode | Parallel migration with per-cluster reports |
-| **Diverse instance types** | Clusters using deprecated instance types (m4, r4, i2) | Instance types mapped to current-gen equivalents |
-
----
-
-## 6. Feedback Collection
-
-### Where to Submit Feedback
-
-| Channel | URL | When to Use |
-|---------|-----|-------------|
-| **GitHub Issues** | `https://github.com/aws-samples/aws-emr-utilities/issues` | Bug reports, feature requests, failure catalogue gaps |
-| **GitHub Discussions** | `https://github.com/aws-samples/aws-emr-utilities/discussions` | Questions, suggestions, share migration stories |
-| **Quip Doc** (internal) | _[Link TBD — for internal AWS testers]_ | Internal feedback during beta |
-
-### What to Include in Feedback
-
-#### For Bug Reports / Failures
-
-```markdown
-## Bug Report
-
-**Cluster details:**
-- EMR version: (e.g., emr-5.33.0)
-- Region: (e.g., us-east-1)
-- Applications: (e.g., Spark 2.4, Hive 2.3, Presto)
-- Instance types: (e.g., m5.xlarge primary, r5.2xlarge core)
-
-**What happened:**
-- Step in the skill workflow where it failed (e.g., Stage 3B — Hive migration)
-- Error message or log snippet
-- What the agent tried and why it didn't work
-
-**Expected behavior:**
-- What should have happened
-
-**Workaround (if any):**
-- What you did to get past the issue manually
-
-**Failure category (if identifiable):**
-- e.g., HIVE3_ACID_DEFAULT, SPARK_REMOVED_APIS, or "new — not in catalogue"
-
-**Cluster ID (optional, for reproduction):**
-- j-XXXXXXXXXXXXX
-
-**Agent used:**
-- Kiro / Claude Code / Codex CLI (version if known)
-```
-
-#### For Feature Requests
-
-```markdown
-## Feature Request
-
-**Use case:**
-- What you're trying to migrate that isn't covered
-
-**Current behavior:**
-- What the skill does (or doesn't do) today
-
-**Desired behavior:**
-- What you want it to do
-
-**Priority:**
-- Blocker (can't migrate without this) / Nice-to-have / Enhancement
-
-**Workaround:**
-- How you handled it manually (if applicable)
-```
-
-#### For Success Stories
-
-```markdown
-## Migration Success
-
-**Source cluster:** EMR version, applications, cluster size
-**Target cluster:** EMR 7.x version achieved
-**Time taken:** End-to-end (setup to validated migration)
-**Fix iterations:** How many cycles the agent needed
-**Fixes applied:** List of failure categories triggered and resolved
-**Human intervention needed:** What you had to do manually (if anything)
-**Data validation:** How you confirmed correctness
-**Would you use this for production migration?** Yes / No / With caveats
-```
-
-### Feedback Metrics We're Tracking
-
-| Metric | What It Tells Us |
-|--------|-----------------|
-| Success rate | % of clusters fully migrated without human intervention |
-| Fix iterations | Average cycles needed per cluster |
-| Catalogue coverage | % of failures matched to existing categories vs. new/unknown |
-| Time to migrate | Average wall-clock time per cluster by complexity |
-| Agent type | Which agents (Kiro/Claude/Codex) work best |
-| Human effort | Hours of manual work after skill completes |
-| False positives | Cases where the skill made an incorrect fix |
-| Missing categories | New failure types not in the catalogue |
+File issues, feature requests, and contributions in the [project repository](https://github.com/aws-samples/aws-emr-utilities/tree/main/utilities/emr-al1-migration-skill).
 
 ---
 

@@ -1,7 +1,5 @@
-#!/bin/bash
+#!/usr/bin/python
 # Sample bootstrap action from an EMR 5.33.0 cluster
-# NOTE: This fixture intentionally uses AL1 patterns (yum, service, IMDSv1)
-# to test the skill's bootstrap migration logic.
 set -e
 
 # Install dependencies

@@ -14,7 +14,7 @@ Upgrades Amazon EMR clusters from **EMR 5.x (Amazon Linux 1)** to **EMR 7.x (Ama
 ```bash
 git clone https://github.com/aws-samples/aws-emr-utilities.git
 cd aws-emr-utilities/utilities/emr-al1-migration-skill
-# or copy emr-al1-migration-skill/ into your project's .kiro/skills/ or .claude/skills/ directory
+# or copy emr-al1-migration-skill/ into your project's .kiro/skills/ directory
 ```
 
 2. Invoke via prompt:
@@ -24,6 +24,8 @@ Use skill emr-al1-migration to migrate EMR cluster <cluster-id>
 from EMR 5.x to EMR 7.x in region <region> using profile <profile-name>.
 ```
 
+3. **(Kiro only) Enable autonomous mode** — add all spark-upgrade tools to `autoApprove` in `~/.kiro/settings/mcp.json` so the Spark Upgrade Agent runs E2E without pausing for approval at each step. See [GETTING_STARTED.md](GETTING_STARTED.md) for the full config.
+
 For batch migration of scripts without a running cluster, point the agent at your script files directly. See [Batch migration](#batch--headless-upgrade-at-scale) below.
 
 ---
@@ -32,7 +34,7 @@ For batch migration of scripts without a running cluster, point the agent at you
 
 | Dimension | Value |
 |---|---|
-| Source | EMR 5.0–5.36 (Amazon Linux 1, Java 8, Spark 2.4, Hive 2.3, Pig 0.17) |
+| Source | EMR 5.0–5.35 (Amazon Linux 1, Java 8, Spark 2.4, Hive 2.3, Pig 0.17) |
 | Target | EMR 7.x latest stable (Amazon Linux 2023, Java 17, Spark 3.5, Hive 3.1, Trino) |
 | Strategy | New cluster — original never modified |
 | Applications | Spark, Hive, Presto→Trino, MapReduce, Flink, Pig→PySpark, Zeppelin |
@@ -48,18 +50,7 @@ For batch migration of scripts without a running cluster, point the agent at you
 
 2. **No data validation.** The skill verifies that jobs *complete successfully* (exit code 0). It does not compare output data correctness — that remains your responsibility.
 
-3. **Migrated scripts are written to new locations — originals are never modified.** All adapted artifacts use a suffix naming convention so the original files remain untouched:
-
-   | Application | Original | Migrated Output |
-   |-------------|----------|-----------------|
-   | Bootstrap scripts | `s3://bucket/path/script.sh` | `s3://bucket/path/script-emr7-migrated.sh` |
-   | Hive scripts | `s3://bucket/path/query.hql` | `s3://bucket/path/query-hive3-migrated.hql` |
-   | Presto/Trino scripts | `s3://bucket/path/query.sql` | `s3://bucket/path/query-trino-migrated.sql` |
-   | MapReduce JARs | `s3://bucket/path/job.jar` | `s3://bucket/path/job-hadoop3-migrated.jar` |
-   | Flink JARs | `s3://bucket/path/flink-app.jar` | `s3://bucket/path/flink-app-flink18-migrated.jar` |
-   | Spark application code | `local-path/src/` | `local-path/src-emr7-migrated/` (full copy) |
-   | Pig → PySpark | `s3://bucket/pig/script.pig` | `s3://bucket/converted/$DOMAIN/data_store/script_name.py` |
-   | Zeppelin notebooks | `notebook_{id}.json` | `notebook_{id}_emr7_migrated.json` |
+3. **Migrated scripts are written to new locations — originals are never modified.** All adapted artifacts use a suffix naming convention (e.g., `script-emr7-migrated.sh`, `query-hive3-migrated.hql`). See [GETTING_STARTED.md](GETTING_STARTED.md) for the full naming conventions table.
 
    Re-running the migration overwrites the `-migrated` artifacts (idempotent) but never touches originals.
 
@@ -115,13 +106,16 @@ See [`references/iam-permissions.md`](references/iam-permissions.md) for the com
 - [ ] S3 bucket for migrated artifacts and logs created
 - [ ] EMR service role and EC2 instance profile configured
 - [ ] Source scripts backed up separately (skill reads but never modifies originals)
+- [ ] Spark Upgrade Agent MCP server configured (see below)
 - [ ] Familiar with [Important constraints](#important-constraints--read-before-running)
+
+### Spark Upgrade Agent MCP Setup (required for Spark 2.4+ code upgrades)
+
+The Spark Upgrade Agent handles Spark application code upgrades, dependency resolution, and validation. See [GETTING_STARTED.md](GETTING_STARTED.md) for complete setup instructions (IAM role creation, S3 bucket, CLI profile, MCP config).
 
 ---
 
-## Confirmed breaks on EMR 7.5
-
-Validated via end-to-end testing (see [Testing by Kshitija - v1](../Testing%20by%20Kshitija%20-%20v1.md)):
+## Known breaks on EMR 7.5
 
 | Break | Error | Severity |
 |---|---|---|
@@ -206,6 +200,17 @@ done
 
 ---
 
+## Known blockers (manual intervention required)
+
+| Blocker | What to do |
+|---------|------------|
+| Scala 2.11 JARs | Recompile for Scala 2.12 (or use `userClassPathFirst=true` as temporary workaround) |
+| Pig scripts | Agent converts to PySpark automatically, but custom Java UDFs need manual rewrite |
+| Oozie workflows | Redesign to Step Functions or MWAA — no automated conversion |
+| Scala 2.11 uber JAR on `extraClassPath` | Move to `--jars` flag or rebuild without bundled Scala runtime |
+
+---
+
 ## Out of scope
 
 - Data validation / output correctness comparison
@@ -233,9 +238,9 @@ done
 |---|---|
 | Skill contract | [`SKILL.md`](SKILL.md) |
 | Failure catalogue | [`references/failure-catalogue.md`](references/failure-catalogue.md) |
+| Spark Upgrade Agent guide | [`references/spark-upgrade-agent-guide.md`](references/spark-upgrade-agent-guide.md) |
 | Pig→Spark mapping | [`references/pig-to-spark-mapping.md`](references/pig-to-spark-mapping.md) |
 | Configuration transforms | [`references/configuration-transforms.md`](references/configuration-transforms.md) |
-| Removed applications | [`references/removed-applications.md`](references/removed-applications.md) |
 | Zeppelin interpreter migration | [`references/zeppelin-interpreter-migration.md`](references/zeppelin-interpreter-migration.md) |
 | IAM permissions | [`references/iam-permissions.md`](references/iam-permissions.md) |
 | AWS EMR Migration Guide | [docs.aws.amazon.com/emr/latest/ManagementGuide](https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-plan-migration.html) |

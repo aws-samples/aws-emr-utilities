@@ -30,12 +30,7 @@ Minimum IAM permissions needed to execute the EMR AL1 Migration Skill.
         "elasticmapreduce:AddJobFlowSteps",
         "elasticmapreduce:TerminateJobFlows"
       ],
-      "Resource": "*",
-      "Condition": {
-        "StringEquals": {
-          "aws:RequestTag/emr-migration-skill": "test-run"
-        }
-      }
+      "Resource": "*"
     },
     {
       "Sid": "S3ScriptAccess",
@@ -43,12 +38,25 @@ Minimum IAM permissions needed to execute the EMR AL1 Migration Skill.
       "Action": [
         "s3:GetObject",
         "s3:PutObject",
-        "s3:CopyObject",
         "s3:ListBucket"
       ],
       "Resource": [
         "arn:aws:s3:::SCRIPT_BUCKET",
         "arn:aws:s3:::SCRIPT_BUCKET/*"
+      ]
+    },
+    {
+      "Sid": "S3StagingBucketAccess",
+      "Effect": "Allow",
+      "Action": [
+        "s3:CreateBucket",
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:ListBucket"
+      ],
+      "Resource": [
+        "arn:aws:s3:::emr-migration-staging-*",
+        "arn:aws:s3:::emr-migration-staging-*/*"
       ]
     },
     {
@@ -73,17 +81,31 @@ Minimum IAM permissions needed to execute the EMR AL1 Migration Skill.
       "Resource": "*"
     },
     {
-      "Sid": "IAMPassRole",
+      "Sid": "IAMReadRole",
       "Effect": "Allow",
       "Action": [
         "iam:GetRole",
-        "iam:GetInstanceProfile",
-        "iam:PassRole"
+        "iam:GetInstanceProfile"
       ],
       "Resource": [
-        "arn:aws:iam::*:role/EMR_*",
-        "arn:aws:iam::*:instance-profile/EMR_*"
+        "arn:aws:iam::*:role/EMR_DefaultRole",
+        "arn:aws:iam::*:role/EMR_EC2_DefaultRole",
+        "arn:aws:iam::*:instance-profile/EMR_EC2_DefaultRole"
       ]
+    },
+    {
+      "Sid": "IAMPassRole",
+      "Effect": "Allow",
+      "Action": "iam:PassRole",
+      "Resource": [
+        "arn:aws:iam::*:role/EMR_DefaultRole",
+        "arn:aws:iam::*:role/EMR_EC2_DefaultRole"
+      ],
+      "Condition": {
+        "StringEquals": {
+          "iam:PassedToService": "elasticmapreduce.amazonaws.com"
+        }
+      }
     }
   ]
 }
@@ -91,7 +113,7 @@ Minimum IAM permissions needed to execute the EMR AL1 Migration Skill.
 
 ## Additional: Spark Upgrade Agent Permissions (optional)
 
-Required only when using the Apache Spark Upgrade Agent MCP server for application code upgrades (Stage 3A). These are provisioned by the CloudFormation stack `spark-upgrade-mcp-setup`.
+Required only when using the SageMaker Unified Studio Spark Upgrade Agent MCP server for application code upgrades (Stage 3A). These are provisioned by the CloudFormation stack `spark-upgrade-mcp-setup`.
 
 ```json
 {
@@ -137,8 +159,7 @@ Required only when using the Apache Spark Upgrade Agent MCP server for applicati
 
 - Replace `SCRIPT_BUCKET` with the actual S3 bucket used for bootstrap scripts and JARs.
 - Replace `STAGING_BUCKET` with the S3 bucket used by the Spark Upgrade Agent for artifacts.
-- The `EMRWriteAccess` statement uses a tag condition to scope write actions to clusters created by the skill only.
-- `iam:PassRole` is scoped to EMR-prefixed roles. Adjust the resource ARN to match your environment's naming convention.
+- `iam:PassRole` is scoped to EMR default roles and restricted via `iam:PassedToService` to EMR only. Adjust the resource ARN to match your environment's naming convention.
 - For dry-run mode only, the `EMRWriteAccess` statement is not required.
 - No `*FullAccess` policies are used — this follows least-privilege.
 - The Spark Upgrade Agent CloudFormation stack creates its own IAM role with necessary permissions. The above is for reference only if provisioning manually.
