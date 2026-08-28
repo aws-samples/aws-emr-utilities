@@ -5,6 +5,12 @@
 
 Upgrades Amazon EMR clusters from **EMR 5.x (Amazon Linux 1)** to **EMR 7.x (Amazon Linux 2023)**, including all application code: Spark, Hive, Presto→Trino, MapReduce, Flink, Pig→PySpark, and Zeppelin notebooks.
 
+## Authors
+
+- Parul Saxena
+- Kshitija Dound
+- Keerthi Chadalavada
+
 ---
 
 ## Quick start
