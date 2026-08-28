@@ -19,6 +19,15 @@ MAXEXEC = "spark.dynamicAllocation.maxExecutors"
 
 def cost_configs(fixture_dir):
     """Run recommender on a fixture dir, return list of cost spark_configs dicts."""
+    return _configs(fixture_dir, "cost")
+
+
+def perf_configs(fixture_dir):
+    """Run recommender on a fixture dir, return list of PERFORMANCE spark_configs dicts."""
+    return _configs(fixture_dir, "perf")
+
+
+def _configs(fixture_dir, which):
     with tempfile.TemporaryDirectory() as td:
         cost_out = os.path.join(td, "cost.json")
         perf_out = os.path.join(td, "perf.json")
@@ -27,11 +36,23 @@ def cost_configs(fixture_dir):
              "--output-cost", cost_out, "--output-perf", perf_out],
             capture_output=True, text=True, cwd=td)
         assert proc.returncode == 0, f"recommender failed:\n{proc.stderr[-2000:]}"
-        with open(cost_out) as f:
+        with open(cost_out if which == "cost" else perf_out) as f:
             recs = json.load(f)
     if isinstance(recs, dict):
         recs = [recs]
     return [r.get("spark_configs", {}) for r in recs]
+
+
+def test_perf_mode_never_throttles():
+    """Performance-optimized mode must NOT apply DRA rate controls (it optimizes for
+    runtime, so throttling the ramp would be counterproductive). Even on the short-query
+    fixture that triggers the cost-mode fix, perf configs keep an aggressive ramp."""
+    for name in ("serverless_overprovisioned", "field_reports", "b12"):
+        d = os.path.join(FIX, name)
+        if not os.path.isdir(d):
+            continue
+        for c in perf_configs(d):
+            assert c.get(RATIO) != "0.5", f"{name}: perf config must not carry DRA rate controls"
 
 
 def test_short_query_gets_dra_rate_controls():

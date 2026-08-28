@@ -101,6 +101,16 @@
     "ec2_migration/eventlog_v2_00g6bunn7pe8do0b [performance] spark_configs.spark.emr-serverless.executor.disk: golden='2000G' current='1000G'"
    ],
    "reason": "tier-aware disk sizing: A/B-validated 2026-07-25 on replicated production workloads \u2014 16c 2000G->1000G won on both test jobs (-13.3% wall/-18% cost and -8.6%/-13.9%); 8c IOPS floor + FetchFailed IOPS-ladder escalation keep serving-bound fleets on 1000G+"
+  },
+  {
+   "changed_lines": 4,
+   "changes": [
+    "b12/eventlog_v2_00g5r6925j39qg0b [cost] spark_configs.spark.dynamicAllocation.maxExecutors: golden='35' current=None",
+    "field_reports/collect_heavy_omp_00g6tp1n6gqmio0b [cost] spark_configs.spark.dynamicAllocation.maxExecutors: golden='11' current=None",
+    "serverless_overprovisioned/applications [cost] spark_configs.spark.dynamicAllocation.maxExecutors: golden='79' current=None",
+    "serverless_overprovisioned/synthetic_neil_454exec [cost] spark_configs.spark.dynamicAllocation.maxExecutors: golden='116' current=None"
+   ],
+   "reason": "Balanced DRA rate controls in Fine Tuner are now gated to COST mode only. Performance-optimized configs keep an aggressive ramp (no rate controls, static maxExecutors retained) since perf mode optimizes for runtime. Cost-mode short/ramp-wasteful queries drop the static cap for rate controls as before."
   }
  ],
  "snapshot": {
@@ -187,7 +197,6 @@
    },
    "eventlog_v2_00g5r6925j39qg0b": {
     "cost": {
-     "spark_configs.spark.dynamicAllocation.maxExecutors": "35",
      "spark_configs.spark.dynamicAllocation.minExecutors": "11",
      "spark_configs.spark.emr-serverless.executor.disk": "1000G",
      "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
@@ -588,7 +597,6 @@
   "field_reports": {
    "collect_heavy_omp_00g6tp1n6gqmio0b": {
     "cost": {
-     "spark_configs.spark.dynamicAllocation.maxExecutors": "11",
      "spark_configs.spark.dynamicAllocation.minExecutors": "3",
      "spark_configs.spark.sql.shuffle.partitions": "1000",
      "worker.max_executors": 11,
@@ -638,7 +646,6 @@
   "serverless_overprovisioned": {
    "applications": {
     "cost": {
-     "spark_configs.spark.dynamicAllocation.maxExecutors": "79",
      "spark_configs.spark.dynamicAllocation.minExecutors": "26",
      "spark_configs.spark.sql.shuffle.partitions": "1000",
      "worker.max_executors": 79,
@@ -660,7 +667,6 @@
    },
    "synthetic_neil_454exec": {
     "cost": {
-     "spark_configs.spark.dynamicAllocation.maxExecutors": "116",
      "spark_configs.spark.dynamicAllocation.minExecutors": "38",
      "spark_configs.spark.sql.shuffle.partitions": "1000",
      "worker.max_executors": 116,
