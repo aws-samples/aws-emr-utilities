@@ -103,18 +103,18 @@
    "reason": "tier-aware disk sizing: A/B-validated 2026-07-25 on replicated production workloads \u2014 16c 2000G->1000G won on both test jobs (-13.3% wall/-18% cost and -8.6%/-13.9%); 8c IOPS floor + FetchFailed IOPS-ladder escalation keep serving-bound fleets on 1000G+"
   },
   {
-   "changed_lines": 8,
+   "changed_lines": 4,
    "changes": [
     "b12/eventlog_v2_00g5r6925j39qg0b [cost] spark_configs.spark.dynamicAllocation.maxExecutors: golden='35' current=None",
-    "b12/eventlog_v2_00g5r6925j39qg0b [performance] spark_configs.spark.dynamicAllocation.maxExecutors: golden='52' current=None",
     "field_reports/collect_heavy_omp_00g6tp1n6gqmio0b [cost] spark_configs.spark.dynamicAllocation.maxExecutors: golden='11' current=None",
-    "field_reports/collect_heavy_omp_00g6tp1n6gqmio0b [performance] spark_configs.spark.dynamicAllocation.maxExecutors: golden='16' current=None",
     "serverless_overprovisioned/applications [cost] spark_configs.spark.dynamicAllocation.maxExecutors: golden='79' current=None",
-    "serverless_overprovisioned/applications [performance] spark_configs.spark.dynamicAllocation.maxExecutors: golden='118' current=None",
-    "serverless_overprovisioned/synthetic_neil_454exec [cost] spark_configs.spark.dynamicAllocation.maxExecutors: golden='116' current=None",
-    "serverless_overprovisioned/synthetic_neil_454exec [performance] spark_configs.spark.dynamicAllocation.maxExecutors: golden='174' current=None"
+    "serverless_overprovisioned/synthetic_neil_454exec [cost] spark_configs.spark.dynamicAllocation.maxExecutors: golden='116' current=None"
    ],
-   "reason": "Fine Tuner adopts Balanced DRA rate controls (executorAllocationRatio=0.5, sustainedSchedulerBacklogTimeout=15s) for short/ramp-wasteful, non-shuffle-heavy, non-spill-bound queries, dropping the static maxExecutors ceiling. Affected fixtures (b12 low-shuffle/high-idle, field_reports collect_heavy_omp short job, serverless_overprovisioned q96 short + synthetic high-idle) now emit rate controls instead of a hard cap. Validated: -46% cost on TPC-DS short queries; zero config change on 6 Expedia sustained-shuffle production workloads."
+   "reason": "Balanced DRA rate controls in Fine Tuner are now gated to COST mode only. Performance-optimized configs keep an aggressive ramp (no rate controls, static maxExecutors retained) since perf mode optimizes for runtime. Cost-mode short/ramp-wasteful queries drop the static cap for rate controls as before."
+  },
+  {
+   "changed_lines": 0,
+   "reason": "gate Balanced DRA to cost mode; perf keeps aggressive ramp"
   }
  ],
  "snapshot": {
@@ -212,6 +212,7 @@
      "worker.vcpu": 4
     },
     "performance": {
+     "spark_configs.spark.dynamicAllocation.maxExecutors": "52",
      "spark_configs.spark.dynamicAllocation.minExecutors": "17",
      "spark_configs.spark.emr-serverless.executor.disk": "1000G",
      "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
@@ -609,6 +610,7 @@
      "worker.vcpu": 4
     },
     "performance": {
+     "spark_configs.spark.dynamicAllocation.maxExecutors": "16",
      "spark_configs.spark.dynamicAllocation.minExecutors": "5",
      "spark_configs.spark.sql.shuffle.partitions": "1000",
      "worker.max_executors": 16,
@@ -657,6 +659,7 @@
      "worker.vcpu": 4
     },
     "performance": {
+     "spark_configs.spark.dynamicAllocation.maxExecutors": "118",
      "spark_configs.spark.dynamicAllocation.minExecutors": "39",
      "spark_configs.spark.sql.shuffle.partitions": "1000",
      "worker.max_executors": 118,
@@ -677,6 +680,7 @@
      "worker.vcpu": 4
     },
     "performance": {
+     "spark_configs.spark.dynamicAllocation.maxExecutors": "174",
      "spark_configs.spark.dynamicAllocation.minExecutors": "58",
      "spark_configs.spark.sql.shuffle.partitions": "1000",
      "worker.max_executors": 174,
