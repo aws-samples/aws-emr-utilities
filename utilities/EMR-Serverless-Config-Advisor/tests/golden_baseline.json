@@ -101,6 +101,20 @@
     "ec2_migration/eventlog_v2_00g6bunn7pe8do0b [performance] spark_configs.spark.emr-serverless.executor.disk: golden='2000G' current='1000G'"
    ],
    "reason": "tier-aware disk sizing: A/B-validated 2026-07-25 on replicated production workloads \u2014 16c 2000G->1000G won on both test jobs (-13.3% wall/-18% cost and -8.6%/-13.9%); 8c IOPS floor + FetchFailed IOPS-ladder escalation keep serving-bound fleets on 1000G+"
+  },
+  {
+   "changed_lines": 8,
+   "changes": [
+    "b12/eventlog_v2_00g5r6925j39qg0b [cost] spark_configs.spark.dynamicAllocation.maxExecutors: golden='35' current=None",
+    "b12/eventlog_v2_00g5r6925j39qg0b [performance] spark_configs.spark.dynamicAllocation.maxExecutors: golden='52' current=None",
+    "field_reports/collect_heavy_omp_00g6tp1n6gqmio0b [cost] spark_configs.spark.dynamicAllocation.maxExecutors: golden='11' current=None",
+    "field_reports/collect_heavy_omp_00g6tp1n6gqmio0b [performance] spark_configs.spark.dynamicAllocation.maxExecutors: golden='16' current=None",
+    "serverless_overprovisioned/applications [cost] spark_configs.spark.dynamicAllocation.maxExecutors: golden='79' current=None",
+    "serverless_overprovisioned/applications [performance] spark_configs.spark.dynamicAllocation.maxExecutors: golden='118' current=None",
+    "serverless_overprovisioned/synthetic_neil_454exec [cost] spark_configs.spark.dynamicAllocation.maxExecutors: golden='116' current=None",
+    "serverless_overprovisioned/synthetic_neil_454exec [performance] spark_configs.spark.dynamicAllocation.maxExecutors: golden='174' current=None"
+   ],
+   "reason": "Fine Tuner adopts Balanced DRA rate controls (executorAllocationRatio=0.5, sustainedSchedulerBacklogTimeout=15s) for short/ramp-wasteful, non-shuffle-heavy, non-spill-bound queries, dropping the static maxExecutors ceiling. Affected fixtures (b12 low-shuffle/high-idle, field_reports collect_heavy_omp short job, serverless_overprovisioned q96 short + synthetic high-idle) now emit rate controls instead of a hard cap. Validated: -46% cost on TPC-DS short queries; zero config change on 6 Expedia sustained-shuffle production workloads."
   }
  ],
  "snapshot": {
@@ -187,7 +201,6 @@
    },
    "eventlog_v2_00g5r6925j39qg0b": {
     "cost": {
-     "spark_configs.spark.dynamicAllocation.maxExecutors": "35",
      "spark_configs.spark.dynamicAllocation.minExecutors": "11",
      "spark_configs.spark.emr-serverless.executor.disk": "1000G",
      "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
@@ -199,7 +212,6 @@
      "worker.vcpu": 4
     },
     "performance": {
-     "spark_configs.spark.dynamicAllocation.maxExecutors": "52",
      "spark_configs.spark.dynamicAllocation.minExecutors": "17",
      "spark_configs.spark.emr-serverless.executor.disk": "1000G",
      "spark_configs.spark.emr-serverless.executor.disk.type": "shuffle_optimized",
@@ -588,7 +600,6 @@
   "field_reports": {
    "collect_heavy_omp_00g6tp1n6gqmio0b": {
     "cost": {
-     "spark_configs.spark.dynamicAllocation.maxExecutors": "11",
      "spark_configs.spark.dynamicAllocation.minExecutors": "3",
      "spark_configs.spark.sql.shuffle.partitions": "1000",
      "worker.max_executors": 11,
@@ -598,7 +609,6 @@
      "worker.vcpu": 4
     },
     "performance": {
-     "spark_configs.spark.dynamicAllocation.maxExecutors": "16",
      "spark_configs.spark.dynamicAllocation.minExecutors": "5",
      "spark_configs.spark.sql.shuffle.partitions": "1000",
      "worker.max_executors": 16,
@@ -638,7 +648,6 @@
   "serverless_overprovisioned": {
    "applications": {
     "cost": {
-     "spark_configs.spark.dynamicAllocation.maxExecutors": "79",
      "spark_configs.spark.dynamicAllocation.minExecutors": "26",
      "spark_configs.spark.sql.shuffle.partitions": "1000",
      "worker.max_executors": 79,
@@ -648,7 +657,6 @@
      "worker.vcpu": 4
     },
     "performance": {
-     "spark_configs.spark.dynamicAllocation.maxExecutors": "118",
      "spark_configs.spark.dynamicAllocation.minExecutors": "39",
      "spark_configs.spark.sql.shuffle.partitions": "1000",
      "worker.max_executors": 118,
@@ -660,7 +668,6 @@
    },
    "synthetic_neil_454exec": {
     "cost": {
-     "spark_configs.spark.dynamicAllocation.maxExecutors": "116",
      "spark_configs.spark.dynamicAllocation.minExecutors": "38",
      "spark_configs.spark.sql.shuffle.partitions": "1000",
      "worker.max_executors": 116,
@@ -670,7 +677,6 @@
      "worker.vcpu": 4
     },
     "performance": {
-     "spark_configs.spark.dynamicAllocation.maxExecutors": "174",
      "spark_configs.spark.dynamicAllocation.minExecutors": "58",
      "spark_configs.spark.sql.shuffle.partitions": "1000",
      "worker.max_executors": 174,
