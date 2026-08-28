@@ -237,6 +237,32 @@ A common pattern: use the T-shirt sizer for the initial run, then feed the resul
 
 ---
 
+## From Job Configs to Application Settings
+
+The Fine Tuner sizes individual **jobs**. An EMR Serverless **application** has its own settings that span every job that runs on it — `maximumCapacity` (the cpu/memory/disk ceiling) and the optional pre-initialized "warm pool". `emr_s_app_consolidator.py` rolls up a set of per-job recommendations into recommended application settings.
+
+```bash
+# Point it at a Fine Tuner recommendations file (a list of per-job recs) or a directory of them:
+python3 emr_s_app_consolidator.py --input recommendations_cost.json
+```
+
+Because the application ceiling depends on how many jobs run at once, you choose a concurrency model:
+
+```bash
+# Jobs never overlap — ceiling = the single largest job:
+python3 emr_s_app_consolidator.py --input recs.json --concurrency sequential
+
+# All jobs may run at once — ceiling = sum of every job:
+python3 emr_s_app_consolidator.py --input recs.json --concurrency peak-concurrent
+
+# At most N overlap — ceiling = sum of the N largest jobs:
+python3 emr_s_app_consolidator.py --input recs.json --concurrency 3
+```
+
+It outputs a recommended `maximumCapacity` (with configurable `--headroom`, default 20%), a pre-initialized capacity suggestion based on the dominant worker shape and steady-state baseline, and consistency warnings when jobs span multiple architectures, release labels, or too many worker shapes for a single warm pool. Pair it with `lambda_orchestrator.py` (parallel extraction across a fleet of event logs) to go from a directory of logs straight to application-level settings.
+
+---
+
 ## Design Principles
 
 **Stability over speed.** The T-shirt sizer prioritizes job completion — configs are intentionally generous. The Fine Tuner balances precision with safety, using measured metrics to right-size without over-provisioning.
@@ -300,6 +326,7 @@ A separate performance-optimized run of the full suite achieved −72.7% runtime
 | `pipeline_wrapper.py` | End-to-end: extract, recommend, format |
 | `format_to_job_config.py` | Convert recommendations to `sparkSubmitParameters` |
 | `lambda_orchestrator.py` | Lambda function for parallel extraction at scale |
+| `emr_s_app_consolidator.py` | Roll up per-job recommendations into EMR Serverless application settings (maximumCapacity, pre-initialized capacity) |
 | `write_to_iceberg.py` | Persist recommendations to Iceberg table |
 
 ---
