@@ -1,0 +1,43 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "emr-spark-connect"
+version = "0.1.0"
+description = "Unified SparkConnect client for EMR Serverless, EMR on EKS, and EMR on EC2 with automatic token refresh"
+readme = "README.md"
+license = "MIT-0"
+requires-python = ">=3.9"
+authors = [
+    { name = "Amazon Web Services" },
+]
+keywords = ["emr", "spark", "spark-connect", "aws", "pyspark"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Libraries",
+]
+dependencies = [
+    "boto3>=1.43.72",
+    "grpcio>=1.43.0",
+    "pyspark[connect]>=3.5.6",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "moto>=4.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/aws-samples/aws-emr-utilities/tree/main/utilities/emr-spark-connect-client"
+Documentation = "https://github.com/aws-samples/aws-emr-utilities/tree/main/utilities/emr-spark-connect-client#readme"
+Issues = "https://github.com/aws-samples/aws-emr-utilities/issues"
