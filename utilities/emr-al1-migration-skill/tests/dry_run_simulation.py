@@ -305,9 +305,8 @@ def stage3_upgrade(gathered: Dict) -> Dict:
     if "Pig" in gathered["workload_types"]:
         print("\n  --- Stage 3F: Pig → PySpark Conversion ---")
 
-        # Check PigToSparkConversion MCP
-        # NOTE: PigToSparkConversion MCP does not exist — agent handles conversion directly
-        # using references/pig-to-spark-mapping.md
+        # Pig -> PySpark conversion is handled by the agent directly
+        # using references/pig-to-spark-mapping.md (no external tooling required)
         import os
         pig_mapping_exists = os.path.exists(os.path.join(os.path.dirname(os.path.dirname(__file__)), 
                                                           "references", "pig-to-spark-mapping.md"))
