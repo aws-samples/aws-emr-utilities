@@ -46,6 +46,20 @@ Minimum IAM permissions needed to execute the EMR AL1 Migration Skill.
       ]
     },
     {
+      "Sid": "S3StagingBucketAccess",
+      "Effect": "Allow",
+      "Action": [
+        "s3:CreateBucket",
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:ListBucket"
+      ],
+      "Resource": [
+        "arn:aws:s3:::emr-migration-staging-*",
+        "arn:aws:s3:::emr-migration-staging-*/*"
+      ]
+    },
+    {
       "Sid": "CloudWatchLogsRead",
       "Effect": "Allow",
       "Action": [
@@ -67,17 +81,25 @@ Minimum IAM permissions needed to execute the EMR AL1 Migration Skill.
       "Resource": "*"
     },
     {
-      "Sid": "IAMPassRole",
+      "Sid": "IAMReadRole",
       "Effect": "Allow",
       "Action": [
         "iam:GetRole",
-        "iam:GetInstanceProfile",
-        "iam:PassRole"
+        "iam:GetInstanceProfile"
       ],
       "Resource": [
         "arn:aws:iam::*:role/EMR_DefaultRole",
         "arn:aws:iam::*:role/EMR_EC2_DefaultRole",
         "arn:aws:iam::*:instance-profile/EMR_EC2_DefaultRole"
+      ]
+    },
+    {
+      "Sid": "IAMPassRole",
+      "Effect": "Allow",
+      "Action": "iam:PassRole",
+      "Resource": [
+        "arn:aws:iam::*:role/EMR_DefaultRole",
+        "arn:aws:iam::*:role/EMR_EC2_DefaultRole"
       ],
       "Condition": {
         "StringEquals": {
@@ -91,7 +113,7 @@ Minimum IAM permissions needed to execute the EMR AL1 Migration Skill.
 
 ## Additional: Spark Upgrade Agent Permissions (optional)
 
-Required only when using the Apache Spark Upgrade Agent MCP server for application code upgrades (Stage 3A). These are provisioned by the CloudFormation stack `spark-upgrade-mcp-setup`.
+Required only when using the SageMaker Unified Studio Spark Upgrade Agent MCP server for application code upgrades (Stage 3A). These are provisioned by the CloudFormation stack `spark-upgrade-mcp-setup`.
 
 ```json
 {

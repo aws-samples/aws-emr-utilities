@@ -157,7 +157,7 @@ result = (data
 | `INDEXOF(s, search)` | `F.locate(search, col) - 1` | Adjust for 0-index |
 | `REPLACE(s, old, new)` | `F.regexp_replace(col, old, new)` | |
 | `STRSPLIT(s, regex)` | `F.split(col, regex)` | Returns array |
-| `STRSPLIT(s, regex, limit)` | `F.split(col, regex)` | No limit param — use `F.slice` after |
+| `STRSPLIT(s, regex, limit)` | `F.split(col, regex, limit)` | |
 | `CONCAT(a, b)` | `F.concat(col_a, col_b)` | |
 | `SPRINTF(fmt, args...)` | `F.format_string(fmt, *args)` | |
 | `TOKENIZE(s)` | `F.split(col, '\\s+')` | |
@@ -197,7 +197,7 @@ result = (data
 | `AddDuration(d, 'P1D')` | `F.date_add(col, 1)` |
 | `SubtractDuration(d, 'P1D')` | `F.date_sub(col, 1)` |
 | `ToUnixTime(d)` | `F.unix_timestamp(col)` |
-| `ToMilliSeconds(d)` | `F.unix_timestamp(col) * 1000` |
+| `ToMilliSeconds(d)` | `F.unix_millis(col)` |
 
 ### Collection Functions
 
@@ -291,4 +291,4 @@ Common UDF mappings provided by the `pig_udfs.py` library (imported as `PU`):
 | `s3a://bucket/path` | `s3://bucket/path` |
 | `hdfs:///path` | `s3://bucket/path` (preferred) or `hdfs:///path` (if HDFS used) |
 
-Always replace `s3n://` with `s3://` — the `s3n` scheme is removed in Hadoop 3.
+Always replace `s3n://` with `s3://` — the `s3n` scheme is deprecated and will be removed in a future release.

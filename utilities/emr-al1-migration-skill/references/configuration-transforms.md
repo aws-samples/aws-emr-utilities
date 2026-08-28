@@ -24,7 +24,7 @@ Set `ReleaseLabel` to target EMR 7.x (e.g., `emr-7.1.0`).
 | Tez 0.9.x | Tez 0.10.x | Mostly compatible |
 | Flink 1.x | Flink 1.18.x | Memory model, deployment mode |
 | Pig 0.17.x | Pig 0.17.0 (deprecated) | Still available but unmaintained; recommend conversion to PySpark (Stage 3F) |
-| Oozie 5.1.x | Oozie 5.2.1 (deprecated) | Still available but unmaintained; recommend Step Functions / MWAA |
+| Oozie 5.1.x | **Removed** (not available on EMR 7.x) | Redesign to Step Functions / MWAA |
 
 ---
 
@@ -44,7 +44,8 @@ Set `ReleaseLabel` to target EMR 7.x (e.g., `emr-7.1.0`).
     "spark.sql.legacy.parquet.int96RebaseModeInWrite": "LEGACY",
     "spark.sql.legacy.parquet.datetimeRebaseModeInRead": "LEGACY",
     "spark.sql.legacy.parquet.datetimeRebaseModeInWrite": "LEGACY",
-    "spark.sql.legacy.avro.datetimeRebaseModeInRead": "LEGACY"
+    "spark.sql.legacy.avro.datetimeRebaseModeInRead": "LEGACY",
+    "spark.sql.legacy.sizeOfNull": "true"
   }}
 ]
 ```
@@ -82,7 +83,7 @@ Set `ReleaseLabel` to target EMR 7.x (e.g., `emr-7.1.0`).
   }}
 ]
 ```
-Note: These properties prevent Hive 3 from creating ACID tables by default. Required for Glue Catalog (which doesn't support ACID). For standalone HMS clusters, omit these — EMR 7.x Hive 3 may reject them as unknown properties depending on the exact EMR release.
+Note: These properties are safe ONLY when set via the EMR `hive-site` **classification at cluster launch time** (EMR injects them into `hive-site.xml` before Hive starts). Do NOT use `SET hive.create.as.acid=false` in HQL scripts — Hive 3's `SET` command validates property names at runtime and rejects these as unknown, failing with "configuration does not exist". Required for Glue Catalog clusters (which don't support ACID). For standalone HMS clusters, omit these — they may not be needed if tables are explicitly created as EXTERNAL.
 
 **Add for Spark-Glue integration (if Glue Catalog used):**
 ```json
@@ -100,8 +101,9 @@ Note: These properties prevent Hive 3 from creating ACID tables by default. Requ
 ### 3.3 Hadoop / Core-site
 
 **Remove:**
-- `fs.s3n.impl` and all `fs.s3n.*` properties
-- `fs.s3.impl` if set to `NativeS3FileSystem`
+- `fs.s3n.impl` and all `fs.s3n.*` properties (s3n scheme is deprecated regardless of EMR version)
+- `fs.s3.impl` if set to `NativeS3FileSystem` (this class doesn't exist in EMR 7.x)
+- **Note**: Do NOT remove `fs.s3.impl` if it references EMRFS (`com.amazon.ws.emr.hadoop.fs.EmrFileSystem`) on EMR 7.1–7.5 — EMRFS is still active on those releases. Only remove on EMR 7.10+ where S3A replaces EMRFS.
 
 **Update:**
 - `fs.s3a.endpoint` — verify still valid; EMR 7.x uses regional endpoints by default
@@ -110,8 +112,10 @@ Note: These properties prevent Hive 3 from creating ACID tables by default. Requ
 ### 3.4 YARN Configuration
 
 **Remove deprecated:**
-- `yarn.nodemanager.aux-services.mapreduce.shuffle.class` → rename to `mapreduce_shuffle.class` (underscore)
-- `yarn.resourcemanager.resource-tracker.address` if duplicating hostname
+- `yarn.resourcemanager.resource-tracker.address` if duplicating hostname (auto-derived in Hadoop 3)
+
+**Verify:**
+- `yarn.nodemanager.aux-services` is set to `mapreduce_shuffle` (the canonical name in both Hadoop 2 and 3)
 
 **Verify:**
 - `yarn.nodemanager.linux-container-executor.group` — ensure group exists on AL2023
@@ -199,8 +203,20 @@ curl -s -H "X-aws-ec2-metadata-token: $TOKEN" \
 **Important**: EMR 7.x launches instances with `HttpTokens=required` (IMDSv2 only). Any bootstrap action, application code, or custom script that calls the instance metadata endpoint without an IMDSv2 token will get HTTP 401. Common places this hides:
 - Bootstrap scripts fetching instance type/AZ for conditional logic
 - Custom metrics scripts reading instance ID
-- Application code resolving IAM role credentials via instance profile (AWS SDK v1 < 1.11.x does NOT support IMDSv2 automatically)
+- Application code resolving IAM role credentials via instance profile (AWS SDK for Java v1 < 1.11.678 does NOT support IMDSv2 automatically)
 - Ganglia replacement scripts reading hostname
+
+### 4.7 Package Renames
+
+| AL1 Package | AL2023 Package |
+|---|---|
+| `mysql` | `mariadb` |
+| `mysql-server` | `mariadb-server` |
+| `python-pip` | `python3-pip` |
+| `python-devel` | `python3-devel` |
+| `java-1.8.0-openjdk` | `java-17-amazon-corretto` |
+| `java-1.8.0-openjdk-devel` | `java-17-amazon-corretto-devel` |
+| `libffi-devel` | `libffi-devel` (same) |
 
 ### 4.8 Log4j 1.x → Log4j2
 
@@ -240,9 +256,9 @@ logger.spark.level = warn
 
 ### 4.9 EMRFS Consistency View Removal
 
-EMR 7.x removes EMRFS Consistent View (which used DynamoDB for S3 metadata tracking). This feature was useful with S3 eventual consistency but is **unnecessary since December 2020** when S3 became strongly consistent.
+EMR 7.x removes EMRFS Consistent View (which used DynamoDB for S3 metadata tracking). This feature was useful with S3 eventual consistency but is **unnecessary since December 2020** when S3 became strongly consistent. Safe to remove on all EMR 7.x releases.
 
-**Remove these properties if present:**
+**Remove these Consistent View properties if present (safe on all EMR 7.x):**
 ```json
 {"Classification": "emrfs-site", "Properties": {
   "fs.s3.consistent": "REMOVE — property ignored",
@@ -255,27 +271,20 @@ EMR 7.x removes EMRFS Consistent View (which used DynamoDB for S3 metadata track
 ```
 
 **Also remove:**
-- The `emrfs` CLI tool calls in bootstrap actions (tool no longer exists)
+- The `emrfs` CLI tool calls in bootstrap actions (tool no longer exists on any EMR 7.x)
 - DynamoDB table provisioned for EMRFS metadata (no longer needed — can be decommissioned after migration verified)
 - IAM policy statements granting `dynamodb:*` to the EMR role specifically for EMRFS (review if still needed for workload)
 
-**Impact**: None for data correctness (S3 is strongly consistent). However, bootstrap scripts that call `emrfs sync` or `emrfs delete` will fail with "command not found".
+**Important distinction:**
+- **EMR 7.1–7.5**: Remove only `fs.s3.consistent*` properties. Keep the `emrfs-site` classification and `fs.s3.impl` — EMRFS is still the active S3 filesystem implementation.
+- **EMR 7.10+**: Remove the entire `emrfs-site` classification — EMRFS is replaced by native S3A. See `failures/infrastructure.md` EMRFS_TO_S3A_COMMITTER for S3A committer config.
 
-### 4.7 Package Renames
-
-| AL1 Package | AL2023 Package |
-|---|---|
-| `mysql` | `mariadb` |
-| `mysql-server` | `mariadb-server` |
-| `python-pip` | `python3-pip` |
-| `python-devel` | `python3-devel` |
-| `java-1.8.0-openjdk` | `java-17-amazon-corretto` |
-| `java-1.8.0-openjdk-devel` | `java-17-amazon-corretto-devel` |
-| `libffi-devel` | `libffi-devel` (same) |
+**Impact**: None for data correctness (S3 is strongly consistent). Bootstrap scripts that call `emrfs sync` or `emrfs delete` will fail with "command not found" on any EMR 7.x release.
 
 ---
 
 ## 5. Step Definition Migration
+
 
 ### 5.1 Spark Steps
 - Verify `--class` references compile against Scala 2.12
