@@ -1227,7 +1227,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                         return True
             return False
 
-        def build_spark_cfg(max_exec, min_exec, sp, executor_disk, vcpu_override=None, mem_override=None):
+        def build_spark_cfg(max_exec, min_exec, sp, executor_disk, vcpu_override=None, mem_override=None, cfg_mode="cost"):
             d_cores, d_mem = _driver_sizing(sp, max_exec, s_in_gb + s_out_gb)
             driver_disk = _driver_disk_sizing(total_tasks)
             vcpu = vcpu_override or worker_cfg["vcpu"]
@@ -1330,23 +1330,15 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                     cfg.pop("spark.emr-serverless.executor.disk", None)
                     cfg.pop("spark.emr-serverless.executor.disk.type", None)
 
-            # Balanced DRA rate controls for ramp-wasteful queries (applied last, so it
-            # sees the final maxExecutors after any spill-driven bump).
-            # A static maxExecutors ceiling makes short queries ramp hard to the cap and
-            # bill idle executor-hours before the query finishes. When the event log shows
-            # a short query that is NOT sustained-shuffle and NOT spill-bound, throttle the
-            # ramp with rate controls instead — the Balanced DRA lesson validated in the
-            # T-shirt sizer (−46% cost on short TPC-DS queries; zero change on the Expedia
-            # sustained-shuffle workloads, so no regression).
-            # Guards (keep the hard cap when any hold):
-            #   - sustained shuffle (shuffle/input > 0.5 AND CPU > 80%): cap is correct
-            #   - significant spill (spill_ratio > 0.05): needs the executor floor
+            # Balanced DRA rate controls for ramp-wasteful queries (COST mode only).
+            # Performance-optimized mode intentionally keeps an aggressive ramp (its goal
+            # is minimum wall-clock), so throttling would be counterproductive there.
             _dur_min = duration * 60 if duration else 0
             _sh_ratio = (s_out_gb / i_in_gb) if i_in_gb > 0 else 0
             _sustained_shuffle = _sh_ratio > 0.5 and cpu_pct > 80
             _spill_bound = (spill_gb / max(s_in_gb + s_out_gb, 1)) > 0.05
             _ramp_wasteful = ((0 < _dur_min <= 10) or (idle_pct > 60)) and not _sustained_shuffle and not _spill_bound
-            if _ramp_wasteful:
+            if cfg_mode == "cost" and _ramp_wasteful:
                 cfg["spark.dynamicAllocation.executorAllocationRatio"] = "0.5"
                 cfg["spark.dynamicAllocation.sustainedSchedulerBacklogTimeout"] = "15s"
                 # Rate controls replace the hard ceiling (the validated Balanced DRA shape).
@@ -1400,7 +1392,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                 "total_vcpu_capacity": max_exec_perf * worker_cfg["vcpu"],
                 "total_memory_capacity": max_exec_perf * worker_cfg["memory"],
             },
-            "spark_configs": build_spark_cfg(max_exec_perf, min_exec_perf, sp_perf, executor_disk_perf),
+            "spark_configs": build_spark_cfg(max_exec_perf, min_exec_perf, sp_perf, executor_disk_perf, cfg_mode="performance"),
             "shuffle_tuned": {
                 "partitions": sp_perf,
                 "target_partition_size_mib": target_mib_perf,
@@ -1588,7 +1580,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                     }
                     perf_recs[-1]["spark_configs"] = build_spark_cfg(
                         bexec, bmin, sp_perf, executor_disk_perf,
-                        vcpu_override=br["vcpu"], mem_override=bmem)
+                        vcpu_override=br["vcpu"], mem_override=bmem, cfg_mode="performance")
                 else:
                     # Fallback: inflate original workers to match disk count
                     max_exec_perf = io_max
@@ -1597,7 +1589,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                     perf_recs[-1]["worker"]["min_executors"] = min_exec_perf
                     perf_recs[-1]["worker"]["total_vcpu_capacity"] = max_exec_perf * worker_cfg["vcpu"]
                     perf_recs[-1]["worker"]["total_memory_capacity"] = max_exec_perf * worker_cfg["memory"]
-                    perf_recs[-1]["spark_configs"] = build_spark_cfg(max_exec_perf, min_exec_perf, sp_perf, executor_disk_perf)
+                    perf_recs[-1]["spark_configs"] = build_spark_cfg(max_exec_perf, min_exec_perf, sp_perf, executor_disk_perf, cfg_mode="performance")
         # No IO rec for non-IO-bound jobs or already-Small workers
     
     # Process applications with no input data - recommend minimal config

@@ -124,7 +124,7 @@ python3 python_extractor.py --input s3://your-bucket/event-logs/app_id/ --output
 python3 emr_s_fine_tuner.py --input-path /tmp/extracted/
 ```
 
-The Fine Tuner analyzes actual task metrics, shuffle volumes, spill, and memory utilization to produce configs that are typically 25–35% cheaper than the T-shirt sizer's configuration on the same workload — and substantially cheaper than untuned platform defaults (−61% on our full TPC-DS 3 TB evaluation) — while maintaining the same or better performance.
+The Fine Tuner analyzes actual task metrics, shuffle volumes, spill, and memory utilization to produce configs that are typically 25–35% cheaper than the T-shirt sizer's configuration on the same workload — and substantially cheaper than untuned platform defaults (−75% on our full TPC-DS 3 TB evaluation) — while maintaining the same or better performance.
 
 ### Choosing Your Size
 
@@ -298,20 +298,19 @@ Worker type (cores/memory) is fixed by size + sub-category. `partitions` and `di
 
 ## Benchmark Results
 
-Evaluated on the full TPC-DS suite at 3 TB scale, 95 queries, three iterations per configuration, EMR Serverless release emr-7.13.0. Each query ran as its own job; cost is computed from `billedResourceUtilization` at list rates.
+Evaluated on the full TPC-DS suite at 3 TB scale, 95 queries, three iterations per configuration, EMR Serverless release emr-7.13.0, on a clean application with no pre-initialized capacity. Each query ran as its own job; cost is computed from `billedResourceUtilization` at list rates. Comparisons are against **true platform defaults** (unbounded dynamic allocation, default worker/disk).
 
-The workflow delivers escalating savings as you give the tools more information:
+The workflow delivers large cost savings at neutral runtime:
 
 | Configuration | Input needed | Runtime | Cost | Cost vs defaults | Regressions |
 |--------------|-------------|---------|------|-----------------:|:-----------:|
-| Platform defaults | Nothing | 775 min | $38.65 | — | — |
-| T-shirt General (`--size L`) | Data size | 393 min | $22.58 | −42% | 9/95 |
-| T-shirt Optimized (`--shuffle-write-gb`) | + Shuffle volume | 356 min | $20.18 | −48% | 9/95 |
-| Fine Tuner (cost-optimized) | One event log | 318 min | $14.89 | −61% | 0/95 |
+| Platform defaults | Nothing | 228 min | $41.97 | — | — |
+| T-shirt General (`--size L`, Balanced DRA) | Data size | 236 min | $14.61 | −65% | 2/95 |
+| Fine Tuner (cost-optimized) | One event log | 238 min | $10.36 | −75% | 0/95 |
 
-The Fine Tuner produced zero cost regressions across all 95 queries. Cost variance (run-to-run predictability) also improves at each step: median coefficient of variation falls from 27% (defaults) → 21% (General) → 7% (Optimized) → 6% (Fine Tuner).
+The Fine Tuner produced zero cost regressions across all 95 queries. Runtime stays flat — the savings come from eliminating over-provisioned, idle executor time, not from running slower. Cost variance (run-to-run predictability) also improves sharply: the median coefficient of variation across queries falls from 36% (true defaults) to 9% with the Balanced DRA T-shirt configuration — roughly 4× more predictable billing.
 
-A separate performance-optimized run of the full suite achieved −72.7% runtime / −18.3% cost with zero regressions — the right profile for latency-sensitive jobs.
+A separate performance-optimized run of the full suite, generated from the same event logs, ran **9% faster than platform defaults while still cutting cost 62%** — the right profile for latency-sensitive jobs. Cost-optimized minimizes spend at neutral runtime; performance-optimized minimizes wall-clock time.
 
 ---
 
