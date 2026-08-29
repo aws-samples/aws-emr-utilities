@@ -136,6 +136,12 @@ EMRSparkSession.create(
     spark_conf=None,            # Dict of Spark config overrides
     endpoint_url=None,          # Custom AWS endpoint
     boto3_session=None,         # Pre-configured boto3.Session
+    **kwargs: #Additional backend-specific arguments. For EMR on EKS:
+        - managed_endpoint_id: # reuse an existing SPARK_CONNECT managed endpoint instead of creating one.
+        - release_label: # EMR release for the endpoint(default 'emr-7.14.0-latest').
+        - token_duration_seconds: # session token TTL (default 12h, the max).
+        - application_configuration: # full `applicationConfiguration` list, for classifications and nested configs `spark_conf` can't express.
+        - monitoring_configuration: # monitoringConfiguratio
 )
 ```
 
