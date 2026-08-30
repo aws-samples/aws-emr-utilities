@@ -37,6 +37,11 @@ def _parse_size_to_mb(val):
     b = _parse_size_to_bytes(val)
     return b // (1024 * 1024) if b else 0
 
+def _parse_size_to_gb(val):
+    """Parse size string to gigabytes (float)."""
+    b = _parse_size_to_bytes(val)
+    return b / (1024 ** 3) if b else 0.0
+
 # Setup logging
 logging.basicConfig(
     format="%(asctime)s %(levelname)-5s [%(name)s]  %(message)s",
@@ -267,11 +272,37 @@ def _compute_exec_limits(input_gb: float, vcpu: int, partitions: int = 0,
         else:
             cores = base_cores
     else:
-        # --- Serverless source: use actual configuration directly ---
-        # The source already ran on Serverless — match its configured capacity.
-        # orig_vcpu = what was set as maxExecutors × cores (the proven config).
-        # Add 10% headroom for variability between runs.
-        cores = max(work * 1.1, orig_vcpu * 1.1) if orig_vcpu > 0 else work * 1.1
+        # --- Serverless source ---
+        # Healthy source: match its proven capacity (+10% headroom).
+        # orig_vcpu here is the OBSERVED DRA peak (extractor total_executors ×
+        # cores), not the configured cap — so an over-provisioned source must
+        # not be used as the anchor.
+        # Rule 3: Cap for over-provisioned Serverless sources (uncapped-DRA
+        # pattern). When the source ran mostly idle (low task efficiency AND
+        # high idle share) at meaningful scale, size from measured work like
+        # EC2 Rule 2 instead of reproducing the waste. Field-validated:
+        # 454-exec/80%-idle source (eff 0.20) — old anchor recommended 499
+        # execs/$29; work-based sizing gives ~116, matching the manually
+        # right-sized 90-exec run that held runtime parity at $7.29.
+        if orig_vcpu >= 200 and eff < 0.40 and idle_pct > 40:
+            mult = max(1.1, 1.8 - eff * 3)          # same curve as Rule 2
+            cores = min(work * mult + 30, orig_vcpu * 1.1)
+        else:
+            cores = max(work * 1.1, orig_vcpu * 1.1) if orig_vcpu > 0 else work * 1.1
+            # No idle-trim on healthy sources (the former Rule 4). The
+            # 2026-07-25 replicated-workload A/B (max 17 vs 15, same config
+            # otherwise) tested exactly the trim mechanism: wall-clock
+            # flat, billed vCPU-h ROSE 87.6 -> 93.6 (+6.8% cost). Under
+            # DRA + per-second billing a lower cap doesn't release the
+            # measured idle — idle_core_percentage is WITHIN-executor core
+            # gaps (skew/contention), so the narrower fleet just holds the
+            # same executors alive longer. The rule's founding evidence
+            # (a 600 -> 432 vCPU win on the same workload) was confounded with an
+            # 8c -> 16c worker shape change. Rule 3 above owns genuine
+            # over-provisioning (eff < 0.40); re-add a trim only when the
+            # extractor exposes fleet-level TASKLESS-executor time
+            # (executor_timeline today records only add/remove events,
+            # not per-executor busy spans).
 
     max_exec = max(4, int(cores / vcpu))  # EMR Serverless minimum is 4
 
@@ -315,39 +346,145 @@ def _compute_exec_limits(input_gb: float, vcpu: int, partitions: int = 0,
     return max_exec, min_exec
 
 
+# shuffle_optimized disk throughput (GB/s) by worker vCPU x disk size —
+# the EMR Serverless service-side tier table (verified empirically via
+# per-tier disk benchmark runs on each worker shape).
+# Entries: (min_disk_gib, throughput_gbps), largest tier first. KEY FACT:
+# on <=8 vCPU workers every size >=170G serves the SAME 250 MiB/s — a
+# bigger disk on a small worker buys capacity only, never bandwidth.
+_DISK_THROUGHPUT_TIERS = {
+    8:  [(170, 0.250), (0, 0.125)],
+    16: [(1000, 0.500), (170, 0.250), (0, 0.125)],
+    32: [(2000, 1.000), (1500, 0.750), (1000, 0.500), (170, 0.250), (0, 0.125)],
+}
+
+
+def _disk_tiers_for_vcpu(worker_vcpu: int) -> list:
+    if worker_vcpu <= 8:
+        return _DISK_THROUGHPUT_TIERS[8]
+    if worker_vcpu <= 16:
+        return _DISK_THROUGHPUT_TIERS[16]
+    return _DISK_THROUGHPUT_TIERS[32]
+
+
 def _calculate_executor_disk(shuffle_write_gb: float, disk_spill_gb: float,
-                             memory_spill_gb: float, max_executors: int) -> str:
-    """Attach shuffle_optimized disk for shuffle-intensive jobs.
-    Shuffle-optimized disks provide higher IOPS and faster disk access,
-    benefiting jobs with significant shuffle operations or disk spill.
-    For non-shuffle workloads, default disk avoids unnecessary cost.
-    
-    Disk tier selection also considers IOPS/throughput needs:
-      - 200G + 16c: 250 MiB/s, 3,000 IOPS (small shuffle)
-      - 1000G + 16c: 500 MiB/s, 6,000 IOPS (medium shuffle)
-      - 2000G + 16c: 500 MiB/s, 16,000 IOPS (large shuffle, IOPS-bound)
-    
-    For massive shuffle (>10 TB), the IOPS tier matters more than capacity.
+                             max_executors: int, worker_vcpu: int = 4,
+                             stages: list = None,
+                             fetch_wait_pct: float = 0.0,
+                             mode: str = "cost") -> str:
+    """Attach shuffle_optimized disk sized from per-executor need and
+    measured serving demand — never from fleet-total volume.
+
+    Field validation (replicated customer ETL, 2026-07: 2.26TB fleet
+    shuffle, 9.7x spill):
+    this function's old fleet-total rule (>2000G shuffle -> 2000G disk)
+    billed $8/run for disks whose throughput tier was IDENTICAL to 200G —
+    per the control-plane table above, 8c workers cap at 250 MiB/s at any
+    size. The same job then ran healthier on 500G (fetch-wait 3.1%) and,
+    on 16c workers where 1000G is a real tier, fastest at 1000G. Replica
+    matrix confirmed the tier boundary directly: 16c@500G ran 1.5x the
+    task-hours of 16c@1000G on the same data.
+
+    Three independent constraints, each tiered by THIS worker's table:
+
+    1. CAPACITY — this executor's share of shuffle write + disk spill,
+       x1.5 for uneven distribution. (Memory-spill bytes are the same data
+       as disk-spill bytes pre-compression — counting both double-counts.)
+    2. SERVING — peak sustained per-host disk IO must fit the tier's
+       throughput with x1.5 headroom. Sizes from workload arithmetic, not
+       from what disk the source ran with (evidence-conditioned-on-
+       treatment guard). If NO tier on this worker shape can sustain the
+       demand (8c fleet needing >250 MiB/s), disk cannot fix it — take the
+       biggest useful tier and leave worker-shape escalation to the sizing
+       matrix, which is the actual cure.
+       IOPS floor: throughput tiers are flat across sizes on 8c, but IOPS
+       still scale with size (~3K@200G -> ~16K@2000G), and high-fan-in
+       shuffle serving is IOPS-bound. A/B 2026-07-25 (replicated customer job, 92x8c, 1.7TB
+       peak-stage shuffle): 200G ran +17.5% wall vs 2000G with shuffle
+       write inflated 3365->3979 GB; a prior disk sweep on the same job
+       was monotonic — 500G=730s/$8.42, 1000G=531s/$6.79, 2000G=404s/$4.85
+       (biggest disk fastest AND cheapest). So when serving demand exceeds
+       the base tier on a flat-throughput shape, floor at 1000G, and at
+       2000G once demand crosses half the shape's ceiling. Shapes with
+       real throughput tiers (16c/32c) already land on large disks via
+       the throughput math — their demand-sized picks won their A/Bs.
+    3. EVIDENCE — observed serving harm (FetchFailed retries, or
+       fetch-wait > 10%) escalates one tier boundary when a higher tier
+       EXISTS for this shape. PR #191 harm-gate pattern: volume alone is
+       not evidence.
+    4. PERF MODE floors at the shape's MAX-throughput tier. Demand math
+       sizes serving (shuffle read fan-out over hosts) but spill I/O
+       scales with the CORES doing the work, not the host count — a big
+       perf fleet passes the serving check while every worker still
+       writes/merges its spill through the base tier. Replica matrix:
+       the healthy/degraded boundary tracked per-vCPU disk bandwidth
+       (~31 MiB/s/vCPU healthy, ~15.6 degraded at 1.4-1.5x task-hours),
+       and each shape reaches ~31 exactly at its top tier — 8c@170G+,
+       16c@1000G, 32c@2000G. Perf mode pays for wall-clock; shipping it
+       on a half-bandwidth disk defeats the mode. Cost mode keeps
+       demand-based sizing (spill-tolerant by definition).
     """
-    total_shuffle_and_spill = shuffle_write_gb + disk_spill_gb + memory_spill_gb
-    if total_shuffle_and_spill < 20:
+    landed = shuffle_write_gb + disk_spill_gb
+    if landed < 20:
         return ""  # Minimal shuffle — default disk sufficient
-    
-    # IOPS-tier selection: for large shuffle, bump to 2000G for 16K IOPS
-    # regardless of per-executor capacity needs.
-    # Rationale: shuffle blocks are typically 16-200 KB; serving them is
-    # IOPS-bound, not throughput-bound. 2000G gives 16K IOPS vs 3K at 200G.
-    if shuffle_write_gb > 10000:
-        return "2000G"  # Massive shuffle: need 16K IOPS tier
-    if shuffle_write_gb > 2000:
-        return "2000G"  # Large shuffle: 16K IOPS helps significantly
-    if shuffle_write_gb > 500:
-        return "1000G"  # Medium shuffle: 6K IOPS tier
-    
-    # Small-to-moderate shuffle: size by capacity
-    per_exec = total_shuffle_and_spill / max(max_executors, 1)
-    disk_gb = max(200, min(2000, int(per_exec * 1.5 / 20) * 20 + 20))
-    return f"{disk_gb}G"
+    hosts = max(max_executors, 1)
+    tiers = _disk_tiers_for_vcpu(worker_vcpu)
+
+    # 1) capacity
+    per_exec = landed / hosts
+    capacity_gb = max(200, min(2000, int(per_exec * 1.5 / 20) * 20 + 20))
+
+    # 2) serving demand: peak sustained per-host disk IO across real stages
+    demand = 0.0
+    for s in (stages or []):
+        dur = s.get("duration_sec") or 0
+        if dur <= 30:
+            continue  # too short for reliable rate; can't be rate-limiting
+        io_gb = ((s.get("shuffle_read_gb") or 0)
+                 + (s.get("shuffle_write_gb") or 0)
+                 + (s.get("disk_spill_gb") or 0))
+        demand = max(demand, io_gb / dur / hosts)
+    # smallest tier on THIS worker shape that sustains demand x1.5;
+    # if none does, the largest tier is the best disk can do here
+    tier_floor = 200
+    needed = demand * 1.5
+    if needed > tiers[-1][1]:  # above the base 125 MiB/s tier
+        sustaining = [min_gib for min_gib, gbps in tiers if gbps >= needed]
+        tier_floor = max(200, min(sustaining) if sustaining else tiers[0][0])
+        # IOPS floor (see docstring): on shapes whose throughput ceiling is
+        # flat across sizes, the throughput table alone says "bigger buys
+        # nothing" — but serving-bound stages are IOPS-bound and IOPS scale
+        # with size. Floor at 1000G; 2000G once demand crosses half the
+        # shape's ceiling.
+        shape_ceiling = tiers[0][1]
+        flat_throughput = len({gbps for _, gbps in tiers if gbps > tiers[-1][1]}) <= 1
+        if flat_throughput:
+            tier_floor = max(tier_floor,
+                             2000 if needed >= shape_ceiling * 0.5 else 1000)
+
+    # 3) evidence escalation: one tier boundary up, where one exists.
+    # On flat-throughput shapes the throughput table has no boundary above
+    # 200G, which left FetchFailed fleets on the 3K-IOPS disk — escalate
+    # up the IOPS ladder (200 -> 1000 -> 2000) instead. Evidence of harm
+    # trumps demand arithmetic (PR #191 pattern), so this applies even
+    # when the serving check above did not fire.
+    fetch_fail = any("FetchFailed" in (s.get("failure_reason") or "")
+                     for s in (stages or []))
+    if fetch_fail or fetch_wait_pct > 10:
+        flat = len({gbps for _, gbps in tiers if gbps > tiers[-1][1]}) <= 1
+        if flat:
+            tier_floor = 2000 if tier_floor >= 1000 else 1000
+        else:
+            boundaries = sorted(min_gib for min_gib, _ in tiers if min_gib > 0)
+            higher = [b for b in boundaries if b > tier_floor]
+            if higher:
+                tier_floor = higher[0]
+
+    # 4) perf mode: floor at this shape's max-throughput tier (see above)
+    if mode == "performance":
+        tier_floor = max(tier_floor, tiers[0][0], 200)
+
+    return f"{max(capacity_gb, tier_floor)}G"
 
 
 def _max_partition_bytes(input_gb: float, advisory_bytes: int = 0) -> str:
@@ -494,6 +631,30 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         io_data = data.get('io', data.get('io_summary', {}).get('application_level', {}))
         util_data = data.get('utilization', data.get('executor_summary', {}))
         spill_data = data.get('spill_summary', {})
+
+        # Extracts prior to the attempt-dedupe fix emit one stage row per
+        # retry attempt, each carrying the full cross-attempt aggregate —
+        # summing them multiplies spill/shuffle by the retry count. Keep one
+        # row per stage_id and record the duplicate count as attempts so
+        # per-attempt math (spill-aware partition sizing) stays correct on
+        # both old and new extracts.
+        _stages_in = data.get('stage_summary', {}).get('stages', [])
+        _stages_dedup = {}
+        for _s in _stages_in:
+            if not isinstance(_s, dict):
+                continue
+            _sid = _s.get('stage_id')
+            if _sid in _stages_dedup:
+                _prev = _stages_dedup[_sid]
+                _prev['attempts'] = max(_prev.get('attempts', 1), 1) + 1
+                if _s.get('failure_reason') and not _prev.get('failure_reason'):
+                    _prev['failure_reason'] = _s['failure_reason']
+            else:
+                _stages_dedup[_sid] = dict(_s)
+                _stages_dedup[_sid].setdefault('attempts', 1)
+        _stages_deduped = list(_stages_dedup.values())
+        if 'stage_summary' in data:
+            data = dict(data, stage_summary=dict(data['stage_summary'], stages=_stages_deduped))
         
         flat = {
             'application_id': data.get('application_id', app_info.get('app_id')),
@@ -519,6 +680,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             'total_task_execution_hours': util_data.get('total_task_execution_hours', 0),
             'max_stage_shuffle_write_gb': data.get('shuffle_data_summary', {}).get('max_stage_shuffle_write_gb', 0),
             'shuffle_fetch_wait_percent': io_data.get('shuffle_fetch_wait_percent', 0),
+            'driver_result_gb': float(data.get('driver_metrics', {}).get('total_result_bytes_received_gb', 0) or 0),
             '_stages_raw': data.get('stage_summary', {}).get('stages', []),
             '_sql_executions_raw': data.get('sql_executions', []),
             '_executor_summary_raw': data.get('executor_summary', {}),
@@ -740,11 +902,38 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
 
             # Partition sizing: target zero spill (partition fits in per-task memory)
             # Use 70% of per-task memory for build side hash table headroom
+            # Size from the full sort footprint: what spilled PLUS what fit in
+            # memory (spill alone undercounts; shuffle bytes alone ignore the
+            # decompression/sort expansion that causes the spill — a window
+            # sort reading 94G/attempt spilled 8.5T at 1000 partitions, and
+            # shuffle-based sizing said 1000 was fine).
+            # parts = p0 + spill_per_attempt/(per_task_mem*0.7) — i.e. current
+            # partitions handle the in-memory share, spill needs extra ones.
+            # Field-validated: 8.5T-spill window stage on 8c/54G → 4016 ≈ the
+            # proven 4000-partition fix (30min, no fetch-fail retries).
             _serverless_spill_override = False
+            _spill_extra_parts = 0
+            # Spill boost requires evidence of HARM, not just volume: only
+            # stages that spilled AND failed (fetch-fail/executor-death
+            # retry loops) get their sort footprint sized into partitions.
+            # Steady-state spill on succeeding stages is the workload's
+            # proven operating point (steady-spill class: 6-14x data
+            # moved and wins on big workers) — boosting those inflated proven
+            # 1000-partition configs to 8-11k.
+            # Memory spill is the uncompressed sort footprint; disk spill is
+            # the same bytes after compression — use mem, fall back to disk
+            # only when mem wasn't reported.
+            _spill_per_attempt = max(
+                (((s.get("mem_spill_gb") or s.get("memory_spill_gb") or 0)
+                  or (s.get("disk_spill_gb", 0) or 0))
+                 / max(s.get("attempts", 1) or 1, 1)
+                 for s in stages_raw if s.get("failure_reason")),
+                default=0)
             if spill_gb > _peak_shuf and _peak_shuf > 100:
-                _target_partitions = int(math.ceil(_peak_shuf / (_per_task_mem_gb * 0.7)))
-                if _target_partitions > sp_cost:
-                    sp_cost = _target_partitions
+                _spill_extra_parts = int(math.ceil(
+                    _spill_per_attempt / (_per_task_mem_gb * 0.7)))
+                if _spill_extra_parts > 0:
+                    sp_cost = sp_cost + _spill_extra_parts
                     _serverless_spill_override = True
 
             # Executor floor: disk throughput must deliver peak stage IO in 15 min
@@ -815,31 +1004,65 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         # its share of total shuffle write under full fan-in). A spill-discounted
         # compute answer can be correct on cores yet collapse on serving.
         #
-        # The binding constraint is the per-host SERVING RATE:
-        #     shuffle_write_gb / hosts / target_duration_sec
-        # not raw GB/host (a longer job serves the same bytes more slowly) and
-        # not connection count alone (connections × per-connection volume is
-        # what saturates Netty/TCP — the rate captures the product). This is
-        # network/fan-in bound, NOT disk bound: thresholds sit ~6x below the
-        # 0.244 GB/s shuffle_optimized GP3 per-executor throughput.
+        # The floor has TWO terms, because serving fails two different ways:
         #
-        # Calibration (validated production workload, ~14-17TB shuffle write):
-        #   0.057 GB/s/host demanded (82 hosts, 62min compute budget)
-        #          → fetch timeouts → unregisterOutputOnHost storms →
-        #            congestion collapse (301 min, 75% fetch-wait)
-        #   0.033 GB/s/host (300 hosts, 25min) → healthy (45% fetch-wait)
-        #   0.021 GB/s/host (118 EC2 hosts, 95min) → completed (48% fetch-wait)
-        # Safe ceiling: 0.04 GB/s/host — above the healthiest observed run,
-        # well below the observed collapse point.
+        # DISK term — fleet disk bandwidth must sustain the peak-stage IO
+        # rate. Per-host capacity is the worker shape's best shuffle_optimized
+        # tier (see _DISK_THROUGHPUT_TIERS; 8c caps at
+        # 0.25 GB/s at ANY disk size, 16c reaches 0.5 at 1000G, 32c 1.0 at
+        # 2000G). Tier-aware calibration (replica benchmark matrix, 7 cells):
+        # every config at ~31 MiB/s/vCPU fleet disk bandwidth ran healthy,
+        # every config below ran degraded-to-collapsed, ordering exactly by
+        # this metric. The previous flat 0.04 GB/s/host constant conflated
+        # this term with fan-in and over-floored healthy fleets (production
+        # 16c@1000G ran clean at 0.10 GB/s/host, 2.5x that constant).
+        #
+        # NETWORK fan-in term — connections x per-connection volume
+        # saturating Netty/TCP, independent of disk. Calibration (~14-17TB
+        # shuffle write, many sub-100KB blocks): 0.057 GB/s/host → congestion
+        # collapse (301min, 75% fetch-wait); 0.033 → healthy. Ceiling 0.04.
+        # Applied ONLY on evidence of fan-in distress (source fetch-wait >10%
+        # or FetchFailed retries) — the PR #191 harm-gate pattern. Without
+        # the gate this term masquerades as a disk limit and inflates floors
+        # on jobs whose own runs prove serving is fine (a healthy replica at 8.4%
+        # fetch-wait was floored 27→31 for nothing).
         SAFE_SERVING_GBPS = 0.04
         _serve_target_cost_h = duration
         _serve_target_perf_h = (max(duration * 0.25, min(duration, 20.0 / 60.0))
                                 if is_ec2 else duration)
 
+        # Peak-stage serving demand (GB/s): the rate the fleet must sustain.
+        # Only stages that are a meaningful share of the job bind the floor —
+        # a short burst (e.g. 1TB in 49s inside a 38min job) doubling in
+        # length is invisible at job level, but sizing the fleet to preserve
+        # its rate inflated one migration fixture's fleet by 80%. Stages
+        # shorter than 5% of the job (or 120s) size nothing; if they slow
+        # down on the new fleet, the job-level cost is by construction <5%.
+        _min_binding_sec = max(120.0, (duration or 0) * 3600 * 0.05)
+        _peak_io_gbps = 0.0
+        for _s in (stages_raw or []):
+            _dur = _s.get("duration_sec") or 0
+            if _dur < _min_binding_sec:
+                continue
+            _io = ((_s.get("shuffle_read_gb") or 0)
+                   + (_s.get("shuffle_write_gb") or 0)
+                   + (_s.get("disk_spill_gb") or 0))
+            _peak_io_gbps = max(_peak_io_gbps, _io / _dur)
+
+        _fanin_evidence = (shuffle_fetch_wait_pct > 10
+                           or any("FetchFailed" in (s.get("failure_reason") or "")
+                                  for s in (stages_raw or [])))
+
         def _serving_floor(target_h):
             if s_out_gb <= 1000 or target_h <= 0:
                 return 0
-            return int(math.ceil(s_out_gb / (SAFE_SERVING_GBPS * target_h * 3600)))
+            avg_gbps = s_out_gb / (target_h * 3600)
+            demand = max(_peak_io_gbps, avg_gbps)
+            best_tier_gbps = _disk_tiers_for_vcpu(worker_cfg["vcpu"])[0][1]
+            disk_hosts = int(math.ceil(demand * 1.5 / best_tier_gbps))
+            net_hosts = (int(math.ceil(avg_gbps / SAFE_SERVING_GBPS))
+                         if _fanin_evidence else 0)
+            return max(disk_hosts, net_hosts)
 
         _floor_cost = _serving_floor(_serve_target_cost_h)
         if _floor_cost > max_exec_cost:
@@ -856,9 +1079,11 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
 
         # Account for EC2 spill conservatively: Serverless has more memory per core
         # and AQE reduces spill, but not to zero. Use 10% of observed spill as safety floor.
-        _eff_disk_spill = disk_spill_gb * 0.1
-        _eff_mem_spill = spill_gb * 0.1
-        executor_disk_cost = _calculate_executor_disk(s_out_gb, _eff_disk_spill, _eff_mem_spill, max_exec_cost)
+        _eff_disk_spill = disk_spill_gb * (0.1 if is_ec2 else 1.0)
+        executor_disk_cost = _calculate_executor_disk(
+            s_out_gb, _eff_disk_spill, max_exec_cost,
+            worker_vcpu=worker_cfg["vcpu"],
+            stages=stages_raw, fetch_wait_pct=shuffle_fetch_wait_pct)
         # Performance-optimized
         max_exec_perf_init, min_exec_perf = _compute_exec_limits(
             i_in_gb, worker_cfg["vcpu"], 0, mem_pct, cpu_pct, idle_pct, spill_gb, mode="performance",
@@ -874,6 +1099,10 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         sp_perf = cap_partitions(sp_perf, max_exec_perf)
         # EMR Serverless: never reduce partitions below 1000 (target is always Serverless)
         sp_perf = max(1000, sp_perf)
+        # Spill-aware partition sizing applies to perf mode too — the sort
+        # footprint is a property of the data, not the optimization goal.
+        if not is_ec2 and stages_raw and _serverless_spill_override:
+            sp_perf = sp_perf + _spill_extra_parts
         # Stage-level efficiency for perf mode: no stage > 30min
         if is_ec2 and stages_raw:
             max_stage_p = max(stages_raw, key=lambda s: s.get('total_task_time_sec', 0) or 0)
@@ -900,7 +1129,11 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                 if _new_max_p != max_exec_perf:
                     max_exec_perf = _new_max_p
                     min_exec_perf = max(1, min(max_exec_perf - 2, max(5, max_exec_perf // 3)))
-        executor_disk_perf = _calculate_executor_disk(s_out_gb, _eff_disk_spill, _eff_mem_spill, max_exec_perf)
+        executor_disk_perf = _calculate_executor_disk(
+            s_out_gb, _eff_disk_spill, max_exec_perf,
+            worker_vcpu=worker_cfg["vcpu"],
+            stages=stages_raw, fetch_wait_pct=shuffle_fetch_wait_pct,
+            mode="performance")
         
         # Build base metrics
         base_metrics = {
@@ -918,16 +1151,30 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         }
         
         # Build Spark configs
+        driver_result_gb = float(row.get('driver_result_gb', 0) or 0)
+
         def _driver_sizing(partitions, max_exec, shuffle_gb):
-            """Scale driver based on coordination overhead."""
-            if partitions > 10000 or max_exec > 500 or shuffle_gb > 10000:
-                return 16, 108
-            elif partitions > 2000 or max_exec > 100 or shuffle_gb > 2000:
-                return 8, 54
-            elif partitions > 500 or max_exec > 50 or shuffle_gb > 500:
-                return 4, 27
+            """Scale driver based on coordination overhead and collect volume."""
+            # Collect-heavy jobs OOM the driver regardless of cluster-side
+            # coordination signals: results accumulate in the driver heap
+            # (replicated: 15 parallel toPandas/collect killed a 14G driver;
+            # 54G peaked at 34.9G on the same job). Size the driver so
+            # aggregate collected results fit within ~25% of heap. The
+            # source's proven driver is the floor — never recommend below a
+            # driver tier that already worked.
+            if partitions > 10000 or max_exec > 500 or shuffle_gb > 10000 or driver_result_gb > 13:
+                cores, mem = 16, 108
+            elif partitions > 2000 or max_exec > 100 or shuffle_gb > 2000 or driver_result_gb > 2:
+                cores, mem = 8, 54
+            elif partitions > 500 or max_exec > 50 or shuffle_gb > 500 or driver_result_gb > 0.5:
+                cores, mem = 4, 27
             else:
-                return 4, 14
+                cores, mem = 4, 14
+            _src_dmem = _parse_size_to_gb(_spark_config_raw.get('spark.driver.memory', '0'))
+            if _src_dmem > mem and not is_ec2:
+                _src_dcores = int(_spark_config_raw.get('spark.driver.cores', 0) or 0)
+                cores, mem = max(cores, _src_dcores), int(_src_dmem)
+            return cores, mem
 
         def _driver_disk_sizing(total_tasks):
             """Scale driver disk based on total task count to prevent event log disk pressure."""
@@ -980,7 +1227,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                         return True
             return False
 
-        def build_spark_cfg(max_exec, min_exec, sp, executor_disk, vcpu_override=None, mem_override=None):
+        def build_spark_cfg(max_exec, min_exec, sp, executor_disk, vcpu_override=None, mem_override=None, cfg_mode="cost"):
             d_cores, d_mem = _driver_sizing(sp, max_exec, s_in_gb + s_out_gb)
             driver_disk = _driver_disk_sizing(total_tasks)
             vcpu = vcpu_override or worker_cfg["vcpu"]
@@ -1025,7 +1272,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             spill_ratio = spill_gb / shuffle_total_gb
             
             # Advisory: don't set — let EMR defaults handle (64MB + AQE coalesces as needed)
-            # Setting advisory explicitly risks spill (1GB advisory caused 158TB spill on sup-trvlr-bml)
+            # Setting advisory explicitly risks spill (1GB advisory caused 158TB spill on one replicated workload)
             # EMR's default AQE coalescing is safe and effective for all workload sizes
             
             # Partitions: if spill is significant relative to shuffle, compute from zero-spill formula.
@@ -1038,14 +1285,21 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
             # executor time in fetch-wait, 301min vs 25min for the same job).
             if spill_ratio > 0.05 and not is_ec2:
                 # Zero-spill target: peak_shuffle / (per_task_mem * 0.7)
+                # Floor, never ceiling: the caller's sp may already be larger
+                # (spill-aware sizing upstream); overwriting it here silently
+                # reverted the 4000-partition fix for an 8.5T-spill window
+                # sort back to 1000.
                 peak_shuffle_gb = max(s_in_gb, s_out_gb)
                 zero_spill_parts = int(peak_shuffle_gb / (per_task_mem_gb * 0.7))
-                zero_spill_parts = max(1000, zero_spill_parts)
-                sp = zero_spill_parts
+                sp = max(sp, 1000, zero_spill_parts)
                 cfg['spark.sql.shuffle.partitions'] = str(sp)
-                # MaxExecutors: size for 2-3 waves (avoid 4-6 waves of waiting)
+                # MaxExecutors: size for 2-3 waves (avoid 4-6 waves of waiting).
+                # Waves are sized from SHUFFLE-based partitions only: partitions
+                # added for sort-footprint (spill) make tasks smaller, not the
+                # fleet bigger — coupling executors to spill-inflated sp turned
+                # a 12-exec cost rec into 130 on a mostly-idle source.
                 target_waves = 4
-                needed_exec = int(sp / (worker_cfg["vcpu"] * target_waves))
+                needed_exec = int(max(1000, zero_spill_parts) / (worker_cfg["vcpu"] * target_waves))
                 needed_exec = max(needed_exec, max_exec)  # don't reduce below existing
                 if needed_exec > max_exec:
                     cfg['spark.dynamicAllocation.maxExecutors'] = str(needed_exec)
@@ -1075,6 +1329,21 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                     cfg["spark.aws.serverlessStorage.enabled"] = "true"
                     cfg.pop("spark.emr-serverless.executor.disk", None)
                     cfg.pop("spark.emr-serverless.executor.disk.type", None)
+
+            # Balanced DRA rate controls for ramp-wasteful queries (COST mode only).
+            # Performance-optimized mode intentionally keeps an aggressive ramp (its goal
+            # is minimum wall-clock), so throttling would be counterproductive there.
+            _dur_min = duration * 60 if duration else 0
+            _sh_ratio = (s_out_gb / i_in_gb) if i_in_gb > 0 else 0
+            _sustained_shuffle = _sh_ratio > 0.5 and cpu_pct > 80
+            _spill_bound = (spill_gb / max(s_in_gb + s_out_gb, 1)) > 0.05
+            _ramp_wasteful = ((0 < _dur_min <= 10) or (idle_pct > 60)) and not _sustained_shuffle and not _spill_bound
+            if cfg_mode == "cost" and _ramp_wasteful:
+                cfg["spark.dynamicAllocation.executorAllocationRatio"] = "0.5"
+                cfg["spark.dynamicAllocation.sustainedSchedulerBacklogTimeout"] = "15s"
+                # Rate controls replace the hard ceiling (the validated Balanced DRA shape).
+                # Keeping both re-introduces the ramp waste; drop the static cap.
+                cfg.pop("spark.dynamicAllocation.maxExecutors", None)
             return cfg
         
         # Cost recommendation
@@ -1123,7 +1392,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                 "total_vcpu_capacity": max_exec_perf * worker_cfg["vcpu"],
                 "total_memory_capacity": max_exec_perf * worker_cfg["memory"],
             },
-            "spark_configs": build_spark_cfg(max_exec_perf, min_exec_perf, sp_perf, executor_disk_perf),
+            "spark_configs": build_spark_cfg(max_exec_perf, min_exec_perf, sp_perf, executor_disk_perf, cfg_mode="performance"),
             "shuffle_tuned": {
                 "partitions": sp_perf,
                 "target_partition_size_mib": target_mib_perf,
@@ -1240,7 +1509,10 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                          io_r["min_mem"] + (-(-(io_mem - io_r["min_mem"]) // io_r["mem_step"])) * io_r["mem_step"]))
             io_max = max_exec_cost * io_mult
             io_min = min_exec_cost * io_mult
-            io_disk = _calculate_executor_disk(s_out_gb, disk_spill_gb, spill_gb, io_max)
+            io_disk = _calculate_executor_disk(
+                s_out_gb, _eff_disk_spill, io_max,
+                worker_vcpu=io_r["vcpu"],
+                stages=stages_raw, fetch_wait_pct=shuffle_fetch_wait_pct)
             io_cfg = {"vcpu": io_r["vcpu"], "memory": io_mem}
             # Temporarily swap worker_cfg for build_spark_cfg
             saved_cfg, saved_type = worker_cfg, worker_type
@@ -1308,7 +1580,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                     }
                     perf_recs[-1]["spark_configs"] = build_spark_cfg(
                         bexec, bmin, sp_perf, executor_disk_perf,
-                        vcpu_override=br["vcpu"], mem_override=bmem)
+                        vcpu_override=br["vcpu"], mem_override=bmem, cfg_mode="performance")
                 else:
                     # Fallback: inflate original workers to match disk count
                     max_exec_perf = io_max
@@ -1317,7 +1589,7 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
                     perf_recs[-1]["worker"]["min_executors"] = min_exec_perf
                     perf_recs[-1]["worker"]["total_vcpu_capacity"] = max_exec_perf * worker_cfg["vcpu"]
                     perf_recs[-1]["worker"]["total_memory_capacity"] = max_exec_perf * worker_cfg["memory"]
-                    perf_recs[-1]["spark_configs"] = build_spark_cfg(max_exec_perf, min_exec_perf, sp_perf, executor_disk_perf)
+                    perf_recs[-1]["spark_configs"] = build_spark_cfg(max_exec_perf, min_exec_perf, sp_perf, executor_disk_perf, cfg_mode="performance")
         # No IO rec for non-IO-bound jobs or already-Small workers
     
     # Process applications with no input data - recommend minimal config
@@ -1366,6 +1638,25 @@ def generate_dual_recommendations(input_path: str, limit: int = 100,
         cost_recs.append(minimal_rec)
         perf_recs.append(minimal_rec)
     
+    # The worker section and the dynamicAllocation confs are two views of one
+    # decision — build_spark_cfg may raise the confs after the worker section
+    # is frozen (zero-spill executor bump), which shipped contradictory
+    # recommendations (worker.max_executors=12 vs conf 15). The confs are what
+    # the job actually runs with, so they win.
+    for _recs in (cost_recs, perf_recs):
+        for _r in _recs:
+            _w, _c = _r.get("worker"), _r.get("spark_configs", {})
+            if not _w:
+                continue
+            _cmax = int(_c.get("spark.dynamicAllocation.maxExecutors", 0) or 0)
+            _cmin = int(_c.get("spark.dynamicAllocation.minExecutors", 0) or 0)
+            if _cmax and _cmax != _w["max_executors"]:
+                _w["max_executors"] = _cmax
+                _w["total_vcpu_capacity"] = _cmax * _w["vcpu"]
+                _w["total_memory_capacity"] = _cmax * _w["memory_gb"]
+            if _cmin and _cmin != _w["min_executors"]:
+                _w["min_executors"] = _cmin
+
     log.info("Generated %d cost, %d performance recommendations",
              len(cost_recs), len(perf_recs))
     return cost_recs, perf_recs

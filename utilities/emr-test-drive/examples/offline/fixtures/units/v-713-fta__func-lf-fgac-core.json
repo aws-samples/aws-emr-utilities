@@ -1,0 +1,1656 @@
+{
+  "run_id": "etd-20260813-a41f9c",
+  "variant_id": "v-713-fta",
+  "workload_id": "func/lf-fgac-core",
+  "unit_kind": "operation",
+  "iterations": 2,
+  "cost_facts": {
+    "vcpu_hour": 11.7011,
+    "memory_gb_hour": 46.8045,
+    "storage_gb_hour": 50.1477,
+    "wall_clock_s": 1504.4,
+    "drivers_per_job": 1,
+    "avg_executors": 6,
+    "source": "synthetic fixture \u2014 derived from shape x wall clock"
+  },
+  "data_class": "SAMPLE",
+  "units": [
+    {
+      "name": "SELECT",
+      "table_format": "hive",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 14.46,
+      "iterations_observed": 2,
+      "job_id": "0000d35f481b0cb5",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:052c954c7326ab6d",
+      "table_version_advanced": true
+    },
+    {
+      "name": "CREATE_TABLE",
+      "table_format": "hive",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "CREATE_TABLE"
+      ],
+      "duration_s": 16.47,
+      "iterations_observed": 2,
+      "job_id": "00007d166f1fb2ee",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:af5f69f1145b1bc8",
+      "table_version_advanced": true
+    },
+    {
+      "name": "CREATE_TABLE_LIKE",
+      "table_format": "hive",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "CREATE_TABLE"
+      ],
+      "duration_s": 22.98,
+      "iterations_observed": 2,
+      "job_id": "00001a94cabf8f3f",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:f5d6cca20f9a9f82",
+      "table_version_advanced": true
+    },
+    {
+      "name": "CTAS",
+      "table_format": "hive",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "CREATE_TABLE"
+      ],
+      "duration_s": 5.75,
+      "iterations_observed": 2,
+      "job_id": "0000bce9427dee3c",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:f899862b1f4ef63b",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DESCRIBE",
+      "table_format": "hive",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "DESCRIBE"
+      ],
+      "duration_s": 4.61,
+      "iterations_observed": 2,
+      "job_id": "0000dd060bca7645",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:d6015569effc8958",
+      "table_version_advanced": true
+    },
+    {
+      "name": "SHOW_PARTITIONS",
+      "table_format": "hive",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "DESCRIBE"
+      ],
+      "duration_s": 17.58,
+      "iterations_observed": 2,
+      "job_id": "00005ae4883aa7db",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:790f25db36569a49",
+      "table_version_advanced": true
+    },
+    {
+      "name": "SHOW_CREATE_TABLE",
+      "table_format": "hive",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "DESCRIBE"
+      ],
+      "duration_s": 6.31,
+      "iterations_observed": 2,
+      "job_id": "0000264fd850d686",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:bd7aff6b8f47dc03",
+      "table_version_advanced": true
+    },
+    {
+      "name": "ALTER_TABLE",
+      "table_format": "hive",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "SELECT",
+        "ALTER"
+      ],
+      "duration_s": 19.79,
+      "iterations_observed": 2,
+      "job_id": "00004021bfbc4076",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:c20f4c662da97d3a",
+      "table_version_advanced": true
+    },
+    {
+      "name": "ALTER_TABLE_SET_LOCATION",
+      "table_format": "hive",
+      "table_type": "external_partitioned",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [],
+      "duration_s": 21.84,
+      "iterations_observed": 2,
+      "job_id": "0000acc97fa9fdd4",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:caa11e4fa743098d",
+      "table_version_advanced": true
+    },
+    {
+      "name": "ADD_PARTITION",
+      "table_format": "hive",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 25.54,
+      "iterations_observed": 2,
+      "job_id": "0000d96ee30983bd",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:06e620e293605187",
+      "table_version_advanced": true
+    },
+    {
+      "name": "REPAIR_TABLE",
+      "table_format": "hive",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "SELECT",
+        "ALTER"
+      ],
+      "duration_s": 24.13,
+      "iterations_observed": 2,
+      "job_id": "0000bd104aabc42c",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:21839ce9669e69bf",
+      "table_version_advanced": true
+    },
+    {
+      "name": "LOAD_DATA",
+      "table_format": "hive",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [],
+      "duration_s": 2.99,
+      "iterations_observed": 2,
+      "job_id": "0000bcc276cce54e",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:a26cc4dab18ea6c5",
+      "table_version_advanced": true
+    },
+    {
+      "name": "INSERT_INTO",
+      "table_format": "hive",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 21.31,
+      "iterations_observed": 2,
+      "job_id": "0000c3412917d544",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:7ef409a936d9e1cc",
+      "table_version_advanced": true
+    },
+    {
+      "name": "INSERT_OVERWRITE",
+      "table_format": "hive",
+      "table_type": "external_partitioned",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT",
+        "DELETE",
+        "ALTER"
+      ],
+      "duration_s": 5.22,
+      "iterations_observed": 2,
+      "job_id": "000004b1f256a9b9",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:3106219c14e128b1",
+      "table_version_advanced": true
+    },
+    {
+      "name": "TRUNCATE_TABLE",
+      "table_format": "hive",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT",
+        "DELETE",
+        "ALTER"
+      ],
+      "duration_s": 17.94,
+      "iterations_observed": 2,
+      "job_id": "0000872def0ace45",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:81615ef671dd2228",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DROP_TABLE",
+      "table_format": "hive",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "SELECT",
+        "DROP",
+        "DELETE",
+        "ALTER"
+      ],
+      "duration_s": 13.19,
+      "iterations_observed": 2,
+      "job_id": "0000cf2527924ae9",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:022e4d20615e4ec5",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DF_WRITER_V1",
+      "table_format": "hive",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 4.23,
+      "iterations_observed": 2,
+      "job_id": "00005d947302216f",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:0303c8f87fe6e651",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DF_WRITER_V2",
+      "table_format": "hive",
+      "table_type": "external_partitioned",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [],
+      "duration_s": 17.43,
+      "iterations_observed": 2,
+      "job_id": "00001579a6b2d4a4",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:4921d4635a08ea05",
+      "table_version_advanced": true
+    },
+    {
+      "name": "ROW_FILTER",
+      "table_format": "hive",
+      "table_type": "external",
+      "expected_state": "NA",
+      "expected_reason": "FTA grants whole-table access; row/column/cell filters do not apply",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 14.77,
+      "iterations_observed": 2,
+      "job_id": "000085800686d9c6",
+      "status": "NOT_APPLICABLE",
+      "error": null,
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "COLUMN_FILTER",
+      "table_format": "hive",
+      "table_type": "external_partitioned",
+      "expected_state": "NA",
+      "expected_reason": "FTA grants whole-table access; row/column/cell filters do not apply",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 11.34,
+      "iterations_observed": 2,
+      "job_id": "00004ca10166d251",
+      "status": "NOT_APPLICABLE",
+      "error": null,
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "CELL_FILTER",
+      "table_format": "hive",
+      "table_type": "managed_partitioned",
+      "expected_state": "NA",
+      "expected_reason": "FTA grants whole-table access; row/column/cell filters do not apply",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 21.46,
+      "iterations_observed": 2,
+      "job_id": "0000ecca3bc1a865",
+      "status": "NOT_APPLICABLE",
+      "error": null,
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "NESTED_FILTER",
+      "table_format": "hive",
+      "table_type": "external",
+      "expected_state": "NA",
+      "expected_reason": "FTA grants whole-table access; row/column/cell filters do not apply",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 20.11,
+      "iterations_observed": 2,
+      "job_id": "00004661724374da",
+      "status": "NOT_APPLICABLE",
+      "error": null,
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "UPDATE",
+      "table_format": "hive",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [],
+      "duration_s": 20.65,
+      "iterations_observed": 2,
+      "job_id": "0000a70a33a5ebe6",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:ad1765c4e3603a7c",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DELETE",
+      "table_format": "hive",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [],
+      "duration_s": 4.85,
+      "iterations_observed": 2,
+      "job_id": "00000e04f126cf33",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:3386d46ed2e6bcc5",
+      "table_version_advanced": true
+    },
+    {
+      "name": "MERGE_INTO",
+      "table_format": "hive",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [],
+      "duration_s": 22.39,
+      "iterations_observed": 2,
+      "job_id": "0000feac9602eee9",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:42ce7001752b7d7d",
+      "table_version_advanced": true
+    },
+    {
+      "name": "SELECT",
+      "table_format": "iceberg",
+      "table_type": "external_partitioned",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 14.17,
+      "iterations_observed": 2,
+      "job_id": "0000a84abd9f7684",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:d5389671ecaca1f9",
+      "table_version_advanced": true
+    },
+    {
+      "name": "CREATE_TABLE",
+      "table_format": "iceberg",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "CREATE_TABLE"
+      ],
+      "duration_s": 13.19,
+      "iterations_observed": 2,
+      "job_id": "0000388d440db36d",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:fcd9169bd6feb80e",
+      "table_version_advanced": true
+    },
+    {
+      "name": "CREATE_TABLE_LIKE",
+      "table_format": "iceberg",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "CREATE_TABLE"
+      ],
+      "duration_s": 3.17,
+      "iterations_observed": 2,
+      "job_id": "000000836717fa27",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:b74bf33262248426",
+      "table_version_advanced": true
+    },
+    {
+      "name": "CTAS",
+      "table_format": "iceberg",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "CREATE_TABLE"
+      ],
+      "duration_s": 19.89,
+      "iterations_observed": 2,
+      "job_id": "00005ff55044c6cb",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:a917bf59f2e31207",
+      "table_version_advanced": true
+    },
+    {
+      "name": "REPLACE_TABLE_AS_SELECT",
+      "table_format": "iceberg",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 26.94,
+      "iterations_observed": 2,
+      "job_id": "000066480a55d7b3",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:1d353eaeab113e2a",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DESCRIBE",
+      "table_format": "iceberg",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "DESCRIBE"
+      ],
+      "duration_s": 26.47,
+      "iterations_observed": 2,
+      "job_id": "0000a071657292de",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:a728fc7dfc8da4e0",
+      "table_version_advanced": true
+    },
+    {
+      "name": "SHOW_CREATE_TABLE",
+      "table_format": "iceberg",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "DESCRIBE"
+      ],
+      "duration_s": 7.52,
+      "iterations_observed": 2,
+      "job_id": "00004270084b2a24",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:c92267ca79d7566f",
+      "table_version_advanced": true
+    },
+    {
+      "name": "ALTER_TABLE",
+      "table_format": "iceberg",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 8.69,
+      "iterations_observed": 2,
+      "job_id": "000047d3276169de",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:a30e15da45d5414a",
+      "table_version_advanced": true
+    },
+    {
+      "name": "ALTER_TABLE_SET_LOCATION",
+      "table_format": "iceberg",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 13.95,
+      "iterations_observed": 2,
+      "job_id": "00009d8ea86ad5f6",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:ad679758f182d3bb",
+      "table_version_advanced": true
+    },
+    {
+      "name": "ALTER_TABLE_RENAME",
+      "table_format": "iceberg",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "CREATE_TABLE",
+        "DROP"
+      ],
+      "duration_s": 6.72,
+      "iterations_observed": 2,
+      "job_id": "0000e4fe6a45410e",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:de419fb128daf4a9",
+      "table_version_advanced": true
+    },
+    {
+      "name": "INSERT_INTO",
+      "table_format": "iceberg",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 27.51,
+      "iterations_observed": 2,
+      "job_id": "00004409a97f82f5",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:1328811452acd6b5",
+      "table_version_advanced": true
+    },
+    {
+      "name": "INSERT_OVERWRITE",
+      "table_format": "iceberg",
+      "table_type": "external_partitioned",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 13.59,
+      "iterations_observed": 2,
+      "job_id": "00000f2d40508da1",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:10f2f34dd0f11116",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DELETE",
+      "table_format": "iceberg",
+      "table_type": "external_partitioned",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 7.67,
+      "iterations_observed": 2,
+      "job_id": "000086e1126a08d3",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:8351ea8635befcce",
+      "table_version_advanced": true
+    },
+    {
+      "name": "UPDATE",
+      "table_format": "iceberg",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 9.56,
+      "iterations_observed": 2,
+      "job_id": "0000d9b74be531f2",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:754878142c1227fe",
+      "table_version_advanced": true
+    },
+    {
+      "name": "MERGE_INTO",
+      "table_format": "iceberg",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 11.17,
+      "iterations_observed": 2,
+      "job_id": "0000dbe0e3ea2acb",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:a854501b0a6ff5a7",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DROP_TABLE",
+      "table_format": "iceberg",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "SELECT",
+        "DELETE",
+        "DROP"
+      ],
+      "duration_s": 16.9,
+      "iterations_observed": 2,
+      "job_id": "00007e36afeb1fc8",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:86f39e9c340b80a3",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DF_WRITER_V1",
+      "table_format": "iceberg",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [],
+      "duration_s": 14.37,
+      "iterations_observed": 2,
+      "job_id": "00004dd7b4a8681a",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:6fde3fbf60c933ca",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DF_WRITER_V2",
+      "table_format": "iceberg",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 26.43,
+      "iterations_observed": 2,
+      "job_id": "000096195ea35ae8",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:0ba9e4a053cae7d4",
+      "table_version_advanced": true
+    },
+    {
+      "name": "METADATA_TABLES",
+      "table_format": "iceberg",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 20.0,
+      "iterations_observed": 2,
+      "job_id": "0000df8450a0609a",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:33d73a0918c7c26a",
+      "table_version_advanced": true
+    },
+    {
+      "name": "STORED_PROCEDURES",
+      "table_format": "iceberg",
+      "table_type": "external_partitioned",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [],
+      "duration_s": 19.97,
+      "iterations_observed": 2,
+      "job_id": "00007c1469fcc252",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:57a1bb92a9dd9e00",
+      "table_version_advanced": true
+    },
+    {
+      "name": "ROW_FILTER",
+      "table_format": "iceberg",
+      "table_type": "external",
+      "expected_state": "NA",
+      "expected_reason": "FTA grants whole-table access; row/column/cell filters do not apply",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 4.04,
+      "iterations_observed": 2,
+      "job_id": "00002e923315f843",
+      "status": "NOT_APPLICABLE",
+      "error": null,
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "COLUMN_FILTER",
+      "table_format": "iceberg",
+      "table_type": "managed_partitioned",
+      "expected_state": "NA",
+      "expected_reason": "FTA grants whole-table access; row/column/cell filters do not apply",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 18.77,
+      "iterations_observed": 2,
+      "job_id": "0000e156f02d5f66",
+      "status": "NOT_APPLICABLE",
+      "error": null,
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "CELL_FILTER",
+      "table_format": "iceberg",
+      "table_type": "managed",
+      "expected_state": "NA",
+      "expected_reason": "FTA grants whole-table access; row/column/cell filters do not apply",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 12.41,
+      "iterations_observed": 2,
+      "job_id": "0000587bab2061f7",
+      "status": "NOT_APPLICABLE",
+      "error": null,
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "NESTED_FILTER",
+      "table_format": "iceberg",
+      "table_type": "managed_partitioned",
+      "expected_state": "NA",
+      "expected_reason": "FTA grants whole-table access; row/column/cell filters do not apply",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 4.22,
+      "iterations_observed": 2,
+      "job_id": "000071dedc99fd59",
+      "status": "NOT_APPLICABLE",
+      "error": null,
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "SELECT",
+      "table_format": "hudi",
+      "table_type": "external_partitioned",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 23.87,
+      "iterations_observed": 2,
+      "job_id": "00008364adfafdc9",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:1d1e54d00aa93889",
+      "table_version_advanced": true
+    },
+    {
+      "name": "CREATE_TABLE",
+      "table_format": "hudi",
+      "table_type": "external_partitioned",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "CREATE_TABLE"
+      ],
+      "duration_s": 21.3,
+      "iterations_observed": 2,
+      "job_id": "00007b4ee2b7800a",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:ce7e29fb8791dbac",
+      "table_version_advanced": true
+    },
+    {
+      "name": "CREATE_TABLE_LIKE",
+      "table_format": "hudi",
+      "table_type": "external_partitioned",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "CREATE_TABLE"
+      ],
+      "duration_s": 12.11,
+      "iterations_observed": 2,
+      "job_id": "0000805675ff3744",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:8b514196057a0a5e",
+      "table_version_advanced": true
+    },
+    {
+      "name": "CTAS",
+      "table_format": "hudi",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [],
+      "duration_s": 5.5,
+      "iterations_observed": 2,
+      "job_id": "00001dd4cb54d7c1",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:0486f06270d406c2",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DESCRIBE",
+      "table_format": "hudi",
+      "table_type": "external_partitioned",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "DESCRIBE"
+      ],
+      "duration_s": 27.44,
+      "iterations_observed": 2,
+      "job_id": "000055df10d4b67e",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:4fb99a8291de1b2d",
+      "table_version_advanced": true
+    },
+    {
+      "name": "SHOW_CREATE_TABLE",
+      "table_format": "hudi",
+      "table_type": "external_partitioned",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "DESCRIBE"
+      ],
+      "duration_s": 22.22,
+      "iterations_observed": 2,
+      "job_id": "0000250b612c8ccb",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:99a5f44b69f89850",
+      "table_version_advanced": true
+    },
+    {
+      "name": "ALTER_TABLE",
+      "table_format": "hudi",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 21.27,
+      "iterations_observed": 2,
+      "job_id": "00009827724eda87",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:41bc8bca22cb4505",
+      "table_version_advanced": true
+    },
+    {
+      "name": "INSERT_INTO",
+      "table_format": "hudi",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "SELECT",
+        "ALTER"
+      ],
+      "duration_s": 8.52,
+      "iterations_observed": 2,
+      "job_id": "00002dc0e1cb258d",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:559aa7d519d2e657",
+      "table_version_advanced": true
+    },
+    {
+      "name": "INSERT_OVERWRITE",
+      "table_format": "hudi",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "SELECT",
+        "ALTER"
+      ],
+      "duration_s": 4.86,
+      "iterations_observed": 2,
+      "job_id": "0000a6457b57d7ee",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:f186899b8b63fd35",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DELETE",
+      "table_format": "hudi",
+      "table_type": "external_partitioned",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [],
+      "duration_s": 26.18,
+      "iterations_observed": 2,
+      "job_id": "0000c9cfa0704fb8",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:d85fa1c98ce30557",
+      "table_version_advanced": true
+    },
+    {
+      "name": "UPDATE",
+      "table_format": "hudi",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [],
+      "duration_s": 25.8,
+      "iterations_observed": 2,
+      "job_id": "0000f04c2eefba73",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:ebde323c1d6a00ad",
+      "table_version_advanced": true
+    },
+    {
+      "name": "MERGE_INTO",
+      "table_format": "hudi",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [],
+      "duration_s": 8.63,
+      "iterations_observed": 2,
+      "job_id": "0000da8765b6d04e",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:9ce75161fbcda944",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DROP_TABLE",
+      "table_format": "hudi",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "SELECT",
+        "DROP"
+      ],
+      "duration_s": 23.13,
+      "iterations_observed": 2,
+      "job_id": "000051fe696e476e",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:db3598c2f24c5b00",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DF_WRITER_V1",
+      "table_format": "hudi",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [],
+      "duration_s": 13.15,
+      "iterations_observed": 2,
+      "job_id": "000008ed04026994",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:e5ff35cf75056494",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DF_WRITER_V2",
+      "table_format": "hudi",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 16.11,
+      "iterations_observed": 2,
+      "job_id": "0000e7d4845ff11d",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:725f9f2f1b992c3f",
+      "table_version_advanced": true
+    },
+    {
+      "name": "METADATA_TABLES",
+      "table_format": "hudi",
+      "table_type": "external_partitioned",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [],
+      "duration_s": 11.4,
+      "iterations_observed": 2,
+      "job_id": "0000ac8ebe06d59b",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:ab454837b05bad58",
+      "table_version_advanced": true
+    },
+    {
+      "name": "TABLE_MAINTENANCE",
+      "table_format": "hudi",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [],
+      "duration_s": 10.83,
+      "iterations_observed": 2,
+      "job_id": "0000818bdda9cdea",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:f6c6ade11a0675ca",
+      "table_version_advanced": true
+    },
+    {
+      "name": "TIME_TRAVEL",
+      "table_format": "hudi",
+      "table_type": "external_partitioned",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 15.59,
+      "iterations_observed": 2,
+      "job_id": "0000090a84ad40fb",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:383daed72af33016",
+      "table_version_advanced": true
+    },
+    {
+      "name": "ROW_FILTER",
+      "table_format": "hudi",
+      "table_type": "external",
+      "expected_state": "NA",
+      "expected_reason": "FTA grants whole-table access; row/column/cell filters do not apply",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 17.7,
+      "iterations_observed": 2,
+      "job_id": "000086b1b3301cba",
+      "status": "NOT_APPLICABLE",
+      "error": null,
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "COLUMN_FILTER",
+      "table_format": "hudi",
+      "table_type": "managed",
+      "expected_state": "NA",
+      "expected_reason": "FTA grants whole-table access; row/column/cell filters do not apply",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 14.95,
+      "iterations_observed": 2,
+      "job_id": "0000d49d4e73ac93",
+      "status": "NOT_APPLICABLE",
+      "error": null,
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "CELL_FILTER",
+      "table_format": "hudi",
+      "table_type": "managed",
+      "expected_state": "NA",
+      "expected_reason": "FTA grants whole-table access; row/column/cell filters do not apply",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 16.38,
+      "iterations_observed": 2,
+      "job_id": "0000fd83a2eb769c",
+      "status": "NOT_APPLICABLE",
+      "error": null,
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "SELECT",
+      "table_format": "delta",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 18.97,
+      "iterations_observed": 2,
+      "job_id": "00006a6243bda71d",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:2ee9c405f6335614",
+      "table_version_advanced": true
+    },
+    {
+      "name": "CREATE_TABLE",
+      "table_format": "delta",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "CREATE_TABLE"
+      ],
+      "duration_s": 26.85,
+      "iterations_observed": 2,
+      "job_id": "0000f50e4fa84a07",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:4f258a1dcd6e7b7d",
+      "table_version_advanced": true
+    },
+    {
+      "name": "CREATE_TABLE_LIKE",
+      "table_format": "delta",
+      "table_type": "external_partitioned",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [],
+      "duration_s": 26.29,
+      "iterations_observed": 2,
+      "job_id": "00003ea780fb75ea",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:5df9d71136025a3d",
+      "table_version_advanced": true
+    },
+    {
+      "name": "CTAS",
+      "table_format": "delta",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "CREATE_TABLE"
+      ],
+      "duration_s": 24.9,
+      "iterations_observed": 2,
+      "job_id": "0000e2463d5cb46f",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:5578ac4101588a5e",
+      "table_version_advanced": true
+    },
+    {
+      "name": "REPLACE_TABLE_AS_SELECT",
+      "table_format": "delta",
+      "table_type": "external_partitioned",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 4.95,
+      "iterations_observed": 2,
+      "job_id": "00002fe3281bdccb",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:2391d0dc0c2abd1e",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DESCRIBE",
+      "table_format": "delta",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "DESCRIBE"
+      ],
+      "duration_s": 27.49,
+      "iterations_observed": 2,
+      "job_id": "0000d17e6be0472c",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:a473dda57ccb0f6b",
+      "table_version_advanced": true
+    },
+    {
+      "name": "SHOW_CREATE_TABLE",
+      "table_format": "delta",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [],
+      "duration_s": 7.24,
+      "iterations_observed": 2,
+      "job_id": "00006bcb6257cd3f",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:9b406f38b1b05a39",
+      "table_version_advanced": true
+    },
+    {
+      "name": "ALTER_TABLE",
+      "table_format": "delta",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT"
+      ],
+      "duration_s": 21.01,
+      "iterations_observed": 2,
+      "job_id": "00007d1e6f132936",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:a0298e24d80e31fb",
+      "table_version_advanced": true
+    },
+    {
+      "name": "ALTER_TABLE_SET_LOCATION",
+      "table_format": "delta",
+      "table_type": "external_partitioned",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT"
+      ],
+      "duration_s": 19.1,
+      "iterations_observed": 2,
+      "job_id": "00003ed05fdc5a16",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:51c000770d6da86f",
+      "table_version_advanced": true
+    },
+    {
+      "name": "INSERT_INTO",
+      "table_format": "delta",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT"
+      ],
+      "duration_s": 18.57,
+      "iterations_observed": 2,
+      "job_id": "0000e0808094b38d",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:5ca992d4daf09cb1",
+      "table_version_advanced": true
+    },
+    {
+      "name": "INSERT_OVERWRITE",
+      "table_format": "delta",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT"
+      ],
+      "duration_s": 15.98,
+      "iterations_observed": 2,
+      "job_id": "0000469c9c79e03d",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:0aad0864ac8e66e0",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DELETE",
+      "table_format": "delta",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT"
+      ],
+      "duration_s": 7.69,
+      "iterations_observed": 2,
+      "job_id": "00006f5f9db8a933",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:35ef941cc983e635",
+      "table_version_advanced": true
+    },
+    {
+      "name": "UPDATE",
+      "table_format": "delta",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT"
+      ],
+      "duration_s": 6.24,
+      "iterations_observed": 2,
+      "job_id": "0000b14beee6b14b",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:89be5f0dbe9e99bf",
+      "table_version_advanced": true
+    },
+    {
+      "name": "MERGE_INTO",
+      "table_format": "delta",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT"
+      ],
+      "duration_s": 15.52,
+      "iterations_observed": 2,
+      "job_id": "0000c25d2e782911",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:e8a1e8d896161987",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DROP_TABLE",
+      "table_format": "delta",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "SELECT",
+        "DELETE",
+        "DROP"
+      ],
+      "duration_s": 25.37,
+      "iterations_observed": 2,
+      "job_id": "0000b7d9b5a64412",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:15f93a5118847ae2",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DF_WRITER_V1",
+      "table_format": "delta",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [],
+      "duration_s": 20.04,
+      "iterations_observed": 2,
+      "job_id": "000076ae2a9ae51e",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:efb1d5e9586efa35",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DF_WRITER_V2",
+      "table_format": "delta",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 9.82,
+      "iterations_observed": 2,
+      "job_id": "00002116dc284cae",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:8745eb09724bf491",
+      "table_version_advanced": true
+    },
+    {
+      "name": "TABLE_MAINTENANCE",
+      "table_format": "delta",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "FTA whole-table credential vending",
+      "lf_permissions": [],
+      "duration_s": 5.0,
+      "iterations_observed": 2,
+      "job_id": "0000aa727466014e",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:a8622f78b9bad319",
+      "table_version_advanced": true
+    },
+    {
+      "name": "ROW_FILTER",
+      "table_format": "delta",
+      "table_type": "managed",
+      "expected_state": "NA",
+      "expected_reason": "FTA grants whole-table access; row/column/cell filters do not apply",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 11.84,
+      "iterations_observed": 2,
+      "job_id": "0000979f9a35f7d7",
+      "status": "NOT_APPLICABLE",
+      "error": null,
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "COLUMN_FILTER",
+      "table_format": "delta",
+      "table_type": "external",
+      "expected_state": "NA",
+      "expected_reason": "FTA grants whole-table access; row/column/cell filters do not apply",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 4.78,
+      "iterations_observed": 2,
+      "job_id": "0000d38cdea3eec2",
+      "status": "NOT_APPLICABLE",
+      "error": null,
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "CELL_FILTER",
+      "table_format": "delta",
+      "table_type": "external_partitioned",
+      "expected_state": "NA",
+      "expected_reason": "FTA grants whole-table access; row/column/cell filters do not apply",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 20.18,
+      "iterations_observed": 2,
+      "job_id": "0000bb4f477dd996",
+      "status": "NOT_APPLICABLE",
+      "error": null,
+      "row_count": null,
+      "result_checksum": null
+    }
+  ]
+}

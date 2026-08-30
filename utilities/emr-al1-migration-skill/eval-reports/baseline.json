@@ -1,0 +1,110 @@
+{
+  "baseline_date": "2026-08-17",
+  "skill_version": "1.0",
+  "skill_commit": "59b01e5",
+  "total_test_cases": 17,
+  "test_case_breakdown": {
+    "knowledge": 4,
+    "introspection": 8,
+    "adversarial": 4,
+    "multi-turn": 1
+  },
+  "methodology_note": "Reference baseline established by 1 run of the Kiro CLI agent (Auto model) with the skill loaded, graded against the Must/Should rubric in each test case. Input token footprint measured with tiktoken (cl100k_base). Consumers SHOULD re-run in their own environment across their target models (3 runs each) and record their own scores/tokens/latency below — a baseline is only meaningful relative to a specific model + harness + skill-version combination.",
+  "skill_token_footprint": {
+    "tokenizer": "tiktoken cl100k_base",
+    "measured_date": "2026-08-17",
+    "per_file_tokens": {
+      "SKILL.md": 6636,
+      "references/configuration-transforms.md": 3784,
+      "references/spark-upgrade-agent-guide.md": 1245,
+      "references/pig-to-spark-mapping.md": 3553,
+      "references/zeppelin-interpreter-migration.md": 1896,
+      "references/iam-permissions.md": 1188,
+      "references/failure-catalogue.md": 1014,
+      "references/failures/spark.md": 1278,
+      "references/failures/hive.md": 2409,
+      "references/failures/flink.md": 715,
+      "references/failures/hadoop-mr.md": 799,
+      "references/failures/pig.md": 1232,
+      "references/failures/infrastructure.md": 2776,
+      "references/failures/platform.md": 2640
+    },
+    "scenario_input_tokens": {
+      "minimal_spark_only": 11665,
+      "medium_spark_hive_bootstrap": 15352,
+      "heavy_spark_hive_pig_zeppelin": 22033,
+      "maximum_all_files": 31165
+    },
+    "fits_context_window": {
+      "128k": true,
+      "200k": true
+    }
+  },
+  "models": {
+    "kiro-cli-auto (reference run)": {
+      "runs": 1,
+      "run_date": "2026-08-17",
+      "overall_score": 0.971,
+      "score_distribution": {"full_pass_1.0": 16, "partial_0.5": 1, "fail_0.0": 0},
+      "test_results": {
+        "emr_al1_migration_halt_non_al1_01": {"scores": [1.0], "type": "knowledge"},
+        "emr_al1_migration_bootstrap_imdsv2_01": {"scores": [1.0], "type": "introspection"},
+        "emr_al1_migration_hive_acid_01": {"scores": [1.0], "type": "introspection", "note": "column stats recomputation guidance is in failures/platform.md (COLUMN_STATS_ACCURATE=false), not hive.md"},
+        "emr_al1_migration_presto_to_trino_01": {"scores": [1.0], "type": "introspection"},
+        "emr_al1_migration_pig_conversion_01": {"scores": [1.0], "type": "introspection", "note": "also live-validated on EMR 7.1.0"},
+        "emr_al1_migration_ganglia_removal_01": {"scores": [1.0], "type": "knowledge"},
+        "emr_al1_migration_log4j_conversion_01": {"scores": [0.5], "type": "introspection", "note": "GAP: skill lists classification renames (spark-log4j->spark-log4j2 etc.) and silent-drop behavior, but does NOT warn that Hadoop core logging keeps the log4j.properties (log4j1) format. 'Must warn about Hadoop exception' partially met."},
+        "emr_al1_migration_java17_compat_01": {"scores": [1.0], "type": "introspection", "note": "removed javax.* package guidance is in failures/platform.md"},
+        "emr_al1_migration_emrfs_removal_01": {"scores": [1.0], "type": "knowledge"},
+        "emr_al1_migration_spark_backward_compat_01": {"scores": [1.0], "type": "knowledge"},
+        "emr_al1_migration_zeppelin_01": {"scores": [1.0], "type": "introspection"},
+        "emr_al1_migration_flink_memory_01": {"scores": [1.0], "type": "introspection"},
+        "emr_al1_migration_negative_invalid_cluster_01": {"scores": [1.0], "type": "adversarial", "note": "live-validated: aws emr describe-cluster returns InvalidRequestException for malformed ID"},
+        "emr_al1_migration_negative_emr_on_eks_01": {"scores": [1.0], "type": "adversarial"},
+        "emr_al1_migration_negative_pig_insist_01": {"scores": [1.0], "type": "adversarial"},
+        "emr_al1_migration_negative_hallucination_01": {"scores": [1.0], "type": "adversarial"},
+        "emr_al1_migration_multiturn_fixloop_01": {"scores": [1.0], "type": "multi-turn", "note": "also live-validated: --add-opens fix on EMR 7.1.0"}
+      },
+      "token_usage": {
+        "avg_skill_input_tokens": 15352,
+        "note": "avg_skill_input reflects the medium scenario (SKILL.md + config-transforms + hive + spark failure refs), the most common single-topic load. Per-run output tokens and latency are harness/model-specific and were not captured in this static reference run — consumers should record these from their own API usage accounting."
+      }
+    },
+    "anthropic.claude-sonnet-4-5-20250929-v1:0": {
+      "runs": 0,
+      "status": "not yet run in this environment — populate with 3 runs",
+      "overall_score": null,
+      "test_results": {},
+      "token_usage": {}
+    },
+    "anthropic.claude-opus-4-20250514-v1:0": {
+      "runs": 0,
+      "status": "not yet run in this environment — populate with 3 runs",
+      "overall_score": null,
+      "test_results": {},
+      "token_usage": {}
+    },
+    "openai.gpt-5-20250806-v1:0": {
+      "runs": 0,
+      "status": "not yet run in this environment — populate with 3 runs",
+      "overall_score": null,
+      "test_results": {},
+      "token_usage": {}
+    }
+  },
+  "known_gaps": [
+    {
+      "test": "emr_al1_migration_log4j_conversion_01",
+      "gap": "Skill does not explicitly warn that Hadoop core logging retains log4j.properties (log4j1) format while Spark/Hive/YARN move to log4j2. Recommend adding a note to configuration-transforms.md section 4.8.",
+      "severity": "low",
+      "score_impact": "0.5 instead of 1.0"
+    }
+  ],
+  "drift_thresholds": {
+    "score_drop_block": 0.05,
+    "must_criteria_flip_block": true,
+    "token_increase_warn": 0.20,
+    "latency_increase_warn": 0.50,
+    "should_criteria_flip_warn": true
+  }
+}

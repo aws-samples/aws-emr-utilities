@@ -37,6 +37,28 @@ pip install fastapi 'uvicorn[standard]' python-multipart jinja2 boto3
 python3 app.py    # http://localhost:5000
 ```
 
+### Screenshots
+
+The home page lists your EMR Serverless applications and their recent job runs, with one-click **Optimize** and **Troubleshoot** actions per run, plus a **Size a new job** button that opens the T-shirt sizer:
+
+![EMR Serverless Advisor home page showing applications, recent job runs with status, and Optimize and Troubleshoot actions per run](docs/images/home-page.png)
+
+The Config Advisor page is the web front end for the Fine Tuner: drag and drop a raw Spark event log (or an extracted summary) for server-side analysis, and use the EC2→Serverless migration and compare-two-runs workflows on the same page:
+
+![Config Advisor page with a drag-and-drop event log upload zone, an EC2 to EMR Serverless migration analyzer, and a compare-two-runs workflow](docs/images/config-advisor-page.png)
+
+The Observability page shows live driver and executor dashboards for metrics-enabled job runs, backed by a self-hosted Prometheus. The resource overview tracks running jobs, stages, tasks, and executors; the driver panels chart heap used against heap max (the gap is your out-of-memory headroom), process RSS, CPU, and GC pressure:
+
+![Observability page showing a live resource overview with 400 executors and driver charts for heap used, process RSS, CPU, and GC](docs/images/observability-driver.png)
+
+Executor panels chart the same resources across every executor in the run, plus disk used by shuffle/spill/cached blocks and active tasks per executor — the active-tasks chart makes skew visible at a glance:
+
+![Executor resource dashboards charting heap, RSS, CPU, GC, disk used, and active tasks across executors](docs/images/observability-executors.png)
+
+A Spark job status section tracks jobs, stages, and tasks by status over the run, so you can watch completion progress and spot task failures as they happen:
+
+![Spark job status dashboards showing jobs by status, stages by status, cumulative tasks completed, and task failures over time](docs/images/observability-job-status.png)
+
 ---
 
 ## T-Shirt Sizing
@@ -102,7 +124,7 @@ python3 python_extractor.py --input s3://your-bucket/event-logs/app_id/ --output
 python3 emr_s_fine_tuner.py --input-path /tmp/extracted/
 ```
 
-The Fine Tuner analyzes actual task metrics, shuffle volumes, spill, and memory utilization to produce configs that are typically 30–60% cheaper than T-shirt defaults while maintaining the same or better performance.
+The Fine Tuner analyzes actual task metrics, shuffle volumes, spill, and memory utilization to produce configs that are typically 25–35% cheaper than the T-shirt sizer's configuration on the same workload — and substantially cheaper than untuned platform defaults (−75% on our full TPC-DS 3 TB evaluation) — while maintaining the same or better performance.
 
 ### Choosing Your Size
 
@@ -121,7 +143,7 @@ Default is **General** — safe for any workload. Pick a specialized category on
 | Sub-Category | The Pattern | Difference from General |
 |---|---|---|
 | **General** | Mixed workload, or you are not sure. Start here. | 1-wave partitions, 200G disk |
-| **Optimized** | Heavy GROUP BY, multi-table JOINs, shuffle >1 TB or >30% of input, 20+ joins. | 2-wave partitions, 1000G disk |
+| **Optimized** | Heavy GROUP BY, multi-table JOINs, shuffle >1 TB or >30% of input, 20+ joins. | 2-wave partitions, shuffle-scaled disk (200G–2000G) |
 | **IO-Optimized** | Tiny input that explodes into massive intermediate data (EXPLODE, CROSS JOIN). | Optimized + smaller workers × 2 executors for disk parallelism |
 | **Iceberg-Maintenance** | File compaction, snapshot expiration, manifest rewrites. No business logic. | Fixed 4c/14G workers, scaled by file count |
 
@@ -215,48 +237,80 @@ A common pattern: use the T-shirt sizer for the initial run, then feed the resul
 
 ---
 
+## From Job Configs to Application Settings
+
+The Fine Tuner sizes individual **jobs**. An EMR Serverless **application** has its own settings that span every job that runs on it — `maximumCapacity` (the cpu/memory/disk ceiling) and the optional pre-initialized "warm pool". `emr_s_app_consolidator.py` rolls up a set of per-job recommendations into recommended application settings.
+
+```bash
+# Point it at a Fine Tuner recommendations file (a list of per-job recs) or a directory of them:
+python3 emr_s_app_consolidator.py --input recommendations_cost.json
+```
+
+Because the application ceiling depends on how many jobs run at once, you choose a concurrency model:
+
+```bash
+# Jobs never overlap — ceiling = the single largest job:
+python3 emr_s_app_consolidator.py --input recs.json --concurrency sequential
+
+# All jobs may run at once — ceiling = sum of every job:
+python3 emr_s_app_consolidator.py --input recs.json --concurrency peak-concurrent
+
+# At most N overlap — ceiling = sum of the N largest jobs:
+python3 emr_s_app_consolidator.py --input recs.json --concurrency 3
+```
+
+It outputs a recommended `maximumCapacity` (with configurable `--headroom`, default 20%), a pre-initialized capacity suggestion based on the dominant worker shape and steady-state baseline, and consistency warnings when jobs span multiple architectures, release labels, or too many worker shapes for a single warm pool. Pair it with `lambda_orchestrator.py` (parallel extraction across a fleet of event logs) to go from a directory of logs straight to application-level settings.
+
+---
+
 ## Design Principles
 
 **Stability over speed.** The T-shirt sizer prioritizes job completion — configs are intentionally generous. The Fine Tuner balances precision with safety, using measured metrics to right-size without over-provisioning.
 
-**AQE handles the rest.** Shuffle partitions are set using a wave-based formula: `waves × maxExecutors × cores` (min 1000, max 10000). General uses 1 wave; Optimized and IO-Optimized use 2 waves. Adaptive Query Execution coalesces unused partitions at runtime.
+**AQE handles the rest.** Shuffle partitions are set using a wave-based formula: `waves × executor-estimate × cores` (min 1000, max 10000), where the executor estimate is derived from input size, target duration, and shuffle volume. General uses 1 wave; Optimized and IO-Optimized use 2 waves. Adaptive Query Execution coalesces unused partitions at runtime.
 
-**Dynamic allocation scales down.** EMR Serverless releases idle executors automatically. A higher `maxExecutors` ceiling allows the job to scale up when needed without risking under-provisioning.
+**Dynamic allocation scales down.** EMR Serverless releases idle executors automatically. Instead of a static `maxExecutors` ceiling (which forces you to guess an absolute number at cold start), the T-shirt sizer uses dynamic allocation *rate controls* — `executorAllocationRatio=0.5` and `sustainedSchedulerBacklogTimeout=15s`. These throttle how fast the job requests new executors without capping the maximum, so a job that genuinely needs more executors still gets them, but short stages don't over-provision. On TPC-DS at 3 TB this cut cost ~42% versus platform defaults and reduced run-to-run cost variance (median CV 27% → 21%). (XS micro-jobs and Iceberg-Maintenance keep an explicit `maxExecutors`, since their sizing is bounded by design.)
 
 ### Config Matrix
 
-Worker type (cores/memory) is fixed by size + sub-category. `maxExecutors`, `partitions`, and `disk` are dynamically computed for Optimized/IO-Optimized.
+Worker type (cores/memory) is fixed by size + sub-category. `partitions` and `disk` are dynamically computed for Optimized/IO-Optimized. General, Optimized, and IO-Optimized use dynamic allocation rate controls (`executorAllocationRatio=0.5`, `sustainedSchedulerBacklogTimeout=15s`) instead of a static `maxExecutors`; XS and Iceberg-Maintenance keep an explicit `maxExecutors` because their sizing is bounded by design.
 
-| Size | Sub-category | Cores | Memory | maxExec | Partitions | Disk |
-|------|-------------|-------|--------|---------|-----------|------|
-| XS | General | 1 | 2G | 3 | 20 | — |
-| S | General | 4 | 27G | 50 | 1000 | 200G |
-| S | Optimized | 4 | 27G | f(input) | 2 × maxExec × cores | f(shuffle) |
-| S | IO-Optimized | 4 | 27G | f(input) × 2 | 2 × maxExec × cores | f(shuffle) |
-| M | General | 8 | 54G | 50 | 1000 | 200G |
-| M | Optimized | 8 | 54G | f(input) | 2 × maxExec × cores | f(shuffle) |
-| M | IO-Optimized | 4 | 27G | f(input) × 2 | 2 × maxExec × cores | f(shuffle) |
-| L | General | 8 | 54G | 100 | 1000 | 200G |
-| L | Optimized | 8 | 54G | f(input) | 2 × maxExec × cores | f(shuffle) |
-| L | IO-Optimized | 4 | 27G | f(input) × 2 | 2 × maxExec × cores | f(shuffle) |
-| XL | General | 16 | 108G | 125 | 2000 | 200G |
-| XL | Optimized | 16 | 108G | f(input) | 2 × maxExec × cores | f(shuffle) |
-| XL | IO-Optimized | 8 | 54G | f(input) × 2 | 2 × maxExec × cores | f(shuffle) |
+| Size | Sub-category | Cores | Memory | Executor scaling | Partitions | Disk |
+|------|-------------|-------|--------|------------------|-----------|------|
+| XS | General | 1 | 2G | maxExec=3 | 20 | — |
+| S | General | 4 | 27G | DRA rate controls | 1000 | 200G |
+| S | Optimized | 4 | 27G | DRA rate controls | 2 × f(input) × cores | f(shuffle) |
+| S | IO-Optimized | 4 | 27G | DRA rate controls | 2 × f(input) × cores | f(shuffle) |
+| M | General | 8 | 54G | DRA rate controls | 1000 | 200G |
+| M | Optimized | 8 | 54G | DRA rate controls | 2 × f(input) × cores | f(shuffle) |
+| M | IO-Optimized | 4 | 27G | DRA rate controls | 2 × f(input) × cores | f(shuffle) |
+| L | General | 8 | 54G | DRA rate controls | 1000 | 200G |
+| L | Optimized | 8 | 54G | DRA rate controls | 2 × f(input) × cores | f(shuffle) |
+| L | IO-Optimized | 4 | 27G | DRA rate controls | 2 × f(input) × cores | f(shuffle) |
+| XL | General | 16 | 108G | DRA rate controls | 2000 | 200G |
+| XL | Optimized | 16 | 108G | DRA rate controls | 2 × f(input) × cores | f(shuffle) |
+| XL | IO-Optimized | 8 | 54G | DRA rate controls | 2 × f(input) × cores | f(shuffle) |
 
-- `f(input)` — executor count derived from target duration, shuffle volume, and throughput constraints (min 1000, max 10000 for partitions)
-- `f(shuffle)` — disk per executor: `shuffle_gb / maxExec × 1.5` (min 200G, max 2000G)
+- `f(input)` — internal executor estimate derived from target duration, shuffle volume, and throughput constraints; used to size partitions and disk (partitions min 1000, max 10000)
+- `f(shuffle)` — disk per executor: `shuffle_gb / f(input) × 1.5` (min 200G, max 2000G)
 
 ---
 
 ## Benchmark Results
 
-Evaluated on TPC-DS at 3 TB scale, 104 queries, EMR Serverless release emr-7.13.0.
+Evaluated on the full TPC-DS suite at 3 TB scale, 95 queries, three iterations per configuration, EMR Serverless release emr-7.13.0, on a clean application with no pre-initialized capacity. Each query ran as its own job; cost is computed from `billedResourceUtilization` at list rates. Comparisons are against **true platform defaults** (unbounded dynamic allocation, default worker/disk).
 
-| Metric | Improvement |
-|--------|-------------|
-| Runtime | -72.7% |
-| Cost | -18.3% |
-| Regressions | 0 |
+The workflow delivers large cost savings at neutral runtime:
+
+| Configuration | Input needed | Runtime | Cost | Cost vs defaults | Regressions |
+|--------------|-------------|---------|------|-----------------:|:-----------:|
+| Platform defaults | Nothing | 228 min | $41.97 | — | — |
+| T-shirt General (`--size L`, Balanced DRA) | Data size | 236 min | $14.61 | −65% | 2/95 |
+| Fine Tuner (cost-optimized) | One event log | 238 min | $10.36 | −75% | 0/95 |
+
+The Fine Tuner produced zero cost regressions across all 95 queries. Runtime stays flat — the savings come from eliminating over-provisioned, idle executor time, not from running slower. Cost variance (run-to-run predictability) also improves sharply: the median coefficient of variation across queries falls from 36% (true defaults) to 9% with the Balanced DRA T-shirt configuration — roughly 4× more predictable billing.
+
+A separate performance-optimized run of the full suite, generated from the same event logs, ran **9% faster than platform defaults while still cutting cost 62%** — the right profile for latency-sensitive jobs. Cost-optimized minimizes spend at neutral runtime; performance-optimized minimizes wall-clock time.
 
 ---
 
@@ -271,6 +325,7 @@ Evaluated on TPC-DS at 3 TB scale, 104 queries, EMR Serverless release emr-7.13.
 | `pipeline_wrapper.py` | End-to-end: extract, recommend, format |
 | `format_to_job_config.py` | Convert recommendations to `sparkSubmitParameters` |
 | `lambda_orchestrator.py` | Lambda function for parallel extraction at scale |
+| `emr_s_app_consolidator.py` | Roll up per-job recommendations into EMR Serverless application settings (maximumCapacity, pre-initialized capacity) |
 | `write_to_iceberg.py` | Persist recommendations to Iceberg table |
 
 ---

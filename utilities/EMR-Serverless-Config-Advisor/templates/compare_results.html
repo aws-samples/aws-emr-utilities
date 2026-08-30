@@ -48,10 +48,26 @@
 {% endif %}
 {% endif %}
 
+{% macro worker_chips(w) %}
+  {% if w %}
+  <div class="source-worker-banner compact">
+    {% if w.cores %}<span class="swb-chip tier">{{ w.cores }} vCPU{% if w.tier %} · {{ w.tier }}{% endif %}</span>{% endif %}
+    {% if w.heap %}<span class="swb-chip">{{ w.heap }} heap{% if w.billed_memory_gb %} → {{ w.billed_memory_gb }} GB{% endif %}</span>{% endif %}
+    {% if w.platform == 'emr-serverless' %}
+      {% if w.disk %}<span class="swb-chip disk">{{ w.disk }}{% if w.disk_type %} · {{ w.disk_type }}{% endif %}</span>
+      {% else %}<span class="swb-chip unknown" title="submit-only parameter — absence from the event log does NOT mean it wasn't set">disk not captured</span>{% endif %}
+    {% endif %}
+    {% if w.max_executors %}<span class="swb-chip">{% if w.dynamic_allocation %}{{ w.min_executors or '?' }}–{{ w.max_executors }} exec{% else %}{{ w.max_executors }} exec{% endif %}</span>{% endif %}
+    {% if w.platform == 'emr-ec2' %}<span class="swb-chip muted">EC2</span>{% endif %}
+  </div>
+  {% endif %}
+{% endmacro %}
+
 <div class="run-head">
   <div class="run-card a">
     <span class="tag">RUN A</span>
     <div class="fname">{{ a.source_filename }}</div>
+    {{ worker_chips(a.source_worker) }}
     <div style="margin-top:8px">
       <span class="bottleneck-badge {{ a.bottleneck.primary|lower|replace(' ', '-') }}">{{ a.bottleneck.primary }}</span>
       <span class="bottleneck-score">{{ a.bottleneck.primary_score }}/100</span>
@@ -60,12 +76,24 @@
   <div class="run-card b">
     <span class="tag">RUN B</span>
     <div class="fname">{{ b.source_filename }}</div>
+    {{ worker_chips(b.source_worker) }}
     <div style="margin-top:8px">
       <span class="bottleneck-badge {{ b.bottleneck.primary|lower|replace(' ', '-') }}">{{ b.bottleneck.primary }}</span>
       <span class="bottleneck-score">{{ b.bottleneck.primary_score }}/100</span>
     </div>
   </div>
 </div>
+
+{% set wa, wb = a.source_worker, b.source_worker %}
+{% if wa and wb and (wa.cores != wb.cores or wa.heap != wb.heap or wa.disk != wb.disk or wa.max_executors != wb.max_executors) %}
+<div class="flash" style="background:#FFF6EA;border:1px solid #FFAD4A;color:#8A5A1F;">
+  <b>Different worker shapes</b> — metric deltas below mix workload changes with sizing changes:
+  {% if wa.cores != wb.cores %} vCPU {{ wa.cores }} → {{ wb.cores }};{% endif %}
+  {% if wa.heap != wb.heap %} heap {{ wa.heap }} → {{ wb.heap }};{% endif %}
+  {% if wa.disk != wb.disk %} disk {{ wa.disk or 'not captured' }} → {{ wb.disk or 'not captured' }};{% endif %}
+  {% if wa.max_executors != wb.max_executors %} max executors {{ wa.max_executors }} → {{ wb.max_executors }}{% endif %}
+</div>
+{% endif %}
 
 {% if a.run_cost and b.run_cost and (a.run_cost.source != 'billed' or b.run_cost.source != 'billed') %}
 <div class="flash" style="background:#FFF6EA;border:1px solid #FFAD4A;color:#8A5A1F;">

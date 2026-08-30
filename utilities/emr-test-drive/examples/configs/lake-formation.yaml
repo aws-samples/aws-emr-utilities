@@ -1,0 +1,96 @@
+# Governance comparison: what does Lake Formation cost, and does an upgrade change
+# behaviour under fine-grained access control?
+#
+# Access mode binds to the variant, not to the run. Full table access (FTA) and
+# fine-grained access control (FGAC) cannot coexist on one EMR Serverless
+# application, so each mode needs its own variant.
+#
+# Run this in a dedicated account: it registers an S3 location with Lake
+# Formation and grants permissions.
+
+run:
+  name: lf-modes
+  account: "111122223333"                                            # REQUIRED
+  region: us-east-1                                                  # REQUIRED
+  bucket: my-etd-bucket                                              # REQUIRED
+  execution_role_arn: arn:aws:iam::111122223333:role/my-etd-role     # REQUIRED
+
+variants:
+  - id: plain713
+    label: "7.13.0 plain Glue"
+    release_label: emr-7.13.0
+    access_mode: plain
+    baseline: true
+
+  - id: fta713
+    label: "7.13.0 LF full table access"
+    release_label: emr-7.13.0
+    access_mode: lf_fta
+
+  - id: fgac713
+    label: "7.13.0 LF fine-grained (FGAC)"
+    release_label: emr-7.13.0
+    access_mode: lf_fgac
+
+  - id: fgac711
+    label: "7.11.0 LF fine-grained (FGAC)"
+    release_label: emr-7.11.0
+    access_mode: lf_fgac
+
+comparisons:
+  - id: gov-plain-fgac
+    title: "Cost of governance: plain Glue -> LF fine-grained (FGAC)"
+    baseline: plain713
+    candidate: fgac713
+    intent: governance_overhead
+    primary: true
+    sizing_caveat: >-
+      FGAC runs two Spark drivers per job (user profile and system profile) and
+      splits executors between them, so the shapes deliberately differ. Read as
+      the price of enforcement, not as a matched benchmark.
+
+  - id: gov-plain-fta
+    title: "Cost of governance: plain Glue -> LF full table access"
+    baseline: plain713
+    candidate: fta713
+    intent: governance_overhead
+
+  - id: upgrade-fgac
+    title: "Upgrade under FGAC: 7.11.0 -> 7.13.0"
+    baseline: fgac711
+    candidate: fgac713
+    intent: upgrade_regression
+
+lake_formation:
+  database: etd_lf_modes
+
+workloads:
+  # Functional: the operation matrix, diffed against the documented support
+  # matrix for each variant's access mode.
+  - id: func/core
+    kind: functional
+    formats: [parquet, iceberg, delta]
+    iterations: 1
+    operations: DEFAULT
+
+  # Performance: your SQL, best-of-N. Replace these queries with ones that look
+  # like your real workload.
+  #
+  # job_repeats counts separate job runs, not iterations inside one job.
+  # Iterations within a job share driver and executors and cannot observe a
+  # whole-job environmental difference, which otherwise appears as a large and
+  # entirely fake cross-variant delta. See docs/methodology.md.
+  - id: perf/sql
+    kind: performance
+    iterations: 3
+    job_repeats: 3
+    queries:
+      q1_scan_filter: >
+        SELECT count(*) FROM {db}.fact WHERE amount > 50
+      q2_group_agg: >
+        SELECT category, count(*) c, avg(amount) a
+        FROM {db}.fact GROUP BY category ORDER BY c DESC
+      q3_join_agg: >
+        SELECT d.region, sum(f.amount) total
+        FROM {db}.fact f JOIN {db}.dim d ON f.dim_id = d.dim_id
+        GROUP BY d.region ORDER BY total DESC

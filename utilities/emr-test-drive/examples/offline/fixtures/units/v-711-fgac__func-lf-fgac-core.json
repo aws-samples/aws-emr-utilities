@@ -1,0 +1,1717 @@
+{
+  "run_id": "etd-20260813-a41f9c",
+  "variant_id": "v-711-fgac",
+  "workload_id": "func/lf-fgac-core",
+  "unit_kind": "operation",
+  "iterations": 2,
+  "cost_facts": {
+    "vcpu_hour": 17.5818,
+    "memory_gb_hour": 70.3271,
+    "storage_gb_hour": 65.9317,
+    "wall_clock_s": 1978.0,
+    "drivers_per_job": 2,
+    "avg_executors": 6,
+    "source": "synthetic fixture \u2014 derived from shape x wall clock"
+  },
+  "data_class": "SAMPLE",
+  "units": [
+    {
+      "name": "SELECT",
+      "table_format": "hive",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 8.3,
+      "iterations_observed": 2,
+      "job_id": "0000c4c79aa00034",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:052c954c7326ab6d",
+      "table_version_advanced": true
+    },
+    {
+      "name": "CREATE_TABLE",
+      "table_format": "hive",
+      "table_type": "external_partitioned",
+      "expected_state": "S",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "CREATE_TABLE"
+      ],
+      "duration_s": 10.83,
+      "iterations_observed": 2,
+      "job_id": "000052ed3627694d",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:af5f69f1145b1bc8",
+      "table_version_advanced": true
+    },
+    {
+      "name": "CREATE_TABLE_LIKE",
+      "table_format": "hive",
+      "table_type": "managed_partitioned",
+      "expected_state": "S3",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "CREATE_TABLE"
+      ],
+      "duration_s": 7.98,
+      "iterations_observed": 2,
+      "job_id": "00005555f5c79696",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:f5d6cca20f9a9f82",
+      "table_version_advanced": true
+    },
+    {
+      "name": "CTAS",
+      "table_format": "hive",
+      "table_type": "managed",
+      "expected_state": "S3",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "CREATE_TABLE"
+      ],
+      "duration_s": 31.65,
+      "iterations_observed": 2,
+      "job_id": "00000cd0f9c63338",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:f899862b1f4ef63b",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DESCRIBE",
+      "table_format": "hive",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "DESCRIBE"
+      ],
+      "duration_s": 23.92,
+      "iterations_observed": 2,
+      "job_id": "0000deded83c7692",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:d6015569effc8958",
+      "table_version_advanced": true
+    },
+    {
+      "name": "SHOW_PARTITIONS",
+      "table_format": "hive",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "DESCRIBE"
+      ],
+      "duration_s": 31.24,
+      "iterations_observed": 2,
+      "job_id": "000078c3481ec646",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:790f25db36569a49",
+      "table_version_advanced": true
+    },
+    {
+      "name": "SHOW_CREATE_TABLE",
+      "table_format": "hive",
+      "table_type": "external_partitioned",
+      "expected_state": "S",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "DESCRIBE"
+      ],
+      "duration_s": 12.6,
+      "iterations_observed": 2,
+      "job_id": "00007f5cd00ded34",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:bd7aff6b8f47dc03",
+      "table_version_advanced": true
+    },
+    {
+      "name": "ALTER_TABLE",
+      "table_format": "hive",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "SELECT",
+        "ALTER"
+      ],
+      "duration_s": 32.94,
+      "iterations_observed": 2,
+      "job_id": "00002c503d4822c4",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:c20f4c662da97d3a",
+      "table_version_advanced": true
+    },
+    {
+      "name": "ALTER_TABLE_SET_LOCATION",
+      "table_format": "hive",
+      "table_type": "managed_partitioned",
+      "expected_state": "N",
+      "expected_reason": "documented support state",
+      "lf_permissions": [],
+      "duration_s": 37.26,
+      "iterations_observed": 2,
+      "job_id": "0000f5ab5eebf022",
+      "status": "FAILED",
+      "error": "Operation ALTER_TABLE_SET_LOCATION on hive is not supported: documented support state",
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "ADD_PARTITION",
+      "table_format": "hive",
+      "table_type": "external_partitioned",
+      "expected_state": "S",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 6.99,
+      "iterations_observed": 2,
+      "job_id": "00003fda96357856",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:06e620e293605187",
+      "table_version_advanced": true
+    },
+    {
+      "name": "REPAIR_TABLE",
+      "table_format": "hive",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "SELECT",
+        "ALTER"
+      ],
+      "duration_s": 20.21,
+      "iterations_observed": 2,
+      "job_id": "00000c70b904bdc2",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:21839ce9669e69bf",
+      "table_version_advanced": true
+    },
+    {
+      "name": "LOAD_DATA",
+      "table_format": "hive",
+      "table_type": "external_partitioned",
+      "expected_state": "N",
+      "expected_reason": "documented support state",
+      "lf_permissions": [],
+      "duration_s": 5.33,
+      "iterations_observed": 2,
+      "job_id": "0000d7c1017fa721",
+      "status": "FAILED",
+      "error": "Operation LOAD_DATA on hive is not supported: documented support state",
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "INSERT_INTO",
+      "table_format": "hive",
+      "table_type": "external_partitioned",
+      "expected_state": "S",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 13.22,
+      "iterations_observed": 2,
+      "job_id": "000042a49304ec53",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:7ef409a936d9e1cc",
+      "table_version_advanced": true
+    },
+    {
+      "name": "INSERT_OVERWRITE",
+      "table_format": "hive",
+      "table_type": "external_partitioned",
+      "expected_state": "S",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT",
+        "DELETE",
+        "ALTER"
+      ],
+      "duration_s": 33.0,
+      "iterations_observed": 2,
+      "job_id": "0000e3a3ab344090",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:3106219c14e128b1",
+      "table_version_advanced": true
+    },
+    {
+      "name": "TRUNCATE_TABLE",
+      "table_format": "hive",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT",
+        "DELETE",
+        "ALTER"
+      ],
+      "duration_s": 19.01,
+      "iterations_observed": 2,
+      "job_id": "0000f68e88b74d6d",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:81615ef671dd2228",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DROP_TABLE",
+      "table_format": "hive",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "SELECT",
+        "DROP",
+        "DELETE",
+        "ALTER"
+      ],
+      "duration_s": 17.82,
+      "iterations_observed": 2,
+      "job_id": "00001224122fd73b",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:022e4d20615e4ec5",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DF_WRITER_V1",
+      "table_format": "hive",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "append to existing table only",
+      "lf_permissions": [
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 8.23,
+      "iterations_observed": 2,
+      "job_id": "0000216ed2498109",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:0303c8f87fe6e651",
+      "orphaned_object_count": 48,
+      "orphaned_bytes": 191365120,
+      "defect_note": "Overwrite could not delete prior-generation files; new files written alongside old."
+    },
+    {
+      "name": "DF_WRITER_V2",
+      "table_format": "hive",
+      "table_type": "managed_partitioned",
+      "expected_state": "N",
+      "expected_reason": "Cannot write into v1 table; DataFrameWriterV2 requires a v2 table",
+      "lf_permissions": [],
+      "duration_s": 35.93,
+      "iterations_observed": 2,
+      "job_id": "000053c0e29c3adb",
+      "status": "FAILED",
+      "error": "Operation DF_WRITER_V2 on hive is not supported: Cannot write into v1 table; DataFrameWriterV2 requires a v2 table",
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "ROW_FILTER",
+      "table_format": "hive",
+      "table_type": "external_partitioned",
+      "expected_state": "S",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 14.21,
+      "iterations_observed": 2,
+      "job_id": "000000035e40d82c",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:675758b6d49921a1",
+      "table_version_advanced": true
+    },
+    {
+      "name": "COLUMN_FILTER",
+      "table_format": "hive",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 6.1,
+      "iterations_observed": 2,
+      "job_id": "0000a79e1ad79164",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:88b45d60138f626c",
+      "table_version_advanced": true
+    },
+    {
+      "name": "CELL_FILTER",
+      "table_format": "hive",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 35.66,
+      "iterations_observed": 2,
+      "job_id": "0000dcf6d44af3af",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:af6f9cd70f3810d6",
+      "table_version_advanced": true
+    },
+    {
+      "name": "NESTED_FILTER",
+      "table_format": "hive",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 32.94,
+      "iterations_observed": 2,
+      "job_id": "000034f12b2aa60d",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:134d05b4d3e6ff95",
+      "table_version_advanced": true
+    },
+    {
+      "name": "UPDATE",
+      "table_format": "hive",
+      "table_type": "external_partitioned",
+      "expected_state": "N",
+      "expected_reason": "EMR 7.11 and older do not support DELETE/UPDATE/MERGE under FGAC (documented)",
+      "lf_permissions": [],
+      "duration_s": 27.78,
+      "iterations_observed": 2,
+      "job_id": "000000504ec5a0aa",
+      "status": "FAILED",
+      "error": "Operation UPDATE on hive is not supported: EMR 7.11 and older do not support DELETE/UPDATE/MERGE under FGAC (documented)",
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "DELETE",
+      "table_format": "hive",
+      "table_type": "external_partitioned",
+      "expected_state": "N",
+      "expected_reason": "EMR 7.11 and older do not support DELETE/UPDATE/MERGE under FGAC (documented)",
+      "lf_permissions": [],
+      "duration_s": 21.04,
+      "iterations_observed": 2,
+      "job_id": "0000a37435a60d0a",
+      "status": "FAILED",
+      "error": "Operation DELETE on hive is not supported: EMR 7.11 and older do not support DELETE/UPDATE/MERGE under FGAC (documented)",
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "MERGE_INTO",
+      "table_format": "hive",
+      "table_type": "external",
+      "expected_state": "N",
+      "expected_reason": "EMR 7.11 and older do not support DELETE/UPDATE/MERGE under FGAC (documented)",
+      "lf_permissions": [],
+      "duration_s": 22.86,
+      "iterations_observed": 2,
+      "job_id": "0000ccb926541663",
+      "status": "FAILED",
+      "error": "Operation MERGE_INTO on hive is not supported: EMR 7.11 and older do not support DELETE/UPDATE/MERGE under FGAC (documented)",
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "SELECT",
+      "table_format": "iceberg",
+      "table_type": "external_partitioned",
+      "expected_state": "S",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 14.54,
+      "iterations_observed": 2,
+      "job_id": "0000815c2d405d0e",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:d5389671ecaca1f9",
+      "table_version_advanced": true
+    },
+    {
+      "name": "CREATE_TABLE",
+      "table_format": "iceberg",
+      "table_type": "external_partitioned",
+      "expected_state": "S",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "CREATE_TABLE"
+      ],
+      "duration_s": 15.07,
+      "iterations_observed": 2,
+      "job_id": "0000f988e29b3d2d",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:fcd9169bd6feb80e",
+      "table_version_advanced": true
+    },
+    {
+      "name": "CREATE_TABLE_LIKE",
+      "table_format": "iceberg",
+      "table_type": "external",
+      "expected_state": "S3",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "CREATE_TABLE"
+      ],
+      "duration_s": 36.77,
+      "iterations_observed": 2,
+      "job_id": "0000d3eeb9be280a",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:b74bf33262248426",
+      "table_version_advanced": true
+    },
+    {
+      "name": "CTAS",
+      "table_format": "iceberg",
+      "table_type": "managed",
+      "expected_state": "S3",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "CREATE_TABLE"
+      ],
+      "duration_s": 31.71,
+      "iterations_observed": 2,
+      "job_id": "000016f19be9309f",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:a917bf59f2e31207",
+      "table_version_advanced": true
+    },
+    {
+      "name": "REPLACE_TABLE_AS_SELECT",
+      "table_format": "iceberg",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 19.93,
+      "iterations_observed": 2,
+      "job_id": "000043794cfa70a2",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:1d353eaeab113e2a",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DESCRIBE",
+      "table_format": "iceberg",
+      "table_type": "managed_partitioned",
+      "expected_state": "S3",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "DESCRIBE"
+      ],
+      "duration_s": 6.09,
+      "iterations_observed": 2,
+      "job_id": "000033e4775ed235",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:a728fc7dfc8da4e0",
+      "table_version_advanced": true
+    },
+    {
+      "name": "SHOW_CREATE_TABLE",
+      "table_format": "iceberg",
+      "table_type": "external",
+      "expected_state": "S3",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "DESCRIBE"
+      ],
+      "duration_s": 5.72,
+      "iterations_observed": 2,
+      "job_id": "000024e1d791771e",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:c92267ca79d7566f",
+      "table_version_advanced": true
+    },
+    {
+      "name": "ALTER_TABLE",
+      "table_format": "iceberg",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 18.03,
+      "iterations_observed": 2,
+      "job_id": "00002f20530d42f7",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:a30e15da45d5414a",
+      "table_version_advanced": true
+    },
+    {
+      "name": "ALTER_TABLE_SET_LOCATION",
+      "table_format": "iceberg",
+      "table_type": "managed_partitioned",
+      "expected_state": "S3",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 8.1,
+      "iterations_observed": 2,
+      "job_id": "0000a716dd5c0a7d",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:ad679758f182d3bb",
+      "table_version_advanced": true
+    },
+    {
+      "name": "ALTER_TABLE_RENAME",
+      "table_format": "iceberg",
+      "table_type": "external_partitioned",
+      "expected_state": "S",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "CREATE_TABLE",
+        "DROP"
+      ],
+      "duration_s": 33.23,
+      "iterations_observed": 2,
+      "job_id": "0000a51a8b4174c6",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:de419fb128daf4a9",
+      "table_version_advanced": true
+    },
+    {
+      "name": "INSERT_INTO",
+      "table_format": "iceberg",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 35.45,
+      "iterations_observed": 2,
+      "job_id": "0000b66239a0a3fd",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:1328811452acd6b5",
+      "table_version_advanced": true
+    },
+    {
+      "name": "INSERT_OVERWRITE",
+      "table_format": "iceberg",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 23.17,
+      "iterations_observed": 2,
+      "job_id": "00008a6b943df354",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:10f2f34dd0f11116",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DELETE",
+      "table_format": "iceberg",
+      "table_type": "external_partitioned",
+      "expected_state": "N",
+      "expected_reason": "not supported under FGAC before EMR 7.12.0 (documented)",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 3.96,
+      "iterations_observed": 2,
+      "job_id": "0000a5ec2f95778a",
+      "status": "FAILED",
+      "error": "Operation DELETE on iceberg is not supported: not supported under FGAC before EMR 7.12.0 (documented)",
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "UPDATE",
+      "table_format": "iceberg",
+      "table_type": "external",
+      "expected_state": "N",
+      "expected_reason": "not supported under FGAC before EMR 7.12.0 (documented)",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 25.32,
+      "iterations_observed": 2,
+      "job_id": "00009f9d096655be",
+      "status": "FAILED",
+      "error": "Operation UPDATE on iceberg is not supported: not supported under FGAC before EMR 7.12.0 (documented)",
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "MERGE_INTO",
+      "table_format": "iceberg",
+      "table_type": "external_partitioned",
+      "expected_state": "N",
+      "expected_reason": "not supported under FGAC before EMR 7.12.0 (documented)",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 11.87,
+      "iterations_observed": 2,
+      "job_id": "00001b053de48088",
+      "status": "FAILED",
+      "error": "Operation MERGE_INTO on iceberg is not supported: not supported under FGAC before EMR 7.12.0 (documented)",
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "DROP_TABLE",
+      "table_format": "iceberg",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "SELECT",
+        "DELETE",
+        "DROP"
+      ],
+      "duration_s": 34.76,
+      "iterations_observed": 2,
+      "job_id": "0000f5ba02698320",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:86f39e9c340b80a3",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DF_WRITER_V1",
+      "table_format": "iceberg",
+      "table_type": "external",
+      "expected_state": "N",
+      "expected_reason": "documented support state",
+      "lf_permissions": [],
+      "duration_s": 30.61,
+      "iterations_observed": 2,
+      "job_id": "0000bc4236d2f751",
+      "status": "FAILED",
+      "error": "Operation DF_WRITER_V1 on iceberg is not supported: documented support state",
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "DF_WRITER_V2",
+      "table_format": "iceberg",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "append to existing table only",
+      "lf_permissions": [
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 6.98,
+      "iterations_observed": 2,
+      "job_id": "000064afbb9b799a",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:0ba9e4a053cae7d4",
+      "table_version_advanced": true
+    },
+    {
+      "name": "METADATA_TABLES",
+      "table_format": "iceberg",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "certain metadata tables are hidden",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 25.46,
+      "iterations_observed": 2,
+      "job_id": "00009dc216aa0c40",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:33d73a0918c7c26a",
+      "table_version_advanced": true
+    },
+    {
+      "name": "STORED_PROCEDURES",
+      "table_format": "iceberg",
+      "table_type": "managed_partitioned",
+      "expected_state": "N",
+      "expected_reason": "supported only for tables NOT registered in LF and not using register_table/migrate",
+      "lf_permissions": [],
+      "duration_s": 6.99,
+      "iterations_observed": 2,
+      "job_id": "0000af28e108e013",
+      "status": "FAILED",
+      "error": "Operation STORED_PROCEDURES on iceberg is not supported: supported only for tables NOT registered in LF and not using register_table/migrate",
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "ROW_FILTER",
+      "table_format": "iceberg",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 16.62,
+      "iterations_observed": 2,
+      "job_id": "0000e287f624dc36",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:3bd3b70d5409078f",
+      "table_version_advanced": true
+    },
+    {
+      "name": "COLUMN_FILTER",
+      "table_format": "iceberg",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 13.43,
+      "iterations_observed": 2,
+      "job_id": "00008f7cbef449c4",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:9d7ea64beaf31ba5",
+      "table_version_advanced": true
+    },
+    {
+      "name": "CELL_FILTER",
+      "table_format": "iceberg",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 8.79,
+      "iterations_observed": 2,
+      "job_id": "0000e2831bd94296",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:5b3e1a2ff4e349ae",
+      "table_version_advanced": true
+    },
+    {
+      "name": "NESTED_FILTER",
+      "table_format": "iceberg",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 22.48,
+      "iterations_observed": 2,
+      "job_id": "00005e38c010387d",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:3dd3e153d3078d9c",
+      "table_version_advanced": true
+    },
+    {
+      "name": "SELECT",
+      "table_format": "hudi",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 33.06,
+      "iterations_observed": 2,
+      "job_id": "000028c9778cdab3",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:1d1e54d00aa93889",
+      "table_version_advanced": true
+    },
+    {
+      "name": "CREATE_TABLE",
+      "table_format": "hudi",
+      "table_type": "external_partitioned",
+      "expected_state": "S3",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "CREATE_TABLE"
+      ],
+      "duration_s": 12.65,
+      "iterations_observed": 2,
+      "job_id": "0000a129eba41675",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:ce7e29fb8791dbac",
+      "table_version_advanced": true
+    },
+    {
+      "name": "CREATE_TABLE_LIKE",
+      "table_format": "hudi",
+      "table_type": "external_partitioned",
+      "expected_state": "S3",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "CREATE_TABLE"
+      ],
+      "duration_s": 6.08,
+      "iterations_observed": 2,
+      "job_id": "0000046b25b1d914",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:8b514196057a0a5e",
+      "table_version_advanced": true
+    },
+    {
+      "name": "CTAS",
+      "table_format": "hudi",
+      "table_type": "managed",
+      "expected_state": "N",
+      "expected_reason": "documented support state",
+      "lf_permissions": [],
+      "duration_s": 15.15,
+      "iterations_observed": 2,
+      "job_id": "0000de0f16713539",
+      "status": "FAILED",
+      "error": "Operation CTAS on hudi is not supported: documented support state",
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "DESCRIBE",
+      "table_format": "hudi",
+      "table_type": "managed_partitioned",
+      "expected_state": "S3",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "DESCRIBE"
+      ],
+      "duration_s": 26.11,
+      "iterations_observed": 2,
+      "job_id": "000055efc7052260",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:4fb99a8291de1b2d",
+      "table_version_advanced": true
+    },
+    {
+      "name": "SHOW_CREATE_TABLE",
+      "table_format": "hudi",
+      "table_type": "external",
+      "expected_state": "S3",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "DESCRIBE"
+      ],
+      "duration_s": 32.95,
+      "iterations_observed": 2,
+      "job_id": "000072973b3a6bce",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:99a5f44b69f89850",
+      "table_version_advanced": true
+    },
+    {
+      "name": "ALTER_TABLE",
+      "table_format": "hudi",
+      "table_type": "external",
+      "expected_state": "S3",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 27.09,
+      "iterations_observed": 2,
+      "job_id": "000083a8769be8c5",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:41bc8bca22cb4505",
+      "table_version_advanced": true
+    },
+    {
+      "name": "INSERT_INTO",
+      "table_format": "hudi",
+      "table_type": "managed_partitioned",
+      "expected_state": "S3",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "SELECT",
+        "ALTER"
+      ],
+      "duration_s": 15.34,
+      "iterations_observed": 2,
+      "job_id": "0000a6ebfaada0bb",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:559aa7d519d2e657",
+      "table_version_advanced": true
+    },
+    {
+      "name": "INSERT_OVERWRITE",
+      "table_format": "hudi",
+      "table_type": "managed_partitioned",
+      "expected_state": "S3",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "SELECT",
+        "ALTER"
+      ],
+      "duration_s": 5.79,
+      "iterations_observed": 2,
+      "job_id": "0000c3ceca9a71d3",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:f186899b8b63fd35",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DELETE",
+      "table_format": "hudi",
+      "table_type": "managed_partitioned",
+      "expected_state": "N",
+      "expected_reason": "EMR 7.11 and older do not support DELETE/UPDATE/MERGE under FGAC (documented)",
+      "lf_permissions": [],
+      "duration_s": 4.52,
+      "iterations_observed": 2,
+      "job_id": "0000dcac530341b1",
+      "status": "FAILED",
+      "error": "Operation DELETE on hudi is not supported: EMR 7.11 and older do not support DELETE/UPDATE/MERGE under FGAC (documented)",
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "UPDATE",
+      "table_format": "hudi",
+      "table_type": "external_partitioned",
+      "expected_state": "N",
+      "expected_reason": "EMR 7.11 and older do not support DELETE/UPDATE/MERGE under FGAC (documented)",
+      "lf_permissions": [],
+      "duration_s": 25.93,
+      "iterations_observed": 2,
+      "job_id": "00001633fe3ce5a3",
+      "status": "FAILED",
+      "error": "Operation UPDATE on hudi is not supported: EMR 7.11 and older do not support DELETE/UPDATE/MERGE under FGAC (documented)",
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "MERGE_INTO",
+      "table_format": "hudi",
+      "table_type": "external_partitioned",
+      "expected_state": "N",
+      "expected_reason": "EMR 7.11 and older do not support DELETE/UPDATE/MERGE under FGAC (documented)",
+      "lf_permissions": [],
+      "duration_s": 32.63,
+      "iterations_observed": 2,
+      "job_id": "00001f7fe58ab01a",
+      "status": "FAILED",
+      "error": "Operation MERGE_INTO on hudi is not supported: EMR 7.11 and older do not support DELETE/UPDATE/MERGE under FGAC (documented)",
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "DROP_TABLE",
+      "table_format": "hudi",
+      "table_type": "managed",
+      "expected_state": "S3",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "SELECT",
+        "DROP"
+      ],
+      "duration_s": 27.2,
+      "iterations_observed": 2,
+      "job_id": "000024e67a54b756",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:db3598c2f24c5b00",
+      "table_version_advanced": true
+    },
+    {
+      "name": "DF_WRITER_V1",
+      "table_format": "hudi",
+      "table_type": "external",
+      "expected_state": "N",
+      "expected_reason": "documented support state",
+      "lf_permissions": [],
+      "duration_s": 25.9,
+      "iterations_observed": 2,
+      "job_id": "0000cb8bb2451b5d",
+      "status": "FAILED",
+      "error": "Operation DF_WRITER_V1 on hudi is not supported: documented support state",
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "DF_WRITER_V2",
+      "table_format": "hudi",
+      "table_type": "managed",
+      "expected_state": "S3",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 31.76,
+      "iterations_observed": 2,
+      "job_id": "00009918b4b68908",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:725f9f2f1b992c3f",
+      "table_version_advanced": true
+    },
+    {
+      "name": "METADATA_TABLES",
+      "table_format": "hudi",
+      "table_type": "managed_partitioned",
+      "expected_state": "N",
+      "expected_reason": "documented support state",
+      "lf_permissions": [],
+      "duration_s": 22.93,
+      "iterations_observed": 2,
+      "job_id": "000024916c34ee64",
+      "status": "FAILED",
+      "error": "Operation METADATA_TABLES on hudi is not supported: documented support state",
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "TABLE_MAINTENANCE",
+      "table_format": "hudi",
+      "table_type": "external",
+      "expected_state": "N",
+      "expected_reason": "documented support state",
+      "lf_permissions": [],
+      "duration_s": 28.0,
+      "iterations_observed": 2,
+      "job_id": "000005d960ae40ae",
+      "status": "FAILED",
+      "error": "Operation TABLE_MAINTENANCE on hudi is not supported: documented support state",
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "TIME_TRAVEL",
+      "table_format": "hudi",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "must use WHERE _hoodie_commit_time <= point_in_time; Spark TIMESTAMP AS OF syntax and spark.read() are NOT supported",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 4.82,
+      "iterations_observed": 2,
+      "job_id": "000017f114ce6de1",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:383daed72af33016",
+      "table_version_advanced": true
+    },
+    {
+      "name": "ROW_FILTER",
+      "table_format": "hudi",
+      "table_type": "external",
+      "expected_state": "S",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 17.64,
+      "iterations_observed": 2,
+      "job_id": "0000cc0f0ad2b5c8",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:8b309c1271203413",
+      "table_version_advanced": true
+    },
+    {
+      "name": "COLUMN_FILTER",
+      "table_format": "hudi",
+      "table_type": "managed_partitioned",
+      "expected_state": "S",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 10.41,
+      "iterations_observed": 2,
+      "job_id": "0000cc054bf9fe3d",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:4cde33a781e94976",
+      "table_version_advanced": true
+    },
+    {
+      "name": "CELL_FILTER",
+      "table_format": "hudi",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 24.06,
+      "iterations_observed": 2,
+      "job_id": "000078d768330db2",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:f18f856edfda29ba",
+      "table_version_advanced": true
+    },
+    {
+      "name": "SELECT",
+      "table_format": "delta",
+      "table_type": "managed_partitioned",
+      "expected_state": "N",
+      "expected_reason": "not supported under FGAC before EMR 7.12.0 (documented)",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 26.47,
+      "iterations_observed": 2,
+      "job_id": "00002f29e7724a91",
+      "status": "FAILED",
+      "error": "Operation SELECT on delta is not supported: not supported under FGAC before EMR 7.12.0 (documented)",
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "CREATE_TABLE",
+      "table_format": "delta",
+      "table_type": "external",
+      "expected_state": "N",
+      "expected_reason": "not supported under FGAC before EMR 7.12.0 (documented)",
+      "lf_permissions": [
+        "CREATE_TABLE"
+      ],
+      "duration_s": 30.13,
+      "iterations_observed": 2,
+      "job_id": "000026d4fd906f0d",
+      "status": "FAILED",
+      "error": "Operation CREATE_TABLE on delta is not supported: not supported under FGAC before EMR 7.12.0 (documented)",
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "CREATE_TABLE_LIKE",
+      "table_format": "delta",
+      "table_type": "external_partitioned",
+      "expected_state": "N",
+      "expected_reason": "documented support state",
+      "lf_permissions": [],
+      "duration_s": 16.48,
+      "iterations_observed": 2,
+      "job_id": "000013b0e032b4ec",
+      "status": "FAILED",
+      "error": "Operation CREATE_TABLE_LIKE on delta is not supported: documented support state",
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "CTAS",
+      "table_format": "delta",
+      "table_type": "external",
+      "expected_state": "N",
+      "expected_reason": "not supported under FGAC before EMR 7.12.0 (documented)",
+      "lf_permissions": [
+        "CREATE_TABLE"
+      ],
+      "duration_s": 33.31,
+      "iterations_observed": 2,
+      "job_id": "0000272ad757ebcf",
+      "status": "FAILED",
+      "error": "Operation CTAS on delta is not supported: not supported under FGAC before EMR 7.12.0 (documented)",
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "REPLACE_TABLE_AS_SELECT",
+      "table_format": "delta",
+      "table_type": "managed_partitioned",
+      "expected_state": "N",
+      "expected_reason": "not supported under FGAC before EMR 7.12.0 (documented)",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 10.67,
+      "iterations_observed": 2,
+      "job_id": "0000d7547e84847d",
+      "status": "FAILED",
+      "error": "Operation REPLACE_TABLE_AS_SELECT on delta is not supported: not supported under FGAC before EMR 7.12.0 (documented)",
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "DESCRIBE",
+      "table_format": "delta",
+      "table_type": "external",
+      "expected_state": "S3",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "DESCRIBE"
+      ],
+      "duration_s": 11.63,
+      "iterations_observed": 2,
+      "job_id": "0000d21af971b2ee",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:a473dda57ccb0f6b",
+      "table_version_advanced": true
+    },
+    {
+      "name": "SHOW_CREATE_TABLE",
+      "table_format": "delta",
+      "table_type": "external_partitioned",
+      "expected_state": "N",
+      "expected_reason": "documented support state | Delta DDL and table creation under fine-grained access control require EMR 7.12.0 or later",
+      "lf_permissions": [],
+      "duration_s": 24.73,
+      "iterations_observed": 2,
+      "job_id": "00001146833b7532",
+      "status": "FAILED",
+      "error": "Operation SHOW_CREATE_TABLE on delta is not supported: documented support state | Delta DDL and table creation under fine-grained access control require EMR 7.12.0 or later",
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "ALTER_TABLE",
+      "table_format": "delta",
+      "table_type": "external",
+      "expected_state": "N",
+      "expected_reason": "not supported under FGAC before EMR 7.12.0 (documented)",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT"
+      ],
+      "duration_s": 37.02,
+      "iterations_observed": 2,
+      "job_id": "0000abf49ae17e97",
+      "status": "FAILED",
+      "error": "Operation ALTER_TABLE on delta is not supported: not supported under FGAC before EMR 7.12.0 (documented)",
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "ALTER_TABLE_SET_LOCATION",
+      "table_format": "delta",
+      "table_type": "external",
+      "expected_state": "S3",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT"
+      ],
+      "duration_s": 13.33,
+      "iterations_observed": 2,
+      "job_id": "0000aaced0156256",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:51c000770d6da86f",
+      "table_version_advanced": true
+    },
+    {
+      "name": "INSERT_INTO",
+      "table_format": "delta",
+      "table_type": "managed",
+      "expected_state": "N",
+      "expected_reason": "not supported under FGAC before EMR 7.12.0 (documented)",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT"
+      ],
+      "duration_s": 19.94,
+      "iterations_observed": 2,
+      "job_id": "0000241aeb559475",
+      "status": "FAILED",
+      "error": "Operation INSERT_INTO on delta is not supported: not supported under FGAC before EMR 7.12.0 (documented)",
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "INSERT_OVERWRITE",
+      "table_format": "delta",
+      "table_type": "external_partitioned",
+      "expected_state": "N",
+      "expected_reason": "not supported under FGAC before EMR 7.12.0 (documented)",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT"
+      ],
+      "duration_s": 19.54,
+      "iterations_observed": 2,
+      "job_id": "000000d1d6b43e79",
+      "status": "FAILED",
+      "error": "Operation INSERT_OVERWRITE on delta is not supported: not supported under FGAC before EMR 7.12.0 (documented)",
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "DELETE",
+      "table_format": "delta",
+      "table_type": "external",
+      "expected_state": "N",
+      "expected_reason": "not supported under FGAC before EMR 7.12.0 (documented)",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT"
+      ],
+      "duration_s": 34.73,
+      "iterations_observed": 2,
+      "job_id": "0000d40db28f9f77",
+      "status": "FAILED",
+      "error": "Operation DELETE on delta is not supported: not supported under FGAC before EMR 7.12.0 (documented)",
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "UPDATE",
+      "table_format": "delta",
+      "table_type": "external",
+      "expected_state": "N",
+      "expected_reason": "not supported under FGAC before EMR 7.12.0 (documented)",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT"
+      ],
+      "duration_s": 7.48,
+      "iterations_observed": 2,
+      "job_id": "0000e042885d9f06",
+      "status": "FAILED",
+      "error": "Operation UPDATE on delta is not supported: not supported under FGAC before EMR 7.12.0 (documented)",
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "MERGE_INTO",
+      "table_format": "delta",
+      "table_type": "external_partitioned",
+      "expected_state": "N",
+      "expected_reason": "not supported under FGAC before EMR 7.12.0 (documented)",
+      "lf_permissions": [
+        "SELECT",
+        "INSERT"
+      ],
+      "duration_s": 29.08,
+      "iterations_observed": 2,
+      "job_id": "0000ab644676ad0f",
+      "status": "FAILED",
+      "error": "Operation MERGE_INTO on delta is not supported: not supported under FGAC before EMR 7.12.0 (documented)",
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "DROP_TABLE",
+      "table_format": "delta",
+      "table_type": "managed",
+      "expected_state": "N",
+      "expected_reason": "not supported under FGAC before EMR 7.12.0 (documented)",
+      "lf_permissions": [
+        "SELECT",
+        "DELETE",
+        "DROP"
+      ],
+      "duration_s": 24.72,
+      "iterations_observed": 2,
+      "job_id": "00006932d23800db",
+      "status": "FAILED",
+      "error": "Operation DROP_TABLE on delta is not supported: not supported under FGAC before EMR 7.12.0 (documented)",
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "DF_WRITER_V1",
+      "table_format": "delta",
+      "table_type": "external",
+      "expected_state": "N",
+      "expected_reason": "documented support state",
+      "lf_permissions": [],
+      "duration_s": 8.71,
+      "iterations_observed": 2,
+      "job_id": "00004013f3334df2",
+      "status": "FAILED",
+      "error": "Operation DF_WRITER_V1 on delta is not supported: documented support state",
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "DF_WRITER_V2",
+      "table_format": "delta",
+      "table_type": "managed_partitioned",
+      "expected_state": "N",
+      "expected_reason": "not supported under FGAC before EMR 7.12.0 (documented)",
+      "lf_permissions": [
+        "INSERT",
+        "ALTER"
+      ],
+      "duration_s": 36.94,
+      "iterations_observed": 2,
+      "job_id": "00003f25792dc8ce",
+      "status": "FAILED",
+      "error": "Operation DF_WRITER_V2 on delta is not supported: not supported under FGAC before EMR 7.12.0 (documented)",
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "TABLE_MAINTENANCE",
+      "table_format": "delta",
+      "table_type": "managed_partitioned",
+      "expected_state": "N",
+      "expected_reason": "documented support state",
+      "lf_permissions": [],
+      "duration_s": 36.11,
+      "iterations_observed": 2,
+      "job_id": "000010d664c9062f",
+      "status": "FAILED",
+      "error": "Operation TABLE_MAINTENANCE on delta is not supported: documented support state",
+      "row_count": null,
+      "result_checksum": null
+    },
+    {
+      "name": "ROW_FILTER",
+      "table_format": "delta",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "Glue collapses Spark-created Delta schema into a single array<string> 'col' column; remove col and add real columns before defining column/cell filters",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 13.7,
+      "iterations_observed": 2,
+      "job_id": "00009d6edbfd83a5",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:804df22e0ab4979f",
+      "table_version_advanced": true
+    },
+    {
+      "name": "COLUMN_FILTER",
+      "table_format": "delta",
+      "table_type": "external_partitioned",
+      "expected_state": "S",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 34.23,
+      "iterations_observed": 2,
+      "job_id": "00004959fb689a67",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:da78b76cb55040a8",
+      "table_version_advanced": true
+    },
+    {
+      "name": "CELL_FILTER",
+      "table_format": "delta",
+      "table_type": "managed",
+      "expected_state": "S",
+      "expected_reason": "documented support state",
+      "lf_permissions": [
+        "SELECT"
+      ],
+      "duration_s": 8.54,
+      "iterations_observed": 2,
+      "job_id": "00006deca98820d4",
+      "status": "SUCCESS",
+      "error": null,
+      "row_count": 5000,
+      "result_checksum": "sha256:cd8df6574aabf9da",
+      "table_version_advanced": true
+    },
+    {
+      "name": "ROW_FILTER",
+      "table_format": "iceberg",
+      "table_type": "managed",
+      "status": "SUCCESS",
+      "error": null,
+      "duration_s": 2.14,
+      "row_count": 1000,
+      "result_checksum": "sha256:d3c1aa1a00c7381d",
+      "filter_kind": "row",
+      "rows_visible": 1000,
+      "rows_permitted": 1000,
+      "columns_visible": [
+        "amount",
+        "category",
+        "dim_id",
+        "fact_id"
+      ],
+      "columns_permitted": null,
+      "row_filter_enforced": true,
+      "column_filter_enforced": null,
+      "filter_over_disclosure": false,
+      "expected_state": "S",
+      "expected_reason": "documented support state"
+    },
+    {
+      "name": "COLUMN_FILTER",
+      "table_format": "iceberg",
+      "table_type": "managed",
+      "status": "SUCCESS",
+      "error": null,
+      "duration_s": 0.74,
+      "row_count": 10000,
+      "result_checksum": "sha256:29a9e4c74f90861c",
+      "filter_kind": "column",
+      "rows_visible": 10000,
+      "rows_permitted": 10000,
+      "columns_visible": [
+        "category",
+        "dim_id",
+        "fact_id"
+      ],
+      "columns_permitted": [
+        "category",
+        "dim_id",
+        "fact_id"
+      ],
+      "row_filter_enforced": null,
+      "column_filter_enforced": true,
+      "filter_over_disclosure": false,
+      "expected_state": "S",
+      "expected_reason": "documented support state"
+    },
+    {
+      "name": "CELL_FILTER",
+      "table_format": "iceberg",
+      "table_type": "managed",
+      "status": "SUCCESS",
+      "error": null,
+      "duration_s": 0.43,
+      "row_count": 1000,
+      "result_checksum": "sha256:0353183f508d5d0d",
+      "filter_kind": "cell",
+      "rows_visible": 1000,
+      "rows_permitted": 1000,
+      "columns_visible": [
+        "category",
+        "fact_id"
+      ],
+      "columns_permitted": [
+        "category",
+        "fact_id"
+      ],
+      "row_filter_enforced": true,
+      "column_filter_enforced": true,
+      "filter_over_disclosure": false,
+      "expected_state": "S",
+      "expected_reason": "documented support state"
+    }
+  ]
+}

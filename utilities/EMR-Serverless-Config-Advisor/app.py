@@ -237,8 +237,9 @@ PRODUCT CAPABILITIES — never claim the UI lacks these; direct users to them:
   Serverless needs). The result IS the migration recommendation.
 - 'Compare two runs' on the same page diffs two event logs side by side:
   metric deltas, config diff, per-stage CPU-per-GB analysis.
-- Home page lists applications/job runs with Optimize / Troubleshoot /
-  Upgrade actions; Observability shows live metrics for metrics-enabled runs.
+- Home page lists applications/job runs with Optimize / Health (running
+  runs) / Troubleshoot (failed runs) / Upgrade actions; Observability shows
+  live metrics for metrics-enabled runs.
 
 GROUNDING DISCIPLINE: always state WHICH run/application id an answer is
 based on. If the user references a run or file that is NOT the one in your
@@ -284,6 +285,11 @@ You have tools. USE THEM before answering — do not guess:
 - run_config_advisor: full pipeline on a job run's event log — bottleneck
   classification + cost/perf recommendations (slow, 30-120s; use for
   "optimize this job")
+- check_job_health: correlated health verdict for a RUNNING job — state,
+  task-activity stall detection, driver stderr signature scan, duration vs
+  same-name history. Present the per-check evidence, flag stale-S3-log and
+  no-metrics caveats the checks report, and say which check drove the
+  verdict. For finished failed runs prefer troubleshoot_job.
 - troubleshoot_job: failure evidence — state details, driver stderr errors,
   and the AWS managed Spark Troubleshooting Agent analysis when configured
 - get_application_details: release label vs latest EMR, capacity, network
@@ -583,6 +589,194 @@ def _tool_run_config_advisor(job_run_id: str) -> dict:
     return result
 
 
+def _fetch_driver_stderr(app_id: str, job_run_id: str, jr: dict):
+    """(text, error) — driver stderr from the job's S3 monitoring location.
+
+    Works for RUNNING jobs too, with a caveat the callers surface: EMR
+    Serverless pushes logs to S3 periodically, so the text can be minutes
+    stale for an in-flight run.
+    """
+    log_uri = (jr.get("configurationOverrides", {})
+                 .get("monitoringConfiguration", {})
+                 .get("s3MonitoringConfiguration", {})
+                 .get("logUri", ""))
+    if not log_uri:
+        return None, "job has no S3 monitoring logUri"
+    stderr_key = (f"{log_uri.rstrip('/')}/applications/{app_id}/jobs/"
+                  f"{job_run_id}/SPARK_DRIVER/stderr.gz")
+    try:
+        import boto3
+        s3 = boto3.client("s3", region_name=AWS_REGION)
+        m = re.match(r"s3://([^/]+)/(.+)", stderr_key)
+        obj = s3.get_object(Bucket=m.group(1), Key=m.group(2))
+        text = gzip.decompress(obj["Body"].read()).decode("utf-8", "replace")
+        return text, None
+    except Exception as e:
+        return None, f"could not fetch driver stderr: {e}"
+
+
+def _duration_history(app_id: str, job_run_id: str, job_name: str) -> dict:
+    """Completed same-name runs on this application, for duration-anomaly
+    comparison. Bounded to one list_job_runs page window (30 days) because
+    the API throttles at very low TPS."""
+    created_after = datetime.now(timezone.utc) - timedelta(days=30)
+    durations = []
+    try:
+        for page in _emr().get_paginator("list_job_runs").paginate(
+            applicationId=app_id, createdAtAfter=created_after,
+        ):
+            for prior in page["jobRuns"]:
+                if prior["id"] == job_run_id or prior.get("state") != "SUCCESS":
+                    continue
+                if prior.get("name", prior["id"]) != job_name:
+                    continue
+                start, end = prior.get("createdAt"), prior.get("updatedAt")
+                if start and end:
+                    durations.append((end - start).total_seconds() / 60)
+    except Exception as e:
+        return {"error": f"could not list prior runs: {e}"}
+    if not durations:
+        return {"note": f"no successful runs named '{job_name}' on this "
+                        "application in 30 days — no duration baseline"}
+    durations.sort()
+    p95 = durations[min(len(durations) - 1, int(len(durations) * 0.95))]
+    return {"prior_success_count": len(durations),
+            "median_minutes": round(durations[len(durations) // 2], 1),
+            "p95_minutes": round(p95, 1)}
+
+
+# Signatures that are fatal-by-themselves on a running job, vs. churn that is
+# only concerning in combination (see log_evidence.SIGNATURES kill_signal note)
+_HEALTH_FATAL_SIGS = {"heap_oom", "gc_overhead", "container_rss_kill",
+                      "disk_full", "driver_max_result", "python_oom"}
+
+
+def _tool_check_job_health(job_run_id: str) -> dict:
+    """Correlated health verdict for a job run (designed for RUNNING ones).
+
+    Checks: EMR state; task activity from Prometheus (stall detection);
+    driver stderr scanned against the curated signature table; duration vs
+    same-name history. Each check carries its own evidence and degrades
+    independently — uninstrumented jobs still get state + stderr + history.
+    """
+    from log_evidence import scan_text
+
+    cfg = _tool_get_job_config(job_run_id)
+    if "error" in cfg:
+        return cfg
+    app_id = cfg["application_id"]
+    jr = _emr().get_job_run(applicationId=app_id, jobRunId=job_run_id)["jobRun"]
+    state = jr.get("state", "")
+    running = state in ("RUNNING", "SCHEDULED", "PENDING", "SUBMITTED")
+    started = jr.get("createdAt")
+    elapsed_min = round((datetime.now(timezone.utc) - started)
+                        .total_seconds() / 60, 1) if started else None
+
+    checks = []
+
+    def add(name, status, detail, **evidence):
+        checks.append({"check": name, "status": status, "detail": detail,
+                       **({"evidence": evidence} if evidence else {})})
+
+    # --- state ---
+    add("job_state", "ok" if state in ("RUNNING", "SUCCESS") else
+        "warn" if running else "bad",
+        f"{state}{' — ' + jr.get('stateDetails') if jr.get('stateDetails') else ''}",
+        elapsed_minutes=elapsed_min)
+
+    # --- task activity (Prometheus; instrumented jobs only) ---
+    try:
+        end = int(time.time())
+        params = urllib.parse.urlencode({
+            "query": f'sum(spark_executor_threadpool_activeTasks{{app_id="{job_run_id}"}})',
+            "start": end - 6 * 3600, "end": end, "step": "60s"})
+        with urllib.request.urlopen(
+            f"{PROMETHEUS_URL}/api/v1/query_range?{params}", timeout=15,
+        ) as resp:
+            series = json.load(resp)["data"]["result"]
+        if not series:
+            add("task_activity", "unknown",
+                "no metrics in Prometheus — job not instrumented with the "
+                "GraphiteSink confs; stall detection unavailable")
+        else:
+            vals = series[0]["values"]
+            last_active = next((float(ts) for ts, v in reversed(vals)
+                                if float(v) > 0), None)
+            idle_min = (round((end - last_active) / 60, 1)
+                        if last_active else None)
+            if not running:
+                add("task_activity", "ok",
+                    "job finished — activity check not applicable")
+            elif last_active is None:
+                add("task_activity", "bad",
+                    "RUNNING but no task has been active in the 6h metrics "
+                    "window", active_tasks_now=float(vals[-1][1]))
+            elif idle_min is not None and idle_min > 30:
+                add("task_activity", "bad",
+                    f"RUNNING but no active tasks for {idle_min} min — "
+                    "likely stalled (driver wedged, deadlock, or waiting on "
+                    "an external dependency)", idle_minutes=idle_min)
+            else:
+                add("task_activity", "ok",
+                    f"tasks active {idle_min} min ago",
+                    active_tasks_now=float(vals[-1][1]))
+    except Exception as e:
+        add("task_activity", "unknown", f"prometheus unavailable: {e}")
+
+    # --- driver stderr signatures ---
+    text, fetch_err = _fetch_driver_stderr(app_id, job_run_id, jr)
+    if text is None:
+        add("driver_log", "unknown", fetch_err)
+    else:
+        sigs = scan_text(text)
+        fatal = [s for s in sigs if s["id"] in _HEALTH_FATAL_SIGS]
+        churn = [s for s in sigs if s["id"] not in _HEALTH_FATAL_SIGS]
+        note = ("S3 logs lag a running job by minutes — evidence may be "
+                "stale" if running else None)
+        if fatal:
+            add("driver_log", "bad",
+                "; ".join(f"{s['title']} ×{s['count']}" for s in fatal),
+                signatures=[{k: s[k] for k in
+                             ("id", "title", "meaning", "count", "excerpts")}
+                            for s in fatal], freshness=note)
+        elif churn:
+            add("driver_log", "warn",
+                "; ".join(f"{s['title']} ×{s['count']}" for s in churn),
+                signatures=[{k: s[k] for k in
+                             ("id", "title", "meaning", "count")}
+                            for s in churn], freshness=note)
+        else:
+            add("driver_log", "ok", "no known failure signatures in driver "
+                "stderr", freshness=note)
+
+    # --- duration vs history ---
+    hist = _duration_history(app_id, job_run_id, cfg.get("name", job_run_id))
+    if "p95_minutes" in hist and elapsed_min is not None and running:
+        if elapsed_min > hist["p95_minutes"]:
+            add("duration", "warn",
+                f"running {elapsed_min} min, past the P95 of "
+                f"{hist['p95_minutes']} min over {hist['prior_success_count']} "
+                "prior successes", **hist)
+        else:
+            add("duration", "ok",
+                f"{elapsed_min} min elapsed vs P95 {hist['p95_minutes']} min",
+                **hist)
+    else:
+        add("duration", "unknown",
+            hist.get("note") or hist.get("error") or
+            "job finished — see state check")
+
+    order = {"bad": 0, "warn": 1, "unknown": 2, "ok": 3}
+    worst = min((c["status"] for c in checks), key=order.get)
+    return {
+        "job_run_id": job_run_id,
+        "application_id": app_id,
+        "verdict": {"bad": "unhealthy", "warn": "degraded",
+                    "unknown": "insufficient signal", "ok": "healthy"}[worst],
+        "checks": checks,
+    }
+
+
 def _tool_troubleshoot_job(job_run_id: str) -> dict:
     """Failure evidence for a job run: state details + driver stderr tail.
 
@@ -604,30 +798,17 @@ def _tool_troubleshoot_job(job_run_id: str) -> dict:
     }
 
     # Driver stderr tail from the S3 monitoring location
-    log_uri = (jr.get("configurationOverrides", {})
-                 .get("monitoringConfiguration", {})
-                 .get("s3MonitoringConfiguration", {})
-                 .get("logUri", ""))
-    if log_uri:
-        stderr_key = (f"{log_uri.rstrip('/')}/applications/{app_id}/jobs/"
-                      f"{job_run_id}/SPARK_DRIVER/stderr.gz")
-        try:
-            import boto3
-            s3 = boto3.client("s3", region_name=AWS_REGION)
-            m = re.match(r"s3://([^/]+)/(.+)", stderr_key)
-            obj = s3.get_object(Bucket=m.group(1), Key=m.group(2))
-            text = gzip.decompress(obj["Body"].read()).decode("utf-8", "replace")
-            # Errors cluster at the end; keep exception lines + the tail
-            lines = text.splitlines()
-            err_lines = [ln for ln in lines
-                         if re.search(r"ERROR|Exception|OutOfMemory|Killed|137",
-                                      ln)][-40:]
-            out["driver_stderr_errors"] = err_lines
-            out["driver_stderr_tail"] = lines[-60:]
-        except Exception as e:
-            out["driver_stderr_error"] = f"could not fetch driver stderr: {e}"
+    text, fetch_err = _fetch_driver_stderr(app_id, job_run_id, jr)
+    if text is not None:
+        # Errors cluster at the end; keep exception lines + the tail
+        lines = text.splitlines()
+        err_lines = [ln for ln in lines
+                     if re.search(r"ERROR|Exception|OutOfMemory|Killed|137",
+                                  ln)][-40:]
+        out["driver_stderr_errors"] = err_lines
+        out["driver_stderr_tail"] = lines[-60:]
     else:
-        out["driver_stderr_error"] = "job has no S3 monitoring logUri"
+        out["driver_stderr_error"] = fetch_err
 
     # Optional: AWS managed Spark Troubleshooting Agent (SigV4 MCP endpoint)
     if SPARK_TROUBLESHOOTING_MCP_URL:
@@ -778,6 +959,15 @@ CHAT_TOOLS = [
         }},
     }},
     {"toolSpec": {
+        "name": "check_job_health",
+        "description": "Correlated health verdict for a job run, designed for RUNNING jobs: EMR state, task-activity stall detection (Prometheus, instrumented jobs), driver stderr scanned against the curated failure-signature table, and elapsed time vs the P95 of prior same-name successes. Returns healthy/degraded/unhealthy/insufficient-signal with per-check evidence. Use for 'is this job OK?' questions; for post-mortem on failed runs prefer troubleshoot_job.",
+        "inputSchema": {"json": {
+            "type": "object",
+            "properties": {"job_run_id": {"type": "string"}},
+            "required": ["job_run_id"],
+        }},
+    }},
+    {"toolSpec": {
         "name": "troubleshoot_job",
         "description": "Gather failure evidence for a job run: state details, submitted confs, driver stderr error lines and tail from S3, and (when configured) the AWS managed Spark Troubleshooting Agent's analysis. Use for failed or cancelled runs.",
         "inputSchema": {"json": {
@@ -869,6 +1059,8 @@ def _run_chat_tool(name: str, tool_input: dict):
         return _tool_get_log_evidence(tool_input["application_id"])
     if name == "run_config_advisor":
         return _tool_run_config_advisor(tool_input["job_run_id"])
+    if name == "check_job_health":
+        return _tool_check_job_health(tool_input["job_run_id"])
     if name == "troubleshoot_job":
         return _tool_troubleshoot_job(tool_input["job_run_id"])
     if name == "get_application_details":
@@ -1022,6 +1214,54 @@ def classify_bottleneck(metrics: dict) -> dict:
     }
 
 
+# EMR Serverless worker tiers by vCPU — matches the recommender's vocabulary
+_WORKER_TIERS = {4: "Small", 8: "Medium", 16: "Large", 32: "XLarge"}
+
+
+def _source_worker(cfg: dict) -> dict | None:
+    """Submitted worker shape from the event-log Spark conf, for the
+    results/compare banners.
+
+    Serverless: cores + heap -> billed worker memory (heap x overhead factor
+    rounded up to the whole GB, same rule as _run_cost). Disk and disk.type
+    are submit-only params that only appear when they were passed as --conf;
+    absence means "not captured", never "default" (see
+    _CONFS_INVISIBLE_IN_EVENT_LOGS).
+    """
+    if not cfg:
+        return None
+    import math
+    is_ec2 = bool(cfg.get("spark.emr_cluster_id"))
+    try:
+        cores = int(str(cfg.get("spark.executor.cores", "")).strip())
+    except ValueError:
+        cores = None
+    heap = str(cfg.get("spark.executor.memory", "")) or None
+    overhead = 1 + float(cfg.get("spark.emr-serverless.memoryOverheadFactor",
+                                 cfg.get("spark.kubernetes.memoryOverheadFactor",
+                                         0.1)))
+    dyn = str(cfg.get("spark.dynamicAllocation.enabled", "")).lower() == "true"
+    out = {
+        "platform": "emr-ec2" if is_ec2 else "emr-serverless",
+        "tier": None if is_ec2 or cores is None else _WORKER_TIERS.get(cores),
+        "cores": cores,
+        "heap": heap,
+        "billed_memory_gb": (math.ceil(_parse_mem_gb(heap) * overhead)
+                             if heap and not is_ec2 else None),
+        "dynamic_allocation": dyn,
+        "min_executors": cfg.get("spark.dynamicAllocation.minExecutors"),
+        "max_executors": (cfg.get("spark.dynamicAllocation.maxExecutors") if dyn
+                          else cfg.get("spark.executor.instances")),
+        "driver_cores": cfg.get("spark.driver.cores"),
+        "driver_memory": cfg.get("spark.driver.memory"),
+    }
+    if not is_ec2:
+        out["disk"] = cfg.get("spark.emr-serverless.executor.disk")
+        out["disk_type"] = cfg.get("spark.emr-serverless.executor.disk.type")
+        out["driver_disk"] = cfg.get("spark.emr-serverless.driver.disk")
+    return out
+
+
 def analyze_uploaded_file(json_path: str) -> dict:
     """Run the full analysis on an uploaded extracted JSON file.
 
@@ -1087,6 +1327,7 @@ def analyze_uploaded_file(json_path: str) -> dict:
         "source_platform": ("emr-ec2" if data.get("spark_config", {}).get("spark.emr_cluster_id")
                             else "emr-serverless"),
         "spark_config_source": data.get("spark_config", {}),
+        "source_worker": _source_worker(data.get("spark_config", {})),
     }
     try:
         result["_executor_summary"] = {
