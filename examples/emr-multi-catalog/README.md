@@ -93,7 +93,7 @@ configuration.
 
 | Phase | What it does |
 |---|---|
-| `setup` | Create one sample table per format (Iceberg, Delta, Hudi, Hive), 3 rows each. |
+| `setup` | Create one sample table per format in `salesdb`, 3 rows each: `orders_iceberg`, `returns_delta`, `shipments_hudi`, `products_hive`. |
 | `multiformat` | Join all four formats in one query, unqualified names. |
 | `named-local` | Single-account demo of the named-catalog mechanism (a named RSC pointed at this account). |
 | `producer-setup` | Create the producer Hive table (run with the producer account's app/role). |
@@ -104,15 +104,26 @@ configuration.
 
 ## Cross-account (optional)
 
-```bash
-# In the producer account (owns the data): create the table + grants
-./scripts/bootstrap_producer.sh --consumer-role <CONSUMER_ROLE_ARN>
+Three steps, run in this order — the consumer execution role must exist before the producer can
+grant to it:
 
-# In the consumer account (where EMR runs): read across the account boundary
-./scripts/run_demo.sh --phase xacct-autowire \
-  --app-id <APP_ID> --role-arn <ROLE_ARN> --bucket <BUCKET> \
-  --producer-account 111122223333 --producer-table fulfillment
+```bash
+# 1) CONSUMER account (where EMR runs): create the execution role, application, and bucket.
+#    Prints the role ARN to use in step 2. Add --dry-run to preview without creating anything.
+./scripts/bootstrap_consumer.sh --region us-east-1 --producer-account 111122223333
+
+# 2) PRODUCER account (owns the data): create the sample table (salesdb.fulfillment) and grant
+#    the consumer role read access across Lake Formation + Glue + S3. Supports --dry-run.
+./scripts/bootstrap_producer.sh --consumer-role <ROLE_ARN from step 1>
+
+# 3) CONSUMER account: read across the account boundary via auto-wiring, joined to a local
+#    Iceberg table. (App/role/bucket come from .env.)
+./scripts/run_demo.sh --phase xacct-autowire --producer-account 111122223333 --producer-table fulfillment
 ```
+
+Use `--phase xacct-named` instead to read through a declared named catalog rather than auto-wiring;
+`--phase all --producer-account <id>` runs the single-account demo and both cross-account phases in
+one shot (it re-creates the local tables).
 
 Cross-account access is query-time resolution only — it does not copy data. It requires Lake
 Formation grants, a Glue resource policy, an S3 bucket policy, and (if encrypted) a customer-managed
