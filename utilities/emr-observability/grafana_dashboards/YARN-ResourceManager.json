@@ -21,15 +21,14 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 14,
-  "iteration": 1670316881542,
   "links": [],
   "liveNow": false,
   "panels": [
     {
       "collapsed": false,
       "datasource": {
-        "uid": "Prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
       },
       "gridPos": {
         "h": 1,
@@ -45,7 +44,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -112,12 +111,12 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum by (job) (yarn_resourcemanager_clustermetrics_num_active_nms {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'} + yarn_resourcemanager_clustermetrics_num_decommissioning_nms {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'} + yarn_resourcemanager_clustermetrics_num_lost_nms {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'} + yarn_resourcemanager_clustermetrics_num_rebooted_nms {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'} + yarn_resourcemanager_clustermetrics_num_shutdown_nms {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'} + yarn_resourcemanager_clustermetrics_num_unhealthy_nms {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'})",
           "interval": "",
-          "legendFormat": "",
+          "legendFormat": "{{instance}}",
           "refId": "A"
         }
       ],
@@ -127,7 +126,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -194,12 +193,12 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum by (job) (yarn_resourcemanager_clustermetrics_num_active_nms {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'} )",
           "interval": "",
-          "legendFormat": "",
+          "legendFormat": "{{instance}}",
           "refId": "A"
         }
       ],
@@ -213,7 +212,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -263,7 +262,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum by (job, cluster_id, instance) (yarn_resourcemanager_queue_available_mb {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})",
@@ -280,7 +279,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -310,7 +309,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -360,7 +359,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "1-(sum by (job, cluster_id, instance) (yarn_resourcemanager_queue_available_mb {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})/sum by (job, cluster_id, instance) (yarn_resourcemanager_queue_max_capacity_mb {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''}))",
@@ -377,7 +376,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -403,7 +402,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -470,12 +469,12 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum by (job) (yarn_resourcemanager_queue_max_capacity_mb {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})",
           "interval": "",
-          "legendFormat": "",
+          "legendFormat": "{{instance}}",
           "refId": "A"
         }
       ],
@@ -485,7 +484,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -552,12 +551,12 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum by (job) (yarn_resourcemanager_queue_allocated_vcores {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''} +  yarn_resourcemanager_queue_available_vcores {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''}+ yarn_resourcemanager_queue_pending_vcores {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''} +  yarn_resourcemanager_queue_reserved_vcores {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})",
           "interval": "",
-          "legendFormat": "",
+          "legendFormat": "{{instance}}",
           "refId": "A"
         }
       ],
@@ -571,7 +570,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -621,7 +620,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum by (job, cluster_id, instance) (yarn_resourcemanager_queue_available_vcores {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})",
@@ -638,7 +637,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -668,7 +667,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -718,7 +717,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "1-sum by (job, cluster_id, instance) (yarn_resourcemanager_queue_available_vcores {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})/sum by (job, cluster_id, instance) (yarn_resourcemanager_queue_allocated_vcores {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''} + yarn_resourcemanager_queue_available_vcores {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''} + yarn_resourcemanager_queue_pending_vcores {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''} + yarn_resourcemanager_queue_reserved_vcores {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})",
@@ -735,7 +734,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -765,7 +764,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -815,7 +814,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum by (job, cluster_id, instance) (yarn_resourcemanager_queue_apps_running {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})",
@@ -832,7 +831,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -858,7 +857,8 @@
     {
       "collapsed": false,
       "datasource": {
-        "uid": "Prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
       },
       "gridPos": {
         "h": 1,
@@ -874,7 +874,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -941,12 +941,12 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum by (job) (yarn_resourcemanager_clustermetrics_num_active_nms {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'} + yarn_resourcemanager_clustermetrics_num_decommissioning_nms {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'} + yarn_resourcemanager_clustermetrics_num_lost_nms {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'} + yarn_resourcemanager_clustermetrics_num_rebooted_nms {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'} + yarn_resourcemanager_clustermetrics_num_shutdown_nms {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'} + yarn_resourcemanager_clustermetrics_num_unhealthy_nms {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'})",
           "interval": "",
-          "legendFormat": "",
+          "legendFormat": "{{instance}}",
           "refId": "A"
         }
       ],
@@ -960,7 +960,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -1010,7 +1010,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "yarn_resourcemanager_clustermetrics_num_active_nms {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'} ",
@@ -1021,7 +1021,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "yarn_resourcemanager_clustermetrics_num_unhealthy_nms {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'} ",
@@ -1033,7 +1033,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "yarn_resourcemanager_clustermetrics_num_lost_nms {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'} ",
@@ -1045,7 +1045,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "yarn_resourcemanager_clustermetrics_num_decommissioning_nms {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'} ",
@@ -1057,7 +1057,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "yarn_resourcemanager_clustermetrics_num_decommissioned_nms {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'} ",
@@ -1069,7 +1069,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "yarn_resourcemanager_clustermetrics_num_rebooted_nms {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'} ",
@@ -1081,7 +1081,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "yarn_resourcemanager_clustermetrics_num_shutdown_nms {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'} ",
@@ -1099,7 +1099,7 @@
         "sort": 1,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -1125,7 +1125,8 @@
     {
       "collapsed": false,
       "datasource": {
-        "uid": "Prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
       },
       "gridPos": {
         "h": 1,
@@ -1145,7 +1146,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -1195,7 +1196,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum by (job, cluster_id, instance) (yarn_resourcemanager_queue_apps_running {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})",
@@ -1212,7 +1213,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -1242,7 +1243,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -1292,7 +1293,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum by (job, cluster_id, instance) (yarn_resourcemanager_queue_apps_completed {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})",
@@ -1309,7 +1310,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -1339,7 +1340,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -1389,7 +1390,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum by (job, cluster_id, instance) (yarn_resourcemanager_queue_apps_failed {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})",
@@ -1406,7 +1407,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -1436,7 +1437,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -1486,7 +1487,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum by (job, cluster_id, instance) (yarn_resourcemanager_queue_apps_pending {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})",
@@ -1503,7 +1504,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -1533,7 +1534,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -1583,7 +1584,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum by (job, cluster_id, instance) (yarn_resourcemanager_queue_apps_submitted {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})",
@@ -1600,7 +1601,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -1630,7 +1631,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -1680,7 +1681,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum by (job, cluster_id, instance) (yarn_resourcemanager_queue_apps_killed {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})",
@@ -1697,7 +1698,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -1727,7 +1728,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -1777,7 +1778,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "yarn_resourcemanager_queue_running_0 {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''}",
@@ -1788,7 +1789,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "yarn_resourcemanager_queue_running_60 {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''}",
@@ -1800,7 +1801,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "yarn_resourcemanager_queue_running_300 {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''}",
@@ -1812,7 +1813,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "yarn_resourcemanager_queue_running_1440 {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''}",
@@ -1830,7 +1831,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -1856,7 +1857,8 @@
     {
       "collapsed": false,
       "datasource": {
-        "uid": "Prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
       },
       "gridPos": {
         "h": 1,
@@ -1876,7 +1878,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -1926,7 +1928,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum by(job, cluster_id, instance) (yarn_resourcemanager_queue_allocated_containers {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})",
@@ -1943,7 +1945,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -1973,7 +1975,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -2023,7 +2025,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum by(job, cluster_id, instance) (yarn_resourcemanager_queue_pending_containers {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})",
@@ -2040,7 +2042,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -2070,7 +2072,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -2120,7 +2122,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum by(job, cluster_id, instance) (yarn_resourcemanager_queue_reserved_containers {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})",
@@ -2137,7 +2139,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -2163,7 +2165,8 @@
     {
       "collapsed": false,
       "datasource": {
-        "uid": "Prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
       },
       "gridPos": {
         "h": 1,
@@ -2179,7 +2182,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -2246,12 +2249,12 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "max(sum by(job, cluster_id, instance) (yarn_resourcemanager_queue_allocated_vcores {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''} + yarn_resourcemanager_queue_available_vcores {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''} + yarn_resourcemanager_queue_pending_vcores {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''} + yarn_resourcemanager_queue_reserved_vcores {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''}))",
           "interval": "",
-          "legendFormat": "",
+          "legendFormat": "{{instance}}",
           "refId": "A"
         }
       ],
@@ -2265,7 +2268,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -2315,7 +2318,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum by(job, cluster_id, instance) (yarn_resourcemanager_queue_available_vcores {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})",
@@ -2332,7 +2335,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -2362,7 +2365,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -2412,7 +2415,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum by(job, cluster_id, instance) (yarn_resourcemanager_queue_allocated_vcores {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})",
@@ -2429,7 +2432,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -2459,7 +2462,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -2509,7 +2512,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum by(job, cluster_id, instance) (yarn_resourcemanager_queue_pending_vcores{job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})",
@@ -2526,7 +2529,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -2556,7 +2559,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -2606,7 +2609,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum by(job, cluster_id, instance) (yarn_resourcemanager_queue_reserved_vcores{job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})",
@@ -2623,7 +2626,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -2649,7 +2652,8 @@
     {
       "collapsed": false,
       "datasource": {
-        "uid": "Prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
       },
       "gridPos": {
         "h": 1,
@@ -2665,7 +2669,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -2732,7 +2736,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "max(sum by(job, cluster, instance) (yarn_resourcemanager_queue_max_capacity_mb {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''}))",
@@ -2751,7 +2755,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -2801,7 +2805,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum by (job, cluster_id, instance) (yarn_resourcemanager_queue_available_mb {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})",
@@ -2818,7 +2822,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -2848,7 +2852,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -2898,7 +2902,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "1-(sum by(job, cluster_id, instance) (yarn_resourcemanager_queue_available_mb {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})/sum by(job, cluster_id, instance) (yarn_resourcemanager_queue_max_capacity_mb {job=\"$job\", cluster_id=~'$cluster',instance=~'$instance', child_queue=''}))",
@@ -2915,7 +2919,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -2945,7 +2949,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -2995,7 +2999,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum by(job, cluster_id, instance) (yarn_resourcemanager_queue_allocated_mb {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})",
@@ -3012,7 +3016,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -3042,7 +3046,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -3092,7 +3096,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum by(job, cluster_id, instance) (yarn_resourcemanager_queue_pending_mb {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})",
@@ -3109,7 +3113,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -3139,7 +3143,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -3189,7 +3193,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum by(job, cluster_id, instance) (yarn_resourcemanager_queue_reserved_mb {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})",
@@ -3206,7 +3210,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -3232,7 +3236,8 @@
     {
       "collapsed": false,
       "datasource": {
-        "uid": "Prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
       },
       "gridPos": {
         "h": 1,
@@ -3248,7 +3253,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -3315,7 +3320,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "max(sum by(job, cluster_id, instance, child_queue) (yarn_resourcemanager_queue_amresource_limit_mb {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue!=\"\"}))",
@@ -3334,7 +3339,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -3384,7 +3389,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum by(job, cluster_id, instance) (yarn_resourcemanager_queue_used_amresource_mb  {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})",
@@ -3401,7 +3406,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -3431,7 +3436,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -3481,7 +3486,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum by(job, cluster_id, instance) (yarn_resourcemanager_queue_used_amresource_vcores {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue=''})",
@@ -3498,7 +3503,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -3524,7 +3529,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -3591,7 +3596,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "max(sum by(job, cluster_id, instance, child_queue) (yarn_resourcemanager_queue_amresource_limit_vcores {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', child_queue!=\"\"}))",
@@ -3610,7 +3615,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -3660,7 +3665,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum by(job, cluster_id, instance) (yarn_resourcemanager_clustermetrics_amlaunch_delay_avg_time {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'})",
@@ -3677,7 +3682,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -3707,7 +3712,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -3757,7 +3762,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum by(job, cluster_id, instance) (rate(yarn_resourcemanager_clustermetrics_amcontainer_allocation_delay_num_ops{job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'} [$interval]))",
@@ -3774,7 +3779,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -3804,7 +3809,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -3854,7 +3859,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum by(job, cluster_id, instance) (yarn_resourcemanager_clustermetrics_amregister_delay_avg_time {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'})",
@@ -3871,7 +3876,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -3901,7 +3906,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -3951,7 +3956,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum by(job, cluster_id, instance) (rate(yarn_resourcemanager_clustermetrics_amregister_delay_num_ops{job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'} [$interval]))",
@@ -3968,7 +3973,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -3999,7 +4004,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -4049,7 +4054,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum by(job, cluster_id, instance) (rate(yarn_resourcemanager_clustermetrics_amlaunch_delay_num_ops{job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'} [$interval]))",
@@ -4066,7 +4071,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -4096,7 +4101,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -4146,7 +4151,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum by(job, cluster_id, instance) (yarn_resourcemanager_clustermetrics_amlaunch_delay_avg_time{job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'})",
@@ -4163,7 +4168,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -4197,6 +4202,20 @@
   ],
   "templating": {
     "list": [
+      {
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "label": "Datasource",
+        "multi": false,
+        "name": "DS_PROMETHEUS",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
       {
         "auto": false,
         "auto_count": 30,
@@ -4279,7 +4298,7 @@
         },
         "datasource": {
           "type": "prometheus",
-          "uid": "5JyaSIk4k"
+          "uid": "${DS_PROMETHEUS}"
         },
         "definition": "label_values(yarn_resourcemanager_queue_apps_running, job)",
         "hide": 0,
@@ -4290,7 +4309,7 @@
         "options": [],
         "query": {
           "query": "label_values(yarn_resourcemanager_queue_apps_running, job)",
-          "refId": "Prometheus ws-8865d501-f1ec-4d87-821f-3d434e2f3c12-job-Variable-Query"
+          "refId": "job-Variable-Query"
         },
         "refresh": 1,
         "regex": "",
@@ -4313,7 +4332,7 @@
         },
         "datasource": {
           "type": "prometheus",
-          "uid": "5JyaSIk4k"
+          "uid": "${DS_PROMETHEUS}"
         },
         "definition": "label_values(yarn_resourcemanager_queue_apps_running{job=~\"$job\"}, cluster_id)",
         "hide": 0,
@@ -4324,7 +4343,7 @@
         "options": [],
         "query": {
           "query": "label_values(yarn_resourcemanager_queue_apps_running{job=~\"$job\"}, cluster_id)",
-          "refId": "Prometheus ws-8865d501-f1ec-4d87-821f-3d434e2f3c12-cluster-Variable-Query"
+          "refId": "cluster-Variable-Query"
         },
         "refresh": 1,
         "regex": "",
@@ -4347,7 +4366,7 @@
         },
         "datasource": {
           "type": "prometheus",
-          "uid": "5JyaSIk4k"
+          "uid": "${DS_PROMETHEUS}"
         },
         "definition": "label_values(yarn_resourcemanager_queue_apps_running{job=~\"$job\", cluster_id=~'$cluster'}, instance)",
         "hide": 0,
@@ -4358,7 +4377,7 @@
         "options": [],
         "query": {
           "query": "label_values(yarn_resourcemanager_queue_apps_running{job=~\"$job\", cluster_id=~'$cluster'}, instance)",
-          "refId": "Prometheus ws-8865d501-f1ec-4d87-821f-3d434e2f3c12-instance-Variable-Query"
+          "refId": "instance-Variable-Query"
         },
         "refresh": 1,
         "regex": "",
@@ -4391,6 +4410,5 @@
   "timezone": "",
   "title": "YARN - Resource Manager - 1",
   "uid": "a6NRxbeZz",
-  "version": 42,
   "weekStart": ""
 }

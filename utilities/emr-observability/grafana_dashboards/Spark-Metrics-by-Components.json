@@ -18,7 +18,6 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 36,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -1606,11 +1605,7 @@
   "templating": {
     "list": [
       {
-        "current": {
-          "selected": false,
-          "text": "Prometheus",
-          "value": "Prometheus"
-        },
+        "current": {},
         "hide": 0,
         "includeAll": false,
         "label": "Datasource",
@@ -1660,6 +1655,5 @@
   "timezone": "",
   "title": "Spark Metrics by Components",
   "uid": "spark-components",
-  "version": 1,
   "weekStart": ""
 }

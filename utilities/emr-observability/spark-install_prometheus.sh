@@ -1,10 +1,18 @@
 #!/bin/bash -xe
 
 # This script installs and configures Prometheus on the master nodes to collect node level and application level
-# (Hadoop and Spark) metrics from all cluster nodes. It can also configured to export metrics to
-# your AWS Prometheus workspace via the remote_write endpoint. AWS Prometheus workspace id is an optional argument,
-# that, if passed, configures the on-cluster Prometheus instance to export metrics to AWS Prometheus
-# Usage in BA: --bootstrap-actions '[{"Path":"s3://<s3_path>/install_prometheus.sh","Args":["ws-537c7364-f10f-4210-a0fa-deedd3ea1935"]
+# (Hadoop and Spark) metrics from all cluster nodes, and exports them to your AWS Prometheus
+# workspace via the remote_write endpoint. The AWS Prometheus workspace id is a REQUIRED argument;
+# the script exits non-zero without it, which fails the bootstrap action and terminates the cluster.
+#
+# Spark metrics reach Prometheus via Telegraf, which listens for the Spark GraphiteSink on port
+# 2003 and re-exposes on 9273 (the 'telegraf' scrape job below). Telegraf is NOT installed here,
+# so install-telegraf-bootstrap.sh must run as an earlier bootstrap action or every Spark metric
+# is lost. Pair this script with conf_files/emr-application-configuration.json, which sets the
+# GraphiteSink and points the JMX agent at /etc/prometheus (where this script installs the jar).
+#
+# Usage in BA:
+#   --bootstrap-actions '[{"Path":"s3://<s3_path>/install-telegraf-bootstrap.sh","Name":"Install Telegraf"},{"Path":"s3://<s3_path>/spark-install_prometheus.sh","Name":"Install Prometheus","Args":["ws-537c7364-f10f-4210-a0fa-deedd3ea1935"]}]'
 
 # Check if required arguments are provided
 if [ $# -ne 1 ]; then

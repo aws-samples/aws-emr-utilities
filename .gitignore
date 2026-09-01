@@ -11,5 +11,10 @@ target/
 *.rar
 .DS_Store
 .vscode/
+
+# Scala / Metals build server metadata
+.bsp/
+.metals/
+.scala-build/
 utilities/EMR-Serverless-Config-Advisor/whitepaper.md
 utilities/EMR-Serverless-Config-Advisor/bucket-agent/run_3arm_test.py

@@ -24,11 +24,5 @@
       }
     ],
     "Properties": {}
-  },
-  {
-    "Classification": "spark-metrics",
-    "Properties": {
-      "*.sink.jmx.class": "org.apache.spark.metrics.sink.JmxSink"
-    }
   }
 ]
