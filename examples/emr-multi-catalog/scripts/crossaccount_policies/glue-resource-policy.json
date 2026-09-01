@@ -1,0 +1,24 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowConsumerRoleReadCatalog",
+      "Effect": "Allow",
+      "Principal": { "AWS": "arn:aws:iam::444455556666:role/EMRExecutionRole" },
+      "Action": [
+        "glue:GetCatalog",
+        "glue:GetDatabase",
+        "glue:GetDatabases",
+        "glue:GetTable",
+        "glue:GetTables",
+        "glue:GetPartition",
+        "glue:GetPartitions"
+      ],
+      "Resource": [
+        "arn:aws:glue:us-east-1:111122223333:catalog",
+        "arn:aws:glue:us-east-1:111122223333:database/*",
+        "arn:aws:glue:us-east-1:111122223333:table/*/*"
+      ]
+    }
+  ]
+}

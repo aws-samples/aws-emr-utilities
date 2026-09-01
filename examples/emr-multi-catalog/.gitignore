@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Local scratch / generated policy docs
+/tmp/
+*.log
+*.gz
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Never commit credentials
+*.pem
+*credentials*
+.aws/
+.env

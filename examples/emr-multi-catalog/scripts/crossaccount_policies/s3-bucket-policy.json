@@ -1,0 +1,15 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowConsumerRoleReadData",
+      "Effect": "Allow",
+      "Principal": { "AWS": "arn:aws:iam::444455556666:role/EMRExecutionRole" },
+      "Action": ["s3:GetObject", "s3:ListBucket"],
+      "Resource": [
+        "arn:aws:s3:::producer-data-bucket",
+        "arn:aws:s3:::producer-data-bucket/*"
+      ]
+    }
+  ]
+}
