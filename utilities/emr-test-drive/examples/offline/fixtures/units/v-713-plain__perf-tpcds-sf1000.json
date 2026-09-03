@@ -1,0 +1,259 @@
+{
+  "run_id": "etd-20260813-a41f9c",
+  "variant_id": "v-713-plain",
+  "workload_id": "perf/tpcds-sf1000",
+  "unit_kind": "query",
+  "iterations": 3,
+  "cost_facts": {
+    "vcpu_hour": 314.587,
+    "memory_gb_hour": 1258.349,
+    "storage_gb_hour": 179.252,
+    "wall_clock_s": 21779.28,
+    "drivers_per_job": 1,
+    "avg_executors": 12,
+    "source": "synthetic fixture \u2014 derived from shape x wall clock"
+  },
+  "data_class": "SAMPLE",
+  "units": [
+    {
+      "name": "q1",
+      "status": "SUCCESS",
+      "iterations": [
+        109.32,
+        114.68,
+        114.68
+      ],
+      "row_count": 100,
+      "error": null,
+      "job_id": "0000d9ffa35aac38"
+    },
+    {
+      "name": "q3",
+      "status": "SUCCESS",
+      "iterations": [
+        58.19,
+        58.37,
+        60.07
+      ],
+      "row_count": 100,
+      "error": null,
+      "job_id": "00000e2d3d25d206"
+    },
+    {
+      "name": "q4",
+      "status": "SUCCESS",
+      "iterations": [
+        725.4,
+        706.41,
+        700.49
+      ],
+      "row_count": 100,
+      "error": null,
+      "job_id": "00003e7af90796c4"
+    },
+    {
+      "name": "q7",
+      "status": "SUCCESS",
+      "iterations": [
+        89.77,
+        91.74,
+        88.27
+      ],
+      "row_count": 100,
+      "error": null,
+      "job_id": "00001a24843da408"
+    },
+    {
+      "name": "q11",
+      "status": "SUCCESS",
+      "iterations": [
+        563.15,
+        565.79,
+        570.11
+      ],
+      "row_count": 100,
+      "error": null,
+      "job_id": "0000727884da0c23"
+    },
+    {
+      "name": "q17",
+      "status": "SUCCESS",
+      "iterations": [
+        208.21,
+        206.52,
+        200.6
+      ],
+      "row_count": 100,
+      "error": null,
+      "job_id": "0000323f30007f61"
+    },
+    {
+      "name": "q19",
+      "status": "SUCCESS",
+      "iterations": [
+        83.19,
+        87.04,
+        83.75
+      ],
+      "row_count": 100,
+      "error": null,
+      "job_id": "0000cac9c4412ece"
+    },
+    {
+      "name": "q23a",
+      "status": "SUCCESS",
+      "iterations": [
+        628.01,
+        646.72,
+        642.77
+      ],
+      "row_count": 100,
+      "error": null,
+      "job_id": "00007dacd72abe64"
+    },
+    {
+      "name": "q25",
+      "status": "SUCCESS",
+      "iterations": [
+        241.77,
+        242.43,
+        235.47
+      ],
+      "row_count": 100,
+      "error": null,
+      "job_id": "00006bc6b21966c8"
+    },
+    {
+      "name": "q28",
+      "status": "SUCCESS",
+      "iterations": [
+        369.61,
+        375.91,
+        380.23
+      ],
+      "row_count": 100,
+      "error": null,
+      "job_id": "00001a048b65624c"
+    },
+    {
+      "name": "q34",
+      "status": "SUCCESS",
+      "iterations": [
+        115.34,
+        117.41,
+        112.8
+      ],
+      "row_count": 100,
+      "error": null,
+      "job_id": "000074e63cb756f8"
+    },
+    {
+      "name": "q42",
+      "status": "SUCCESS",
+      "iterations": [
+        45.78,
+        45.68,
+        46.72
+      ],
+      "row_count": 100,
+      "error": null,
+      "job_id": "00007fc03c3ef57e"
+    },
+    {
+      "name": "q50",
+      "status": "SUCCESS",
+      "iterations": [
+        259.16,
+        266.21,
+        266.11
+      ],
+      "row_count": 100,
+      "error": null,
+      "job_id": "0000d8fe182cbb0f"
+    },
+    {
+      "name": "q59",
+      "status": "SUCCESS",
+      "iterations": [
+        312.55,
+        320.26,
+        323.27
+      ],
+      "row_count": 100,
+      "error": null,
+      "job_id": "00000a9479ce06af"
+    },
+    {
+      "name": "q64",
+      "status": "SUCCESS",
+      "iterations": [
+        793.83,
+        769.2,
+        773.24
+      ],
+      "row_count": 100,
+      "error": null,
+      "job_id": "00001bdc6b684434"
+    },
+    {
+      "name": "q67",
+      "status": "SUCCESS",
+      "iterations": [
+        929.85,
+        923.64,
+        894.97
+      ],
+      "row_count": 100,
+      "error": null,
+      "job_id": "0000d00c94157266"
+    },
+    {
+      "name": "q72",
+      "status": "SUCCESS",
+      "iterations": [
+        1148.02,
+        1127.91,
+        1133.64
+      ],
+      "row_count": 100,
+      "error": null,
+      "job_id": "0000c6a513a0607b"
+    },
+    {
+      "name": "q75",
+      "status": "SUCCESS",
+      "iterations": [
+        430.43,
+        407.96,
+        410.69
+      ],
+      "row_count": 100,
+      "error": null,
+      "job_id": "0000f8257ccbd143"
+    },
+    {
+      "name": "q78",
+      "status": "SUCCESS",
+      "iterations": [
+        593.05,
+        585.9,
+        604.42
+      ],
+      "row_count": 100,
+      "error": null,
+      "job_id": "0000d43fc4a39e75"
+    },
+    {
+      "name": "q95",
+      "status": "SUCCESS",
+      "iterations": [
+        502.99,
+        496.41,
+        500.64
+      ],
+      "row_count": 100,
+      "error": null,
+      "job_id": "00005d175b1ca036"
+    }
+  ]
+}

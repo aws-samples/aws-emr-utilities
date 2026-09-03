@@ -179,6 +179,33 @@ def do_setup(spark, cfg: dict) -> dict:
     counts = {}
     for t in ("fact", "dim"):
         counts[t] = row_count(spark, f"{db}.{t}")
+
+    # External datasets. Registering a real dataset (TPC-DS, TPC-H, your own)
+    # lets the performance workload run representative queries instead of the
+    # synthetic test bed. The data must already sit under this run's data prefix:
+    # Lake Formation vends credentials only for locations it has registered, so a
+    # table pointing outside that prefix works under plain Glue and fails under
+    # FTA and FGAC -- which would look like a governance regression rather than a
+    # configuration mistake.
+    for name, location in sorted((cfg.get("external_tables") or {}).items()):
+        def reg(name=name, location=location):
+            spark.sql(f"DROP TABLE IF EXISTS {db}.{name}")
+            # Schema is inferred from the Parquet footer, so no DDL to maintain.
+            spark.sql(f"CREATE TABLE {db}.{name} USING parquet LOCATION '{location}'")
+            # A hive-partitioned layout (key=value directories) registers with no
+            # partitions in the catalog, and every query then scans nothing and
+            # returns zero rows -- which looks like empty data rather than a
+            # missing recovery step. RECOVER PARTITIONS is a no-op on an
+            # unpartitioned table, so it is unconditional.
+            try:
+                spark.sql(f"ALTER TABLE {db}.{name} RECOVER PARTITIONS")
+            except Exception as exc:  # noqa: BLE001
+                msg = str(exc)
+                if "not partitioned" not in msg and "PARTITION" not in msg.upper():
+                    raise
+        step(f"register_external:{name}", reg)
+        counts[name] = row_count(spark, f"{db}.{name}")
+
     return {"mode": "setup", "database": db, "steps": steps, "row_counts": counts,
             "spark_version": spark.version}
 
@@ -209,8 +236,6 @@ def do_functional(spark, cfg: dict) -> dict:
             pass
     leftover = purge_prefix(loc) + purge_prefix(
         f"{cfg['data_uri']}/{db}/etd_{fmt}_ctas_{suffix}/")
-
-    filter_evidence: dict = {}
 
     def sql(q):
         return lambda: spark.sql(q)
@@ -253,11 +278,6 @@ def do_functional(spark, cfg: dict) -> dict:
                 rec["orphaned_bytes"] = max(0, after.get("bytes", 0) - s3_before.get("bytes", 0))
         if expect_rows is not None and rec.get("row_count") is not None:
             rec["expected_row_count"] = expect_rows
-        # Recorded even when the assertion raised: the numbers are what make a
-        # non-enforcement finding actionable.
-        ev = filter_evidence.get(op.split("_")[0].lower())
-        if ev:
-            rec.update(ev)
         units.append(rec)
         print(f"[etd] {fmt}.{op} {rec['status']} {rec['duration_s']}s rows={rec.get('row_count')}")
 
@@ -286,65 +306,6 @@ def do_functional(spark, cfg: dict) -> dict:
                 sel.append(f"cast(null as string) as `{name}`")
         base.selectExpr(*sel).writeTo(tbl).append()
 
-    def filtered_read(kind: str, expect_expr: str, expect_cols):
-        """Read the fact table and assert Lake Formation applied the filter.
-
-        The assertion is the point, not the query. A granted data cell filter
-        that returns unfiltered rows or unfiltered columns is a governance
-        failure: the job succeeds, and the data is wrong in the direction of
-        disclosure. Granting whole-table SELECT exercises the FGAC code path but
-        proves nothing about enforcement, which is what this checks.
-
-        Expectations are computed from the table itself rather than hardcoded, so
-        they cannot drift from the test bed. Filters apply to the base fact
-        table, which no workload operation mutates, so the expected shape is
-        stable across variants.
-        """
-        def go():
-            base = f"{db}.fact"
-            visible = spark.table(base)
-            cols = sorted(f.name for f in visible.schema.fields)
-            rows = visible.count()
-
-            if expect_expr == FILTER_ALL_ROWS:
-                permitted = rows
-                row_enforced = None
-            else:
-                permitted = spark.sql(
-                    f"SELECT count(*) AS c FROM {base} WHERE {expect_expr}"
-                ).collect()[0]["c"]
-                row_enforced = rows == permitted
-
-            want_cols = sorted(expect_cols) if expect_cols else None
-            col_enforced = (cols == want_cols) if want_cols else None
-
-            # Disclosure beyond what the filter permits is the finding worth
-            # naming. Fewer rows than permitted is over-restriction: wrong, but
-            # not a disclosure, so it is recorded without raising.
-            over = bool(
-                (expect_expr != FILTER_ALL_ROWS and rows > permitted)
-                or (want_cols and not set(cols).issubset(set(want_cols)))
-            )
-
-            filter_evidence[kind] = {
-                "filter_kind": kind,
-                "rows_visible": rows,
-                "rows_permitted": permitted,
-                "columns_visible": cols,
-                "columns_permitted": want_cols,
-                "row_filter_enforced": row_enforced,
-                "column_filter_enforced": col_enforced,
-                "filter_over_disclosure": over,
-            }
-
-            if over:
-                raise AssertionError(
-                    f"data filter '{kind}' not enforced: {rows} rows visible, "
-                    f"{permitted} permitted; columns visible {cols}, "
-                    f"permitted {want_cols if want_cols else 'all'}"
-                )
-        return go
-
     handlers = {
         "CREATE_TABLE": lambda: run("CREATE_TABLE", sql(
             f"CREATE TABLE {tbl} (fact_id BIGINT, dim_id BIGINT, category STRING, amount DOUBLE) "
@@ -370,15 +331,6 @@ def do_functional(spark, cfg: dict) -> dict:
             f"VALUES (s.fact_id, s.dim_id, s.category, s.amount)")),
         "DF_WRITER_V2": lambda: run("DF_WRITER_V2", df_writer_v2),
         "DROP_TABLE": lambda: run("DROP_TABLE", sql(f"DROP TABLE {tbl}")),
-        # Lake Formation data cell filters. Only meaningful under FGAC: with plain
-        # Glue or full table access there is no filter to enforce, so the
-        # expected-support matrix marks these unsupported for those modes.
-        "ROW_FILTER": lambda: run(
-            "ROW_FILTER", filtered_read("row", FILTER_ROW_EXPR, None)),
-        "COLUMN_FILTER": lambda: run(
-            "COLUMN_FILTER", filtered_read("column", FILTER_ALL_ROWS, FILTER_COLUMN_COLS)),
-        "CELL_FILTER": lambda: run(
-            "CELL_FILTER", filtered_read("cell", FILTER_ROW_EXPR, FILTER_CELL_COLS)),
     }
 
     for op in ops:
@@ -467,9 +419,78 @@ def do_perf(spark, cfg: dict) -> dict:
 
 # ------------------------------------------------------------------------ main
 
+# ---------------------------------------------------------------- filter checks
+
+def do_filters(spark, cfg: dict) -> dict:
+    """Assert Lake Formation data cell filters were enforced.
+
+    Runs once per variant, not once per table format. The filters are defined on
+    the fact table, so dispatching this per format ran the identical query three
+    times and labelled the results parquet./iceberg./delta., implying a
+    format-specific test that does not exist.
+
+    This mode is submitted under a dedicated reader role rather than the job role.
+    A Lake Formation administrator bypasses data cell filters, and a table-wide
+    SELECT grant supersedes them, so a read by the job role proves nothing.
+    """
+    db = cfg["database"]
+    units = []
+
+    for kind, expr, cols in (
+        ("row", FILTER_ROW_EXPR, None),
+        ("column", FILTER_ALL_ROWS, FILTER_COLUMN_COLS),
+        ("cell", FILTER_ROW_EXPR, FILTER_CELL_COLS),
+    ):
+        op = f"{kind.upper()}_FILTER"
+        rec = {"name": op, "table_format": "n/a", "table_type": "managed",
+               "status": "SUCCESS", "error": None, "duration_s": None}
+        t0 = time.time()
+        try:
+            base = f"{db}.fact"
+            visible = spark.table(base)
+            vis_cols = sorted(f.name for f in visible.schema.fields)
+            rows = visible.count()
+            if expr == FILTER_ALL_ROWS:
+                permitted, row_enforced = rows, None
+            else:
+                permitted = spark.sql(
+                    f"SELECT count(*) AS c FROM {base} WHERE {expr}").collect()[0]["c"]
+                row_enforced = rows == permitted
+            want = sorted(cols) if cols else None
+            over = bool((expr != FILTER_ALL_ROWS and rows > permitted)
+                        or (want and not set(vis_cols).issubset(set(want))))
+            rec.update({
+                "filter_kind": kind,
+                "rows_visible": rows,
+                "rows_permitted": permitted,
+                "columns_visible": vis_cols,
+                "columns_permitted": want,
+                "row_filter_enforced": row_enforced,
+                "column_filter_enforced": (vis_cols == want) if want else None,
+                "filter_over_disclosure": over,
+            })
+            if over:
+                rec["status"] = "FAILED"
+                rec["error"] = (f"data filter '{kind}' not enforced: {rows} rows visible, "
+                                f"{permitted} permitted; columns {vis_cols}, "
+                                f"permitted {want if want else 'all'}")
+        except Exception as exc:  # noqa: BLE001
+            # A read that fails outright is a different finding from one that
+            # returns too much, and is recorded as such rather than as disclosure.
+            rec["status"] = "FAILED"
+            rec["error"] = f"{type(exc).__name__}: {exc}"[:2000]
+        rec["duration_s"] = round(time.time() - t0, 2)
+        units.append(rec)
+        print(f"[etd] filter.{kind} {rec['status']} "
+              f"rows={rec.get('rows_visible')}/{rec.get('rows_permitted')}")
+
+    return {"mode": "filters", "database": db, "units": units,
+            "spark_version": spark.version}
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--mode", required=True, choices=["setup", "functional", "perf"])
+    ap.add_argument("--mode", required=True, choices=["setup", "functional", "perf", "filters"])
     ap.add_argument("--config", required=True, help="JSON blob")
     ap.add_argument("--output", required=True, help="s3:// URI for the result document")
     args = ap.parse_args()
@@ -482,6 +503,8 @@ def main() -> None:
     try:
         if args.mode == "setup":
             payload = do_setup(spark, cfg)
+        elif args.mode == "filters":
+            payload = do_filters(spark, cfg)
         elif args.mode == "functional":
             payload = do_functional(spark, cfg)
         else:

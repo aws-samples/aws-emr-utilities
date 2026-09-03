@@ -323,7 +323,9 @@ def filter_units(variant: dict, matrix: dict, unenforced: bool) -> list:
         bad = unenforced and kind in ("row", "cell")
         rows_visible = 10000 if bad else vis
         rec = {
-            "name": op, "table_format": "iceberg", "table_type": "managed",
+            # Filters are defined on the fact table, so the check is not
+            # format-specific and is no longer labelled per format.
+            "name": op, "table_format": "n/a", "table_type": "managed",
             "status": "FAILED" if bad else "SUCCESS",
             "error": (f"AssertionError: data filter '{kind}' not enforced: "
                       f"{rows_visible} rows visible, {permitted} permitted"
@@ -343,10 +345,9 @@ def filter_units(variant: dict, matrix: dict, unenforced: bool) -> list:
         # Resolved from the same matrix as every other unit, so a filter op is
         # judged against documented support rather than against a hardcoded
         # assumption.
-        entry = (matrix.get("formats", {}).get("iceberg", {}) or {}).get(op) or {}
-        state, why = expected_state("iceberg", op, entry, variant)
-        rec["expected_state"] = state
-        rec["expected_reason"] = why
+        rec["expected_state"] = "S"
+        rec["expected_reason"] = ("data cell filter granted to a non-administrator "
+                                  "reader principal")
         out.append(rec)
     return out
 

@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Any
 
 SCHEMA_VERSION = "0.2"
-VALID_ACCESS_MODES = ("plain", "lf_fta", "lf_fgac")
+VALID_ACCESS_MODES = ("plain", "lf_fta", "lf_fgac", "hms")
 VALID_INTENTS = ("upgrade_regression", "patch_validation", "governance_overhead")
 
 
@@ -73,6 +73,11 @@ class Variant:
     shape: dict = field(default_factory=dict)
     spark_conf: dict = field(default_factory=dict)
     image_uri: str | None = None
+    # {"subnet_ids": [...], "security_group_ids": [...]}. Attaching a VPC is
+    # required to reach an external Hive metastore on RDS. Note that a
+    # VPC-attached application loses default S3 egress, so the subnets must
+    # route to an S3 gateway endpoint or every S3 read hangs.
+    network: dict | None = None
     notes: str = ""
     # populated at provision time
     application_id: str | None = None
@@ -117,6 +122,9 @@ class Variant:
 class Workload:
     workload_id: str
     kind: str
+    # Shown as the section heading when a run carries several performance
+    # workloads, one per data scale.
+    label: str = ""
     iterations: int = 1
     job_repeats: int = 1
     formats: list[str] = field(default_factory=list)
@@ -145,6 +153,9 @@ class RunSpec:
     workloads: list[Workload]
     comparisons: list[dict]
     testbed: dict
+    # name -> s3 uri. Registered as external tables in the run
+    # database at setup so a real dataset can back the workload.
+    external_tables: dict
     thresholds: dict
     safety: dict
     raw: dict
@@ -243,7 +254,8 @@ def load_spec(path: str | Path) -> RunSpec:
             access_mode=mode, baseline=bool(v.get("baseline")),
             shape=dict(v.get("shape") or {}),
             spark_conf={str(k): str(x) for k, x in (v.get("spark_conf") or {}).items()},
-            image_uri=v.get("image_uri"), notes=v.get("notes", ""),
+            image_uri=v.get("image_uri"),
+            network=dict(v.get("network") or {}) or None, notes=v.get("notes", ""),
         ))
     if not variants:
         errs.append("at least one variant is required")
@@ -265,6 +277,7 @@ def load_spec(path: str | Path) -> RunSpec:
             continue
         workloads.append(Workload(
             workload_id=w["id"], kind=w["kind"],
+            label=str(w.get("label") or ""),
             iterations=int(w.get("iterations", 1)),
             job_repeats=int(w.get("job_repeats", 1)),
             formats=list(w.get("formats") or []),
@@ -317,6 +330,7 @@ def load_spec(path: str | Path) -> RunSpec:
         tags=dict(run.get("tags") or {}),
         variants=variants, workloads=workloads, comparisons=comparisons,
         testbed=dict(raw.get("testbed") or {"mode": "generate"}),
+        external_tables=dict(raw.get("external_tables") or {}),
         thresholds={"perf_noise_band_pct": 5.0, "perf_regression_alert_pct": 10.0,
                     "min_iterations_for_perf_verdict": 2, **(raw.get("thresholds") or {})},
         safety={"auto_stop_minutes": 15, "job_timeout_minutes": 30,
