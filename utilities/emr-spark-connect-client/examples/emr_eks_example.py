@@ -45,14 +45,12 @@ EXECUTION_ROLE = "arn:aws:iam::123456789012:role/EMRonEKSExecutionRole"
 #   2. mint a token (GetManagedEndpointSessionCredentials)
 #   3. connect to Spark Connect at sc://{authProxyUrl}:443
 session = EMRSparkSession.create(
+    # release_label="emr-7.14.0-latest", # optional override, defaults to EMR 7.14
     resource_id=VIRTUAL_CLUSTER_ID,
     execution_role_arn=EXECUTION_ROLE,
-    idle_timeout_minutes=10,
-    token_duration_seconds=900,
     spark_conf={
         "spark.dynamicAllocation.minExecutors": "0",
         "spark.dynamicAllocation.enabled": "true",
-        "spark.kubernetes.node.selector.topology.kubernetes.io/zone": "us-west-2a"
     },
     # Reuse an existing ACTIVE endpoint (skips the multi-minute ALB creation):
     # managed_endpoint_id="YOUR_ENDPOINT_ID",
