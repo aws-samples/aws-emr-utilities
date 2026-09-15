@@ -18,7 +18,6 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 35,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -1730,11 +1729,7 @@
   "templating": {
     "list": [
       {
-        "current": {
-          "selected": false,
-          "text": "Prometheus",
-          "value": "Prometheus"
-        },
+        "current": {},
         "hide": 0,
         "includeAll": false,
         "label": "Datasource",
@@ -1784,6 +1779,5 @@
   "timezone": "",
   "title": "Spark Application Monitoring - Working",
   "uid": "spark-working",
-  "version": 1,
   "weekStart": ""
 }

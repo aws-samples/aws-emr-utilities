@@ -21,15 +21,14 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 16,
-  "iteration": 1670318961826,
   "links": [],
   "liveNow": false,
   "panels": [
     {
       "collapsed": false,
       "datasource": {
-        "uid": "Prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
       },
       "gridPos": {
         "h": 1,
@@ -49,7 +48,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -99,7 +98,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "yarn_nodemanager_metrics_containers_running {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'}",
@@ -116,7 +115,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -146,7 +145,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -196,7 +195,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "yarn_nodemanager_metrics_containers_failed {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'}",
@@ -213,7 +212,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -243,7 +242,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -293,7 +292,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "yarn_nodemanager_metrics_containers_completed {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'}",
@@ -310,7 +309,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -340,7 +339,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -390,7 +389,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "yarn_nodemanager_metrics_containers_killed {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'}",
@@ -407,7 +406,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -437,7 +436,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -487,7 +486,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "yarn_nodemanager_metrics_containers_initing {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'}",
@@ -504,7 +503,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -534,7 +533,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -584,7 +583,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "yarn_nodemanager_metrics_containers_launched {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'}",
@@ -601,7 +600,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -633,7 +632,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -683,7 +682,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "yarn_nodemanager_metrics_containers_re_initing {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'}",
@@ -700,7 +699,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -732,7 +731,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -782,7 +781,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "yarn_nodemanager_metrics_container_launch_duration_avg_time {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'}",
@@ -799,7 +798,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -827,7 +826,8 @@
     {
       "collapsed": false,
       "datasource": {
-        "uid": "Prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
       },
       "gridPos": {
         "h": 1,
@@ -847,7 +847,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -897,7 +897,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "yarn_nodemanager_metrics_available_vcores {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'}",
@@ -914,7 +914,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -946,7 +946,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -996,7 +996,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "yarn_nodemanager_metrics_allocated_vcores {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'}",
@@ -1013,7 +1013,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -1041,7 +1041,8 @@
     {
       "collapsed": false,
       "datasource": {
-        "uid": "Prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
       },
       "gridPos": {
         "h": 1,
@@ -1061,7 +1062,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -1111,7 +1112,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "yarn_nodemanager_metrics_available_gb {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'}",
@@ -1128,7 +1129,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -1160,7 +1161,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -1210,7 +1211,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "yarn_nodemanager_metrics_allocated_gb {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'}",
@@ -1227,7 +1228,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -1259,7 +1260,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -1309,7 +1310,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "yarn_nodemanager_metrics_allocated_gb {job=\"$job\", cluster_id=~'$', instance=~'$instance'}/(yarn_nodemanager_metrics_allocated_gb {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'} + yarn_nodemanager_metrics_available_gb {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'})",
@@ -1326,7 +1327,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -1361,6 +1362,20 @@
   ],
   "templating": {
     "list": [
+      {
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "label": "Datasource",
+        "multi": false,
+        "name": "DS_PROMETHEUS",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
       {
         "auto": false,
         "auto_count": 30,
@@ -1443,7 +1458,7 @@
         },
         "datasource": {
           "type": "prometheus",
-          "uid": "5JyaSIk4k"
+          "uid": "${DS_PROMETHEUS}"
         },
         "definition": "label_values(yarn_nodemanager_metrics_available_vcores, job)",
         "hide": 0,
@@ -1454,7 +1469,7 @@
         "options": [],
         "query": {
           "query": "label_values(yarn_nodemanager_metrics_available_vcores, job)",
-          "refId": "Prometheus ws-8865d501-f1ec-4d87-821f-3d434e2f3c12-instance-Variable-Query"
+          "refId": "instance-Variable-Query"
         },
         "refresh": 1,
         "regex": "",
@@ -1477,7 +1492,7 @@
         },
         "datasource": {
           "type": "prometheus",
-          "uid": "5JyaSIk4k"
+          "uid": "${DS_PROMETHEUS}"
         },
         "definition": "label_values(yarn_nodemanager_metrics_available_vcores{job=~\"$job\"}, cluster_id)",
         "hide": 0,
@@ -1488,7 +1503,7 @@
         "options": [],
         "query": {
           "query": "label_values(yarn_nodemanager_metrics_available_vcores{job=~\"$job\"}, cluster_id)",
-          "refId": "Prometheus ws-8865d501-f1ec-4d87-821f-3d434e2f3c12-instance-Variable-Query"
+          "refId": "instance-Variable-Query"
         },
         "refresh": 1,
         "regex": "",
@@ -1511,7 +1526,7 @@
         },
         "datasource": {
           "type": "prometheus",
-          "uid": "5JyaSIk4k"
+          "uid": "${DS_PROMETHEUS}"
         },
         "definition": "label_values(yarn_nodemanager_metrics_available_vcores{job=~\"$job\", cluster_id=~'$cluster'}, instance)",
         "hide": 0,
@@ -1522,7 +1537,7 @@
         "options": [],
         "query": {
           "query": "label_values(yarn_nodemanager_metrics_available_vcores{job=~\"$job\", cluster_id=~'$cluster'}, instance)",
-          "refId": "Prometheus ws-8865d501-f1ec-4d87-821f-3d434e2f3c12-instance-Variable-Query"
+          "refId": "instance-Variable-Query"
         },
         "refresh": 1,
         "regex": "",
@@ -1555,6 +1570,5 @@
   "timezone": "",
   "title": "YARN - Node Manager",
   "uid": "CRj-lw6Zk",
-  "version": 4,
   "weekStart": ""
 }

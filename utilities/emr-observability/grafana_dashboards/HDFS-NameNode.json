@@ -21,15 +21,14 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 17,
-  "iteration": 1670319083635,
   "links": [],
   "liveNow": false,
   "panels": [
     {
       "collapsed": false,
       "datasource": {
-        "uid": "Prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
       },
       "gridPos": {
         "h": 1,
@@ -45,7 +44,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -112,12 +111,12 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "count(up {job=\"$job\", cluster_id=~'$cluster', instance=~\"$instance\"})",
           "interval": "",
-          "legendFormat": "",
+          "legendFormat": "{{instance}}",
           "refId": "A"
         }
       ],
@@ -127,7 +126,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -195,12 +194,12 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum(hdfs_namenode_capacity_total {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', role=\"NameNode\", kind=\"FSNamesystem\"})",
           "interval": "",
-          "legendFormat": "",
+          "legendFormat": "{{instance}}",
           "refId": "A"
         }
       ],
@@ -210,7 +209,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -278,12 +277,12 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum(hdfs_namenode_block_capacity {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', role=\"NameNode\", kind=\"FSNamesystem\"})",
           "interval": "",
-          "legendFormat": "",
+          "legendFormat": "{{instance}}",
           "refId": "A"
         }
       ],
@@ -293,7 +292,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -361,12 +360,12 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum(hdfs_namenode_num_live_data_nodes {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', role=\"NameNode\", kind=\"FSNamesystem\"})",
           "interval": "",
-          "legendFormat": "",
+          "legendFormat": "{{instance}}",
           "refId": "A"
         }
       ],
@@ -376,7 +375,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -444,12 +443,12 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum(hdfs_namenode_num_dead_data_nodes {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', role=\"NameNode\", kind=\"FSNamesystem\"})",
           "interval": "",
-          "legendFormat": "",
+          "legendFormat": "{{instance}}",
           "refId": "A"
         }
       ],
@@ -459,7 +458,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -527,12 +526,12 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum(hdfs_namenode_files_total {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', role=\"NameNode\", kind=\"FSNamesystem\"})",
           "interval": "",
-          "legendFormat": "",
+          "legendFormat": "{{instance}}",
           "refId": "A"
         }
       ],
@@ -546,7 +545,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -596,7 +595,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "hdfs_namenode_total_load {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', kind=\"FSNamesystem\"}",
@@ -613,7 +612,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -641,7 +640,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -704,7 +703,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "min(hdfs_namenode_last_checkpoint_time {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance'})",
@@ -719,7 +718,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -787,12 +786,12 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum(hdfs_namenode_volume_failures_total {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', role=\"NameNode\", kind=\"FSNamesystem\"})",
           "interval": "",
-          "legendFormat": "",
+          "legendFormat": "{{instance}}",
           "refId": "A"
         }
       ],
@@ -802,7 +801,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -866,12 +865,12 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum(hdfs_namenode_corrupt_blocks {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', role=\"NameNode\", kind=\"FSNamesystem\"})",
           "interval": "",
-          "legendFormat": "",
+          "legendFormat": "{{instance}}",
           "refId": "A"
         }
       ],
@@ -881,7 +880,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -945,12 +944,12 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum(hdfs_namenode_missing_blocks {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', role=\"NameNode\", kind=\"FSNamesystem\"})",
           "interval": "",
-          "legendFormat": "",
+          "legendFormat": "{{instance}}",
           "refId": "A"
         }
       ],
@@ -960,7 +959,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1024,12 +1023,12 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "sum(hdfs_namenode_under_replicated_blocks {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', role=\"NameNode\", kind=\"FSNamesystem\"})",
           "interval": "",
-          "legendFormat": "",
+          "legendFormat": "{{instance}}",
           "refId": "A"
         }
       ],
@@ -1043,7 +1042,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -1092,7 +1091,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "hdfs_namenode_capacity_used {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', role=\"NameNode\", kind=\"FSNamesystem\"}/ hdfs_namenode_capacity_total {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', role=\"NameNode\", kind=\"FSNamesystem\"}",
@@ -1109,7 +1108,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -1141,7 +1140,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -1190,7 +1189,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "hdfs_namenode_blocks_total {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', role=\"NameNode\", kind=\"FSNamesystem\"}/hdfs_namenode_block_capacity {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', role=\"NameNode\", kind=\"FSNamesystem\"}",
@@ -1207,7 +1206,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -1239,7 +1238,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -1288,7 +1287,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "rate(hdfs_namenode_total_file_ops {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', role=\"NameNode\", kind=\"NameNodeActivity\"} [$interval])",
@@ -1305,7 +1304,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -1337,7 +1336,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -1386,7 +1385,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "rate(hdfs_namenode_transactions_num_ops {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', role=\"NameNode\", kind=\"NameNodeActivity\"} [$interval])",
@@ -1403,7 +1402,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -1432,7 +1431,8 @@
     {
       "collapsed": false,
       "datasource": {
-        "uid": "Prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
       },
       "gridPos": {
         "h": 1,
@@ -1452,7 +1452,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -1501,7 +1501,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "hdfs_namenode_capacity_used {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', role=\"NameNode\", kind=\"FSNamesystem\"}/ hdfs_namenode_capacity_total {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', role=\"NameNode\", kind=\"FSNamesystem\"}",
@@ -1518,7 +1518,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -1550,7 +1550,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -1599,7 +1599,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "hdfs_namenode_capacity_used {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', role=\"NameNode\", kind=\"FSNamesystem\"}",
@@ -1616,7 +1616,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -1648,7 +1648,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -1697,7 +1697,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "hdfs_namenode_capacity_remaining {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', role=\"NameNode\", kind=\"FSNamesystem\"}",
@@ -1714,7 +1714,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -1747,7 +1747,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -1796,7 +1796,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "hdfs_namenode_blocks_total {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', role=\"NameNode\", kind=\"FSNamesystem\"}/hdfs_namenode_block_capacity {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', role=\"NameNode\", kind=\"FSNamesystem\"}",
@@ -1813,7 +1813,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -1845,7 +1845,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -1894,7 +1894,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "hdfs_namenode_blocks_total {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', role=\"NameNode\", kind=\"FSNamesystem\"}",
@@ -1911,7 +1911,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -1943,7 +1943,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -1992,7 +1992,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "hdfs_namenode_block_capacity {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', role=\"NameNode\", kind=\"FSNamesystem\"} - hdfs_namenode_blocks_total {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', role=\"NameNode\", kind=\"FSNamesystem\"}",
@@ -2009,7 +2009,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -2041,7 +2041,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -2090,7 +2090,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "hdfs_namenode_corrupt_blocks {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', role=\"NameNode\", kind=\"FSNamesystem\"}",
@@ -2107,7 +2107,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -2139,7 +2139,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -2189,7 +2189,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "hdfs_namenode_missing_blocks{job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', role=\"NameNode\", kind=\"FSNamesystem\"}",
@@ -2206,7 +2206,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -2238,7 +2238,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -2288,7 +2288,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "hdfs_namenode_excess_blocks{job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', role=\"NameNode\", kind=\"FSNamesystem\"}",
@@ -2305,7 +2305,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -2338,7 +2338,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -2387,7 +2387,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "rate(hdfs_namenode_add_block_ops {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', role=\"NameNode\"} [$interval])",
@@ -2404,7 +2404,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -2432,7 +2432,8 @@
     {
       "collapsed": false,
       "datasource": {
-        "uid": "Prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
       },
       "gridPos": {
         "h": 1,
@@ -2452,7 +2453,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -2501,7 +2502,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "hdfs_namenode_under_replicated_blocks{job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', role=\"NameNode\", kind=\"FSNamesystem\"}",
@@ -2518,7 +2519,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -2550,7 +2551,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -2599,7 +2600,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "hdfs_namenode_scheduled_replication_blocks {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', role=\"NameNode\", kind=\"FSNamesystem\"}",
@@ -2616,7 +2617,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -2648,7 +2649,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -2697,7 +2698,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "hdfs_namenode_pending_replication_blocks {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', role=\"NameNode\", kind=\"FSNamesystem\"}",
@@ -2714,7 +2715,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -2746,7 +2747,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -2795,7 +2796,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "hdfs_namenode_missing_replicated_blocks {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', role=\"NameNode\", kind=\"FSNamesystem\"}",
@@ -2812,7 +2813,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -2844,7 +2845,7 @@
       "dashes": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "5JyaSIk4k"
+        "uid": "${DS_PROMETHEUS}"
       },
       "decimals": 1,
       "fieldConfig": {
@@ -2893,7 +2894,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "5JyaSIk4k"
+            "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
           "expr": "hdfs_namenode_corrupt_replicated_blocks {job=\"$job\", cluster_id=~'$cluster', instance=~'$instance', role=\"NameNode\", kind=\"FSNamesystem\"}",
@@ -2910,7 +2911,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "mode": "time",
         "show": true,
@@ -2945,6 +2946,20 @@
   ],
   "templating": {
     "list": [
+      {
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "label": "Datasource",
+        "multi": false,
+        "name": "DS_PROMETHEUS",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
       {
         "auto": false,
         "auto_count": 30,
@@ -3027,7 +3042,7 @@
         },
         "datasource": {
           "type": "prometheus",
-          "uid": "5JyaSIk4k"
+          "uid": "${DS_PROMETHEUS}"
         },
         "definition": "label_values(hdfs_namenode_capacity_total, job)",
         "hide": 0,
@@ -3038,7 +3053,7 @@
         "options": [],
         "query": {
           "query": "label_values(hdfs_namenode_capacity_total, job)",
-          "refId": "Prometheus ws-8865d501-f1ec-4d87-821f-3d434e2f3c12-instance-Variable-Query"
+          "refId": "instance-Variable-Query"
         },
         "refresh": 1,
         "regex": "",
@@ -3061,7 +3076,7 @@
         },
         "datasource": {
           "type": "prometheus",
-          "uid": "5JyaSIk4k"
+          "uid": "${DS_PROMETHEUS}"
         },
         "definition": "label_values(hdfs_namenode_capacity_total_gb{job=~\"$job\"}, cluster_id)",
         "hide": 0,
@@ -3072,7 +3087,7 @@
         "options": [],
         "query": {
           "query": "label_values(hdfs_namenode_capacity_total_gb{job=~\"$job\"}, cluster_id)",
-          "refId": "Prometheus ws-8865d501-f1ec-4d87-821f-3d434e2f3c12-instance-Variable-Query"
+          "refId": "instance-Variable-Query"
         },
         "refresh": 1,
         "regex": "",
@@ -3095,7 +3110,7 @@
         },
         "datasource": {
           "type": "prometheus",
-          "uid": "5JyaSIk4k"
+          "uid": "${DS_PROMETHEUS}"
         },
         "definition": "label_values(hdfs_namenode_capacity_total_gb{job=~\"$job\", cluster_id=~'$cluster'}, instance)",
         "hide": 0,
@@ -3106,7 +3121,7 @@
         "options": [],
         "query": {
           "query": "label_values(hdfs_namenode_capacity_total_gb{job=~\"$job\", cluster_id=~'$cluster'}, instance)",
-          "refId": "Prometheus ws-8865d501-f1ec-4d87-821f-3d434e2f3c12-instance-Variable-Query"
+          "refId": "instance-Variable-Query"
         },
         "refresh": 1,
         "regex": "",
@@ -3139,6 +3154,5 @@
   "timezone": "",
   "title": "HDFS - NameNode",
   "uid": "KOf4PieWk",
-  "version": 5,
   "weekStart": ""
 }

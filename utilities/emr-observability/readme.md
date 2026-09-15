@@ -32,6 +32,7 @@ Metrics can be viewed only per cluster and it becomes difficult to monitor when 
 * HDFS NameNode metrics
 * HDFS DataNode metrics
 * Hbase metrics
+* Spark Application metrics
 
 **Other AWS Services used for option 2**
 
@@ -40,6 +41,34 @@ Refer this doc for AMP pricing - https://aws.amazon.com/prometheus/pricing/
 
 *AMG* - Amazon Managed Grafana is a fully managed service for open source Grafana developed in collaboration with Grafana Labs. Grafana is a popular open source analytics platform that enables you to query, visualize, alert on and understand your metrics no matter where they are stored.
 Refer this doc for AMG pricing - https://aws.amazon.com/grafana/pricing/
+
+## Choosing a deployment
+
+There are two independent choices to make.
+
+**Where metrics are stored.** Option 1 runs Prometheus and Grafana on your own EC2 instance. Option 2 uses Amazon Managed Prometheus and Amazon Managed Grafana. The same bootstrap scripts serve both; Option 2 additionally passes the AMP workspace ID as an argument so the on-cluster Prometheus remote-writes to it.
+
+**Which workload you are monitoring.** This decides the bootstrap script *and* the EMR configuration classification. They are paired and must not be mixed:
+
+| Workload | Bootstrap action | EMR configuration |
+|---|---|---|
+| Hadoop + HBase | `install_prometheus_v2.sh` | `conf_files/configuration.json` |
+| Hadoop + Spark | `install-telegraf-bootstrap.sh` and `spark-install_prometheus.sh` | `conf_files/emr-application-configuration.json` |
+
+Both cover node/OS, YARN and HDFS metrics, so those dashboards work either way. Neither covers HBase *and* Spark.
+
+Two things to check before launching:
+
+* **JMX agent jar path.** The two configuration files point `-javaagent` at different paths (`/usr/lib/prometheus` and `/etc/prometheus`) to match where each script installs the jar. Using the wrong pairing prevents the NameNode and ResourceManager from starting, because the JVM cannot load a `-javaagent` that is not there.
+* **Exporter ports.** The `port:` values in the script's `scrape_configs` must match the ports set by the `-javaagent` flags in your configuration file. `install_prometheus_v2.sh` and `conf_files/configuration.json` currently specify different YARN and HDFS ports; align one to the other before deploying, or those jobs will scrape ports nothing is listening on.
+
+### Run HBase and Spark on separate clusters
+
+This utility instruments HBase or Spark, not both, so a mixed cluster always leaves one of them uninstrumented.
+
+That limitation lines up with the broader EMR guidance: prefer not to co-locate HBase with YARN workloads such as Spark or Hive. HBase RegionServers are long-running daemons outside YARN's control, so they compete with the NodeManager for the same memory and CPU. You have to hold back `yarn.nodemanager.resource.memory-mb` to leave room for the HBase heap and block cache, and Spark shuffle contends with HBase for page cache and disk. Managed scaling and autoscaling compound it, since decommissioning a core or task node running a RegionServer causes region churn.
+
+Prefer a dedicated HBase cluster, using HBase on S3 if you want to separate storage from compute, and separate clusters for YARN applications. If you do co-locate, expect to instrument only one of the two, and cap YARN resources explicitly so the RegionServers are not starved.
 
 # Instructions
 ### Option - 1
@@ -79,11 +108,31 @@ b)Use the below EMR configuration classification json
         ```
     1) Use the below EMR configuration classification json
         ```
-        ./conf_files/emr-application-configuration.json
+        ./conf_files/configuration.json
         ```
+        This is the configuration that pairs with `install_prometheus_v2.sh` - it points `-javaagent` at `/usr/lib/prometheus`, where that script installs the jar. For Spark metrics use `spark-install_prometheus.sh` with `./conf_files/emr-application-configuration.json` instead; see [Choosing a deployment](#choosing-a-deployment).
 5) You can now start visualizing the metrics in AMG
 
 ### Setting up Grafana Dashboards
+
+After importing, select your Prometheus or Amazon Managed Service for Prometheus source from the **Datasource** dropdown at the top of the dashboard. Every panel binds to this selection, so no JSON editing is required. Grafana remembers the choice per user.
+
+##### Note for Amazon Managed Grafana 12 and later
+
+Starting in AMG 12, SigV4 authentication was removed from the core Prometheus plugin, and AMP data sources are migrated to the dedicated Amazon Managed Service for Prometheus plugin (`grafana-amazonprometheus-datasource`). Refer to [Use AWS data source configuration to add Amazon Managed Service for Prometheus as a data source](https://docs.aws.amazon.com/grafana/latest/userguide/AMP-adding-AWS-config.html).
+
+The **Datasource** dropdown filters by plugin type, so after that migration an AMP data source will not be listed. Point the variable at the AMP plugin once per dashboard:
+
+*Dashboard settings → Variables → `DS_PROMETHEUS` → Type: Amazon Managed Service for Prometheus*
+
+Or set it in the JSON before importing:
+
+```json
+{ "name": "DS_PROMETHEUS", "type": "datasource", "query": "grafana-amazonprometheus-datasource" }
+```
+
+This applies only to AMP data sources on AMG 12+. A self-managed Prometheus data source (Option 1) is unaffected and needs no change on any version.
+
 #### Yarn and OS level metrics Dashboards
 Import the dashboards from `grafana_dashboards/`:
 * `EMRonEC2-Optimization-dashboard.json`
@@ -99,14 +148,8 @@ Use this ID "12243" for importing the dashboard into Grafana
 Import the Spark-specific dashboards from `grafana_dashboards/`:
 * `Spark-Application-Monitoring.json` - Spark application-level monitoring
 * `Spark-Metrics-by-Components.json` - Spark metrics broken down by component
-* `spark-EMRonEC2-Optimization-dashboard.json` - Optimization dashboard with Spark metrics
-* `spark-OS_Level_Metrics.json` - OS metrics tailored for Spark workloads
-* `spark-YARN-ResourceManager.json` - YARN ResourceManager metrics for Spark
-* `spark-YARN-NodeManager.json` - YARN NodeManager metrics for Spark
-* `spark-HDFS-NameNode.json` - HDFS NameNode metrics for Spark
 
-For Spark-specific Prometheus setup, use `spark-install_prometheus.sh` as the bootstrap action instead of `install_prometheus_v2.sh`.
-Alternatively, use `install-telegraf-bootstrap.sh` for Telegraf-based metric collection.
+For Spark-specific Prometheus setup, use `spark-install_prometheus.sh` as the bootstrap action instead of `install_prometheus_v2.sh` & `install-telegraf-bootstrap.sh` for Telegraf-based metric collection.
 
 ## Work in progress
 * Setup Alerts
@@ -126,7 +169,8 @@ Alternatively, use `install-telegraf-bootstrap.sh` for Telegraf-based metric col
 ![Alt text](images/HbaseGrafana-1.png?raw=true "Hbase Dashboard")
 
 ### Dashboard examples - SparkDashboard
-
+![Alt text](images/Spark-Application-Monitoring.png?raw=true "Spark Application Dashboard")
+![Alt text](images/Spark-Metrics-By-Components.png?raw=true "Spark Components Dashboard")
 
 ###  Recommended Actions
 In the **EMRonEC2OptimizationDashboard**
@@ -147,4 +191,4 @@ If Yarn memory utilization is at 100% while the OS memory utilization is low, it
 Coming soon
 
 ### Note
-1)Prometheus runs on port 9091 in this utility. For example: http://ec2-3-90-213-1.compute-1.amazonaws.com:9091/
+1)Prometheus runs on port 9091 in this utility. For example: http://ec2-0-00-000-00.compute-1.amazonaws.com:9091/
