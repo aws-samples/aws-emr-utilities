@@ -19,7 +19,7 @@ for _envf in "./.env" "${SELF_DIR}/../.env" "${SELF_DIR}/.env"; do
   [[ -f "$_envf" ]] && { set -a; . "$_envf"; set +a; break; }
 done
 
-DB="${DB:-salesdb}"; REGION="${REGION:-us-east-1}"; TARGET="${TARGET:-ec2}"
+DB="${DB:-salesdb}"; REGION="${REGION:-us-east-1}"; TARGET="${TARGET:-serverless}"
 CLUSTER_ID="${CLUSTER_ID:-}"; APP_ID="${APP_ID:-}"
 while [[ $# -gt 0 ]]; do
   case "$1" in

@@ -4,12 +4,12 @@
 # to Amazon EMR (on EC2 or Serverless), waits for completion, and prints the
 # driver output (the PASS/FAIL summary and query results).
 #
-# Target EMR on EC2 (default):
-#   ./run_demo.sh --phase <phase> --cluster-id <j-XXX> --bucket <bucket> [--region us-east-1]
+# Target EMR Serverless (default):
+#   ./run_demo.sh --phase <phase> --app-id <id> --role-arn <arn> --bucket <bucket> [--region us-east-1]
 #
-# Target EMR Serverless:
-#   ./run_demo.sh --target serverless --phase <phase> \
-#       --app-id <id> --role-arn <arn> --bucket <bucket> [--region us-east-1]
+# Target EMR on EC2:
+#   ./run_demo.sh --target ec2 --phase <phase> \
+#       --cluster-id <j-XXX> --bucket <bucket> [--region us-east-1]
 #
 # Common optional flags: --producer-account 111122223333 --producer-db salesdb
 #   --producer-table fulfillment --named-catalog prod --db salesdb
@@ -28,7 +28,7 @@ for _envf in "./.env" "${SELF_DIR}/../.env" "${SELF_DIR}/.env"; do
 done
 
 # ---- defaults / parse flags ------------------------------------------------
-TARGET="${TARGET:-ec2}"
+TARGET="${TARGET:-serverless}"
 PHASE="" CLUSTER_ID="${CLUSTER_ID:-}" APP_ID="${APP_ID:-}" ROLE_ARN="${ROLE_ARN:-}"
 BUCKET="${BUCKET:-}" REGION="${REGION:-us-east-1}"
 DB="salesdb" PRODUCER_ACCOUNT="${PRODUCER_ACCOUNT:-}" PRODUCER_DB="salesdb" PRODUCER_TABLE="fulfillment"
