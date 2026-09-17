@@ -1,5 +1,5 @@
 """
-Multi-catalog demo for Amazon EMR 8.1 (release emr-8.1.0).
+Multi-catalog demo for Amazon EMR 8.1 (release emr-spark-8.1.0).
 
 A single, generic PySpark script that creates small sample tables and
 demonstrates the three multi-catalog capabilities of the redirecting session
@@ -25,12 +25,44 @@ Phases (--phase):
 The cross-account phases assume the producer table exists and the cross-account
 grants are in place (Lake Formation + Glue resource policy incl. database/default
 + S3 bucket policy + a decryptable catalog). See ../README.md.
+
+Security note: Spark SQL does not support bind parameters for identifiers
+(database/table/catalog names), so those are interpolated into the statement
+text. All such values come from the operator's own command-line arguments and
+are strictly validated by check_args() below (identifiers are restricted to
+[A-Za-z0-9_], the account id to 12 digits, and the warehouse to a safe S3 URI)
+before any SQL is issued. The Bandit B608 warnings on those lines are therefore
+suppressed with an inline justification.
 """
 import argparse
+import re
 import sys
 import traceback
 
 RESULTS = []
+
+# ---------- input validation (defense against SQL injection via CLI args) ----------
+_IDENT_RE = re.compile(r"^[A-Za-z0-9_]+$")
+_S3_URI_RE = re.compile(r"^s3a?://[A-Za-z0-9_./\-]+$")
+
+
+def _ident(flag, value):
+    """Validate an SQL identifier (database/table/catalog name)."""
+    if value is None or not _IDENT_RE.match(value):
+        raise ValueError(f"{flag} must match [A-Za-z0-9_]+, got {value!r}")
+    return value
+
+
+def check_args(a):
+    """Validate every operator-supplied value that is interpolated into SQL."""
+    _ident("--db", a.db)
+    _ident("--producer-db", a.producer_db)
+    _ident("--producer-table", a.producer_table)
+    _ident("--named-catalog", a.named_catalog)
+    if a.producer_account is not None and not re.match(r"^[0-9]{12}$", a.producer_account):
+        raise ValueError(f"--producer-account must be a 12-digit account id, got {a.producer_account!r}")
+    if not _S3_URI_RE.match(a.warehouse):
+        raise ValueError(f"--warehouse must be a safe s3:// URI, got {a.warehouse!r}")
 
 
 def step(name, fn, *args):
@@ -50,40 +82,41 @@ ROWS = {"iceberg": "ice", "delta": "dl", "hudi": "hu", "hive": "hv"}
 
 
 def _insert(spark, db, tbl, tag):
-    spark.sql(f"INSERT INTO {db}.{tbl} (id, val) VALUES "
+    # identifiers validated in check_args(); values are literal constants
+    spark.sql(f"INSERT INTO {db}.{tbl} (id, val) VALUES "  # nosec B608
               f"(1,'{tag}-1'),(2,'{tag}-2'),(3,'{tag}-3')")
 
 
 def setup(spark, a):
     def _db(spark):
-        spark.sql(f"CREATE DATABASE IF NOT EXISTS {a.db} LOCATION '{a.warehouse}/{a.db}.db'")
-        spark.sql(f"USE {a.db}")
+        spark.sql(f"CREATE DATABASE IF NOT EXISTS {a.db} LOCATION '{a.warehouse}/{a.db}.db'")  # nosec B608
+        spark.sql(f"USE {a.db}")  # nosec B608
     step("create-database", _db, spark)
 
     def _ice(spark):
-        spark.sql(f"DROP TABLE IF EXISTS {a.db}.orders_iceberg")
-        spark.sql(f"CREATE TABLE {a.db}.orders_iceberg (id INT, val STRING) USING iceberg "
+        spark.sql(f"DROP TABLE IF EXISTS {a.db}.orders_iceberg")  # nosec B608
+        spark.sql(f"CREATE TABLE {a.db}.orders_iceberg (id INT, val STRING) USING iceberg "  # nosec B608
                   f"LOCATION '{a.warehouse}/orders_iceberg'")
         _insert(spark, a.db, "orders_iceberg", "ice")
     step("create-iceberg", _ice, spark)
 
     def _delta(spark):
-        spark.sql(f"DROP TABLE IF EXISTS {a.db}.returns_delta")
-        spark.sql(f"CREATE TABLE {a.db}.returns_delta (id INT, val STRING) USING delta "
+        spark.sql(f"DROP TABLE IF EXISTS {a.db}.returns_delta")  # nosec B608
+        spark.sql(f"CREATE TABLE {a.db}.returns_delta (id INT, val STRING) USING delta "  # nosec B608
                   f"LOCATION '{a.warehouse}/returns_delta'")
         _insert(spark, a.db, "returns_delta", "dl")
     step("create-delta", _delta, spark)
 
     def _hudi(spark):
-        spark.sql(f"DROP TABLE IF EXISTS {a.db}.shipments_hudi")
-        spark.sql(f"CREATE TABLE {a.db}.shipments_hudi (id INT, val STRING) USING hudi "
+        spark.sql(f"DROP TABLE IF EXISTS {a.db}.shipments_hudi")  # nosec B608
+        spark.sql(f"CREATE TABLE {a.db}.shipments_hudi (id INT, val STRING) USING hudi "  # nosec B608
                   f"TBLPROPERTIES (primaryKey = 'id') LOCATION '{a.warehouse}/shipments_hudi'")
         _insert(spark, a.db, "shipments_hudi", "hu")
     step("create-hudi", _hudi, spark)
 
     def _hive(spark):
-        spark.sql(f"DROP TABLE IF EXISTS {a.db}.products_hive")
-        spark.sql(f"CREATE TABLE {a.db}.products_hive (id INT, val STRING) USING parquet "
+        spark.sql(f"DROP TABLE IF EXISTS {a.db}.products_hive")  # nosec B608
+        spark.sql(f"CREATE TABLE {a.db}.products_hive (id INT, val STRING) USING parquet "  # nosec B608
                   f"LOCATION '{a.warehouse}/products_hive'")
         _insert(spark, a.db, "products_hive", "hv")
     step("create-hive-parquet", _hive, spark)
@@ -91,7 +124,7 @@ def setup(spark, a):
 
 def multiformat(spark, a):
     def _join(spark):
-        spark.sql(f"USE {a.db}")
+        spark.sql(f"USE {a.db}")  # nosec B608
         df = spark.sql("""
             SELECT i.id, i.val AS iceberg, d.val AS delta, h.val AS hudi, p.val AS hive
             FROM   orders_iceberg  i
@@ -108,24 +141,23 @@ def multiformat(spark, a):
 
 def producer_setup(spark, a):
     def _mk(spark):
-        spark.sql(f"CREATE DATABASE IF NOT EXISTS {a.db} LOCATION '{a.warehouse}/{a.db}.db'")
-        spark.sql(f"DROP TABLE IF EXISTS {a.db}.{a.producer_table}")
-        spark.sql(f"CREATE TABLE {a.db}.{a.producer_table} (id INT, val STRING) USING parquet "
+        spark.sql(f"CREATE DATABASE IF NOT EXISTS {a.db} LOCATION '{a.warehouse}/{a.db}.db'")  # nosec B608
+        spark.sql(f"DROP TABLE IF EXISTS {a.db}.{a.producer_table}")  # nosec B608
+        spark.sql(f"CREATE TABLE {a.db}.{a.producer_table} (id INT, val STRING) USING parquet "  # nosec B608
                   f"LOCATION '{a.warehouse}/{a.producer_table}'")
         _insert(spark, a.db, a.producer_table, "prod")
-        spark.sql(f"SELECT * FROM {a.db}.{a.producer_table} ORDER BY id").show(truncate=False)
+        spark.sql(f"SELECT * FROM {a.db}.{a.producer_table} ORDER BY id").show(truncate=False)  # nosec B608
     step("producer-create-hive-table", _mk, spark)
 
 
 def _xacct_join(spark, a, ref, label):
-    n = spark.sql(f"SELECT count(*) AS n FROM {ref}").collect()[0]["n"]
+    n = spark.sql(f"SELECT count(*) AS n FROM {ref}").collect()[0]["n"]  # nosec B608
     print(f"    -> {label} read OK, {ref} count={n}")
-    spark.sql(f"""
-        SELECT r.id, r.val AS remote_{a.producer_account}, i.val AS local_iceberg
-        FROM   {ref}                    r
-        JOIN   {a.db}.orders_iceberg    i ON r.id = i.id
-        ORDER BY r.id
-    """).show(truncate=False)
+    spark.sql(f"SELECT r.id, r.val AS remote_{a.producer_account}, i.val AS local_iceberg "  # nosec B608
+              f"FROM {ref} r "
+              f"JOIN {a.db}.orders_iceberg i ON r.id = i.id "
+              f"ORDER BY r.id"
+              ).show(truncate=False)
     assert n == 3, f"expected 3 rows, got {n}"
 
 
@@ -137,14 +169,13 @@ def named_local(spark, a):
     ref = f"cat2.{a.db}.orders_iceberg"
 
     def _r(spark):
-        n = spark.sql(f"SELECT count(*) AS n FROM {ref}").collect()[0]["n"]
+        n = spark.sql(f"SELECT count(*) AS n FROM {ref}").collect()[0]["n"]  # nosec B608
         print(f"    -> named-catalog (same account) read OK, {ref} count={n}")
-        spark.sql(f"""
-            SELECT c.id, c.val AS via_named_cat2, h.val AS via_spark_catalog
-            FROM   {ref}                          c
-            JOIN   spark_catalog.{a.db}.products_hive h ON c.id = h.id
-            ORDER BY c.id
-        """).show(truncate=False)
+        spark.sql(f"SELECT c.id, c.val AS via_named_cat2, h.val AS via_spark_catalog "  # nosec B608
+                  f"FROM {ref} c "
+                  f"JOIN spark_catalog.{a.db}.products_hive h ON c.id = h.id "
+                  f"ORDER BY c.id"
+                  ).show(truncate=False)
         assert n == 3, f"expected 3 rows, got {n}"
     step(f"named-local [{ref}]", _r, spark)
 
@@ -152,8 +183,8 @@ def named_local(spark, a):
 def cleanup(spark, a):
     def _c(spark):
         for t in ("orders_iceberg", "returns_delta", "shipments_hudi", "products_hive"):
-            spark.sql(f"DROP TABLE IF EXISTS {a.db}.{t}")
-        spark.sql(f"DROP DATABASE IF EXISTS {a.db} CASCADE")
+            spark.sql(f"DROP TABLE IF EXISTS {a.db}.{t}")  # nosec B608
+        spark.sql(f"DROP DATABASE IF EXISTS {a.db} CASCADE")  # nosec B608
         print(f"dropped demo tables and database '{a.db}'")
     step("cleanup-drop-tables", _c, spark)
 
@@ -185,6 +216,7 @@ def parse_args():
 
 def main():
     a = parse_args()
+    check_args(a)  # reject unsafe identifiers before issuing any SQL
     from pyspark.sql import SparkSession
     spark = SparkSession.builder.appName(f"multicatalog-demo-{a.phase}").getOrCreate()
     print("=== Spark version:", spark.version)
