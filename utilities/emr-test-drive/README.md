@@ -108,9 +108,15 @@ subclass, see [docs/design.md](docs/design.md).
 Lake Formation FGAC creates row, column and cell data filters and **asserts they
 were enforced**: a granted filter that returns more than it permits is reported
 as a critical correctness finding, because the job succeeds and the data is wrong
-in the direction of disclosure. This code path has not yet been validated against
-a live account — see [CHANGELOG.md](CHANGELOG.md). Nested (struct) filters are
-not implemented: the test bed has no nested column.
+in the direction of disclosure.
+
+The check runs as a **dedicated reader role** holding only the data cell filter
+grant, never as the job role. A Lake Formation administrator bypasses data cell
+filters and a table-wide `SELECT` grant supersedes them, so a read by the usual
+job role returns the whole table and proves nothing. If no such reader exists the
+finding is reported as informational and says enforcement was not tested, rather
+than claiming a disclosure. Nested (struct) filters are not implemented: the test
+bed has no nested column.
 
 ## Contributing
 

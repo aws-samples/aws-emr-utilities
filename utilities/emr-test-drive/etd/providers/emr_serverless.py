@@ -94,6 +94,11 @@ class EmrServerlessProvider:
                 {"classification": "spark-defaults", "properties": runtime_props}]
         if v.image_uri:
             kwargs["imageConfiguration"] = {"imageUri": v.image_uri}
+        if v.network:
+            kwargs["networkConfiguration"] = {
+                "subnetIds": list(v.network.get("subnet_ids") or []),
+                "securityGroupIds": list(v.network.get("security_group_ids") or []),
+            }
 
         resp = self.client.create_application(**kwargs)
         app_id = resp["applicationId"]
@@ -133,10 +138,15 @@ class EmrServerlessProvider:
         return " ".join(f"--conf {k}={val}" for k, val in conf.items())
 
     def submit(self, v: Variant, name: str, entry_point: str,
-               args: list[str], extra_conf: dict | None = None) -> str:
+               args: list[str], extra_conf: dict | None = None,
+               execution_role_arn: str | None = None) -> str:
         resp = self.client.start_job_run(
             applicationId=v.application_id,
-            executionRoleArn=self.spec.execution_role_arn,
+            # Overridable so a check can run under a different principal.
+            # Filter enforcement must be tested with a role that is not a
+            # Lake Formation administrator, since administrators bypass
+            # data cell filters.
+            executionRoleArn=(execution_role_arn or self.spec.execution_role_arn),
             name=name[:255],
             executionTimeoutMinutes=int(self.spec.safety["job_timeout_minutes"]),
             tags=self.spec.resource_tags(v),

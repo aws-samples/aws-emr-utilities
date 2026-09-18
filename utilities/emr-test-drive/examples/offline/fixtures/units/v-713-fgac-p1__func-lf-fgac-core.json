@@ -1654,7 +1654,7 @@
     },
     {
       "name": "ROW_FILTER",
-      "table_format": "iceberg",
+      "table_format": "n/a",
       "table_type": "managed",
       "status": "FAILED",
       "error": "AssertionError: data filter 'row' not enforced: 10000 rows visible, 1000 permitted",
@@ -1675,11 +1675,11 @@
       "column_filter_enforced": null,
       "filter_over_disclosure": true,
       "expected_state": "S",
-      "expected_reason": "documented support state"
+      "expected_reason": "data cell filter granted to a non-administrator reader principal"
     },
     {
       "name": "COLUMN_FILTER",
-      "table_format": "iceberg",
+      "table_format": "n/a",
       "table_type": "managed",
       "status": "SUCCESS",
       "error": null,
@@ -1703,11 +1703,11 @@
       "column_filter_enforced": true,
       "filter_over_disclosure": false,
       "expected_state": "S",
-      "expected_reason": "documented support state"
+      "expected_reason": "data cell filter granted to a non-administrator reader principal"
     },
     {
       "name": "CELL_FILTER",
-      "table_format": "iceberg",
+      "table_format": "n/a",
       "table_type": "managed",
       "status": "FAILED",
       "error": "AssertionError: data filter 'cell' not enforced: 10000 rows visible, 1000 permitted",
@@ -1729,7 +1729,7 @@
       "column_filter_enforced": true,
       "filter_over_disclosure": true,
       "expected_state": "S",
-      "expected_reason": "documented support state"
+      "expected_reason": "data cell filter granted to a non-administrator reader principal"
     }
   ]
 }

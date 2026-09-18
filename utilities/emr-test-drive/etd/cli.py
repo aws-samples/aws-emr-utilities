@@ -138,6 +138,9 @@ def cmd_setup(args) -> int:
     (d / "setup.json").write_text(json.dumps(
         {"run_id": orch.run_id, "asset_uri": state["asset_uri"],
          "applications": {v.variant_id: v.application_id for v in spec.variants},
+         # Persisted because `run` is a separate invocation and needs the filter
+         # reader role ARN that setup created.
+         "lakeformation": state.get("lakeformation") or {},
          "job_log": orch.job_log}, indent=2, default=str) + "\n")
     print(f"\nsetup complete — run_id {orch.run_id}\n  state: {d / 'setup.json'}")
     return 0

@@ -31,8 +31,16 @@ ALIASES = {
 }
 
 
+# A catalog choice is not an access-control mode: with an external Hive
+# metastore, Lake Formation is not in the path, so Spark's operation support is
+# the same as with the Glue Data Catalog. Aliasing avoids a duplicate matrix that
+# would drift.
+MATRIX_ALIASES = {"hms": "plain"}
+
+
 @functools.lru_cache(maxsize=8)
 def load_matrix(access_mode: str) -> dict:
+    access_mode = MATRIX_ALIASES.get(access_mode, access_mode)
     p = SUPPORT_DIR / f"{access_mode}.json"
     if not p.exists():
         raise FileNotFoundError(

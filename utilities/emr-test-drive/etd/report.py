@@ -791,24 +791,24 @@ def sec_functional(fn: dict, scope_id: str) -> str:
             f'<tr data-verdict="{e(r["verdict"])}" data-format="{e(r["table_format"])}" '
             f'data-tabletype="{e(r.get("table_type") or "")}">'
             f'<td class="mono">{e(r["operation"])}</td><td>{e(r["table_format"])}</td>'
-            f'<td style="color:var(--ink2)">{e(r["table_type"])}</td>'
+            f'<td style="color:var(--ink2)">{e(r.get("table_type") or "")}</td>'
             f'<td>{chip(r["verdict"])}</td>'
             f'<td>{e(r["base_status"])}</td><td>{e(r["cand_status"])}</td>'
             f'<td style="font-size:12px;color:var(--ink2)">{e(exp)}</td>'
-            f'<td class="num">{fmt_s(r["base_duration_s"])}</td>'
-            f'<td class="num">{fmt_s(r["cand_duration_s"])}</td>'
-            f'<td class="mono" style="color:var(--ink2)">{e(", ".join(r["lf_permissions"]))}</td></tr>')
+            f'<td class="num">{fmt_s(r.get("base_duration_s"))}</td>'
+            f'<td class="num">{fmt_s(r.get("cand_duration_s"))}</td>'
+            f'<td class="mono" style="color:var(--ink2)">{e(", ".join(r.get("lf_permissions") or []))}</td></tr>')
     out.append("</tbody></table></div>")
     return "".join(out)
 
 
 def sec_perf(perf: dict, match: dict, intent: str = "upgrade_regression",
-             scope_suffix: str = "0") -> str:
+             scope_suffix: str = "0", heading: str = "Performance") -> str:
     if not perf:
         return ""
     governance = intent == "governance_overhead"
     a = perf["aggregate"]
-    out = ['<h2 class="sec">Performance</h2>']
+    out = [f'<h2 class="sec">{e(heading)}</h2>']
     if governance:
         out.append('<div class="verdict info"><span class="lvl">overhead, not regression</span><div>'
                    '<h3>This pair measures the price of enabling governance</h3>'
@@ -971,6 +971,18 @@ def sec_env(res: dict) -> str:
     return "".join(out)
 
 
+def num(value, spec: str = ",.0f", suffix: str = "", prefix: str = "") -> str:
+    """Format a number, or an em dash when it is absent.
+
+    A variant can legitimately lack a figure -- no performance workload ran, or no
+    expected-support matrix covers its access mode -- and a dashboard that raises
+    TypeError on None turns a partial result into no report at all.
+    """
+    if value is None:
+        return "—"
+    return f"{prefix}{format(value, spec)}{suffix}"
+
+
 def dashboard(run, results: list[dict]) -> str:
     """Cross-variant dashboard: one row per variant, independent of any pair."""
     pricing = run.manifest["pricing"]
@@ -1017,12 +1029,12 @@ def dashboard(run, results: list[dict]) -> str:
             f'<code style="color:var(--ink3);white-space:nowrap">{e(v["variant_id"])}</code></td>'
             f'<td class="mono" style="white-space:nowrap">{e(release_label(v["release_label"]))}</td>'
             f'<td>{chip(access_label(v["access_mode"]), "info" if v["access_mode"]=="lf_fgac" else "neutral")}</td>'
-            f'<td class="num">{r["pass_rate"]:.1f}%<br><span style="color:var(--ink3);font-size:11.5px">'
+            f'<td class="num">{num(r["pass_rate"], ".1f", "%")}<br><span style="color:var(--ink3);font-size:11.5px">'
             f'{r["passed"]}/{r["expected_ok"]}</span></td>'
             f'<td class="num" style="color:var(--ink3)">{r["unsupported"]}</td>'
-            f'<td class="num">{r["perf_total_s"]:,.0f}s</td>'
+            f'<td class="num">{num(r["perf_total_s"], ",.0f", "s")}</td>'
             f'<td class="num" style="color:{"#d91515" if r["timeouts"] else "var(--ink3)"}">{r["timeouts"]}</td>'
-            f'<td class="num">${r["usd"]:,.2f}</td>'
+            f'<td class="num">{num(r["usd"], ",.2f", "", "$")}</td>'
             f'<td class="num" style="font-weight:650">{fmt_pct(rel)}</td></tr>')
     out.append("</tbody></table></div>")
 
@@ -1210,7 +1222,18 @@ def render_html(run, results: list[dict]) -> str:
         parts.append('<div data-anchor="functional"></div>')
         parts.append(sec_functional(r["functional"], f"ftab-{i}"))
         parts.append('<div data-anchor="performance"></div>')
-        parts.append(sec_perf(r["performance"], r["match"], r["comparison"].get("intent", ""), str(i)))
+        # One section per performance workload, in declaration order, so scales
+        # read 100g -> 1t -> 3t rather than being collapsed into whichever was
+        # declared first.
+        entries = r.get("performances") or (
+            [{"workload_id": "", "label": "", "perf": r["performance"]}] if r["performance"] else [])
+        multi = len(entries) > 1
+        for k, entry in enumerate(entries):
+            head = ("Performance" if not multi
+                    else f'Performance — {entry["label"]}')
+            parts.append(sec_perf(entry["perf"], r["match"],
+                                  r["comparison"].get("intent", ""),
+                                  f"{i}-{k}", head))
         parts.append('<div data-anchor="cost"></div>')
         parts.append(sec_cost(r["cost"], r["baseline"], r["candidate"], m["pricing"]))
         parts.append(sec_env(r))
@@ -1265,6 +1288,13 @@ def render_json(run, results: list[dict]) -> str:
                                for cl in (r["functional"] or {}).get("clusters", [])],
             "correctness_findings": r["correctness"],
             "performance": (r["performance"] or {}).get("aggregate"),
+            # Every scale, in declaration order. A consumer reading only
+            # "performance" above would see the first workload alone.
+            "performance_by_scale": [
+                {"workload_id": pe["workload_id"], "label": pe["label"],
+                 "aggregate": (pe["perf"] or {}).get("aggregate"),
+                 "counts": (pe["perf"] or {}).get("counts", {})}
+                for pe in (r.get("performances") or [])],
             "performance_counts": (r["performance"] or {}).get("counts", {}),
             "performance_units": [
                 {k: u[k] for k in ("name", "verdict", "base_best_s", "cand_best_s", "delta_pct")}

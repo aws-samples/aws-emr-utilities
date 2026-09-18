@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import concurrent.futures as cf
 import json
+import pathlib
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -38,6 +39,32 @@ FTA_CONF = {
 
 def access_mode_conf(v: Variant, spec: RunSpec) -> dict:
     """Job-level configuration implied by the variant's access mode."""
+    if v.access_mode == "hms":
+        # External Apache Hive metastore on Amazon RDS for MySQL over JDBC.
+        # EMR Serverless supports exactly two metastores: the Glue Data Catalog
+        # (the default) and an external Hive metastore. There is no local or
+        # embedded option -- an in-container Derby metastore would not survive
+        # between jobs, and this harness builds the test bed in one job and reads
+        # it from later ones.
+        #
+        # The Glue client factory is deliberately not set: if it were, Glue would
+        # win and this variant would silently measure Glue again. Schema
+        # auto-creation is on because the metastore database starts empty; for a
+        # metastore you care about, run schematool instead.
+        hms_cfg = spec.raw.get("hms") or {}
+        return {
+            "spark.hadoop.javax.jdo.option.ConnectionURL": hms_cfg.get("jdbc_url", ""),
+            "spark.hadoop.javax.jdo.option.ConnectionDriverName": "org.mariadb.jdbc.Driver",
+            "spark.hadoop.javax.jdo.option.ConnectionUserName": hms_cfg.get("user", ""),
+            "spark.hadoop.javax.jdo.option.ConnectionPassword": hms_cfg.get("password", ""),
+            "spark.hadoop.datanucleus.schema.autoCreateAll": "true",
+            "spark.hadoop.hive.metastore.schema.verification": "false",
+            "spark.sql.catalogImplementation": "hive",
+            # The MySQL/MariaDB JDBC driver is not on the EMR Serverless
+            # classpath; without it the metastore connection fails with
+            # ClassNotFoundException for org.mariadb.jdbc.Driver.
+            "spark.jars": hms_cfg.get("driver_jar", ""),
+        }
     if v.access_mode == "lf_fta":
         return dict(FTA_CONF)
     if v.access_mode == "lf_fgac":
@@ -159,12 +186,13 @@ class Orchestrator:
     # ------------------------------------------------------------- job helpers
 
     def _run_job(self, v: Variant, asset_uri: str, mode: str, job_cfg: dict,
-                 out_uri: str, extra_conf: dict, label: str) -> tuple[JobResult, dict | None]:
+                 out_uri: str, extra_conf: dict, label: str,
+                 execution_role_arn: str | None = None) -> tuple[JobResult, dict | None]:
         name = f"etd-{self.spec.name}-{v.variant_id}-{label}"[:255]
         job_id = self.provider.submit(
             v, name, asset_uri,
             ["--mode", mode, "--config", json.dumps(job_cfg), "--output", out_uri],
-            extra_conf)
+            extra_conf, execution_role_arn=execution_role_arn)
         print(f"  [{v.variant_id}] {label}: submitted {job_id}")
         t0 = time.time()
         res = self.provider.monitor(
@@ -185,6 +213,57 @@ class Orchestrator:
 
     # ------------------------------------------------------------------- setup
 
+    @property
+    def lf_state(self) -> dict:
+        """Lake Formation state from setup, reloaded from disk.
+
+        setup and run are separate CLI invocations, so anything held only on the
+        instance is gone by the time run needs it.
+        """
+        if getattr(self, "_lf_cache", None) is not None:
+            return self._lf_cache
+        state = dict(getattr(self, "_lf_state", {}) or {})
+        if not state:
+            try:
+                import json as _json
+                # Newest setup.json for this run name: `run` may carry a
+                # different run_id from the `setup` that created the resources.
+                paths = sorted((pathlib.Path("runs") / self.spec.name).glob("*/setup.json"),
+                               reverse=True)
+                for path in paths:
+                    state = (_json.loads(path.read_text()).get("lakeformation") or {})
+                    if state:
+                        break
+            except Exception:  # noqa: BLE001
+                state = {}
+        self._lf_cache = state
+        return state
+
+    def _lf_manifest_state(self) -> dict:
+        """Lake Formation facts the comparison layer needs.
+
+        Whether the job role is a data lake administrator decides if filter
+        enforcement can be asserted at all: an administrator bypasses data cell
+        filters, so a full-table read is correct behaviour rather than a
+        disclosure.
+        """
+        if not any(v.access_mode in ("lf_fta", "lf_fgac") for v in self.spec.variants):
+            return {}
+        try:
+            is_admin = lakeformation.job_role_is_lf_admin(self.factory, self.spec)
+        except Exception:  # noqa: BLE001
+            is_admin = None
+        reader = (self.lf_state or {}).get("filter_reader") or {}
+        return {
+            "job_role_is_lf_admin": (None if is_admin is None else bool(is_admin)),
+            # The principal the filter check actually ran as. Enforcement is only
+            # assertable when a reader exists and is not an administrator.
+            "filter_reader_arn": reader.get("reader_arn") or "",
+            "filter_reader_is_lf_admin": reader.get("reader_is_lf_admin"),
+            "filter_enforcement_assertable": bool(
+                reader.get("reader_arn") and not reader.get("reader_is_lf_admin")),
+        }
+
     def setup(self) -> dict:
         print(f"\n== setup ({len(self.spec.variants)} variant(s)) ==")
         asset_uri = self.stage_assets()
@@ -197,24 +276,47 @@ class Orchestrator:
                   f"{self.spec.database}, skipping generation")
             return {"asset_uri": asset_uri, "testbed": "existing"}
 
-        # Build the test bed once, on the baseline variant. Every variant reads
-        # the same physical data through the same Glue database.
+        # The test bed is built once per *catalog*, not once per run. Variants
+        # that share the Glue Data Catalog also share the tables, but a variant
+        # with its own metastore (access_mode: hms) starts with an empty catalog:
+        # it can read the same S3 data, yet none of the tables exist in its
+        # metastore, so every operation would fail with TABLE_OR_VIEW_NOT_FOUND
+        # and the report would show a catalog difference as a total outage.
+        #
+        # Grouping by catalog also keeps the data written once: the generated
+        # tables live at the same S3 locations, and a second pass over the same
+        # locations is a rewrite of identical content, not a second dataset.
         base = next(v for v in self.spec.variants if v.baseline)
+        catalog_reps = [base]
+        for v in self.spec.variants:
+            if v.access_mode == "hms" and v is not base:
+                catalog_reps.append(v)
         cfg = {
             "database": self.spec.database, "data_uri": self.spec.data_uri,
             "fact_rows": (tb.get("scale") or {}).get("fact_rows", 2_000_000),
             "dim_rows": (tb.get("scale") or {}).get("dim_rows", 20_000),
+            "external_tables": dict(self.spec.external_tables or {}),
             "variant_id": base.variant_id, "workload_id": "testbed",
             "release_label": base.release_label,
         }
-        out = f"{self.spec.results_uri}/{self.run_id}/testbed.json"
-        res, doc = self._run_job(base, asset_uri, "setup", cfg, out, {}, "testbed")
-        if not res.ok:
-            raise RuntimeError(f"Test bed setup failed: {res.state_details[:500]}")
+        docs = {}
+        for rep in catalog_reps:
+            cfg_rep = {**cfg, "variant_id": rep.variant_id,
+                       "release_label": rep.release_label}
+            label = "testbed" if rep is base else f"testbed-{rep.variant_id}"
+            out = f"{self.spec.results_uri}/{self.run_id}/{label}.json"
+            res, doc = self._run_job(rep, asset_uri, "setup", cfg_rep, out,
+                                     access_mode_conf(rep, self.spec), label)
+            if not res.ok:
+                raise RuntimeError(
+                    f"Test bed setup failed for {rep.variant_id}: {res.state_details[:500]}")
+            docs[rep.variant_id] = doc or {}
+        doc = docs.get(base.variant_id) or {}
         if doc:
             print(f"  testbed rows: {doc.get('row_counts')}")
 
         lf_state = self.setup_lakeformation()
+        self._lf_state = lf_state
         return {"asset_uri": asset_uri, "testbed": doc or {}, "lakeformation": lf_state}
 
     def setup_lakeformation(self) -> dict:
@@ -245,6 +347,33 @@ class Orchestrator:
             return "count"
         return "noop"
 
+    def _run_filters(self, v: Variant, asset_uri: str) -> dict | None:
+        """Run the data cell filter checks under the dedicated reader role.
+
+        Returns None when there is no reader role: without one the check would run
+        as the job role, which is typically a Lake Formation administrator and
+        therefore bypasses filters, producing a full-table read that looks like a
+        disclosure but proves nothing.
+        """
+        reader = ((self.lf_state or {}).get("filter_reader") or {}).get("reader_arn")
+        if not reader:
+            print(f"  [{v.variant_id}] filters: skipped, no reader role available")
+            return None
+        cfg = {"database": self.spec.database, "data_uri": self.spec.data_uri,
+               "variant_id": v.variant_id, "workload_id": "filters",
+               "release_label": v.release_label}
+        out = f"{self.spec.results_uri}/{self.run_id}/{v.variant_id}/filters.json"
+        res, doc = self._run_job(v, asset_uri, "filters", cfg, out,
+                                 access_mode_conf(v, self.spec), "filters",
+                                 execution_role_arn=reader)
+        if not res.ok:
+            print(f"  [{v.variant_id}] filters: {res.state} {res.state_details[:160]}")
+        for u in (doc or {}).get("units", []):
+            u["variant_id"] = v.variant_id
+            u["expected_state"] = "S"
+            u["expected_reason"] = "data cell filter granted to a non-administrator reader"
+        return doc
+
     def run(self, asset_uri: str) -> dict:
         print(f"\n== run {self.run_id} ==")
         # Always re-stage: otherwise a fix to the job script silently does not
@@ -259,6 +388,19 @@ class Orchestrator:
                 payload = (self._run_functional(v, w, asset_uri) if w.kind == "functional"
                            else self._run_perf(v, w, asset_uri))
                 out.append(((v.variant_id, w.workload_id), payload))
+            # Lake Formation filter enforcement, once per FGAC variant, under the
+            # least-privilege reader role. Attached to the functional workload so
+            # the findings appear alongside the other correctness evidence.
+            if v.access_mode == "lf_fgac":
+                fp = self._run_filters(v, asset_uri)
+                if fp:
+                    func_wid = next((w.workload_id for w in self.spec.workloads
+                                     if w.kind == "functional"), None)
+                    if func_wid:
+                        for key, payload in out:
+                            if key == (v.variant_id, func_wid) and payload:
+                                payload.setdefault("units", []).extend(fp.get("units", []))
+                                break
             return out
 
         with cf.ThreadPoolExecutor(max_workers=max(1, min(max_par, len(self.spec.variants)))) as ex:
@@ -432,8 +574,13 @@ class Orchestrator:
                               for v in self.spec.variants)
                 + f". Test bed: Glue database {self.spec.database}."),
             "variants": [v.to_manifest() for v in self.spec.variants],
+            # Queried here rather than carried from setup: setup and run are
+            # separate CLI invocations, so state held on the orchestrator instance
+            # during setup is gone by the time the manifest is written.
+            "lake_formation": self._lf_manifest_state(),
             "workloads": [{
                 "workload_id": w.workload_id, "kind": w.kind, "unit_kind": w.unit_kind,
+                "label": w.label or w.workload_id,
                 "iterations": w.iterations,
                 "description": (f"Operation matrix across {', '.join(w.formats)}"
                                 if w.kind == "functional"
@@ -459,27 +606,32 @@ class Orchestrator:
         return local_dir
 
 
+# The asset in etd/assets/etd_job.py runs on the cluster and imports pyspark at
+# module scope, so importing it here raises ModuleNotFoundError on a machine that
+# only orchestrates. The list is therefore duplicated, and tests/test_ops_sync.py
+# asserts the two copies agree so the duplication cannot drift silently.
+DEFAULT_OPERATIONS = [
+    "CREATE_TABLE", "INSERT_INTO", "SELECT", "DESCRIBE", "SHOW_CREATE_TABLE",
+    "CTAS", "INSERT_OVERWRITE", "ALTER_TABLE_ADD_COLUMN",
+    "UPDATE", "DELETE", "MERGE_INTO", "DF_WRITER_V2", "DROP_TABLE",
+]
+
+
 def _default_ops() -> list[str]:
-    from .assets.etd_job import DEFAULT_OPERATIONS  # local import: asset is standalone
     return list(DEFAULT_OPERATIONS)
-
-
-# Filter enforcement can only be asserted where a filter exists.
-FILTER_OPS = ["ROW_FILTER", "COLUMN_FILTER", "CELL_FILTER"]
 
 
 def _ops_for(w, v) -> list[str] | None:
     """Operations for this workload on this variant.
 
-    Returns None to mean "the harness default". The filter operations are
-    appended only for FGAC, and only when the workload did not name an explicit
-    list -- an explicit list is the operator's choice and is left alone.
+    Returns None to mean "the harness default"; an explicit list is the
+    operator's choice and is left alone.
     """
     if w.operations != "DEFAULT":
         return list(w.operations)
-    if v.access_mode != "lf_fgac":
-        return None
-    return _default_ops() + FILTER_OPS
+    # Filter operations are no longer part of the functional matrix: they are a
+    # separate job, run once per variant under a dedicated reader role.
+    return None
 
 
 def _pricing(region: str) -> dict:
