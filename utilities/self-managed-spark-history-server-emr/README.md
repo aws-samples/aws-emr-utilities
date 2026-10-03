@@ -61,11 +61,11 @@ If you add the above configuration and the step, to your transient cluster, the 
 
 **Step 2:** Set up a proxy server on master node to serve pre-signed S3 URL for executor logs:
 
-Here is the simple python code for this task ![py_web_server.sh](code/py_web_server.py)
+Here is the simple python code for this task [py_web_server.py](code/py_web_server.py)
 Run proxy server on master node (this step can also be part of cluster bootstrap/step. This proxy server will listen on port 9977 and serve as a presigned URL for S3 bucket/key requested from Spark history server executor logs.
 
 ```
-nohup python3 py_web_server_ssl.sh &
+nohup python3 py_web_server_ssl.py &
 ```
 
 **Step 3:**  Set up a web proxy through an SSH connection:
@@ -167,4 +167,3 @@ Restart spark history server.
 sudo systemctl restart spark-history-server.service
 ```
 Now, all EMR Serverless jobs under single application will be accessible from single self-managed spark history server.
-
