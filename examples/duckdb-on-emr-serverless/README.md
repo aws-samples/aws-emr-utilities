@@ -95,6 +95,8 @@ percent of the ones in `results/`.
 - EMR Serverless release emr-7.14.0, x86_64, Python 3.11, us-east-1. Runs took place between 27 and 29 October 2026.
 - Both engines with default settings. DuckDB has no column statistics for Iceberg tables, so it picks a poor join
   order for a few queries (see "Notes and limits"); the numbers include that.
+- Scope: DuckDB compared with Spark SQL on Amazon EMR Serverless only. This is not a comparison with Amazon Athena,
+  Amazon Redshift or other engines, and the results should not be read as one.
 
 ## Layout
 
@@ -196,6 +198,10 @@ SF1000    32    2544.7    6068.0   2.38  96   1.40
 
 "n" is the number of queries compared.
 
+These results fit DuckDB's sweet spot: analytical queries on data that fits on one node, up to about 1 TB here.
+For larger data, many concurrent users or long-running pipelines, Spark on Amazon EMR remains the better choice.
+The two are complementary: pick the engine per workload.
+
 ### Queries that did not complete on DuckDB
 
 | Scale | Setting | Query | Error |
@@ -246,6 +252,11 @@ GB-hours), `misc` (engine version and settings echoed by the job) and `queries` 
   TPC-DS specification for the eight largest tables but the files were not produced by the same generator.
 - On Iceberg, DuckDB gets row counts but no column statistics, so it estimates filter selectivity itself. For Q19 this led
   to a nested-loop join first. On plain Parquet (`results/diag/`) the same query is much faster.
+- Governance: this example reads Iceberg tables from a Hadoop catalog on S3, and DuckDB reads the table files directly.
+  Catalog-level controls such as AWS Lake Formation row, column or cell permissions are therefore not enforced.
+  If you adapt this to a governed data lake (for example tables registered in the AWS Glue Data Catalog with Lake
+  Formation permissions), enforce access with your own controls, such as S3 and IAM permissions limited to the data
+  the job may read.
 
 ## Clean up
 
