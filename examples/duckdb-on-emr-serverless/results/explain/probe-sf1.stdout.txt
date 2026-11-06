@@ -1,0 +1,16 @@
+PROBE|spark|3.5.8-amzn-0
+PROBE|iceberg_version|unavailable: [UNRESOLVED_ROUTINE] Cannot resolve function `iceberg_version` on search path [`system`.`builtin`, `system`.`session`, `
+PROBE|iceberg_jar|['/usr/share/aws/iceberg/lib/iceberg-emr-common.jar', '/usr/share/aws/iceberg/lib/iceberg-flink-runtime-1.20-1.10.1-amzn-1.jar', '/usr/share/aws/iceberg/lib/iceberg-flink-runtime.jar', '/usr/share/aws/iceberg/lib/iceberg-hive3-runtime.jar', '/usr/share/aws/iceberg/lib/iceberg-spark-runtime-3.5_2.12-1.10.1-amzn-1.jar', '/usr/share/aws/iceberg/lib/iceberg-spark3-runtime.jar']
+PROBE|STATS_BEFORE|== Optimized Logical Plan ==
+PROBE|STATS_BEFORE|Aggregate [count(1) AS count(1)#41L], Statistics(sizeInBytes=16.0 B, rowCount=1)
+PROBE|STATS_BEFORE|+- Project, Statistics(sizeInBytes=570.7 KiB, rowCount=7.30E+4)
+PROBE|STATS_BEFORE|   +- Filter (((isnotnull(d_year#11L) AND isnotnull(d_moy#13L)) AND (d_year#11L = 1998)) AND (d_moy#13L = 11)), Statistics(sizeInBytes=1712.1 KiB, rowCount=7.30E+4)
+PROBE|STATS_BEFORE|      +- RelationV2[d_year#11L, d_moy#13L] demo.tpcds.date_dim, Statistics(sizeInBytes=42.9 KiB, rowCount=7.30E+4)
+PROBE|ANALYZE|FAILED: [NOT_SUPPORTED_COMMAND_FOR_V2_TABLE] ANALYZE TABLE is not supported for v2 tables.
+PROBE|COMPUTE_TABLE_STATS|OK [Row(statistics_file='s3://amzn-s3-demo-bucket/tpcds/warehouse_sf1/tpcds/date_dim/metadata/6127642526414867870-11ca4dcc-5b09-4bb7-917c-95421ee1d22a.stats')]
+PROBE|STATS_AFTER|== Optimized Logical Plan ==
+PROBE|STATS_AFTER|Aggregate [count(1) AS count(1)#579L], Statistics(sizeInBytes=16.0 B, rowCount=1)
+PROBE|STATS_AFTER|+- Project, Statistics(sizeInBytes=248.0 B, rowCount=31)
+PROBE|STATS_AFTER|   +- Filter (((isnotnull(d_year#549L) AND isnotnull(d_moy#551L)) AND (d_year#549L = 1998)) AND (d_moy#551L = 11)), Statistics(sizeInBytes=744.0 B, rowCount=31)
+PROBE|STATS_AFTER|      +- RelationV2[d_year#549L, d_moy#551L] demo.tpcds.date_dim, Statistics(sizeInBytes=42.9 KiB, rowCount=7.30E+4)
+PROBE|DONE|1

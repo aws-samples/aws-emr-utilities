@@ -1,0 +1,16 @@
+{
+ "label": "explain-sf100-d8",
+ "state": "SUCCESS",
+ "details": "",
+ "duration_s": 267,
+ "billed": {
+  "vCPUHour": 0.596,
+  "memoryGBHour": 2.68,
+  "storageGBHour": 5.956
+ },
+ "queries": [],
+ "extra": {},
+ "misc": [],
+ "repeat": "2",
+ "timeout": "900"
+}

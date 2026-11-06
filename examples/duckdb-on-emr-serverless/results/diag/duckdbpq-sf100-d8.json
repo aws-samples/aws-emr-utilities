@@ -1,0 +1,79 @@
+{
+ "label": "duckdbpq-sf100-d8",
+ "state": "SUCCESS",
+ "details": "",
+ "duration_s": 139,
+ "billed": {
+  "vCPUHour": 0.311,
+  "memoryGBHour": 1.4,
+  "storageGBHour": 3.111
+ },
+ "queries": [
+  {
+   "q": 9,
+   "engine": "duckdb",
+   "best": 25.692,
+   "all": [
+    25.692
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 19,
+   "engine": "duckdb",
+   "best": 6.835,
+   "all": [
+    6.835
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 64,
+   "engine": "duckdb",
+   "best": 18.864,
+   "all": [
+    18.864
+   ],
+   "rows": 466,
+   "error": null
+  },
+  {
+   "q": 76,
+   "engine": "duckdb",
+   "best": 16.808,
+   "all": [
+    16.808
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 88,
+   "engine": "duckdb",
+   "best": 13.838,
+   "all": [
+    13.838
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 95,
+   "engine": "duckdb",
+   "best": 12.57,
+   "all": [
+    12.57
+   ],
+   "rows": 1,
+   "error": null
+  }
+ ],
+ "extra": {},
+ "misc": [
+  "DUCKDB_VERSION=2.0.0 WAREHOUSE=parquet:s3://amzn-s3-demo-bucket/tpcds/parquet/sf100 REPEAT=1 TIMEOUT=900"
+ ],
+ "repeat": "1",
+ "timeout": "900"
+}

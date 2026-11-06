@@ -1,0 +1,140 @@
+{
+ "label": "iceberg-sf10",
+ "state": "SUCCESS",
+ "details": "",
+ "duration_s": 171,
+ "billed": {
+  "vCPUHour": 1.44,
+  "memoryGBHour": 5.808,
+  "storageGBHour": 0.0
+ },
+ "queries": [],
+ "extra": {
+  "TPCDS_ICEBERG_JSON": {
+   "call_center": {
+    "rows": 24,
+    "s": 10.7
+   },
+   "catalog_page": {
+    "rows": 12000,
+    "s": 6.3
+   },
+   "catalog_returns": {
+    "rows": 1439749,
+    "s": 8.9
+   },
+   "catalog_sales": {
+    "rows": 14401261,
+    "s": 11.9
+   },
+   "customer": {
+    "rows": 500000,
+    "s": 4.2
+   },
+   "customer_address": {
+    "rows": 250000,
+    "s": 3.8
+   },
+   "customer_demographics": {
+    "rows": 1920800,
+    "s": 3.7
+   },
+   "date_dim": {
+    "rows": 73049,
+    "s": 4.0
+   },
+   "household_demographics": {
+    "rows": 7200,
+    "s": 3.0
+   },
+   "income_band": {
+    "rows": 20,
+    "s": 2.8
+   },
+   "inventory": {
+    "rows": 133110000,
+    "s": 8.1
+   },
+   "item": {
+    "rows": 102000,
+    "s": 4.3
+   },
+   "promotion": {
+    "rows": 500,
+    "s": 3.0
+   },
+   "reason": {
+    "rows": 75,
+    "s": 2.8
+   },
+   "ship_mode": {
+    "rows": 20,
+    "s": 2.9
+   },
+   "store": {
+    "rows": 102,
+    "s": 3.5
+   },
+   "store_returns": {
+    "rows": 2875432,
+    "s": 4.7
+   },
+   "store_sales": {
+    "rows": 28800991,
+    "s": 11.5
+   },
+   "time_dim": {
+    "rows": 86400,
+    "s": 3.2
+   },
+   "warehouse": {
+    "rows": 10,
+    "s": 2.8
+   },
+   "web_page": {
+    "rows": 200,
+    "s": 3.1
+   },
+   "web_returns": {
+    "rows": 719217,
+    "s": 3.8
+   },
+   "web_sales": {
+    "rows": 7197566,
+    "s": 6.9
+   },
+   "web_site": {
+    "rows": 42,
+    "s": 3.0
+   }
+  }
+ },
+ "misc": [
+  "ICEBERG call_center: rows=24 10.7s",
+  "ICEBERG catalog_page: rows=12000 6.3s",
+  "ICEBERG catalog_returns: rows=1439749 8.9s",
+  "ICEBERG catalog_sales: rows=14401261 11.9s",
+  "ICEBERG customer: rows=500000 4.2s",
+  "ICEBERG customer_address: rows=250000 3.8s",
+  "ICEBERG customer_demographics: rows=1920800 3.7s",
+  "ICEBERG date_dim: rows=73049 4.0s",
+  "ICEBERG household_demographics: rows=7200 3.0s",
+  "ICEBERG income_band: rows=20 2.8s",
+  "ICEBERG inventory: rows=133110000 8.1s",
+  "ICEBERG item: rows=102000 4.3s",
+  "ICEBERG promotion: rows=500 3.0s",
+  "ICEBERG reason: rows=75 2.8s",
+  "ICEBERG ship_mode: rows=20 2.9s",
+  "ICEBERG store: rows=102 3.5s",
+  "ICEBERG store_returns: rows=2875432 4.7s",
+  "ICEBERG store_sales: rows=28800991 11.5s",
+  "ICEBERG time_dim: rows=86400 3.2s",
+  "ICEBERG warehouse: rows=10 2.8s",
+  "ICEBERG web_page: rows=200 3.1s",
+  "ICEBERG web_returns: rows=719217 3.8s",
+  "ICEBERG web_sales: rows=7197566 6.9s",
+  "ICEBERG web_site: rows=42 3.0s"
+ ],
+ "repeat": "2",
+ "timeout": "900"
+}

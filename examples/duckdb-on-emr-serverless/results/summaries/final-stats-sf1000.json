@@ -1,0 +1,24 @@
+{
+ "default": {
+  "queries_ok": 96,
+  "failed": [
+   19,
+   64,
+   85
+  ],
+  "common": 96,
+  "duck_s": 2545,
+  "spark_s": 6068,
+  "ratio": 2.38,
+  "geomean": 3.55,
+  "wins": 94,
+  "job_min": 86,
+  "job_cost": 3.38
+ },
+ "spark": {
+  "queries_ok": 99,
+  "job_min": 106,
+  "job_cost": 4.76
+ },
+ "job_cost_ratio_default": 1.4
+}

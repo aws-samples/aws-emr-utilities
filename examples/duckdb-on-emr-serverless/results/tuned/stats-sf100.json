@@ -1,0 +1,42 @@
+{
+ "label": "stats-sf100",
+ "state": "SUCCESS",
+ "details": "",
+ "duration_s": 287,
+ "billed": {
+  "vCPUHour": 2.427,
+  "memoryGBHour": 9.787,
+  "storageGBHour": 0.0
+ },
+ "queries": [],
+ "extra": {},
+ "misc": [
+  "STATS call_center: 12.4s",
+  "STATS catalog_page: 5.5s",
+  "STATS catalog_returns: 12.4s",
+  "STATS catalog_sales: 44.2s",
+  "STATS customer: 4.5s",
+  "STATS customer_address: 4.1s",
+  "STATS customer_demographics: 2.7s",
+  "STATS date_dim: 2.2s",
+  "STATS household_demographics: 1.9s",
+  "STATS income_band: 1.6s",
+  "STATS inventory: 13.8s",
+  "STATS item: 3.5s",
+  "STATS promotion: 1.9s",
+  "STATS reason: 1.5s",
+  "STATS ship_mode: 1.8s",
+  "STATS store: 1.7s",
+  "STATS store_returns: 8.3s",
+  "STATS store_sales: 65.9s",
+  "STATS time_dim: 1.9s",
+  "STATS warehouse: 1.7s",
+  "STATS web_page: 3.6s",
+  "STATS web_returns: 5.4s",
+  "STATS web_sales: 24.7s",
+  "STATS web_site: 1.5s",
+  "STATS TOTAL: 228.8s"
+ ],
+ "repeat": "2",
+ "timeout": "900"
+}

@@ -1,0 +1,16 @@
+{
+ "label": "explain-sf100-d32",
+ "state": "SUCCESS",
+ "details": "",
+ "duration_s": 53,
+ "billed": {
+  "vCPUHour": 0.533,
+  "memoryGBHour": 2.0,
+  "storageGBHour": 3.0
+ },
+ "queries": [],
+ "extra": {},
+ "misc": [],
+ "repeat": "2",
+ "timeout": "900"
+}

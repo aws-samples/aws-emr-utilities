@@ -1,0 +1,224 @@
+{
+ "sf10-8": {
+  "sf": 10,
+  "vcpu": 8,
+  "state": {
+   "duckdb": "SUCCESS",
+   "spark": "SUCCESS"
+  },
+  "n_common": 99,
+  "duckdb_total_s": 144.7,
+  "spark_total_s": 474.5,
+  "duckdb_failed": [],
+  "spark_failed": [],
+  "duckdb_errors": {},
+  "spark_errors": {},
+  "duckdb_faster": 98,
+  "geomean_speedup": 3.05,
+  "median_duckdb_s": 1.28,
+  "median_spark_s": 3.91,
+  "row_mismatch": [],
+  "duckdb_job_cost": 0.137,
+  "spark_job_cost": 0.236,
+  "duckdb_billed": {
+   "vCPUHour": 1.736,
+   "memoryGBHour": 7.81,
+   "storageGBHour": 17.356
+  },
+  "spark_billed": {
+   "vCPUHour": 3.133,
+   "memoryGBHour": 12.853,
+   "storageGBHour": 0.0
+  },
+  "duckdb_job_s": 780,
+  "spark_job_s": 1151,
+  "repeat": "2"
+ },
+ "sf10-16": {
+  "sf": 10,
+  "vcpu": 16,
+  "state": {
+   "duckdb": "SUCCESS",
+   "spark": "SUCCESS"
+  },
+  "n_common": 99,
+  "duckdb_total_s": 123.2,
+  "spark_total_s": 335.5,
+  "duckdb_failed": [],
+  "spark_failed": [],
+  "duckdb_errors": {},
+  "spark_errors": {},
+  "duckdb_faster": 98,
+  "geomean_speedup": 2.49,
+  "median_duckdb_s": 1.12,
+  "median_spark_s": 2.77,
+  "row_mismatch": [],
+  "duckdb_job_cost": 0.254,
+  "spark_job_cost": 0.314,
+  "duckdb_billed": {
+   "vCPUHour": 3.253,
+   "memoryGBHour": 14.64,
+   "storageGBHour": 16.267
+  },
+  "spark_billed": {
+   "vCPUHour": 4.181,
+   "memoryGBHour": 16.962,
+   "storageGBHour": 0.0
+  },
+  "duckdb_job_s": 731,
+  "spark_job_s": 862,
+  "repeat": "2"
+ },
+ "sf10-32": {
+  "sf": 10,
+  "vcpu": 32,
+  "state": {
+   "duckdb": "SUCCESS",
+   "spark": "SUCCESS"
+  },
+  "n_common": 99,
+  "duckdb_total_s": 109.6,
+  "spark_total_s": 289.8,
+  "duckdb_failed": [],
+  "spark_failed": [],
+  "duckdb_errors": {},
+  "spark_errors": {},
+  "duckdb_faster": 98,
+  "geomean_speedup": 2.45,
+  "median_duckdb_s": 1.02,
+  "median_spark_s": 2.52,
+  "row_mismatch": [],
+  "duckdb_job_cost": 0.451,
+  "spark_job_cost": 0.5,
+  "duckdb_billed": {
+   "vCPUHour": 6.089,
+   "memoryGBHour": 22.833,
+   "storageGBHour": 34.25
+  },
+  "spark_billed": {
+   "vCPUHour": 6.666,
+   "memoryGBHour": 26.866,
+   "storageGBHour": 0.0
+  },
+  "duckdb_job_s": 684,
+  "spark_job_s": 733,
+  "repeat": "2"
+ },
+ "sf100-8": {
+  "sf": 100,
+  "vcpu": 8,
+  "state": {
+   "duckdb": "SUCCESS",
+   "spark": "SUCCESS"
+  },
+  "n_common": 98,
+  "duckdb_total_s": 824.7,
+  "spark_total_s": 2167.9,
+  "duckdb_failed": [
+   64
+  ],
+  "spark_failed": [],
+  "duckdb_errors": {
+   "64": "Out of Memory Error: failed to offload data block of size 256.0 KiB (84.3 GiB/84.3 GiB use"
+  },
+  "spark_errors": {},
+  "duckdb_faster": 94,
+  "geomean_speedup": 3.59,
+  "median_duckdb_s": 4.97,
+  "median_spark_s": 17.44,
+  "row_mismatch": [],
+  "duckdb_job_cost": 0.313,
+  "spark_job_cost": 0.471,
+  "duckdb_billed": {
+   "vCPUHour": 3.969,
+   "memoryGBHour": 17.86,
+   "storageGBHour": 39.689
+  },
+  "spark_billed": {
+   "vCPUHour": 6.25,
+   "memoryGBHour": 25.632,
+   "storageGBHour": 0.0
+  },
+  "duckdb_job_s": 1785,
+  "spark_job_s": 2273,
+  "repeat": "1"
+ },
+ "sf100-16": {
+  "sf": 100,
+  "vcpu": 16,
+  "state": {
+   "duckdb": "SUCCESS",
+   "spark": "SUCCESS"
+  },
+  "n_common": 98,
+  "duckdb_total_s": 413.7,
+  "spark_total_s": 1275.3,
+  "duckdb_failed": [
+   64
+  ],
+  "spark_failed": [],
+  "duckdb_errors": {
+   "64": "Out of Memory Error: failed to offload data block of size 64.0 KiB (84.3 GiB/84.3 GiB used"
+  },
+  "spark_errors": {},
+  "duckdb_faster": 94,
+  "geomean_speedup": 3.22,
+  "median_duckdb_s": 3.08,
+  "median_spark_s": 10.43,
+  "row_mismatch": [],
+  "duckdb_job_cost": 0.477,
+  "spark_job_cost": 0.503,
+  "duckdb_billed": {
+   "vCPUHour": 6.098,
+   "memoryGBHour": 27.44,
+   "storageGBHour": 30.489
+  },
+  "spark_billed": {
+   "vCPUHour": 6.693,
+   "memoryGBHour": 27.153,
+   "storageGBHour": 0.0
+  },
+  "duckdb_job_s": 1371,
+  "spark_job_s": 1365,
+  "repeat": "1"
+ },
+ "sf100-32": {
+  "sf": 100,
+  "vcpu": 32,
+  "state": {
+   "duckdb": "SUCCESS",
+   "spark": "SUCCESS"
+  },
+  "n_common": 98,
+  "duckdb_total_s": 280.9,
+  "spark_total_s": 842.0,
+  "duckdb_failed": [
+   64
+  ],
+  "spark_failed": [],
+  "duckdb_errors": {
+   "64": "Out of Memory Error: failed to offload data block of size 96.0 KiB (172.9 GiB/172.9 GiB us"
+  },
+  "spark_errors": {},
+  "duckdb_faster": 96,
+  "geomean_speedup": 2.88,
+  "median_duckdb_s": 2.39,
+  "median_spark_s": 6.84,
+  "row_mismatch": [],
+  "duckdb_job_cost": 0.827,
+  "spark_job_cost": 0.634,
+  "duckdb_billed": {
+   "vCPUHour": 11.182,
+   "memoryGBHour": 41.933,
+   "storageGBHour": 62.9
+  },
+  "spark_billed": {
+   "vCPUHour": 8.461,
+   "memoryGBHour": 34.101,
+   "storageGBHour": 0.0
+  },
+  "duckdb_job_s": 1257,
+  "spark_job_s": 923,
+  "repeat": "1"
+ }
+}
