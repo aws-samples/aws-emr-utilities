@@ -1,0 +1,1105 @@
+{
+ "label": "sparkT-sf10-8",
+ "state": "SUCCESS",
+ "details": "",
+ "duration_s": 2383,
+ "billed": {
+  "vCPUHour": 6.554,
+  "memoryGBHour": 26.88,
+  "storageGBHour": 0.0
+ },
+ "queries": [
+  {
+   "q": 1,
+   "engine": "spark",
+   "best": 3.646,
+   "all": [
+    14.89,
+    3.646
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 2,
+   "engine": "spark",
+   "best": 6.181,
+   "all": [
+    10.241,
+    6.181
+   ],
+   "rows": 2513,
+   "error": null
+  },
+  {
+   "q": 3,
+   "engine": "spark",
+   "best": 2.109,
+   "all": [
+    3.499,
+    2.109
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 4,
+   "engine": "spark",
+   "best": 17.865,
+   "all": [
+    21.92,
+    17.865
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 5,
+   "engine": "spark",
+   "best": 7.111,
+   "all": [
+    11.018,
+    7.111
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 6,
+   "engine": "spark",
+   "best": 3.078,
+   "all": [
+    4.491,
+    3.078
+   ],
+   "rows": 51,
+   "error": null
+  },
+  {
+   "q": 7,
+   "engine": "spark",
+   "best": 3.411,
+   "all": [
+    5.134,
+    3.411
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 8,
+   "engine": "spark",
+   "best": 3.319,
+   "all": [
+    4.191,
+    3.319
+   ],
+   "rows": 9,
+   "error": null
+  },
+  {
+   "q": 9,
+   "engine": "spark",
+   "best": 2.695,
+   "all": [
+    3.187,
+    2.695
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 10,
+   "engine": "spark",
+   "best": 4.12,
+   "all": [
+    6.123,
+    4.12
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 11,
+   "engine": "spark",
+   "best": 8.927,
+   "all": [
+    12.003,
+    8.927
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 12,
+   "engine": "spark",
+   "best": 1.791,
+   "all": [
+    2.662,
+    1.791
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 13,
+   "engine": "spark",
+   "best": 4.025,
+   "all": [
+    6.197,
+    4.025
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 14,
+   "engine": "spark",
+   "best": 15.259,
+   "all": [
+    19.584,
+    15.259
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 15,
+   "engine": "spark",
+   "best": 2.475,
+   "all": [
+    3.494,
+    2.475
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 16,
+   "engine": "spark",
+   "best": 3.772,
+   "all": [
+    4.506,
+    3.772
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 17,
+   "engine": "spark",
+   "best": 4.384,
+   "all": [
+    5.442,
+    4.384
+   ],
+   "rows": 0,
+   "error": null
+  },
+  {
+   "q": 18,
+   "engine": "spark",
+   "best": 3.765,
+   "all": [
+    4.925,
+    3.765
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 19,
+   "engine": "spark",
+   "best": 13.099,
+   "all": [
+    13.734,
+    13.099
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 20,
+   "engine": "spark",
+   "best": 1.659,
+   "all": [
+    2.148,
+    1.659
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 21,
+   "engine": "spark",
+   "best": 3.432,
+   "all": [
+    4.492,
+    3.432
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 22,
+   "engine": "spark",
+   "best": 5.236,
+   "all": [
+    6.687,
+    5.236
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 23,
+   "engine": "spark",
+   "best": 11.753,
+   "all": [
+    15.374,
+    11.753
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 24,
+   "engine": "spark",
+   "best": 11.682,
+   "all": [
+    12.172,
+    11.682
+   ],
+   "rows": 7,
+   "error": null
+  },
+  {
+   "q": 25,
+   "engine": "spark",
+   "best": 4.89,
+   "all": [
+    5.78,
+    4.89
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 26,
+   "engine": "spark",
+   "best": 2.472,
+   "all": [
+    3.327,
+    2.472
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 27,
+   "engine": "spark",
+   "best": 8.241,
+   "all": [
+    9.764,
+    8.241
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 28,
+   "engine": "spark",
+   "best": 5.867,
+   "all": [
+    5.988,
+    5.867
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 29,
+   "engine": "spark",
+   "best": 5.645,
+   "all": [
+    6.006,
+    5.645
+   ],
+   "rows": 3,
+   "error": null
+  },
+  {
+   "q": 30,
+   "engine": "spark",
+   "best": 2.197,
+   "all": [
+    3.383,
+    2.197
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 31,
+   "engine": "spark",
+   "best": 8.507,
+   "all": [
+    9.282,
+    8.507
+   ],
+   "rows": 288,
+   "error": null
+  },
+  {
+   "q": 32,
+   "engine": "spark",
+   "best": 2.128,
+   "all": [
+    2.425,
+    2.128
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 33,
+   "engine": "spark",
+   "best": 5.018,
+   "all": [
+    5.264,
+    5.018
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 34,
+   "engine": "spark",
+   "best": 2.665,
+   "all": [
+    3.91,
+    2.665
+   ],
+   "rows": 1546,
+   "error": null
+  },
+  {
+   "q": 35,
+   "engine": "spark",
+   "best": 4.11,
+   "all": [
+    5.068,
+    4.11
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 36,
+   "engine": "spark",
+   "best": 3.063,
+   "all": [
+    3.554,
+    3.063
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 37,
+   "engine": "spark",
+   "best": 3.623,
+   "all": [
+    4.246,
+    3.623
+   ],
+   "rows": 2,
+   "error": null
+  },
+  {
+   "q": 38,
+   "engine": "spark",
+   "best": 5.176,
+   "all": [
+    5.477,
+    5.176
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 39,
+   "engine": "spark",
+   "best": 7.152,
+   "all": [
+    8.206,
+    7.152
+   ],
+   "rows": 2433,
+   "error": null
+  },
+  {
+   "q": 40,
+   "engine": "spark",
+   "best": 3.052,
+   "all": [
+    3.052,
+    3.312
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 41,
+   "engine": "spark",
+   "best": 1.068,
+   "all": [
+    1.068,
+    1.251
+   ],
+   "rows": 41,
+   "error": null
+  },
+  {
+   "q": 42,
+   "engine": "spark",
+   "best": 1.687,
+   "all": [
+    2.231,
+    1.687
+   ],
+   "rows": 11,
+   "error": null
+  },
+  {
+   "q": 43,
+   "engine": "spark",
+   "best": 1.669,
+   "all": [
+    2.658,
+    1.669
+   ],
+   "rows": 17,
+   "error": null
+  },
+  {
+   "q": 44,
+   "engine": "spark",
+   "best": 2.891,
+   "all": [
+    3.589,
+    2.891
+   ],
+   "rows": 10,
+   "error": null
+  },
+  {
+   "q": 45,
+   "engine": "spark",
+   "best": 2.083,
+   "all": [
+    3.45,
+    2.083
+   ],
+   "rows": 49,
+   "error": null
+  },
+  {
+   "q": 46,
+   "engine": "spark",
+   "best": 3.264,
+   "all": [
+    4.462,
+    3.264
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 47,
+   "engine": "spark",
+   "best": 5.891,
+   "all": [
+    7.683,
+    5.891
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 48,
+   "engine": "spark",
+   "best": 4.055,
+   "all": [
+    5.392,
+    4.055
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 49,
+   "engine": "spark",
+   "best": 7.502,
+   "all": [
+    8.152,
+    7.502
+   ],
+   "rows": 41,
+   "error": null
+  },
+  {
+   "q": 50,
+   "engine": "spark",
+   "best": 3.386,
+   "all": [
+    3.623,
+    3.386
+   ],
+   "rows": 51,
+   "error": null
+  },
+  {
+   "q": 51,
+   "engine": "spark",
+   "best": 7.992,
+   "all": [
+    10.73,
+    7.992
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 52,
+   "engine": "spark",
+   "best": 1.7,
+   "all": [
+    2.382,
+    1.7
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 53,
+   "engine": "spark",
+   "best": 2.333,
+   "all": [
+    2.77,
+    2.333
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 54,
+   "engine": "spark",
+   "best": 4.034,
+   "all": [
+    5.387,
+    4.034
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 55,
+   "engine": "spark",
+   "best": 1.811,
+   "all": [
+    1.811,
+    1.84
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 56,
+   "engine": "spark",
+   "best": 4.66,
+   "all": [
+    5.599,
+    4.66
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 57,
+   "engine": "spark",
+   "best": 4.534,
+   "all": [
+    5.447,
+    4.534
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 58,
+   "engine": "spark",
+   "best": 4.342,
+   "all": [
+    5.07,
+    4.342
+   ],
+   "rows": 38,
+   "error": null
+  },
+  {
+   "q": 59,
+   "engine": "spark",
+   "best": 3.868,
+   "all": [
+    5.832,
+    3.868
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 60,
+   "engine": "spark",
+   "best": 4.856,
+   "all": [
+    5.514,
+    4.856
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 61,
+   "engine": "spark",
+   "best": 4.537,
+   "all": [
+    5.702,
+    4.537
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 62,
+   "engine": "spark",
+   "best": 1.578,
+   "all": [
+    2.585,
+    1.578
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 63,
+   "engine": "spark",
+   "best": 2.4,
+   "all": [
+    2.745,
+    2.4
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 64,
+   "engine": "spark",
+   "best": 13.798,
+   "all": [
+    18.458,
+    13.798
+   ],
+   "rows": 33,
+   "error": null
+  },
+  {
+   "q": 65,
+   "engine": "spark",
+   "best": 2.936,
+   "all": [
+    4.485,
+    2.936
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 66,
+   "engine": "spark",
+   "best": 4.244,
+   "all": [
+    5.476,
+    4.244
+   ],
+   "rows": 10,
+   "error": null
+  },
+  {
+   "q": 67,
+   "engine": "spark",
+   "best": 15.512,
+   "all": [
+    20.682,
+    15.512
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 68,
+   "engine": "spark",
+   "best": 3.424,
+   "all": [
+    5.28,
+    3.424
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 69,
+   "engine": "spark",
+   "best": 3.768,
+   "all": [
+    4.791,
+    3.768
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 70,
+   "engine": "spark",
+   "best": 3.484,
+   "all": [
+    4.131,
+    3.484
+   ],
+   "rows": 8,
+   "error": null
+  },
+  {
+   "q": 71,
+   "engine": "spark",
+   "best": 3.55,
+   "all": [
+    4.718,
+    3.55
+   ],
+   "rows": 9669,
+   "error": null
+  },
+  {
+   "q": 72,
+   "engine": "spark",
+   "best": null,
+   "all": [],
+   "rows": null,
+   "error": "An error occurred while calling o723.collectToPython. : org.apache.spark.SparkException: Job aborted due to stage failure: Task 22 in stage 2289.0 failed 4 times, most recent failure: Lost task 22.3 in stage 2289.0 (TID 14315) ([2600:1f18:23d3:a302:ca14:470:47b5:64d2] executor 1): org.apache.spark.m"
+  },
+  {
+   "q": 73,
+   "engine": "spark",
+   "best": 2.609,
+   "all": [
+    5.766,
+    2.609
+   ],
+   "rows": 16,
+   "error": null
+  },
+  {
+   "q": 74,
+   "engine": "spark",
+   "best": 7.974,
+   "all": [
+    9.115,
+    7.974
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 75,
+   "engine": "spark",
+   "best": 11.676,
+   "all": [
+    15.177,
+    11.676
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 76,
+   "engine": "spark",
+   "best": 4.402,
+   "all": [
+    4.402,
+    4.575
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 77,
+   "engine": "spark",
+   "best": 5.167,
+   "all": [
+    6.64,
+    5.167
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 78,
+   "engine": "spark",
+   "best": 9.745,
+   "all": [
+    14.763,
+    9.745
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 79,
+   "engine": "spark",
+   "best": 2.814,
+   "all": [
+    4.424,
+    2.814
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 80,
+   "engine": "spark",
+   "best": 8.394,
+   "all": [
+    10.101,
+    8.394
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 81,
+   "engine": "spark",
+   "best": 2.323,
+   "all": [
+    3.32,
+    2.323
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 82,
+   "engine": "spark",
+   "best": 3.681,
+   "all": [
+    4.504,
+    3.681
+   ],
+   "rows": 6,
+   "error": null
+  },
+  {
+   "q": 83,
+   "engine": "spark",
+   "best": 2.778,
+   "all": [
+    2.984,
+    2.778
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 84,
+   "engine": "spark",
+   "best": 2.022,
+   "all": [
+    2.772,
+    2.022
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 85,
+   "engine": "spark",
+   "best": 290.525,
+   "all": [
+    290.525,
+    321.62
+   ],
+   "rows": 19,
+   "error": null
+  },
+  {
+   "q": 86,
+   "engine": "spark",
+   "best": 1.675,
+   "all": [
+    2.606,
+    1.675
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 87,
+   "engine": "spark",
+   "best": 4.109,
+   "all": [
+    6.037,
+    4.109
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 88,
+   "engine": "spark",
+   "best": 2.622,
+   "all": [
+    3.732,
+    2.622
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 89,
+   "engine": "spark",
+   "best": 2.187,
+   "all": [
+    3.257,
+    2.187
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 90,
+   "engine": "spark",
+   "best": 1.454,
+   "all": [
+    2.246,
+    1.454
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 91,
+   "engine": "spark",
+   "best": 1.776,
+   "all": [
+    2.623,
+    1.776
+   ],
+   "rows": 16,
+   "error": null
+  },
+  {
+   "q": 92,
+   "engine": "spark",
+   "best": 1.881,
+   "all": [
+    2.109,
+    1.881
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 93,
+   "engine": "spark",
+   "best": 2.744,
+   "all": [
+    3.726,
+    2.744
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 94,
+   "engine": "spark",
+   "best": 3.28,
+   "all": [
+    3.929,
+    3.28
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 95,
+   "engine": "spark",
+   "best": 5.842,
+   "all": [
+    7.29,
+    5.842
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 96,
+   "engine": "spark",
+   "best": 1.332,
+   "all": [
+    2.413,
+    1.332
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 97,
+   "engine": "spark",
+   "best": 3.364,
+   "all": [
+    5.009,
+    3.364
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 98,
+   "engine": "spark",
+   "best": 2.341,
+   "all": [
+    3.804,
+    2.341
+   ],
+   "rows": 15080,
+   "error": null
+  },
+  {
+   "q": 99,
+   "engine": "spark",
+   "best": 1.857,
+   "all": [
+    2.682,
+    1.857
+   ],
+   "rows": 100,
+   "error": null
+  }
+ ],
+ "extra": {},
+ "misc": [
+  "SPARK_VERSION=3.5.8-amzn-0 WAREHOUSE=s3://amzn-s3-demo-bucket/tpcds/warehouse_sf10 REPEAT=2 TIMEOUT=900"
+ ],
+ "repeat": "2",
+ "timeout": "900"
+}

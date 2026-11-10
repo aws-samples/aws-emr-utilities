@@ -1,0 +1,200 @@
+{
+ "label": "duckdb-sf100-d16",
+ "state": "FAILED",
+ "details": "Job failed, please check complete logs in configured logging destination. ExitCode: 137. Last few exceptions: Worker has been killed as memory usage exceeded configured memory size, consider increasing memory size...",
+ "duration_s": 158,
+ "billed": {
+  "vCPUHour": 0.707,
+  "memoryGBHour": 3.18,
+  "storageGBHour": 3.533
+ },
+ "queries": [
+  {
+   "q": 1,
+   "engine": "duckdb",
+   "best": 1.671,
+   "all": [
+    1.671
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 2,
+   "engine": "duckdb",
+   "best": 2.354,
+   "all": [
+    2.354
+   ],
+   "rows": 2513,
+   "error": null
+  },
+  {
+   "q": 3,
+   "engine": "duckdb",
+   "best": 2.298,
+   "all": [
+    2.298
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 4,
+   "engine": "duckdb",
+   "best": 8.75,
+   "all": [
+    8.75
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 5,
+   "engine": "duckdb",
+   "best": 5.371,
+   "all": [
+    5.371
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 6,
+   "engine": "duckdb",
+   "best": 2.672,
+   "all": [
+    2.672
+   ],
+   "rows": 52,
+   "error": null
+  },
+  {
+   "q": 7,
+   "engine": "duckdb",
+   "best": 3.924,
+   "all": [
+    3.924
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 8,
+   "engine": "duckdb",
+   "best": 2.011,
+   "all": [
+    2.011
+   ],
+   "rows": 10,
+   "error": null
+  },
+  {
+   "q": 9,
+   "engine": "duckdb",
+   "best": 8.678,
+   "all": [
+    8.678
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 10,
+   "engine": "duckdb",
+   "best": 2.481,
+   "all": [
+    2.481
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 11,
+   "engine": "duckdb",
+   "best": 4.681,
+   "all": [
+    4.681
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 12,
+   "engine": "duckdb",
+   "best": 1.08,
+   "all": [
+    1.08
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 13,
+   "engine": "duckdb",
+   "best": 4.417,
+   "all": [
+    4.417
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 14,
+   "engine": "duckdb",
+   "best": 13.229,
+   "all": [
+    13.229
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 15,
+   "engine": "duckdb",
+   "best": 1.283,
+   "all": [
+    1.283
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 16,
+   "engine": "duckdb",
+   "best": 1.64,
+   "all": [
+    1.64
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 17,
+   "engine": "duckdb",
+   "best": 4.284,
+   "all": [
+    4.284
+   ],
+   "rows": 37,
+   "error": null
+  },
+  {
+   "q": 18,
+   "engine": "duckdb",
+   "best": 2.261,
+   "all": [
+    2.261
+   ],
+   "rows": 100,
+   "error": null
+  }
+ ],
+ "extra": {},
+ "misc": [
+  "DUCKDB_VERSION=2.0.0 WAREHOUSE=s3://amzn-s3-demo-bucket/tpcds/warehouse_sf100 REPEAT=1 TIMEOUT=900",
+  "STDERR_TAIL: Files s3://amzn-s3-demo-bucket/envs/duckdb20_env.tar.gz#environment from /tmp/spark-25ba960b-7317-4ab6-972e-accf9f2129ab/duckdb20_env.tar.gz to /home/hadoop/environment | Files s3://amzn-s3-demo-bucket/envs/tpcds_ext.tar.gz#tpcds_ext from /tmp/spark-25ba960b-7317-4ab6-972e-accf9f2129ab/tpcds_ext.tar.gz to /home/hadoop/tpcds_ext | 26/11/03 00:39:46 INFO ShutdownHookManager: Shutdown hook called | 26/11/03 00:39:46 INFO ShutdownHookManager: Deleting directory /tmp/spark-25ba960b-7317-4ab6-972e-accf9f2129ab"
+ ],
+ "repeat": "1",
+ "timeout": "900"
+}

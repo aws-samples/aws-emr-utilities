@@ -1,0 +1,147 @@
+{
+ "label": "gen-sf100",
+ "state": "SUCCESS",
+ "details": "",
+ "duration_s": 138,
+ "billed": {
+  "vCPUHour": 1.236,
+  "memoryGBHour": 4.633,
+  "storageGBHour": 6.95
+ },
+ "queries": [],
+ "extra": {
+  "TPCDS_GEN_JSON": {
+   "sf": "100",
+   "duckdb": "2.0.0",
+   "dsdgen_s": 61.0,
+   "tables": {
+    "call_center": {
+     "rows": 30,
+     "copy_s": 0.1
+    },
+    "catalog_page": {
+     "rows": 20400,
+     "copy_s": 0.1
+    },
+    "catalog_returns": {
+     "rows": 14404374,
+     "copy_s": 1.6
+    },
+    "catalog_sales": {
+     "rows": 143997065,
+     "copy_s": 10.6
+    },
+    "customer": {
+     "rows": 2000000,
+     "copy_s": 0.5
+    },
+    "customer_address": {
+     "rows": 1000000,
+     "copy_s": 0.2
+    },
+    "customer_demographics": {
+     "rows": 1920800,
+     "copy_s": 0.1
+    },
+    "date_dim": {
+     "rows": 73049,
+     "copy_s": 0.1
+    },
+    "household_demographics": {
+     "rows": 7200,
+     "copy_s": 0.1
+    },
+    "income_band": {
+     "rows": 20,
+     "copy_s": 0.1
+    },
+    "inventory": {
+     "rows": 399330000,
+     "copy_s": 2.4
+    },
+    "item": {
+     "rows": 204000,
+     "copy_s": 0.4
+    },
+    "promotion": {
+     "rows": 1000,
+     "copy_s": 0.1
+    },
+    "reason": {
+     "rows": 75,
+     "copy_s": 0.0
+    },
+    "ship_mode": {
+     "rows": 20,
+     "copy_s": 0.1
+    },
+    "store": {
+     "rows": 402,
+     "copy_s": 0.1
+    },
+    "store_returns": {
+     "rows": 28795080,
+     "copy_s": 3.1
+    },
+    "store_sales": {
+     "rows": 287997024,
+     "copy_s": 20.2
+    },
+    "time_dim": {
+     "rows": 86400,
+     "copy_s": 0.1
+    },
+    "warehouse": {
+     "rows": 15,
+     "copy_s": 0.1
+    },
+    "web_page": {
+     "rows": 2040,
+     "copy_s": 0.1
+    },
+    "web_returns": {
+     "rows": 7197670,
+     "copy_s": 1.3
+    },
+    "web_sales": {
+     "rows": 72001237,
+     "copy_s": 6.4
+    },
+    "web_site": {
+     "rows": 24,
+     "copy_s": 0.1
+    }
+   }
+  }
+ },
+ "misc": [
+  "DUCKDB_VERSION=2.0.0",
+  "DSDGEN_SECONDS=61.0",
+  "TABLE call_center: rows=30 copy=0.1s",
+  "TABLE catalog_page: rows=20400 copy=0.1s",
+  "TABLE catalog_returns: rows=14404374 copy=1.6s",
+  "TABLE catalog_sales: rows=143997065 copy=10.6s",
+  "TABLE customer: rows=2000000 copy=0.5s",
+  "TABLE customer_address: rows=1000000 copy=0.2s",
+  "TABLE customer_demographics: rows=1920800 copy=0.1s",
+  "TABLE date_dim: rows=73049 copy=0.1s",
+  "TABLE household_demographics: rows=7200 copy=0.1s",
+  "TABLE income_band: rows=20 copy=0.1s",
+  "TABLE inventory: rows=399330000 copy=2.4s",
+  "TABLE item: rows=204000 copy=0.4s",
+  "TABLE promotion: rows=1000 copy=0.1s",
+  "TABLE reason: rows=75 copy=0.0s",
+  "TABLE ship_mode: rows=20 copy=0.1s",
+  "TABLE store: rows=402 copy=0.1s",
+  "TABLE store_returns: rows=28795080 copy=3.1s",
+  "TABLE store_sales: rows=287997024 copy=20.2s",
+  "TABLE time_dim: rows=86400 copy=0.1s",
+  "TABLE warehouse: rows=15 copy=0.1s",
+  "TABLE web_page: rows=2040 copy=0.1s",
+  "TABLE web_returns: rows=7197670 copy=1.3s",
+  "TABLE web_sales: rows=72001237 copy=6.4s",
+  "TABLE web_site: rows=24 copy=0.1s"
+ ],
+ "repeat": "2",
+ "timeout": "900"
+}

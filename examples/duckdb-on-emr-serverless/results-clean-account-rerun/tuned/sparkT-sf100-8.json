@@ -1,0 +1,706 @@
+{
+ "label": "sparkT-sf100-8",
+ "state": "CANCELLED",
+ "details": "Job run cancellation requested by user.",
+ "duration_s": 8483,
+ "billed": {
+  "vCPUHour": 23.502,
+  "memoryGBHour": 96.366,
+  "storageGBHour": 0.0
+ },
+ "queries": [
+  {
+   "q": 1,
+   "engine": "spark",
+   "best": 17.08,
+   "all": [
+    17.08
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 2,
+   "engine": "spark",
+   "best": 19.027,
+   "all": [
+    19.027
+   ],
+   "rows": 2513,
+   "error": null
+  },
+  {
+   "q": 3,
+   "engine": "spark",
+   "best": 10.763,
+   "all": [
+    10.763
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 4,
+   "engine": "spark",
+   "best": 75.656,
+   "all": [
+    75.656
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 5,
+   "engine": "spark",
+   "best": 33.094,
+   "all": [
+    33.094
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 6,
+   "engine": "spark",
+   "best": 10.382,
+   "all": [
+    10.382
+   ],
+   "rows": 52,
+   "error": null
+  },
+  {
+   "q": 7,
+   "engine": "spark",
+   "best": 19.031,
+   "all": [
+    19.031
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 8,
+   "engine": "spark",
+   "best": 9.479,
+   "all": [
+    9.479
+   ],
+   "rows": 10,
+   "error": null
+  },
+  {
+   "q": 9,
+   "engine": "spark",
+   "best": 13.697,
+   "all": [
+    13.697
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 10,
+   "engine": "spark",
+   "best": 13.591,
+   "all": [
+    13.591
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 11,
+   "engine": "spark",
+   "best": 40.128,
+   "all": [
+    40.128
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 12,
+   "engine": "spark",
+   "best": 5.204,
+   "all": [
+    5.204
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 13,
+   "engine": "spark",
+   "best": 25.67,
+   "all": [
+    25.67
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 14,
+   "engine": "spark",
+   "best": 62.587,
+   "all": [
+    62.587
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 15,
+   "engine": "spark",
+   "best": 8.673,
+   "all": [
+    8.673
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 16,
+   "engine": "spark",
+   "best": 18.044,
+   "all": [
+    18.044
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 17,
+   "engine": "spark",
+   "best": 27.386,
+   "all": [
+    27.386
+   ],
+   "rows": 37,
+   "error": null
+  },
+  {
+   "q": 18,
+   "engine": "spark",
+   "best": 16.866,
+   "all": [
+    16.866
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 19,
+   "engine": "spark",
+   "best": 119.796,
+   "all": [
+    119.796
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 20,
+   "engine": "spark",
+   "best": 8.127,
+   "all": [
+    8.127
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 21,
+   "engine": "spark",
+   "best": 9.939,
+   "all": [
+    9.939
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 22,
+   "engine": "spark",
+   "best": 16.704,
+   "all": [
+    16.704
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 23,
+   "engine": "spark",
+   "best": 80.751,
+   "all": [
+    80.751
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 24,
+   "engine": "spark",
+   "best": 77.659,
+   "all": [
+    77.659
+   ],
+   "rows": 40,
+   "error": null
+  },
+  {
+   "q": 25,
+   "engine": "spark",
+   "best": 23.774,
+   "all": [
+    23.774
+   ],
+   "rows": 14,
+   "error": null
+  },
+  {
+   "q": 26,
+   "engine": "spark",
+   "best": 12.233,
+   "all": [
+    12.233
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 27,
+   "engine": "spark",
+   "best": 49.193,
+   "all": [
+    49.193
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 28,
+   "engine": "spark",
+   "best": 25.59,
+   "all": [
+    25.59
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 29,
+   "engine": "spark",
+   "best": 31.759,
+   "all": [
+    31.759
+   ],
+   "rows": 62,
+   "error": null
+  },
+  {
+   "q": 30,
+   "engine": "spark",
+   "best": 7.55,
+   "all": [
+    7.55
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 31,
+   "engine": "spark",
+   "best": 31.496,
+   "all": [
+    31.496
+   ],
+   "rows": 275,
+   "error": null
+  },
+  {
+   "q": 32,
+   "engine": "spark",
+   "best": 11.76,
+   "all": [
+    11.76
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 33,
+   "engine": "spark",
+   "best": 19.462,
+   "all": [
+    19.462
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 34,
+   "engine": "spark",
+   "best": 10.743,
+   "all": [
+    10.743
+   ],
+   "rows": 5774,
+   "error": null
+  },
+  {
+   "q": 35,
+   "engine": "spark",
+   "best": 13.314,
+   "all": [
+    13.314
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 36,
+   "engine": "spark",
+   "best": 13.538,
+   "all": [
+    13.538
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 37,
+   "engine": "spark",
+   "best": 11.097,
+   "all": [
+    11.097
+   ],
+   "rows": 3,
+   "error": null
+  },
+  {
+   "q": 38,
+   "engine": "spark",
+   "best": 17.669,
+   "all": [
+    17.669
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 39,
+   "engine": "spark",
+   "best": 18.745,
+   "all": [
+    18.745
+   ],
+   "rows": 7367,
+   "error": null
+  },
+  {
+   "q": 40,
+   "engine": "spark",
+   "best": 12.068,
+   "all": [
+    12.068
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 41,
+   "engine": "spark",
+   "best": 1.279,
+   "all": [
+    1.279
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 42,
+   "engine": "spark",
+   "best": 9.258,
+   "all": [
+    9.258
+   ],
+   "rows": 11,
+   "error": null
+  },
+  {
+   "q": 43,
+   "engine": "spark",
+   "best": 10.3,
+   "all": [
+    10.3
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 44,
+   "engine": "spark",
+   "best": 10.558,
+   "all": [
+    10.558
+   ],
+   "rows": 10,
+   "error": null
+  },
+  {
+   "q": 45,
+   "engine": "spark",
+   "best": 6.686,
+   "all": [
+    6.686
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 46,
+   "engine": "spark",
+   "best": 17.925,
+   "all": [
+    17.925
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 47,
+   "engine": "spark",
+   "best": 22.466,
+   "all": [
+    22.466
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 48,
+   "engine": "spark",
+   "best": 24.926,
+   "all": [
+    24.926
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 49,
+   "engine": "spark",
+   "best": 34.657,
+   "all": [
+    34.657
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 50,
+   "engine": "spark",
+   "best": 181.236,
+   "all": [
+    181.236
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 51,
+   "engine": "spark",
+   "best": 50.367,
+   "all": [
+    50.367
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 52,
+   "engine": "spark",
+   "best": 9.926,
+   "all": [
+    9.926
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 53,
+   "engine": "spark",
+   "best": 12.571,
+   "all": [
+    12.571
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 54,
+   "engine": "spark",
+   "best": 16.564,
+   "all": [
+    16.564
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 55,
+   "engine": "spark",
+   "best": 7.87,
+   "all": [
+    7.87
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 56,
+   "engine": "spark",
+   "best": 19.255,
+   "all": [
+    19.255
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 57,
+   "engine": "spark",
+   "best": 15.23,
+   "all": [
+    15.23
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 58,
+   "engine": "spark",
+   "best": 18.445,
+   "all": [
+    18.445
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 59,
+   "engine": "spark",
+   "best": 23.628,
+   "all": [
+    23.628
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 60,
+   "engine": "spark",
+   "best": 20.746,
+   "all": [
+    20.746
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 61,
+   "engine": "spark",
+   "best": 23.622,
+   "all": [
+    23.622
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 62,
+   "engine": "spark",
+   "best": 5.165,
+   "all": [
+    5.165
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 63,
+   "engine": "spark",
+   "best": 11.876,
+   "all": [
+    11.876
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 64,
+   "engine": "spark",
+   "best": null,
+   "all": [],
+   "rows": null,
+   "error": "timeout"
+  },
+  {
+   "q": 65,
+   "engine": "spark",
+   "best": null,
+   "all": [],
+   "rows": null,
+   "error": "timeout"
+  },
+  {
+   "q": 66,
+   "engine": "spark",
+   "best": null,
+   "all": [],
+   "rows": null,
+   "error": "timeout"
+  },
+  {
+   "q": 67,
+   "engine": "spark",
+   "best": null,
+   "all": [],
+   "rows": null,
+   "error": "timeout"
+  },
+  {
+   "q": 68,
+   "engine": "spark",
+   "best": null,
+   "all": [],
+   "rows": null,
+   "error": "timeout"
+  },
+  {
+   "q": 69,
+   "engine": "spark",
+   "best": null,
+   "all": [],
+   "rows": null,
+   "error": "timeout"
+  },
+  {
+   "q": 70,
+   "engine": "spark",
+   "best": null,
+   "all": [],
+   "rows": null,
+   "error": "timeout"
+  }
+ ],
+ "extra": {},
+ "misc": [
+  "SPARK_VERSION=3.5.8-amzn-0 WAREHOUSE=s3://amzn-s3-demo-bucket/tpcds/warehouse_sf100 REPEAT=1 TIMEOUT=900",
+  "STDERR_TAIL: 26/11/03 04:16:04 INFO OutputCommitCoordinator$OutputCommitCoordinatorEndpoint: OutputCommitCoordinator stopped! | 26/11/03 04:16:04 INFO SparkContext: Successfully stopped SparkContext | 26/11/03 04:16:04 INFO ShutdownHookManager: Shutdown hook called | 26/11/03 04:16:04 INFO ShutdownHookManager: Deleting directory /tmp/spark-61a64af9-df9f-4567-b5a3-c64e8b6f868d/pyspark-0828b0ad-e007-46f0-9d7b-21c10087e3dd | 26/11/03 04:16:04 INFO ShutdownHookManager: Deleting directory /tmp/spark-6637035a-2fb0-4d61-9d18-d4e55d48b9dd | 26/11/03 04:16:04 INFO ShutdownHookManager: Deleting directory /tmp/spark-61a64af9-df9f-4567-b5a3-c64e8b6f868d"
+ ],
+ "repeat": "1",
+ "timeout": "900"
+}

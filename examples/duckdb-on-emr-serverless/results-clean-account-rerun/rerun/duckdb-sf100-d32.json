@@ -1,0 +1,999 @@
+{
+ "label": "duckdb-sf100-d32",
+ "state": "SUCCESS",
+ "details": "",
+ "duration_s": 538,
+ "billed": {
+  "vCPUHour": 4.791,
+  "memoryGBHour": 17.967,
+  "storageGBHour": 26.95
+ },
+ "queries": [
+  {
+   "q": 1,
+   "engine": "duckdb",
+   "best": 1.047,
+   "all": [
+    1.047
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 2,
+   "engine": "duckdb",
+   "best": 1.469,
+   "all": [
+    1.469
+   ],
+   "rows": 2513,
+   "error": null
+  },
+  {
+   "q": 3,
+   "engine": "duckdb",
+   "best": 2.052,
+   "all": [
+    2.052
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 4,
+   "engine": "duckdb",
+   "best": 5.236,
+   "all": [
+    5.236
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 5,
+   "engine": "duckdb",
+   "best": 4.285,
+   "all": [
+    4.285
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 6,
+   "engine": "duckdb",
+   "best": 2.026,
+   "all": [
+    2.026
+   ],
+   "rows": 52,
+   "error": null
+  },
+  {
+   "q": 7,
+   "engine": "duckdb",
+   "best": 3.38,
+   "all": [
+    3.38
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 8,
+   "engine": "duckdb",
+   "best": 1.631,
+   "all": [
+    1.631
+   ],
+   "rows": 10,
+   "error": null
+  },
+  {
+   "q": 9,
+   "engine": "duckdb",
+   "best": 4.528,
+   "all": [
+    4.528
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 10,
+   "engine": "duckdb",
+   "best": 2.193,
+   "all": [
+    2.193
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 11,
+   "engine": "duckdb",
+   "best": 2.657,
+   "all": [
+    2.657
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 12,
+   "engine": "duckdb",
+   "best": 1.199,
+   "all": [
+    1.199
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 13,
+   "engine": "duckdb",
+   "best": 4.268,
+   "all": [
+    4.268
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 14,
+   "engine": "duckdb",
+   "best": 6.317,
+   "all": [
+    6.317
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 15,
+   "engine": "duckdb",
+   "best": 1.048,
+   "all": [
+    1.048
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 16,
+   "engine": "duckdb",
+   "best": 1.773,
+   "all": [
+    1.773
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 17,
+   "engine": "duckdb",
+   "best": 3.114,
+   "all": [
+    3.114
+   ],
+   "rows": 37,
+   "error": null
+  },
+  {
+   "q": 18,
+   "engine": "duckdb",
+   "best": 2.029,
+   "all": [
+    2.029
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 19,
+   "engine": "duckdb",
+   "best": 13.642,
+   "all": [
+    13.642
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 20,
+   "engine": "duckdb",
+   "best": 1.013,
+   "all": [
+    1.013
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 21,
+   "engine": "duckdb",
+   "best": 1.699,
+   "all": [
+    1.699
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 22,
+   "engine": "duckdb",
+   "best": 2.181,
+   "all": [
+    2.181
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 23,
+   "engine": "duckdb",
+   "best": 8.807,
+   "all": [
+    8.807
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 24,
+   "engine": "duckdb",
+   "best": 3.381,
+   "all": [
+    3.381
+   ],
+   "rows": 40,
+   "error": null
+  },
+  {
+   "q": 25,
+   "engine": "duckdb",
+   "best": 3.753,
+   "all": [
+    3.753
+   ],
+   "rows": 14,
+   "error": null
+  },
+  {
+   "q": 26,
+   "engine": "duckdb",
+   "best": 2.021,
+   "all": [
+    2.021
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 27,
+   "engine": "duckdb",
+   "best": 3.216,
+   "all": [
+    3.216
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 28,
+   "engine": "duckdb",
+   "best": 4.211,
+   "all": [
+    4.211
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 29,
+   "engine": "duckdb",
+   "best": 3.714,
+   "all": [
+    3.714
+   ],
+   "rows": 62,
+   "error": null
+  },
+  {
+   "q": 30,
+   "engine": "duckdb",
+   "best": 1.113,
+   "all": [
+    1.113
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 31,
+   "engine": "duckdb",
+   "best": 1.965,
+   "all": [
+    1.965
+   ],
+   "rows": 275,
+   "error": null
+  },
+  {
+   "q": 32,
+   "engine": "duckdb",
+   "best": 1.282,
+   "all": [
+    1.282
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 33,
+   "engine": "duckdb",
+   "best": 3.556,
+   "all": [
+    3.556
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 34,
+   "engine": "duckdb",
+   "best": 1.342,
+   "all": [
+    1.342
+   ],
+   "rows": 5774,
+   "error": null
+  },
+  {
+   "q": 35,
+   "engine": "duckdb",
+   "best": 2.092,
+   "all": [
+    2.092
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 36,
+   "engine": "duckdb",
+   "best": 2.911,
+   "all": [
+    2.911
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 37,
+   "engine": "duckdb",
+   "best": 2.345,
+   "all": [
+    2.345
+   ],
+   "rows": 3,
+   "error": null
+  },
+  {
+   "q": 38,
+   "engine": "duckdb",
+   "best": 2.071,
+   "all": [
+    2.071
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 39,
+   "engine": "duckdb",
+   "best": 1.526,
+   "all": [
+    1.526
+   ],
+   "rows": 7367,
+   "error": null
+  },
+  {
+   "q": 40,
+   "engine": "duckdb",
+   "best": 1.345,
+   "all": [
+    1.345
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 41,
+   "engine": "duckdb",
+   "best": 0.328,
+   "all": [
+    0.328
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 42,
+   "engine": "duckdb",
+   "best": 1.886,
+   "all": [
+    1.886
+   ],
+   "rows": 11,
+   "error": null
+  },
+  {
+   "q": 43,
+   "engine": "duckdb",
+   "best": 1.427,
+   "all": [
+    1.427
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 44,
+   "engine": "duckdb",
+   "best": 3.164,
+   "all": [
+    3.164
+   ],
+   "rows": 10,
+   "error": null
+  },
+  {
+   "q": 45,
+   "engine": "duckdb",
+   "best": 1.65,
+   "all": [
+    1.65
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 46,
+   "engine": "duckdb",
+   "best": 2.494,
+   "all": [
+    2.494
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 47,
+   "engine": "duckdb",
+   "best": 2.654,
+   "all": [
+    2.654
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 48,
+   "engine": "duckdb",
+   "best": 2.629,
+   "all": [
+    2.629
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 49,
+   "engine": "duckdb",
+   "best": 5.027,
+   "all": [
+    5.027
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 50,
+   "engine": "duckdb",
+   "best": 2.772,
+   "all": [
+    2.772
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 51,
+   "engine": "duckdb",
+   "best": 5.139,
+   "all": [
+    5.139
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 52,
+   "engine": "duckdb",
+   "best": 2.368,
+   "all": [
+    2.368
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 53,
+   "engine": "duckdb",
+   "best": 1.863,
+   "all": [
+    1.863
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 54,
+   "engine": "duckdb",
+   "best": 2.71,
+   "all": [
+    2.71
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 55,
+   "engine": "duckdb",
+   "best": 1.855,
+   "all": [
+    1.855
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 56,
+   "engine": "duckdb",
+   "best": 3.523,
+   "all": [
+    3.523
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 57,
+   "engine": "duckdb",
+   "best": 1.346,
+   "all": [
+    1.346
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 58,
+   "engine": "duckdb",
+   "best": 3.411,
+   "all": [
+    3.411
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 59,
+   "engine": "duckdb",
+   "best": 2.184,
+   "all": [
+    2.184
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 60,
+   "engine": "duckdb",
+   "best": 3.263,
+   "all": [
+    3.263
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 61,
+   "engine": "duckdb",
+   "best": 3.656,
+   "all": [
+    3.656
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 62,
+   "engine": "duckdb",
+   "best": 1.337,
+   "all": [
+    1.337
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 63,
+   "engine": "duckdb",
+   "best": 1.847,
+   "all": [
+    1.847
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 65,
+   "engine": "duckdb",
+   "best": 3.298,
+   "all": [
+    3.298
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 66,
+   "engine": "duckdb",
+   "best": 1.963,
+   "all": [
+    1.963
+   ],
+   "rows": 15,
+   "error": null
+  },
+  {
+   "q": 67,
+   "engine": "duckdb",
+   "best": 8.464,
+   "all": [
+    8.464
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 68,
+   "engine": "duckdb",
+   "best": 3.199,
+   "all": [
+    3.199
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 69,
+   "engine": "duckdb",
+   "best": 1.946,
+   "all": [
+    1.946
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 70,
+   "engine": "duckdb",
+   "best": 2.018,
+   "all": [
+    2.018
+   ],
+   "rows": 20,
+   "error": null
+  },
+  {
+   "q": 71,
+   "engine": "duckdb",
+   "best": 3.609,
+   "all": [
+    3.609
+   ],
+   "rows": 59606,
+   "error": null
+  },
+  {
+   "q": 72,
+   "engine": "duckdb",
+   "best": 4.797,
+   "all": [
+    4.797
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 73,
+   "engine": "duckdb",
+   "best": 1.554,
+   "all": [
+    1.554
+   ],
+   "rows": 111,
+   "error": null
+  },
+  {
+   "q": 74,
+   "engine": "duckdb",
+   "best": 2.136,
+   "all": [
+    2.136
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 75,
+   "engine": "duckdb",
+   "best": 4.997,
+   "all": [
+    4.997
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 76,
+   "engine": "duckdb",
+   "best": 3.806,
+   "all": [
+    3.806
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 77,
+   "engine": "duckdb",
+   "best": 4.875,
+   "all": [
+    4.875
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 78,
+   "engine": "duckdb",
+   "best": 6.675,
+   "all": [
+    6.675
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 79,
+   "engine": "duckdb",
+   "best": 2.434,
+   "all": [
+    2.434
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 80,
+   "engine": "duckdb",
+   "best": 5.835,
+   "all": [
+    5.835
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 81,
+   "engine": "duckdb",
+   "best": 1.029,
+   "all": [
+    1.029
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 82,
+   "engine": "duckdb",
+   "best": 2.32,
+   "all": [
+    2.32
+   ],
+   "rows": 14,
+   "error": null
+  },
+  {
+   "q": 83,
+   "engine": "duckdb",
+   "best": 1.666,
+   "all": [
+    1.666
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 84,
+   "engine": "duckdb",
+   "best": 1.571,
+   "all": [
+    1.571
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 85,
+   "engine": "duckdb",
+   "best": 2.354,
+   "all": [
+    2.354
+   ],
+   "rows": 62,
+   "error": null
+  },
+  {
+   "q": 86,
+   "engine": "duckdb",
+   "best": 1.033,
+   "all": [
+    1.033
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 87,
+   "engine": "duckdb",
+   "best": 2.331,
+   "all": [
+    2.331
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 88,
+   "engine": "duckdb",
+   "best": 3.624,
+   "all": [
+    3.624
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 89,
+   "engine": "duckdb",
+   "best": 2.114,
+   "all": [
+    2.114
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 90,
+   "engine": "duckdb",
+   "best": 1.068,
+   "all": [
+    1.068
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 91,
+   "engine": "duckdb",
+   "best": 1.23,
+   "all": [
+    1.23
+   ],
+   "rows": 30,
+   "error": null
+  },
+  {
+   "q": 92,
+   "engine": "duckdb",
+   "best": 1.206,
+   "all": [
+    1.206
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 93,
+   "engine": "duckdb",
+   "best": 2.733,
+   "all": [
+    2.733
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 94,
+   "engine": "duckdb",
+   "best": 1.928,
+   "all": [
+    1.928
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 95,
+   "engine": "duckdb",
+   "best": 6.52,
+   "all": [
+    6.52
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 96,
+   "engine": "duckdb",
+   "best": 0.951,
+   "all": [
+    0.951
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 97,
+   "engine": "duckdb",
+   "best": 2.669,
+   "all": [
+    2.669
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 98,
+   "engine": "duckdb",
+   "best": 2.027,
+   "all": [
+    2.027
+   ],
+   "rows": 30579,
+   "error": null
+  },
+  {
+   "q": 99,
+   "engine": "duckdb",
+   "best": 1.123,
+   "all": [
+    1.123
+   ],
+   "rows": 100,
+   "error": null
+  }
+ ],
+ "extra": {},
+ "misc": [
+  "DUCKDB_VERSION=2.0.0 WAREHOUSE=s3://amzn-s3-demo-bucket/tpcds/warehouse_sf100 REPEAT=1 TIMEOUT=900"
+ ],
+ "repeat": "1",
+ "timeout": "900"
+}

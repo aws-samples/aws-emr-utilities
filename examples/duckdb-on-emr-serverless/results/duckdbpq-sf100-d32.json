@@ -1,0 +1,29 @@
+{
+ "label": "duckdbpq-sf100-d32",
+ "state": "SUCCESS",
+ "details": "",
+ "duration_s": 45,
+ "billed": {
+  "vCPUHour": 0.533,
+  "memoryGBHour": 2.0,
+  "storageGBHour": 3.0
+ },
+ "queries": [
+  {
+   "q": 64,
+   "engine": "duckdb",
+   "best": 19.671,
+   "all": [
+    19.671
+   ],
+   "rows": 466,
+   "error": null
+  }
+ ],
+ "extra": {},
+ "misc": [
+  "DUCKDB_VERSION=2.0.0 WAREHOUSE=parquet:s3://amzn-s3-demo-bucket/tpcds/parquet/sf100 REPEAT=1 TIMEOUT=1200"
+ ],
+ "repeat": "1",
+ "timeout": "1200"
+}

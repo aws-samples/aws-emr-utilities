@@ -1,0 +1,16 @@
+{
+ "label": "probe-sf1",
+ "state": "SUCCESS",
+ "details": "",
+ "duration_s": 66,
+ "billed": {
+  "vCPUHour": 0.171,
+  "memoryGBHour": 0.701,
+  "storageGBHour": 0.0
+ },
+ "queries": [],
+ "extra": {},
+ "misc": [],
+ "repeat": "2",
+ "timeout": "900"
+}
