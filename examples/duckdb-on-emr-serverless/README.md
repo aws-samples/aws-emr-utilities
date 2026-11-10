@@ -183,7 +183,15 @@ disk setting matters: a smaller disk makes more queries fail with an out-of-temp
 Totals are sums of the median per-query times over the queries completed on both engines. SF10 has two runs per
 query, SF100 and SF1000 one. A repeat of the SF100 DuckDB run on 32 vCPU was 16% slower in total, and on 16 vCPU it
 differed by less than 1%. The cost column divides the billed compute of the Spark SQL job by that of the DuckDB job
-(approximate list rates, only meaningful as a ratio, including startup and the extra disk DuckDB used).
+(approximate list rates, only meaningful as a ratio).
+
+The cost ratio is lower than the speed ratio mainly because of time that is billed but not timed. `tpcds_duckdb.py`
+opens a fresh connection for every run, and loading the extensions and creating the 24 table views happens before
+the timer starts. At SF10, where every query completed, each Spark SQL job spent about 60 s outside the timer and
+each DuckDB job about 450 to 480 s: the same start-up plus about 2 s of connection setup per run, 390 to 420 s per
+job. At SF100 and SF1000, the queries that failed on DuckDB are also billed but not timed. The extra disk DuckDB
+used is under 1.5% of its job cost, and worker start-up takes about a minute for both engines. Reusing one
+connection would cut this overhead, so the cost ratios are conservative for DuckDB.
 
 ```
 scale   vCPU  DuckDB s   Spark s  ratio   n   cost
@@ -233,7 +241,8 @@ In the second run, tuned Spark at SF100 with 8 vCPU timed out on one query and t
 
 Each file in `results/` is one job: `label`, `state`, `duration_s`, `billed` (vCPU-hours, memory GB-hours, storage
 GB-hours), `misc` (engine version and settings echoed by the job) and `queries` (one record per query:
-`q`, `best`, `all` timed runs in seconds, `rows`, `error`). Job run ids and account details were removed.
+`q`, `best`, `all` timed runs in seconds, `rows`, `error`). Job run ids and account details were removed, here and in
+`results-clean-account-rerun/`.
 
 | Folder | Content |
 |---|---|
@@ -247,7 +256,8 @@ GB-hours), `misc` (engine version and settings echoed by the job) and `queries` 
 ## Notes and limits
 
 - The runs were not isolated: several jobs ran at the same time on separate workers reading the same bucket.
-- Time covers query execution plus fetching the results. Job submission and worker start-up are not included.
+- Time covers query execution plus fetching the results. Job submission and worker start-up are not included, and
+  neither is opening the fresh DuckDB connection for each run (see Results).
 - SF10 and SF100 data come from DuckDB's dsdgen. SF1000 comes from the AWS public dataset, so row counts match the
   TPC-DS specification for the eight largest tables but the files were not produced by the same generator.
 - On Iceberg, DuckDB gets row counts but no column statistics, so it estimates filter selectivity itself. For Q19 this led

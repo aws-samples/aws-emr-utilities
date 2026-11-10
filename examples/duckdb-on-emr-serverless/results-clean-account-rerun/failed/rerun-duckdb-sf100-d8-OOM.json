@@ -1,6 +1,5 @@
 {
  "label": "duckdb-sf100-d8",
- "job_run_id": "00ga0pvq208p480b",
  "state": "FAILED",
  "details": "Job failed, please check complete logs in configured logging destination. ExitCode: 137. Last few exceptions: Worker has been killed as memory usage exceeded configured memory size, consider increasing memory size...",
  "duration_s": 404,

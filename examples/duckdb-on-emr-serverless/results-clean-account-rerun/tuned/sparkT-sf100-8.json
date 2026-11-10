@@ -1,6 +1,5 @@
 {
  "label": "sparkT-sf100-8",
- "job_run_id": "00ga0ri2nh76880b",
  "state": "CANCELLED",
  "details": "Job run cancellation requested by user.",
  "duration_s": 8483,
