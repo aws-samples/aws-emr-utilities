@@ -20,7 +20,7 @@ constraints="$(mktemp)"
 trap 'rm -f "$constraints"' EXIT
 "$PYTHON" -m pip list --format=freeze --disable-pip-version-check 2>/dev/null \
   | grep -E '^[A-Za-z0-9_.-]+==' > "$constraints" || true
-boto_ver="$(grep -iE '^botocore==' "$constraints" | head -1 | cut -d'=' -f3)"
+boto_ver="$(grep -iE '^botocore==' "$constraints" | head -1 | cut -d'=' -f3 || true)"
 if [[ -n "$boto_ver" ]] && ! grep -iqE '^boto3==' "$constraints"; then
   echo "boto3==$boto_ver" >> "$constraints"
 fi
