@@ -13,17 +13,42 @@ PRICING = {
     "ap-northeast-1": {"graviton": (0.052774, 0.005804, 0.000128), "x86": (0.065974, 0.007256, 0.000128)},
 }
 
+
+def read_float(prompt: str, allow_negative: bool = False) -> float | None:
+    """Read a numeric input and return None when the input is invalid."""
+    raw_value = input(prompt).strip()
+    try:
+        value = float(raw_value)
+    except ValueError:
+        print(f"Error: '{raw_value}' is not a valid number.")
+        return None
+
+    if not allow_negative and value < 0:
+        print("Error: value must be zero or greater.")
+        return None
+
+    return value
+
+
 def main():
     print("=" * 50)
     print("  EMR Serverless Pricing Calculator")
     print("=" * 50)
 
-    vcpu_hours = float(input("\nEnter vCPU-hours: "))
-    memory_hours = float(input("Enter memoryGB-hours: "))
-    storage_hours = float(input("Enter storageGB-hours: "))
+    vcpu_hours = read_float("\nEnter vCPU-hours: ")
+    if vcpu_hours is None:
+        return
+
+    memory_hours = read_float("Enter memoryGB-hours: ")
+    if memory_hours is None:
+        return
+
+    storage_hours = read_float("Enter storageGB-hours: ")
+    if storage_hours is None:
+        return
 
     print(f"\nAvailable regions: {', '.join(PRICING.keys())}")
-    region = input("Enter region: ").strip()
+    region = input("Enter region: ").strip().lower()
     if region not in PRICING:
         print(f"Error: Region '{region}' not found. Available: {', '.join(PRICING.keys())}")
         return
@@ -48,8 +73,9 @@ def main():
     print(f"  {'':->48}")
     print(f"  Total Estimated Cost: ${total:.2f}")
 
-    discount_input = input("\nService discount %? (0 for none): ").strip()
-    discount_pct = float(discount_input)
+    discount_pct = read_float("\nService discount %? (0 for none): ", allow_negative=False)
+    if discount_pct is None:
+        return
 
     if discount_pct > 0:
         discount_amt = round(total * discount_pct / 100, 2)
