@@ -15,6 +15,7 @@ decimal point, and generated output is skipped.
 from __future__ import annotations
 
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -43,7 +44,25 @@ CHECKS = [
 ]
 
 
+def ignored(root: Path, paths: list[Path]) -> set[Path]:
+    """Paths git ignores. Anything gitignored cannot leak through the repository,
+    and a local file such as a real-account config would otherwise fail the scan
+    on a developer machine while passing in CI."""
+    if not (root / ".git").exists() or not paths:
+        return set()
+    try:
+        proc = subprocess.run(
+            ["git", "-C", str(root), "check-ignore", "--stdin"],
+            input="\n".join(str(p) for p in paths), text=True,
+            capture_output=True, timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        return set()
+    return {Path(line) for line in proc.stdout.splitlines() if line}
+
+
 def files(root: Path):
+    candidates: list[Path] = []
+    skip: set[Path] = set()
     for p in sorted(root.rglob("*")):
         if not p.is_file():
             continue
@@ -53,7 +72,11 @@ def files(root: Path):
             continue
         if p.resolve() == Path(__file__).resolve():
             continue
-        yield p
+        candidates.append(p)
+    skip = ignored(root, candidates)
+    for p in candidates:
+        if p not in skip:
+            yield p
 
 
 def main() -> int:
