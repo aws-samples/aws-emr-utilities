@@ -232,7 +232,7 @@ explicitly for retries so they do not overwrite earlier results.
 Spark SQL with Iceberg column statistics (`stats-sf*`) and `spark.sql.cbo.enabled` /
 `spark.sql.cbo.joinReorder.enabled` (`results/tuned/sparkT-*`) was slower overall than the default Spark run.
 Over the queries that completed in both runs, with the median per-query time as in "Results", suite totals were
-33 to 51% higher at SF10 and 8 to 30% higher at SF100. Q72 failed at every size, and Q85 failed (8 and 16 vCPU) or
+33 to 50% higher at SF10 and 8 to 30% higher at SF100. Q72 failed at every size, and Q85 failed (8 and 16 vCPU) or
 timed out (32 vCPU) at SF100. The default Spark run is the baseline in all comparisons, and the tuned Spark results
 are for reference only. Run them with `stats-sf<N>` and then `sparkT-sf<N>-<V>` (same sizes as `spark-sf<N>-<V>`).
 
