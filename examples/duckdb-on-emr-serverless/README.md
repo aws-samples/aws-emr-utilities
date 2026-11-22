@@ -114,7 +114,7 @@ scripts/
   tpcds_duckdb.py           DuckDB runner, default settings
   tpcds_spark.py            Spark SQL runner
   tpcds_spark_stats.py      Spark: Iceberg table statistics, used by the tuned Spark runs
-  analyze_results.py        recomputes the tables below from results/
+  analyze_results.py        recomputes the tables below from results/ (--repeat adds the SF100 repeat comparison)
   tpcds-schema.json         table schemas used for the text-to-Iceberg conversion
 results/                    per-query timings and billed resources for every job (see "Results files")
 ```
@@ -163,7 +163,8 @@ Set these before running `run-tpcds.py`:
    REPEAT=2 python3 scripts/run-tpcds.py duckdb-sf10-d8 duckdb-sf10-d16 duckdb-sf10-d32 spark-sf10-8 spark-sf10-16 spark-sf10-32
    REPEAT=1 TIMEOUT=1800 python3 scripts/run-tpcds.py duckdb-sf1000-d32 spark-sf1000-32
    ```
-5. `python3 scripts/analyze_results.py results` prints the summary below.
+5. `python3 scripts/analyze_results.py results` prints the summary below. Add `--repeat` to also compare the SF100
+   DuckDB runs with the repeat in `results/repeat/`.
 
 ## Job configuration
 
@@ -223,7 +224,10 @@ The two are complementary: pick the engine per workload.
 DuckDB 2.0.1 completed all 99 queries in all seven configurations, and its row counts match Spark SQL for every query.
 Spark SQL completed all 99 queries at every size, except in the tuned Spark runs (below).
 
-Each DuckDB 2.0.1 job ran once, and none of the seven was killed. If a job ends early (for example a driver killed
+Each DuckDB 2.0.1 job in the table ran once, and none of the seven was killed. A repeat of the three SF100 DuckDB
+jobs, with the same application, tables and job settings, also completed all 99 queries with identical row counts.
+Its total query time differed from the runs in the table by -0.5% to +3.8% (575.7 to 578.9 s on 8 vCPU, 364.5 to
+362.5 s on 16 vCPU, 245.3 to 254.6 s on 32 vCPU). The repeat files are in `results/repeat/`. If a job ends early (for example a driver killed
 for exceeding memory, exit code 137), set `ONLY` to the query numbers that are missing and retry. Set `OUTDIR`
 explicitly for retries so they do not overwrite earlier results.
 
@@ -250,6 +254,7 @@ runner used for those jobs echoed before the first query.
 | `results/*.json` | DuckDB 2.0.1 and Spark SQL runs for SF10 and SF100, and the Iceberg conversion |
 | `results/sf1000/` | DuckDB 2.0.1 and Spark SQL runs for SF1000 and the text-to-Iceberg conversion |
 | `results/tuned/` | tuned Spark and Spark statistics |
+| `results/repeat/` | a repeat of the three SF100 DuckDB 2.0.1 jobs; total query time differed from `results/duckdb-sf100-d*.json` by -0.5% to +3.8%, with identical row counts |
 
 ## Notes and limits
 
