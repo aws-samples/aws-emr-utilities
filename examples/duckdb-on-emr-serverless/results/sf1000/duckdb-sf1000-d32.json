@@ -2,19 +2,19 @@
  "label": "duckdb-sf1000-d32",
  "state": "SUCCESS",
  "details": "",
- "duration_s": 5145,
+ "duration_s": 2332,
  "billed": {
-  "vCPUHour": 45.742,
-  "memoryGBHour": 171.533,
-  "storageGBHour": 257.3
+  "vCPUHour": 20.738,
+  "memoryGBHour": 77.767,
+  "storageGBHour": 116.65
  },
  "queries": [
   {
    "q": 1,
    "engine": "duckdb",
-   "best": 3.623,
+   "best": 3.842,
    "all": [
-    3.623
+    3.842
    ],
    "rows": 100,
    "error": null
@@ -22,9 +22,9 @@
   {
    "q": 2,
    "engine": "duckdb",
-   "best": 7.863,
+   "best": 4.382,
    "all": [
-    7.863
+    4.382
    ],
    "rows": 2513,
    "error": null
@@ -32,9 +32,9 @@
   {
    "q": 3,
    "engine": "duckdb",
-   "best": 13.715,
+   "best": 13.361,
    "all": [
-    13.715
+    13.361
    ],
    "rows": 100,
    "error": null
@@ -42,9 +42,9 @@
   {
    "q": 4,
    "engine": "duckdb",
-   "best": 38.475,
+   "best": 38.669,
    "all": [
-    38.475
+    38.669
    ],
    "rows": 100,
    "error": null
@@ -52,9 +52,9 @@
   {
    "q": 5,
    "engine": "duckdb",
-   "best": 22.924,
+   "best": 21.366,
    "all": [
-    22.924
+    21.366
    ],
    "rows": 100,
    "error": null
@@ -62,9 +62,9 @@
   {
    "q": 6,
    "engine": "duckdb",
-   "best": 10.452,
+   "best": 10.047,
    "all": [
-    10.452
+    10.047
    ],
    "rows": 52,
    "error": null
@@ -72,9 +72,9 @@
   {
    "q": 7,
    "engine": "duckdb",
-   "best": 24.491,
+   "best": 23.605,
    "all": [
-    24.491
+    23.605
    ],
    "rows": 100,
    "error": null
@@ -82,9 +82,9 @@
   {
    "q": 8,
    "engine": "duckdb",
-   "best": 8.573,
+   "best": 8.815,
    "all": [
-    8.573
+    8.815
    ],
    "rows": 11,
    "error": null
@@ -92,9 +92,9 @@
   {
    "q": 9,
    "engine": "duckdb",
-   "best": 46.823,
+   "best": 32.371,
    "all": [
-    46.823
+    32.371
    ],
    "rows": 1,
    "error": null
@@ -102,9 +102,9 @@
   {
    "q": 10,
    "engine": "duckdb",
-   "best": 7.444,
+   "best": 5.939,
    "all": [
-    7.444
+    5.939
    ],
    "rows": 100,
    "error": null
@@ -112,9 +112,9 @@
   {
    "q": 11,
    "engine": "duckdb",
-   "best": 29.138,
+   "best": 17.829,
    "all": [
-    29.138
+    17.829
    ],
    "rows": 100,
    "error": null
@@ -122,9 +122,9 @@
   {
    "q": 12,
    "engine": "duckdb",
-   "best": 4.568,
+   "best": 4.076,
    "all": [
-    4.568
+    4.076
    ],
    "rows": 100,
    "error": null
@@ -132,9 +132,9 @@
   {
    "q": 13,
    "engine": "duckdb",
-   "best": 28.834,
+   "best": 27.707,
    "all": [
-    28.834
+    27.707
    ],
    "rows": 1,
    "error": null
@@ -142,9 +142,9 @@
   {
    "q": 14,
    "engine": "duckdb",
-   "best": 110.487,
+   "best": 45.271,
    "all": [
-    110.487
+    45.271
    ],
    "rows": 100,
    "error": null
@@ -152,9 +152,9 @@
   {
    "q": 15,
    "engine": "duckdb",
-   "best": 2.922,
+   "best": 1.996,
    "all": [
-    2.922
+    1.996
    ],
    "rows": 100,
    "error": null
@@ -162,9 +162,9 @@
   {
    "q": 16,
    "engine": "duckdb",
-   "best": 3.781,
+   "best": 2.734,
    "all": [
-    3.781
+    2.734
    ],
    "rows": 1,
    "error": null
@@ -172,9 +172,9 @@
   {
    "q": 17,
    "engine": "duckdb",
-   "best": 17.861,
+   "best": 15.128,
    "all": [
-    17.861
+    15.128
    ],
    "rows": 100,
    "error": null
@@ -182,9 +182,9 @@
   {
    "q": 18,
    "engine": "duckdb",
-   "best": 6.598,
+   "best": 5.257,
    "all": [
-    6.598
+    5.257
    ],
    "rows": 100,
    "error": null
@@ -192,17 +192,19 @@
   {
    "q": 19,
    "engine": "duckdb",
-   "best": null,
-   "all": [],
-   "rows": null,
-   "error": "Out of Memory Error: failed to offload data block of size 256.0 KiB (172.9 GiB/172.9 GiB used). This limit was set by the 'max_temp_directory_size' setting. By default, this setting utilizes the available disk space on the drive where the 'temp_directory' is located. You can adjust this setting, by "
+   "best": 15.414,
+   "all": [
+    15.414
+   ],
+   "rows": 100,
+   "error": null
   },
   {
    "q": 20,
    "engine": "duckdb",
-   "best": 1.785,
+   "best": 1.046,
    "all": [
-    1.785
+    1.046
    ],
    "rows": 100,
    "error": null
@@ -210,9 +212,9 @@
   {
    "q": 21,
    "engine": "duckdb",
-   "best": 1.509,
+   "best": 1.401,
    "all": [
-    1.509
+    1.401
    ],
    "rows": 100,
    "error": null
@@ -220,9 +222,9 @@
   {
    "q": 22,
    "engine": "duckdb",
-   "best": 7.054,
+   "best": 6.831,
    "all": [
-    7.054
+    6.831
    ],
    "rows": 100,
    "error": null
@@ -230,9 +232,9 @@
   {
    "q": 23,
    "engine": "duckdb",
-   "best": 341.604,
+   "best": 339.342,
    "all": [
-    341.604
+    339.342
    ],
    "rows": 100,
    "error": null
@@ -240,9 +242,9 @@
   {
    "q": 24,
    "engine": "duckdb",
-   "best": 19.551,
+   "best": 19.796,
    "all": [
-    19.551
+    19.796
    ],
    "rows": 403,
    "error": null
@@ -250,9 +252,9 @@
   {
    "q": 25,
    "engine": "duckdb",
-   "best": 21.117,
+   "best": 20.525,
    "all": [
-    21.117
+    20.525
    ],
    "rows": 100,
    "error": null
@@ -260,9 +262,9 @@
   {
    "q": 26,
    "engine": "duckdb",
-   "best": 4.014,
+   "best": 3.724,
    "all": [
-    4.014
+    3.724
    ],
    "rows": 100,
    "error": null
@@ -270,9 +272,9 @@
   {
    "q": 27,
    "engine": "duckdb",
-   "best": 21.542,
+   "best": 20.667,
    "all": [
-    21.542
+    20.667
    ],
    "rows": 100,
    "error": null
@@ -280,9 +282,9 @@
   {
    "q": 28,
    "engine": "duckdb",
-   "best": 34.017,
+   "best": 34.659,
    "all": [
-    34.017
+    34.659
    ],
    "rows": 1,
    "error": null
@@ -290,9 +292,9 @@
   {
    "q": 29,
    "engine": "duckdb",
-   "best": 19.048,
+   "best": 18.512,
    "all": [
-    19.048
+    18.512
    ],
    "rows": 100,
    "error": null
@@ -300,9 +302,9 @@
   {
    "q": 30,
    "engine": "duckdb",
-   "best": 2.456,
+   "best": 2.126,
    "all": [
-    2.456
+    2.126
    ],
    "rows": 100,
    "error": null
@@ -310,9 +312,9 @@
   {
    "q": 31,
    "engine": "duckdb",
-   "best": 11.546,
+   "best": 11.297,
    "all": [
-    11.546
+    11.297
    ],
    "rows": 297,
    "error": null
@@ -320,9 +322,9 @@
   {
    "q": 32,
    "engine": "duckdb",
-   "best": 2.11,
+   "best": 1.162,
    "all": [
-    2.11
+    1.162
    ],
    "rows": 1,
    "error": null
@@ -330,9 +332,9 @@
   {
    "q": 33,
    "engine": "duckdb",
-   "best": 19.218,
+   "best": 17.767,
    "all": [
-    19.218
+    17.767
    ],
    "rows": 100,
    "error": null
@@ -340,9 +342,9 @@
   {
    "q": 34,
    "engine": "duckdb",
-   "best": 5.555,
+   "best": 5.291,
    "all": [
-    5.555
+    5.291
    ],
    "rows": 24231,
    "error": null
@@ -350,9 +352,9 @@
   {
    "q": 35,
    "engine": "duckdb",
-   "best": 10.804,
+   "best": 10.542,
    "all": [
-    10.804
+    10.542
    ],
    "rows": 100,
    "error": null
@@ -360,9 +362,9 @@
   {
    "q": 36,
    "engine": "duckdb",
-   "best": 18.75,
+   "best": 20.174,
    "all": [
-    18.75
+    20.174
    ],
    "rows": 100,
    "error": null
@@ -370,9 +372,9 @@
   {
    "q": 37,
    "engine": "duckdb",
-   "best": 6.016,
+   "best": 4.902,
    "all": [
-    6.016
+    4.902
    ],
    "rows": 4,
    "error": null
@@ -380,9 +382,9 @@
   {
    "q": 38,
    "engine": "duckdb",
-   "best": 10.828,
+   "best": 10.228,
    "all": [
-    10.828
+    10.228
    ],
    "rows": 1,
    "error": null
@@ -390,9 +392,9 @@
   {
    "q": 39,
    "engine": "duckdb",
-   "best": 5.938,
+   "best": 5.004,
    "all": [
-    5.938
+    5.004
    ],
    "rows": 14796,
    "error": null
@@ -400,9 +402,9 @@
   {
    "q": 40,
    "engine": "duckdb",
-   "best": 3.361,
+   "best": 1.668,
    "all": [
-    3.361
+    1.668
    ],
    "rows": 100,
    "error": null
@@ -410,9 +412,9 @@
   {
    "q": 41,
    "engine": "duckdb",
-   "best": 0.325,
+   "best": 0.295,
    "all": [
-    0.325
+    0.295
    ],
    "rows": 100,
    "error": null
@@ -420,9 +422,9 @@
   {
    "q": 42,
    "engine": "duckdb",
-   "best": 13.478,
+   "best": 12.656,
    "all": [
-    13.478
+    12.656
    ],
    "rows": 12,
    "error": null
@@ -430,9 +432,9 @@
   {
    "q": 43,
    "engine": "duckdb",
-   "best": 6.219,
+   "best": 5.966,
    "all": [
-    6.219
+    5.966
    ],
    "rows": 100,
    "error": null
@@ -440,9 +442,9 @@
   {
    "q": 44,
    "engine": "duckdb",
-   "best": 20.303,
+   "best": 19.444,
    "all": [
-    20.303
+    19.444
    ],
    "rows": 10,
    "error": null
@@ -450,9 +452,9 @@
   {
    "q": 45,
    "engine": "duckdb",
-   "best": 4.952,
+   "best": 5.23,
    "all": [
-    4.952
+    5.23
    ],
    "rows": 100,
    "error": null
@@ -460,9 +462,9 @@
   {
    "q": 46,
    "engine": "duckdb",
-   "best": 15.829,
+   "best": 15.814,
    "all": [
-    15.829
+    15.814
    ],
    "rows": 100,
    "error": null
@@ -470,9 +472,9 @@
   {
    "q": 47,
    "engine": "duckdb",
-   "best": 14.405,
+   "best": 15.029,
    "all": [
-    14.405
+    15.029
    ],
    "rows": 100,
    "error": null
@@ -480,9 +482,9 @@
   {
    "q": 48,
    "engine": "duckdb",
-   "best": 17.128,
+   "best": 16.346,
    "all": [
-    17.128
+    16.346
    ],
    "rows": 1,
    "error": null
@@ -490,9 +492,9 @@
   {
    "q": 49,
    "engine": "duckdb",
-   "best": 31.072,
+   "best": 31.036,
    "all": [
-    31.072
+    31.036
    ],
    "rows": 100,
    "error": null
@@ -500,9 +502,9 @@
   {
    "q": 50,
    "engine": "duckdb",
-   "best": 15.598,
+   "best": 13.437,
    "all": [
-    15.598
+    13.437
    ],
    "rows": 100,
    "error": null
@@ -510,9 +512,9 @@
   {
    "q": 51,
    "engine": "duckdb",
-   "best": 23.066,
+   "best": 22.847,
    "all": [
-    23.066
+    22.847
    ],
    "rows": 100,
    "error": null
@@ -520,9 +522,9 @@
   {
    "q": 52,
    "engine": "duckdb",
-   "best": 13.734,
+   "best": 12.648,
    "all": [
-    13.734
+    12.648
    ],
    "rows": 100,
    "error": null
@@ -530,9 +532,9 @@
   {
    "q": 53,
    "engine": "duckdb",
-   "best": 12.172,
+   "best": 11.564,
    "all": [
-    12.172
+    11.564
    ],
    "rows": 100,
    "error": null
@@ -540,9 +542,9 @@
   {
    "q": 54,
    "engine": "duckdb",
-   "best": 13.302,
+   "best": 12.262,
    "all": [
-    13.302
+    12.262
    ],
    "rows": 100,
    "error": null
@@ -550,9 +552,9 @@
   {
    "q": 55,
    "engine": "duckdb",
-   "best": 12.423,
+   "best": 12.592,
    "all": [
-    12.423
+    12.592
    ],
    "rows": 100,
    "error": null
@@ -560,9 +562,9 @@
   {
    "q": 56,
    "engine": "duckdb",
-   "best": 18.697,
+   "best": 19.676,
    "all": [
-    18.697
+    19.676
    ],
    "rows": 100,
    "error": null
@@ -570,9 +572,9 @@
   {
    "q": 57,
    "engine": "duckdb",
-   "best": 5.094,
+   "best": 5.211,
    "all": [
-    5.094
+    5.211
    ],
    "rows": 100,
    "error": null
@@ -580,9 +582,9 @@
   {
    "q": 58,
    "engine": "duckdb",
-   "best": 18.59,
+   "best": 18.155,
    "all": [
-    18.59
+    18.155
    ],
    "rows": 4,
    "error": null
@@ -590,9 +592,9 @@
   {
    "q": 59,
    "engine": "duckdb",
-   "best": 13.032,
+   "best": 8.027,
    "all": [
-    13.032
+    8.027
    ],
    "rows": 100,
    "error": null
@@ -600,9 +602,9 @@
   {
    "q": 60,
    "engine": "duckdb",
-   "best": 18.82,
+   "best": 19.597,
    "all": [
-    18.82
+    19.597
    ],
    "rows": 100,
    "error": null
@@ -610,9 +612,9 @@
   {
    "q": 61,
    "engine": "duckdb",
-   "best": 23.137,
+   "best": 23.328,
    "all": [
-    23.137
+    23.328
    ],
    "rows": 1,
    "error": null
@@ -620,9 +622,9 @@
   {
    "q": 62,
    "engine": "duckdb",
-   "best": 3.42,
+   "best": 3.019,
    "all": [
-    3.42
+    3.019
    ],
    "rows": 100,
    "error": null
@@ -630,9 +632,9 @@
   {
    "q": 63,
    "engine": "duckdb",
-   "best": 12.212,
+   "best": 11.535,
    "all": [
-    12.212
+    11.535
    ],
    "rows": 100,
    "error": null
@@ -640,17 +642,19 @@
   {
    "q": 64,
    "engine": "duckdb",
-   "best": null,
-   "all": [],
-   "rows": null,
-   "error": "Out of Memory Error: failed to offload data block of size 64.0 KiB (172.9 GiB/172.9 GiB used). This limit was set by the 'max_temp_directory_size' setting. By default, this setting utilizes the available disk space on the drive where the 'temp_directory' is located. You can adjust this setting, by u"
+   "best": 44.785,
+   "all": [
+    44.785
+   ],
+   "rows": 11492,
+   "error": null
   },
   {
    "q": 65,
    "engine": "duckdb",
-   "best": 27.375,
+   "best": 26.318,
    "all": [
-    27.375
+    26.318
    ],
    "rows": 100,
    "error": null
@@ -658,9 +662,9 @@
   {
    "q": 66,
    "engine": "duckdb",
-   "best": 8.667,
+   "best": 7.391,
    "all": [
-    8.667
+    7.391
    ],
    "rows": 20,
    "error": null
@@ -668,9 +672,9 @@
   {
    "q": 67,
    "engine": "duckdb",
-   "best": 243.285,
+   "best": 247.876,
    "all": [
-    243.285
+    247.876
    ],
    "rows": 100,
    "error": null
@@ -678,9 +682,9 @@
   {
    "q": 68,
    "engine": "duckdb",
-   "best": 21.981,
+   "best": 23.379,
    "all": [
-    21.981
+    23.379
    ],
    "rows": 100,
    "error": null
@@ -688,9 +692,9 @@
   {
    "q": 69,
    "engine": "duckdb",
-   "best": 7.091,
+   "best": 6.826,
    "all": [
-    7.091
+    6.826
    ],
    "rows": 100,
    "error": null
@@ -698,9 +702,9 @@
   {
    "q": 70,
    "engine": "duckdb",
-   "best": 11.33,
+   "best": 11.114,
    "all": [
-    11.33
+    11.114
    ],
    "rows": 52,
    "error": null
@@ -708,9 +712,9 @@
   {
    "q": 71,
    "engine": "duckdb",
-   "best": 19.229,
+   "best": 18.679,
    "all": [
-    19.229
+    18.679
    ],
    "rows": 209234,
    "error": null
@@ -718,9 +722,9 @@
   {
    "q": 72,
    "engine": "duckdb",
-   "best": 34.284,
+   "best": 15.737,
    "all": [
-    34.284
+    15.737
    ],
    "rows": 100,
    "error": null
@@ -728,9 +732,9 @@
   {
    "q": 73,
    "engine": "duckdb",
-   "best": 6.024,
+   "best": 6.584,
    "all": [
-    6.024
+    6.584
    ],
    "rows": 589,
    "error": null
@@ -738,9 +742,9 @@
   {
    "q": 74,
    "engine": "duckdb",
-   "best": 13.126,
+   "best": 12.967,
    "all": [
-    13.126
+    12.967
    ],
    "rows": 100,
    "error": null
@@ -748,9 +752,9 @@
   {
    "q": 75,
    "engine": "duckdb",
-   "best": 32.81,
+   "best": 31.549,
    "all": [
-    32.81
+    31.549
    ],
    "rows": 30,
    "error": null
@@ -758,9 +762,9 @@
   {
    "q": 76,
    "engine": "duckdb",
-   "best": 26.641,
+   "best": 25.228,
    "all": [
-    26.641
+    25.228
    ],
    "rows": 100,
    "error": null
@@ -768,9 +772,9 @@
   {
    "q": 77,
    "engine": "duckdb",
-   "best": 24.762,
+   "best": 23.281,
    "all": [
-    24.762
+    23.281
    ],
    "rows": 100,
    "error": null
@@ -778,9 +782,9 @@
   {
    "q": 78,
    "engine": "duckdb",
-   "best": 53.621,
+   "best": 48.396,
    "all": [
-    53.621
+    48.396
    ],
    "rows": 100,
    "error": null
@@ -788,9 +792,9 @@
   {
    "q": 79,
    "engine": "duckdb",
-   "best": 14.765,
+   "best": 14.923,
    "all": [
-    14.765
+    14.923
    ],
    "rows": 100,
    "error": null
@@ -798,9 +802,9 @@
   {
    "q": 80,
    "engine": "duckdb",
-   "best": 33.947,
+   "best": 34.251,
    "all": [
-    33.947
+    34.251
    ],
    "rows": 100,
    "error": null
@@ -808,9 +812,9 @@
   {
    "q": 81,
    "engine": "duckdb",
-   "best": 2.64,
+   "best": 2.56,
    "all": [
-    2.64
+    2.56
    ],
    "rows": 100,
    "error": null
@@ -818,9 +822,9 @@
   {
    "q": 82,
    "engine": "duckdb",
-   "best": 7.864,
+   "best": 8.047,
    "all": [
-    7.864
+    8.047
    ],
    "rows": 24,
    "error": null
@@ -828,9 +832,9 @@
   {
    "q": 83,
    "engine": "duckdb",
-   "best": 3.959,
+   "best": 4.023,
    "all": [
-    3.959
+    4.023
    ],
    "rows": 100,
    "error": null
@@ -838,9 +842,9 @@
   {
    "q": 84,
    "engine": "duckdb",
-   "best": 2.791,
+   "best": 2.94,
    "all": [
-    2.791
+    2.94
    ],
    "rows": 100,
    "error": null
@@ -848,17 +852,19 @@
   {
    "q": 85,
    "engine": "duckdb",
-   "best": null,
-   "all": [],
-   "rows": null,
-   "error": "Out of Memory Error: failed to offload data block of size 256.0 KiB (172.9 GiB/172.9 GiB used). This limit was set by the 'max_temp_directory_size' setting. By default, this setting utilizes the available disk space on the drive where the 'temp_directory' is located. You can adjust this setting, by "
+   "best": 8.281,
+   "all": [
+    8.281
+   ],
+   "rows": 64,
+   "error": null
   },
   {
    "q": 86,
    "engine": "duckdb",
-   "best": 4.25,
+   "best": 4.048,
    "all": [
-    4.25
+    4.048
    ],
    "rows": 100,
    "error": null
@@ -866,9 +872,9 @@
   {
    "q": 87,
    "engine": "duckdb",
-   "best": 11.84,
+   "best": 11.059,
    "all": [
-    11.84
+    11.059
    ],
    "rows": 1,
    "error": null
@@ -876,9 +882,9 @@
   {
    "q": 88,
    "engine": "duckdb",
-   "best": 20.039,
+   "best": 20.332,
    "all": [
-    20.039
+    20.332
    ],
    "rows": 1,
    "error": null
@@ -886,9 +892,9 @@
   {
    "q": 89,
    "engine": "duckdb",
-   "best": 11.501,
+   "best": 11.951,
    "all": [
-    11.501
+    11.951
    ],
    "rows": 100,
    "error": null
@@ -896,9 +902,9 @@
   {
    "q": 90,
    "engine": "duckdb",
-   "best": 3.426,
+   "best": 3.055,
    "all": [
-    3.426
+    3.055
    ],
    "rows": 1,
    "error": null
@@ -906,9 +912,9 @@
   {
    "q": 91,
    "engine": "duckdb",
-   "best": 2.581,
+   "best": 2.374,
    "all": [
-    2.581
+    2.374
    ],
    "rows": 42,
    "error": null
@@ -916,9 +922,9 @@
   {
    "q": 92,
    "engine": "duckdb",
-   "best": 5.143,
+   "best": 4.939,
    "all": [
-    5.143
+    4.939
    ],
    "rows": 1,
    "error": null
@@ -926,9 +932,9 @@
   {
    "q": 93,
    "engine": "duckdb",
-   "best": 16.595,
+   "best": 16.649,
    "all": [
-    16.595
+    16.649
    ],
    "rows": 100,
    "error": null
@@ -936,9 +942,9 @@
   {
    "q": 94,
    "engine": "duckdb",
-   "best": 6.744,
+   "best": 7.018,
    "all": [
-    6.744
+    7.018
    ],
    "rows": 1,
    "error": null
@@ -946,9 +952,9 @@
   {
    "q": 95,
    "engine": "duckdb",
-   "best": 547.113,
+   "best": 27.604,
    "all": [
-    547.113
+    27.604
    ],
    "rows": 1,
    "error": null
@@ -956,9 +962,9 @@
   {
    "q": 96,
    "engine": "duckdb",
-   "best": 4.012,
+   "best": 3.77,
    "all": [
-    4.012
+    3.77
    ],
    "rows": 1,
    "error": null
@@ -966,9 +972,9 @@
   {
    "q": 97,
    "engine": "duckdb",
-   "best": 15.588,
+   "best": 14.549,
    "all": [
-    15.588
+    14.549
    ],
    "rows": 1,
    "error": null
@@ -976,9 +982,9 @@
   {
    "q": 98,
    "engine": "duckdb",
-   "best": 12.921,
+   "best": 13.177,
    "all": [
-    12.921
+    13.177
    ],
    "rows": 45075,
    "error": null
@@ -986,9 +992,9 @@
   {
    "q": 99,
    "engine": "duckdb",
-   "best": 3.339,
+   "best": 2.919,
    "all": [
-    3.339
+    2.919
    ],
    "rows": 100,
    "error": null
@@ -996,7 +1002,7 @@
  ],
  "extra": {},
  "misc": [
-  "DUCKDB_VERSION=2.0.0 WAREHOUSE=s3://amzn-s3-demo-bucket/tpcds/warehouse_sf1000 REPEAT=1 TIMEOUT=1800"
+  "DUCKDB_VERSION=2.0.1 WAREHOUSE=s3://amzn-s3-demo-bucket/tpcds/warehouse_sf1000 REPEAT=1 TIMEOUT=1800 SETTINGS=default EFFECTIVE=memory_limit:99.0 GiB;max_temp:90% of available disk space;threads:32"
  ],
  "repeat": "1",
  "timeout": "1800"

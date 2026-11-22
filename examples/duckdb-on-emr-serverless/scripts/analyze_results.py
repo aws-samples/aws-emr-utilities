@@ -4,7 +4,7 @@
 """Recompute the totals and relative-cost tables from the per-query results in ../results.
 
 Per query: median of the timed runs (SF10 has two runs per query, SF100 and SF1000 one).
-Totals cover the queries that completed on both engines (Q64 is left out at SF10 and SF100).
+Totals cover the queries that completed on both engines (all 99 with DuckDB 2.0.1).
 Cost: billed vCPU-hours, memory GB-hours and storage GB-hours of whole jobs at approximate list rates,
 used only as a ratio (Spark SQL job cost divided by DuckDB job cost).
 
@@ -38,11 +38,6 @@ for sf, v in runs:
     sub = "sf1000/" if sf == 1000 else ""
     dk, sp = load(f"{sub}duckdb-sf{sf}-d{v}.json"), load(f"{sub}spark-sf{sf}-{v}.json")
     d, s = per_q(dk), per_q(sp)
-    excl = {64} if sf < 1000 else set()
-    c1 = sorted((set(d) & set(s)) - excl)
+    c1 = sorted(set(d) & set(s))
     dd, ss = sum(d[q] for q in c1), sum(s[q] for q in c1)
-    # Default-settings job cost at SF100 uses the reruns without Q64: the original jobs billed minutes
-    # for a Q64 that ran until it failed with out of temporary disk space.
-    rr = {8: "rerun2-same", 16: "rerun", 32: "rerun"}[v] if sf == 100 else None
-    dcost = cost(load(f"{rr}/duckdb-sf100-d{v}.json")) if rr else cost(dk)
-    print(f"SF{sf:<5}{v:>5}{dd:>10.1f}{ss:>10.1f}{ss / dd:>7.2f}{len(c1):>4}{cost(sp) / dcost:>7.2f}")
+    print(f"SF{sf:<5}{v:>5}{dd:>10.1f}{ss:>10.1f}{ss / dd:>7.2f}{len(c1):>4}{cost(sp) / cost(dk):>7.2f}")

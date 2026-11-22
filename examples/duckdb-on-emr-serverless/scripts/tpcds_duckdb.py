@@ -1,6 +1,6 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: MIT-0
-"""TPC-DS on DuckDB 2.0.0: run the 99 queries against Apache Iceberg tables on S3.
+"""TPC-DS on DuckDB 2.0.1: run the 99 queries against Apache Iceberg tables on S3.
 
 Methodology (same spirit as the single-table benchmark):
 - A fresh DuckDB connection for every timed run, so no cache carries over between runs.

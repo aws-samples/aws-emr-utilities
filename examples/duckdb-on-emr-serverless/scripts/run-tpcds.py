@@ -7,7 +7,7 @@ Required env: EMR_APP_ID, EXEC_ROLE_ARN, S3_BUCKET. Optional: AWS_REGION, AWS_PR
 Labels:
   gen-sf<N>               DuckDB dsdgen -> Parquet on S3
   iceberg-sf<N>           Spark: Parquet -> Apache Iceberg tables
-  duckdb-sf<N>-d<V>       DuckDB 2.0.0, one V-vCPU driver, 99 queries
+  duckdb-sf<N>-d<V>       DuckDB 2.0.1, one V-vCPU driver, 99 queries
   spark-sf<N>-<V>         Spark SQL, V total vCPUs as 4-vCPU executors, 99 queries
 Options (env): REPEAT (default 2), TIMEOUT (default 900), ONLY ("1,2,3")
 
@@ -38,7 +38,7 @@ REGION = os.environ.get("AWS_REGION", "us-east-1")
 HERE = os.path.dirname(os.path.abspath(__file__))
 RES = os.path.join(HERE, os.environ.get("OUTDIR", "results"))
 os.makedirs(RES, exist_ok=True)
-ENV_ARCHIVE = f"{BUCKET}/envs/duckdb20_env.tar.gz#environment"
+ENV_ARCHIVE = f"{BUCKET}/envs/duckdb201_env.tar.gz#environment"
 EXT_ARCHIVE = f"{BUCKET}/envs/tpcds_ext.tar.gz#tpcds_ext"
 QUERIES = f"{BUCKET}/tpcds/queries-duckdb.json"
 QUERIES_SPARK = f"{BUCKET}/tpcds/queries-spark.json"
