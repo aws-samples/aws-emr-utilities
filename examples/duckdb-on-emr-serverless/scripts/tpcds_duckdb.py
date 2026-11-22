@@ -48,10 +48,7 @@ def fresh_con():
         con.load_extension(e)
     con.execute("CREATE OR REPLACE SECRET (TYPE s3, PROVIDER credential_chain);")
     for t in TABLES:
-        if WH.startswith("parquet:"):  # diagnostic mode: plain Parquet instead of Iceberg
-            con.read_parquet(f"{WH[8:]}/{t}/*.parquet").create_view(t)
-        else:
-            con.sql("SELECT * FROM iceberg_scan(?)", params=[f"{WH}/tpcds/{t}"]).create_view(t)
+        con.sql("SELECT * FROM iceberg_scan(?)", params=[f"{WH}/tpcds/{t}"]).create_view(t)
     return con
 
 
