@@ -8,7 +8,7 @@
 # Usage: S3_BUCKET=s3://<your-bucket> bash build_venv.sh
 set -euo pipefail
 : "${S3_BUCKET:?Set S3_BUCKET, for example s3://amzn-s3-demo-bucket}"
-DUCKDB_VER="${DUCKDB_VER:-2.0.0}"
+DUCKDB_VER="${DUCKDB_VER:-2.0.1}"
 
 export TMPDIR="$HOME/tmp"; mkdir -p "$TMPDIR"
 command -v python3.11 >/dev/null || sudo dnf install -y python3.11
@@ -33,7 +33,7 @@ for e in ("httpfs", "aws", "avro", "iceberg"):
 print("DuckDB", duckdb.__version__, "extensions OK")
 PY
 venv-pack -f -o duckdb_env.tar.gz
-aws s3 cp duckdb_env.tar.gz "$S3_BUCKET/envs/duckdb20_env.tar.gz"
+aws s3 cp duckdb_env.tar.gz "$S3_BUCKET/envs/duckdb201_env.tar.gz"
 
 # 2. The tpcds extension (dsdgen) is only needed to generate the data, so it ships as a second archive
 mkdir -p tpcds_ext
@@ -46,4 +46,4 @@ cp "$(find tpcds_ext_tmp -name tpcds.duckdb_extension | head -1)" tpcds_ext/
 tar czf tpcds_ext.tar.gz -C tpcds_ext tpcds.duckdb_extension
 aws s3 cp tpcds_ext.tar.gz "$S3_BUCKET/envs/tpcds_ext.tar.gz"
 
-echo "DONE: $S3_BUCKET/envs/duckdb20_env.tar.gz and $S3_BUCKET/envs/tpcds_ext.tar.gz"
+echo "DONE: $S3_BUCKET/envs/duckdb201_env.tar.gz and $S3_BUCKET/envs/tpcds_ext.tar.gz"

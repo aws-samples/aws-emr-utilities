@@ -2,19 +2,19 @@
  "label": "duckdb-sf100-d32",
  "state": "SUCCESS",
  "details": "",
- "duration_s": 1257,
+ "duration_s": 548,
  "billed": {
-  "vCPUHour": 11.182,
-  "memoryGBHour": 41.933,
-  "storageGBHour": 62.9
+  "vCPUHour": 4.88,
+  "memoryGBHour": 18.3,
+  "storageGBHour": 27.45
  },
  "queries": [
   {
    "q": 1,
    "engine": "duckdb",
-   "best": 1.266,
+   "best": 1.282,
    "all": [
-    1.266
+    1.282
    ],
    "rows": 100,
    "error": null
@@ -22,9 +22,9 @@
   {
    "q": 2,
    "engine": "duckdb",
-   "best": 1.342,
+   "best": 1.065,
    "all": [
-    1.342
+    1.065
    ],
    "rows": 2513,
    "error": null
@@ -32,9 +32,9 @@
   {
    "q": 3,
    "engine": "duckdb",
-   "best": 1.975,
+   "best": 1.912,
    "all": [
-    1.975
+    1.912
    ],
    "rows": 100,
    "error": null
@@ -42,9 +42,9 @@
   {
    "q": 4,
    "engine": "duckdb",
-   "best": 4.885,
+   "best": 4.953,
    "all": [
-    4.885
+    4.953
    ],
    "rows": 100,
    "error": null
@@ -52,9 +52,9 @@
   {
    "q": 5,
    "engine": "duckdb",
-   "best": 4.454,
+   "best": 3.618,
    "all": [
-    4.454
+    3.618
    ],
    "rows": 100,
    "error": null
@@ -62,9 +62,9 @@
   {
    "q": 6,
    "engine": "duckdb",
-   "best": 2.312,
+   "best": 2.339,
    "all": [
-    2.312
+    2.339
    ],
    "rows": 52,
    "error": null
@@ -72,9 +72,9 @@
   {
    "q": 7,
    "engine": "duckdb",
-   "best": 3.627,
+   "best": 3.312,
    "all": [
-    3.627
+    3.312
    ],
    "rows": 100,
    "error": null
@@ -82,9 +82,9 @@
   {
    "q": 8,
    "engine": "duckdb",
-   "best": 1.652,
+   "best": 1.904,
    "all": [
-    1.652
+    1.904
    ],
    "rows": 10,
    "error": null
@@ -92,9 +92,9 @@
   {
    "q": 9,
    "engine": "duckdb",
-   "best": 4.565,
+   "best": 4.596,
    "all": [
-    4.565
+    4.596
    ],
    "rows": 1,
    "error": null
@@ -102,9 +102,9 @@
   {
    "q": 10,
    "engine": "duckdb",
-   "best": 2.323,
+   "best": 1.976,
    "all": [
-    2.323
+    1.976
    ],
    "rows": 100,
    "error": null
@@ -112,9 +112,9 @@
   {
    "q": 11,
    "engine": "duckdb",
-   "best": 2.571,
+   "best": 2.57,
    "all": [
-    2.571
+    2.57
    ],
    "rows": 100,
    "error": null
@@ -122,9 +122,9 @@
   {
    "q": 12,
    "engine": "duckdb",
-   "best": 0.981,
+   "best": 1.027,
    "all": [
-    0.981
+    1.027
    ],
    "rows": 100,
    "error": null
@@ -132,9 +132,9 @@
   {
    "q": 13,
    "engine": "duckdb",
-   "best": 3.883,
+   "best": 3.918,
    "all": [
-    3.883
+    3.918
    ],
    "rows": 1,
    "error": null
@@ -142,9 +142,9 @@
   {
    "q": 14,
    "engine": "duckdb",
-   "best": 5.907,
+   "best": 6.286,
    "all": [
-    5.907
+    6.286
    ],
    "rows": 100,
    "error": null
@@ -152,9 +152,9 @@
   {
    "q": 15,
    "engine": "duckdb",
-   "best": 1.319,
+   "best": 0.958,
    "all": [
-    1.319
+    0.958
    ],
    "rows": 100,
    "error": null
@@ -162,9 +162,9 @@
   {
    "q": 16,
    "engine": "duckdb",
-   "best": 2.14,
+   "best": 1.454,
    "all": [
-    2.14
+    1.454
    ],
    "rows": 1,
    "error": null
@@ -172,9 +172,9 @@
   {
    "q": 17,
    "engine": "duckdb",
-   "best": 3.337,
+   "best": 2.976,
    "all": [
-    3.337
+    2.976
    ],
    "rows": 37,
    "error": null
@@ -182,295 +182,15 @@
   {
    "q": 18,
    "engine": "duckdb",
-   "best": 2.11,
+   "best": 1.583,
    "all": [
-    2.11
+    1.583
    ],
    "rows": 100,
    "error": null
   },
   {
    "q": 19,
-   "engine": "duckdb",
-   "best": 12.555,
-   "all": [
-    12.555
-   ],
-   "rows": 100,
-   "error": null
-  },
-  {
-   "q": 20,
-   "engine": "duckdb",
-   "best": 1.13,
-   "all": [
-    1.13
-   ],
-   "rows": 100,
-   "error": null
-  },
-  {
-   "q": 21,
-   "engine": "duckdb",
-   "best": 1.814,
-   "all": [
-    1.814
-   ],
-   "rows": 100,
-   "error": null
-  },
-  {
-   "q": 22,
-   "engine": "duckdb",
-   "best": 1.994,
-   "all": [
-    1.994
-   ],
-   "rows": 100,
-   "error": null
-  },
-  {
-   "q": 23,
-   "engine": "duckdb",
-   "best": 8.208,
-   "all": [
-    8.208
-   ],
-   "rows": 100,
-   "error": null
-  },
-  {
-   "q": 24,
-   "engine": "duckdb",
-   "best": 2.95,
-   "all": [
-    2.95
-   ],
-   "rows": 40,
-   "error": null
-  },
-  {
-   "q": 25,
-   "engine": "duckdb",
-   "best": 3.605,
-   "all": [
-    3.605
-   ],
-   "rows": 14,
-   "error": null
-  },
-  {
-   "q": 26,
-   "engine": "duckdb",
-   "best": 2.018,
-   "all": [
-    2.018
-   ],
-   "rows": 100,
-   "error": null
-  },
-  {
-   "q": 27,
-   "engine": "duckdb",
-   "best": 2.978,
-   "all": [
-    2.978
-   ],
-   "rows": 100,
-   "error": null
-  },
-  {
-   "q": 28,
-   "engine": "duckdb",
-   "best": 4.047,
-   "all": [
-    4.047
-   ],
-   "rows": 1,
-   "error": null
-  },
-  {
-   "q": 29,
-   "engine": "duckdb",
-   "best": 3.403,
-   "all": [
-    3.403
-   ],
-   "rows": 62,
-   "error": null
-  },
-  {
-   "q": 30,
-   "engine": "duckdb",
-   "best": 0.972,
-   "all": [
-    0.972
-   ],
-   "rows": 100,
-   "error": null
-  },
-  {
-   "q": 31,
-   "engine": "duckdb",
-   "best": 1.865,
-   "all": [
-    1.865
-   ],
-   "rows": 275,
-   "error": null
-  },
-  {
-   "q": 32,
-   "engine": "duckdb",
-   "best": 0.942,
-   "all": [
-    0.942
-   ],
-   "rows": 1,
-   "error": null
-  },
-  {
-   "q": 33,
-   "engine": "duckdb",
-   "best": 3.322,
-   "all": [
-    3.322
-   ],
-   "rows": 100,
-   "error": null
-  },
-  {
-   "q": 34,
-   "engine": "duckdb",
-   "best": 1.84,
-   "all": [
-    1.84
-   ],
-   "rows": 5774,
-   "error": null
-  },
-  {
-   "q": 35,
-   "engine": "duckdb",
-   "best": 2.066,
-   "all": [
-    2.066
-   ],
-   "rows": 100,
-   "error": null
-  },
-  {
-   "q": 36,
-   "engine": "duckdb",
-   "best": 2.693,
-   "all": [
-    2.693
-   ],
-   "rows": 100,
-   "error": null
-  },
-  {
-   "q": 37,
-   "engine": "duckdb",
-   "best": 1.953,
-   "all": [
-    1.953
-   ],
-   "rows": 3,
-   "error": null
-  },
-  {
-   "q": 38,
-   "engine": "duckdb",
-   "best": 2.123,
-   "all": [
-    2.123
-   ],
-   "rows": 1,
-   "error": null
-  },
-  {
-   "q": 39,
-   "engine": "duckdb",
-   "best": 1.485,
-   "all": [
-    1.485
-   ],
-   "rows": 7367,
-   "error": null
-  },
-  {
-   "q": 40,
-   "engine": "duckdb",
-   "best": 1.494,
-   "all": [
-    1.494
-   ],
-   "rows": 100,
-   "error": null
-  },
-  {
-   "q": 41,
-   "engine": "duckdb",
-   "best": 0.458,
-   "all": [
-    0.458
-   ],
-   "rows": 100,
-   "error": null
-  },
-  {
-   "q": 42,
-   "engine": "duckdb",
-   "best": 2.297,
-   "all": [
-    2.297
-   ],
-   "rows": 11,
-   "error": null
-  },
-  {
-   "q": 43,
-   "engine": "duckdb",
-   "best": 1.345,
-   "all": [
-    1.345
-   ],
-   "rows": 100,
-   "error": null
-  },
-  {
-   "q": 44,
-   "engine": "duckdb",
-   "best": 3.764,
-   "all": [
-    3.764
-   ],
-   "rows": 10,
-   "error": null
-  },
-  {
-   "q": 45,
-   "engine": "duckdb",
-   "best": 1.445,
-   "all": [
-    1.445
-   ],
-   "rows": 100,
-   "error": null
-  },
-  {
-   "q": 46,
-   "engine": "duckdb",
-   "best": 2.479,
-   "all": [
-    2.479
-   ],
-   "rows": 100,
-   "error": null
-  },
-  {
-   "q": 47,
    "engine": "duckdb",
    "best": 2.611,
    "all": [
@@ -480,11 +200,291 @@
    "error": null
   },
   {
+   "q": 20,
+   "engine": "duckdb",
+   "best": 0.658,
+   "all": [
+    0.658
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 21,
+   "engine": "duckdb",
+   "best": 1.066,
+   "all": [
+    1.066
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 22,
+   "engine": "duckdb",
+   "best": 1.578,
+   "all": [
+    1.578
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 23,
+   "engine": "duckdb",
+   "best": 7.918,
+   "all": [
+    7.918
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 24,
+   "engine": "duckdb",
+   "best": 3.371,
+   "all": [
+    3.371
+   ],
+   "rows": 40,
+   "error": null
+  },
+  {
+   "q": 25,
+   "engine": "duckdb",
+   "best": 3.574,
+   "all": [
+    3.574
+   ],
+   "rows": 14,
+   "error": null
+  },
+  {
+   "q": 26,
+   "engine": "duckdb",
+   "best": 1.161,
+   "all": [
+    1.161
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 27,
+   "engine": "duckdb",
+   "best": 2.825,
+   "all": [
+    2.825
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 28,
+   "engine": "duckdb",
+   "best": 4.248,
+   "all": [
+    4.248
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 29,
+   "engine": "duckdb",
+   "best": 3.171,
+   "all": [
+    3.171
+   ],
+   "rows": 62,
+   "error": null
+  },
+  {
+   "q": 30,
+   "engine": "duckdb",
+   "best": 0.838,
+   "all": [
+    0.838
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 31,
+   "engine": "duckdb",
+   "best": 2.163,
+   "all": [
+    2.163
+   ],
+   "rows": 275,
+   "error": null
+  },
+  {
+   "q": 32,
+   "engine": "duckdb",
+   "best": 0.654,
+   "all": [
+    0.654
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 33,
+   "engine": "duckdb",
+   "best": 3.139,
+   "all": [
+    3.139
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 34,
+   "engine": "duckdb",
+   "best": 1.524,
+   "all": [
+    1.524
+   ],
+   "rows": 5774,
+   "error": null
+  },
+  {
+   "q": 35,
+   "engine": "duckdb",
+   "best": 1.954,
+   "all": [
+    1.954
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 36,
+   "engine": "duckdb",
+   "best": 2.726,
+   "all": [
+    2.726
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 37,
+   "engine": "duckdb",
+   "best": 1.248,
+   "all": [
+    1.248
+   ],
+   "rows": 3,
+   "error": null
+  },
+  {
+   "q": 38,
+   "engine": "duckdb",
+   "best": 2.041,
+   "all": [
+    2.041
+   ],
+   "rows": 1,
+   "error": null
+  },
+  {
+   "q": 39,
+   "engine": "duckdb",
+   "best": 0.876,
+   "all": [
+    0.876
+   ],
+   "rows": 7367,
+   "error": null
+  },
+  {
+   "q": 40,
+   "engine": "duckdb",
+   "best": 1.047,
+   "all": [
+    1.047
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 41,
+   "engine": "duckdb",
+   "best": 0.267,
+   "all": [
+    0.267
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 42,
+   "engine": "duckdb",
+   "best": 1.811,
+   "all": [
+    1.811
+   ],
+   "rows": 11,
+   "error": null
+  },
+  {
+   "q": 43,
+   "engine": "duckdb",
+   "best": 1.3,
+   "all": [
+    1.3
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 44,
+   "engine": "duckdb",
+   "best": 3.198,
+   "all": [
+    3.198
+   ],
+   "rows": 10,
+   "error": null
+  },
+  {
+   "q": 45,
+   "engine": "duckdb",
+   "best": 1.271,
+   "all": [
+    1.271
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 46,
+   "engine": "duckdb",
+   "best": 2.455,
+   "all": [
+    2.455
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
+   "q": 47,
+   "engine": "duckdb",
+   "best": 2.418,
+   "all": [
+    2.418
+   ],
+   "rows": 100,
+   "error": null
+  },
+  {
    "q": 48,
    "engine": "duckdb",
-   "best": 2.596,
+   "best": 2.499,
    "all": [
-    2.596
+    2.499
    ],
    "rows": 1,
    "error": null
@@ -492,9 +492,9 @@
   {
    "q": 49,
    "engine": "duckdb",
-   "best": 4.876,
+   "best": 4.251,
    "all": [
-    4.876
+    4.251
    ],
    "rows": 100,
    "error": null
@@ -502,9 +502,9 @@
   {
    "q": 50,
    "engine": "duckdb",
-   "best": 2.602,
+   "best": 2.185,
    "all": [
-    2.602
+    2.185
    ],
    "rows": 100,
    "error": null
@@ -512,9 +512,9 @@
   {
    "q": 51,
    "engine": "duckdb",
-   "best": 4.53,
+   "best": 4.67,
    "all": [
-    4.53
+    4.67
    ],
    "rows": 100,
    "error": null
@@ -522,9 +522,9 @@
   {
    "q": 52,
    "engine": "duckdb",
-   "best": 2.002,
+   "best": 1.894,
    "all": [
-    2.002
+    1.894
    ],
    "rows": 100,
    "error": null
@@ -532,9 +532,9 @@
   {
    "q": 53,
    "engine": "duckdb",
-   "best": 1.968,
+   "best": 1.818,
    "all": [
-    1.968
+    1.818
    ],
    "rows": 100,
    "error": null
@@ -542,9 +542,9 @@
   {
    "q": 54,
    "engine": "duckdb",
-   "best": 3.025,
+   "best": 2.528,
    "all": [
-    3.025
+    2.528
    ],
    "rows": 100,
    "error": null
@@ -552,9 +552,9 @@
   {
    "q": 55,
    "engine": "duckdb",
-   "best": 2.133,
+   "best": 1.798,
    "all": [
-    2.133
+    1.798
    ],
    "rows": 100,
    "error": null
@@ -562,9 +562,9 @@
   {
    "q": 56,
    "engine": "duckdb",
-   "best": 3.406,
+   "best": 3.021,
    "all": [
-    3.406
+    3.021
    ],
    "rows": 100,
    "error": null
@@ -572,9 +572,9 @@
   {
    "q": 57,
    "engine": "duckdb",
-   "best": 1.369,
+   "best": 1.137,
    "all": [
-    1.369
+    1.137
    ],
    "rows": 100,
    "error": null
@@ -582,9 +582,9 @@
   {
    "q": 58,
    "engine": "duckdb",
-   "best": 3.259,
+   "best": 3.119,
    "all": [
-    3.259
+    3.119
    ],
    "rows": 100,
    "error": null
@@ -592,9 +592,9 @@
   {
    "q": 59,
    "engine": "duckdb",
-   "best": 1.953,
+   "best": 1.531,
    "all": [
-    1.953
+    1.531
    ],
    "rows": 100,
    "error": null
@@ -602,9 +602,9 @@
   {
    "q": 60,
    "engine": "duckdb",
-   "best": 3.175,
+   "best": 2.965,
    "all": [
-    3.175
+    2.965
    ],
    "rows": 100,
    "error": null
@@ -612,9 +612,9 @@
   {
    "q": 61,
    "engine": "duckdb",
-   "best": 3.564,
+   "best": 3.664,
    "all": [
-    3.564
+    3.664
    ],
    "rows": 1,
    "error": null
@@ -622,9 +622,9 @@
   {
    "q": 62,
    "engine": "duckdb",
-   "best": 1.16,
+   "best": 1.085,
    "all": [
-    1.16
+    1.085
    ],
    "rows": 100,
    "error": null
@@ -632,9 +632,9 @@
   {
    "q": 63,
    "engine": "duckdb",
-   "best": 1.898,
+   "best": 1.811,
    "all": [
-    1.898
+    1.811
    ],
    "rows": 100,
    "error": null
@@ -642,17 +642,19 @@
   {
    "q": 64,
    "engine": "duckdb",
-   "best": null,
-   "all": [],
-   "rows": null,
-   "error": "Out of Memory Error: failed to offload data block of size 96.0 KiB (172.9 GiB/172.9 GiB used). This limit was set by the 'max_temp_directory_size' setting. By default, this setting utilizes the available disk space on the drive where the 'temp_directory' is located. You can adjust this setting, by u"
+   "best": 6.055,
+   "all": [
+    6.055
+   ],
+   "rows": 466,
+   "error": null
   },
   {
    "q": 65,
    "engine": "duckdb",
-   "best": 3.187,
+   "best": 3.251,
    "all": [
-    3.187
+    3.251
    ],
    "rows": 100,
    "error": null
@@ -660,9 +662,9 @@
   {
    "q": 66,
    "engine": "duckdb",
-   "best": 1.979,
+   "best": 1.853,
    "all": [
-    1.979
+    1.853
    ],
    "rows": 15,
    "error": null
@@ -670,9 +672,9 @@
   {
    "q": 67,
    "engine": "duckdb",
-   "best": 7.192,
+   "best": 7.904,
    "all": [
-    7.192
+    7.904
    ],
    "rows": 100,
    "error": null
@@ -680,9 +682,9 @@
   {
    "q": 68,
    "engine": "duckdb",
-   "best": 3.111,
+   "best": 3.161,
    "all": [
-    3.111
+    3.161
    ],
    "rows": 100,
    "error": null
@@ -690,9 +692,9 @@
   {
    "q": 69,
    "engine": "duckdb",
-   "best": 2.953,
+   "best": 1.892,
    "all": [
-    2.953
+    1.892
    ],
    "rows": 100,
    "error": null
@@ -700,9 +702,9 @@
   {
    "q": 70,
    "engine": "duckdb",
-   "best": 1.996,
+   "best": 1.882,
    "all": [
-    1.996
+    1.882
    ],
    "rows": 20,
    "error": null
@@ -710,9 +712,9 @@
   {
    "q": 71,
    "engine": "duckdb",
-   "best": 3.768,
+   "best": 3.143,
    "all": [
-    3.768
+    3.143
    ],
    "rows": 59606,
    "error": null
@@ -720,9 +722,9 @@
   {
    "q": 72,
    "engine": "duckdb",
-   "best": 4.196,
+   "best": 3.308,
    "all": [
-    4.196
+    3.308
    ],
    "rows": 100,
    "error": null
@@ -730,9 +732,9 @@
   {
    "q": 73,
    "engine": "duckdb",
-   "best": 1.4,
+   "best": 1.295,
    "all": [
-    1.4
+    1.295
    ],
    "rows": 111,
    "error": null
@@ -740,9 +742,9 @@
   {
    "q": 74,
    "engine": "duckdb",
-   "best": 2.016,
+   "best": 2.082,
    "all": [
-    2.016
+    2.082
    ],
    "rows": 100,
    "error": null
@@ -750,9 +752,9 @@
   {
    "q": 75,
    "engine": "duckdb",
-   "best": 5.589,
+   "best": 5.268,
    "all": [
-    5.589
+    5.268
    ],
    "rows": 100,
    "error": null
@@ -760,9 +762,9 @@
   {
    "q": 76,
    "engine": "duckdb",
-   "best": 8.811,
+   "best": 3.71,
    "all": [
-    8.811
+    3.71
    ],
    "rows": 100,
    "error": null
@@ -770,9 +772,9 @@
   {
    "q": 77,
    "engine": "duckdb",
-   "best": 4.967,
+   "best": 3.853,
    "all": [
-    4.967
+    3.853
    ],
    "rows": 100,
    "error": null
@@ -780,9 +782,9 @@
   {
    "q": 78,
    "engine": "duckdb",
-   "best": 6.492,
+   "best": 6.15,
    "all": [
-    6.492
+    6.15
    ],
    "rows": 100,
    "error": null
@@ -790,9 +792,9 @@
   {
    "q": 79,
    "engine": "duckdb",
-   "best": 2.485,
+   "best": 2.429,
    "all": [
-    2.485
+    2.429
    ],
    "rows": 100,
    "error": null
@@ -800,9 +802,9 @@
   {
    "q": 80,
    "engine": "duckdb",
-   "best": 5.544,
+   "best": 4.892,
    "all": [
-    5.544
+    4.892
    ],
    "rows": 100,
    "error": null
@@ -810,9 +812,9 @@
   {
    "q": 81,
    "engine": "duckdb",
-   "best": 1.054,
+   "best": 0.871,
    "all": [
-    1.054
+    0.871
    ],
    "rows": 100,
    "error": null
@@ -820,9 +822,9 @@
   {
    "q": 82,
    "engine": "duckdb",
-   "best": 2.4,
+   "best": 1.547,
    "all": [
-    2.4
+    1.547
    ],
    "rows": 14,
    "error": null
@@ -830,9 +832,9 @@
   {
    "q": 83,
    "engine": "duckdb",
-   "best": 1.765,
+   "best": 1.395,
    "all": [
-    1.765
+    1.395
    ],
    "rows": 100,
    "error": null
@@ -840,9 +842,9 @@
   {
    "q": 84,
    "engine": "duckdb",
-   "best": 2.389,
+   "best": 1.28,
    "all": [
-    2.389
+    1.28
    ],
    "rows": 100,
    "error": null
@@ -850,9 +852,9 @@
   {
    "q": 85,
    "engine": "duckdb",
-   "best": 2.773,
+   "best": 2.266,
    "all": [
-    2.773
+    2.266
    ],
    "rows": 62,
    "error": null
@@ -860,9 +862,9 @@
   {
    "q": 86,
    "engine": "duckdb",
-   "best": 1.236,
+   "best": 1.02,
    "all": [
-    1.236
+    1.02
    ],
    "rows": 100,
    "error": null
@@ -870,9 +872,9 @@
   {
    "q": 87,
    "engine": "duckdb",
-   "best": 2.986,
+   "best": 2.113,
    "all": [
-    2.986
+    2.113
    ],
    "rows": 1,
    "error": null
@@ -880,9 +882,9 @@
   {
    "q": 88,
    "engine": "duckdb",
-   "best": 3.39,
+   "best": 3.558,
    "all": [
-    3.39
+    3.558
    ],
    "rows": 1,
    "error": null
@@ -890,9 +892,9 @@
   {
    "q": 89,
    "engine": "duckdb",
-   "best": 1.955,
+   "best": 1.872,
    "all": [
-    1.955
+    1.872
    ],
    "rows": 100,
    "error": null
@@ -900,9 +902,9 @@
   {
    "q": 90,
    "engine": "duckdb",
-   "best": 0.985,
+   "best": 0.858,
    "all": [
-    0.985
+    0.858
    ],
    "rows": 1,
    "error": null
@@ -910,9 +912,9 @@
   {
    "q": 91,
    "engine": "duckdb",
-   "best": 1.122,
+   "best": 1.131,
    "all": [
-    1.122
+    1.131
    ],
    "rows": 30,
    "error": null
@@ -920,9 +922,9 @@
   {
    "q": 92,
    "engine": "duckdb",
-   "best": 1.072,
+   "best": 1.051,
    "all": [
-    1.072
+    1.051
    ],
    "rows": 1,
    "error": null
@@ -930,9 +932,9 @@
   {
    "q": 93,
    "engine": "duckdb",
-   "best": 2.399,
+   "best": 2.541,
    "all": [
-    2.399
+    2.541
    ],
    "rows": 100,
    "error": null
@@ -940,9 +942,9 @@
   {
    "q": 94,
    "engine": "duckdb",
-   "best": 1.828,
+   "best": 1.705,
    "all": [
-    1.828
+    1.705
    ],
    "rows": 1,
    "error": null
@@ -950,9 +952,9 @@
   {
    "q": 95,
    "engine": "duckdb",
-   "best": 6.23,
+   "best": 3.116,
    "all": [
-    6.23
+    3.116
    ],
    "rows": 1,
    "error": null
@@ -960,9 +962,9 @@
   {
    "q": 96,
    "engine": "duckdb",
-   "best": 1.017,
+   "best": 0.917,
    "all": [
-    1.017
+    0.917
    ],
    "rows": 1,
    "error": null
@@ -970,9 +972,9 @@
   {
    "q": 97,
    "engine": "duckdb",
-   "best": 2.671,
+   "best": 2.296,
    "all": [
-    2.671
+    2.296
    ],
    "rows": 1,
    "error": null
@@ -980,9 +982,9 @@
   {
    "q": 98,
    "engine": "duckdb",
-   "best": 2.715,
+   "best": 1.962,
    "all": [
-    2.715
+    1.962
    ],
    "rows": 30579,
    "error": null
@@ -990,9 +992,9 @@
   {
    "q": 99,
    "engine": "duckdb",
-   "best": 1.18,
+   "best": 0.893,
    "all": [
-    1.18
+    0.893
    ],
    "rows": 100,
    "error": null
@@ -1000,7 +1002,7 @@
  ],
  "extra": {},
  "misc": [
-  "DUCKDB_VERSION=2.0.0 WAREHOUSE=s3://amzn-s3-demo-bucket/tpcds/warehouse_sf100 REPEAT=1 TIMEOUT=900"
+  "DUCKDB_VERSION=2.0.1 WAREHOUSE=s3://amzn-s3-demo-bucket/tpcds/warehouse_sf100 REPEAT=1 TIMEOUT=900 SETTINGS=default EFFECTIVE=memory_limit:99.0 GiB;max_temp:90% of available disk space;threads:32"
  ],
  "repeat": "1",
  "timeout": "900"

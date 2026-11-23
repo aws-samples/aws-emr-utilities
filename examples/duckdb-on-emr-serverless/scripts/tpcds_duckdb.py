@@ -1,6 +1,6 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: MIT-0
-"""TPC-DS on DuckDB 2.0.0: run the 99 queries against Apache Iceberg tables on S3.
+"""TPC-DS on DuckDB 2.0.1: run the 99 queries against Apache Iceberg tables on S3.
 
 Methodology (same spirit as the single-table benchmark):
 - A fresh DuckDB connection for every timed run, so no cache carries over between runs.
@@ -48,10 +48,7 @@ def fresh_con():
         con.load_extension(e)
     con.execute("CREATE OR REPLACE SECRET (TYPE s3, PROVIDER credential_chain);")
     for t in TABLES:
-        if WH.startswith("parquet:"):  # diagnostic mode: plain Parquet instead of Iceberg
-            con.read_parquet(f"{WH[8:]}/{t}/*.parquet").create_view(t)
-        else:
-            con.sql("SELECT * FROM iceberg_scan(?)", params=[f"{WH}/tpcds/{t}"]).create_view(t)
+        con.sql("SELECT * FROM iceberg_scan(?)", params=[f"{WH}/tpcds/{t}"]).create_view(t)
     return con
 
 

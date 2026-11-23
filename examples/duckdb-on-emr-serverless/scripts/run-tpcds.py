@@ -7,8 +7,11 @@ Required env: EMR_APP_ID, EXEC_ROLE_ARN, S3_BUCKET. Optional: AWS_REGION, AWS_PR
 Labels:
   gen-sf<N>               DuckDB dsdgen -> Parquet on S3
   iceberg-sf<N>           Spark: Parquet -> Apache Iceberg tables
-  duckdb-sf<N>-d<V>       DuckDB 2.0.0, one V-vCPU driver, 99 queries
+  duckdb-sf<N>-d<V>       DuckDB 2.0.1, one V-vCPU driver, 99 queries
   spark-sf<N>-<V>         Spark SQL, V total vCPUs as 4-vCPU executors, 99 queries
+  txticeberg-sf<N>        Spark: AWS public text files -> Apache Iceberg tables (SF1000)
+  stats-sf<N>             Spark: Iceberg table statistics (tuned Spark, step 1)
+  sparkT-sf<N>-<V>        tuned Spark SQL: Iceberg statistics + cost-based optimizer
 Options (env): REPEAT (default 2), TIMEOUT (default 900), ONLY ("1,2,3")
 
 Usage: python3 run-tpcds.py gen-sf1 iceberg-sf1 duckdb-sf1-d8 spark-sf1-8
@@ -38,7 +41,7 @@ REGION = os.environ.get("AWS_REGION", "us-east-1")
 HERE = os.path.dirname(os.path.abspath(__file__))
 RES = os.path.join(HERE, os.environ.get("OUTDIR", "results"))
 os.makedirs(RES, exist_ok=True)
-ENV_ARCHIVE = f"{BUCKET}/envs/duckdb20_env.tar.gz#environment"
+ENV_ARCHIVE = f"{BUCKET}/envs/duckdb201_env.tar.gz#environment"
 EXT_ARCHIVE = f"{BUCKET}/envs/tpcds_ext.tar.gz#tpcds_ext"
 QUERIES = f"{BUCKET}/tpcds/queries-duckdb.json"
 QUERIES_SPARK = f"{BUCKET}/tpcds/queries-spark.json"
@@ -101,19 +104,6 @@ def job_for(label):
         sf, v = m.group(1), int(m.group(2))
         return spark_params("tpcds_spark.py", [warehouse(sf), QUERIES_SPARK, REPEAT, TIMEOUT, ONLY], v,
                             extra=("spark.sql.cbo.enabled=true", "spark.sql.cbo.joinReorder.enabled=true"))
-    m = re.fullmatch(r"probe-sf(\d+)", label)  # diagnostic: what stats can Spark use on Iceberg
-    if m:
-        return spark_params("tpcds_cbo_probe.py", [warehouse(m.group(1))], 8)
-    m = re.fullmatch(r"explain-sf(\d+)-d(\d+)", label)  # diagnostic: EXPLAIN / EXPLAIN ANALYZE of one query
-    if m:
-        sf, v = m.group(1), int(m.group(2))
-        srcs = ",".join({"iceberg": "iceberg:" + warehouse(sf), "parquet": "parquet:" + parquet(sf)}[k]
-                        for k in os.environ.get("EXPL_SOURCES", "iceberg,parquet").split(","))
-        return duck_params("tpcds_explain.py", [QUERIES, os.environ.get("EXPL_QNR", "19"), srcs], v)
-    m = re.fullmatch(r"duckdbpq-sf(\d+)-d(\d+)", label)  # diagnostic: DuckDB on plain Parquet
-    if m:
-        sf, v = m.group(1), int(m.group(2))
-        return duck_params("tpcds_duckdb.py", ["parquet:" + parquet(sf), QUERIES, REPEAT, TIMEOUT, ONLY], v)
     m = re.fullmatch(r"spark-sf(\d+)-(\d+)", label)
     if m:
         sf, v = m.group(1), int(m.group(2))
@@ -182,12 +172,10 @@ def run(label):
         except RuntimeError:
             pass
     print(f"[{label}] {j['state']} in {j.get('totalExecutionDurationSeconds')}s {j.get('stateDetails','')[:200]}", flush=True)
-    qs, extra, misc, full = [], {}, [], []
+    qs, extra, misc = [], {}, []
     try:
         for ln in driver_log(rid, "stdout.gz").splitlines():
             ln = ln.rstrip()
-            if ln.startswith(("EXPL|", "PROBE|")):
-                full.append(ln)
             if ln.startswith("TPCDS_Q="):
                 qs.append(json.loads(ln[8:]))
             elif ln.startswith(("TPCDS_GEN_JSON=", "TPCDS_ICEBERG_JSON=")):
@@ -196,9 +184,6 @@ def run(label):
                 misc.append(ln[:300])
     except Exception as e:  # noqa: BLE001
         misc.append(f"STDOUT_FETCH_FAILED: {e}")
-    if full:
-        with open(os.path.join(RES, f"{label}.stdout.txt"), "w") as fh:
-            fh.write("\n".join(full))
     if j["state"] != "SUCCESS":  # surface the driver error tail
         try:
             misc.append("STDERR_TAIL: " + " | ".join(driver_log(rid, "stderr.gz").splitlines()[-6:])[:900])

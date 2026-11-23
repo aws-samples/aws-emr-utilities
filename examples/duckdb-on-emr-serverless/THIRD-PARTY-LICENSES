@@ -5,7 +5,7 @@ when you run the steps in README.md. Each project is under its own license.
 
 | Component | Used for | License |
 |---|---|---|
-| DuckDB 2.0.0 (https://duckdb.org) and its httpfs, aws, avro, iceberg and tpcds extensions | Query engine, Iceberg reads, data generation | MIT |
+| DuckDB 2.0.1 (https://duckdb.org) and its httpfs, aws, avro, iceberg and tpcds extensions | Query engine, Iceberg reads, data generation | MIT |
 | venv-pack 0.2.0 (https://github.com/jcrist/venv-pack) | Packaging the DuckDB Python environment | BSD |
 | boto3 1.43.123 (https://github.com/boto/boto3) | EMR Serverless and S3 API calls from the runner | Apache-2.0 |
 | Apache Spark and Apache Iceberg (provided by Amazon EMR Serverless) | Spark SQL baseline, Iceberg tables | Apache-2.0 |
